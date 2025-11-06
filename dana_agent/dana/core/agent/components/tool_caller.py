@@ -10,12 +10,17 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import traceback
 from typing import TYPE_CHECKING, Any
+
+from pydantic import BaseModel
 
 from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMResponse
 from dana.common.observable import observable
 from dana.common.protocols import DictParams
+from dana.common.utils.misc import Misc
+from dana.core.knowledge.prompts.codecs import AbstractCodec
 
 
 if TYPE_CHECKING:
@@ -28,6 +33,7 @@ class WARCaller:
     def __init__(self, agent: "STARAgent", tool_caller: ToolCaller | None = None):
         """Initialize with agent reference."""
         self._agent = agent
+        self._llm = agent.llm_client  # TODO: maintain our own LLM (maybe local?)
         self._tool_caller = tool_caller
 
     def execute_call(self, arguments: dict[str, Any], object_type: str, id_key: str, default_method: str | None = None) -> dict[str, Any]:
@@ -266,7 +272,33 @@ class ToolCaller(WARCaller):
     # ============================================================================
 
     def _execute_single_call(self, tool_call: dict[str, Any]) -> dict[str, Any]:
-        """Execute a single tool call with error handling."""
+        """
+        Execute a single tool call with error handling.
+
+        FAULT-TOLERANCE STRATEGY (Phase 1):
+        This method handles multiple tool call format combinations through branching logic:
+
+        1. type + target + method: 'type="agent" id="web-researcher"/' (XML format)
+        2. target + method: {"target": "web-researcher", "method": "query"} (explicit target in args)
+        3. function-as-target: {"function": "web-researcher", "arguments": {...}} (implicit target)
+
+        Each branch extracts the necessary information (type, target, method, parameters) and
+        dispatches to the appropriate execution method.
+
+        FUTURE ENHANCEMENT (Phase 2):
+        Consider refactoring to a canonical normalization approach:
+        - Extract all format handling into _normalize_tool_call_to_canonical()
+        - Normalize all combinations to: {"type": str, "target": str, "method": str, "parameters": dict}
+        - Single dispatch based on normalized type
+        - Benefits: cleaner separation, easier to extend, better testability
+        - Challenges: type inference cost, ambiguity handling if target exists in multiple registries
+
+        Args:
+            tool_call: Dictionary with "function" and "arguments" keys
+
+        Returns:
+            Tool call result dictionary with type, target, result, and success fields
+        """
         try:
             function_name = tool_call.get("function", "")
             arguments = tool_call.get("arguments", {})
@@ -323,8 +355,14 @@ class ToolCaller(WARCaller):
                 # Check if this is a structured JSON call with target field
                 if "target" in arguments:
                     return self._handle_target_based_call(function_name, arguments)
-                else:
-                    return self._create_unknown_function_error(function_name or "unknown")
+
+                # Phase 1: Try function_name as implicit target (e.g., "web-researcher")
+                # This handles cases where LLM provides function name without explicit target field
+                if function_name:
+                    pseudo_args = {"target": function_name} | arguments
+                    return self._handle_target_based_call(function_name, pseudo_args)
+
+                return self._create_unknown_function_error(function_name or "unknown")
 
         except Exception as e:
             return self._create_execution_error(tool_call, e)
@@ -336,7 +374,20 @@ class ToolCaller(WARCaller):
     @observable
     def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
         """
-        Parse LLM response into response text and tool calls.
+        Parse LLM response using LLM-assisted parsing.
+
+        This method uses the LLM to recast the response into canonical XML form,
+        then parses it symbolically with high confidence.
+        """
+        return self.parse_llm_response_symbolic(llm_response)
+
+    @observable
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using pure symbolic parsing (original method).
+
+        This method uses only symbolic parsing without LLM assistance.
+        It handles both XML content and structured tool calls.
 
         Args:
             llm_response: The LLM response object containing content and tool calls
@@ -400,6 +451,148 @@ class ToolCaller(WARCaller):
 
         return result_response, result_reasoning, result_tool_calls
 
+    @observable
+    def parse_llm_response_assisted(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using LLM-assisted canonical XML conversion.
+
+        This method first uses the LLM to recast the response into canonical XML form,
+        then parses it symbolically with high confidence.
+
+        Args:
+            llm_response: The LLM response object containing content and tool calls
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        if not llm_response:
+            return None, None, []
+
+        # Handle structured tool calls from LLM providers (like OpenAI function calling)
+        if llm_response.tool_calls:
+            if len(llm_response.tool_calls) == 1 and llm_response.tool_calls[0].function.name == "<|constrain|>response":
+                # Special case: response passed as tool call (openai/gpt-oss-20b)
+                content = llm_response.tool_calls[0].function.arguments
+                if content:
+                    content = content.strip()
+            else:
+                # Structured tool calls - convert to our format and return
+                structured_tool_calls = self._to_tool_call_dicts(llm_response.tool_calls)
+                return llm_response.content, None, structured_tool_calls
+
+        # Work with a copy to avoid mutating the input
+        content = llm_response.content.strip()
+
+        try:
+            # Step 1: Use LLM to recast the response into canonical XML form
+            canonical_xml = self._recast_to_canonical_xml(content)
+
+            # Step 2: Parse the canonical XML symbolically with confidence
+            return self._parse_canonical_xml(canonical_xml)
+
+        except Exception as e:
+            # Fallback to symbolic parsing method if LLM-assisted parsing fails
+            print(f"Error in LLM-assisted parsing, falling back to symbolic method: {e}")
+            return self.parse_llm_response_symbolic(llm_response)
+
+    def _recast_to_canonical_xml(self, content: str) -> str:
+        """
+        Use the LLM to recast the response content into canonical XML form.
+
+        Args:
+            content: The original LLM response content
+
+        Returns:
+            Canonical XML string with proper structure
+        """
+        from dana.common.llm.types import LLMMessage
+
+        recast_prompt = f"""
+You are a response parser that converts LLM responses into canonical XML format.
+
+Convert the following response into the standard XML format with these sections:
+- <response> as the root wrapper
+- <content> for the main response text
+- <reasoning> for any reasoning or explanation (optional)
+- <tool_calls> for any tool calls with proper structure (optional)
+
+Expected XML format:
+<response>
+<content>Main response text here</content>
+<reasoning>Any reasoning or explanation</reasoning>
+<tool_calls>
+<tool_call>
+<target id="target-name"/>
+<method>method-name</method>
+<arguments>
+<param1>value1</param1>
+<param2>value2</param2>
+</arguments>
+</tool_call>
+</tool_calls>
+</response>
+
+Original response:
+{content}
+
+Please provide the canonical XML format:
+"""
+
+        try:
+            # Use the LLM to recast the content
+            messages = [
+                LLMMessage(role="system", content="You are a response parser that converts LLM responses into canonical XML format."),
+                LLMMessage(role="user", content=recast_prompt),
+            ]
+            recast_response = self._llm.chat_response_sync(messages)
+            return recast_response.content.strip()
+        except Exception as e:
+            print(f"Error recasting to canonical XML: {e}")
+            # Return original content wrapped in basic XML structure
+            return f"<content>{content}</content>"
+
+    def _parse_canonical_xml(self, canonical_xml: str) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse canonical XML with high confidence using symbolic parsing.
+
+        Args:
+            canonical_xml: The canonical XML string to parse
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        result_response = None
+        result_reasoning = None
+        result_tool_calls = []
+
+        try:
+            # Extract content section
+            content_text = self._extract_content_between_xml_tags(canonical_xml, "content")
+            if content_text:
+                result_response = content_text.strip()
+            else:
+                # Fallback: use the entire content if no content tags found
+                result_response = canonical_xml.strip()
+
+            # Extract reasoning section
+            reasoning_text = self._extract_content_between_xml_tags(canonical_xml, "reasoning")
+            if reasoning_text:
+                result_reasoning = reasoning_text.strip()
+
+            # Extract tool calls section
+            tool_calls_xml = self._extract_content_between_xml_tags(canonical_xml, "tool_calls")
+            if tool_calls_xml:
+                # Parse tool calls with high confidence since they're in canonical form
+                result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
+
+        except Exception as e:
+            print(f"Error parsing canonical XML: {e}")
+            # Return what we have so far
+            if not result_response:
+                result_response = canonical_xml
+
+        return result_response, result_reasoning, result_tool_calls
+
     def _extract_content_between_xml_tags(self, content: str, tag: str) -> str | None:
         """
         Extract content between tags, handling both balanced and unbalanced cases.
@@ -435,9 +628,49 @@ class ToolCaller(WARCaller):
 
         return None
 
+    def _parse_xml_attributes(self, attrs_str: str) -> dict[str, str]:
+        """
+        Parse XML attributes from a string into a dictionary.
+
+        Args:
+            attrs_str: String containing XML attributes (e.g., 'id="foo" type="bar"')
+
+        Returns:
+            Dictionary of attribute name-value pairs
+        """
+        attributes = {}
+        # Match attribute="value" or attribute='value'
+        attr_pattern = r'(\w+)\s*=\s*["\']([^"\']*)["\']'
+        for match in re.finditer(attr_pattern, attrs_str):
+            attr_name, attr_value = match.groups()
+            attributes[attr_name] = attr_value
+        return attributes
+
+    def _extract_function_name_from_attributes(self, attrs_str: str) -> str | None:
+        """
+        Extract function name from XML attributes with preference: id > type.
+
+        Args:
+            attrs_str: String containing XML attributes
+
+        Returns:
+            Function name (id or type value), or None if neither found
+        """
+        if not attrs_str or not attrs_str.strip():
+            return None
+
+        attributes = self._parse_xml_attributes(attrs_str)
+
+        # Prefer id over type
+        return attributes.get("id") or attributes.get("type")
+
     def _extract_tool_calls_from_xml(self, tool_calls_xml: str) -> list[DictParams]:
         """
         Parse XML tool calls into dictionary format.
+
+        Supports these patterns (with id preferred over type):
+        - <tool_call id="xxx"> or <tool_call type="xxx"> or <tool_call id="xxx" type="yyy">
+        - <tool_call><target id="xxx"/> or <tool_call><target type="xxx"/> etc.
 
         Args:
             tool_calls_xml: XML string containing tool calls
@@ -452,7 +685,8 @@ class ToolCaller(WARCaller):
 
         try:
             # Find all tool_call elements using regex (handle attributes on opening tag)
-            matches = re.findall(r"<tool_call\s*([^>]*)>(.*?)</tool_call>", tool_calls_xml, re.DOTALL)
+            # Use word boundary \b to avoid matching <tool_calls> as <tool_call>
+            matches = re.findall(r"<tool_call\b\s*([^>]*)>(.*?)</tool_call>", tool_calls_xml, re.DOTALL)
 
             if not matches:
                 # Try tolerant parsing for unbalanced tags
@@ -461,19 +695,20 @@ class ToolCaller(WARCaller):
                     matches = [("", tool_call_content)]
 
             for attrs_str, tool_call_content in matches:
-                # Extract function name from attributes (type and id) or from <target> tag
+                # Extract function name: try <tool_call> attributes first, then <target> tag
                 function_name = None
 
-                # First try: extract from attributes on <tool_call> tag
+                # Strategy 1: Extract from <tool_call> tag attributes (id > type)
                 if attrs_str:
-                    function_name = attrs_str.strip()
+                    function_name = self._extract_function_name_from_attributes(attrs_str)
 
-                # Second try: extract from <target> tag
+                # Strategy 2: Extract from <target> tag attributes (id > type)
                 if not function_name:
                     target_match = re.search(r"<target\s+([^>]+)/?>", tool_call_content)
                     if target_match:
-                        function_name = target_match.group(1).strip()
+                        function_name = self._extract_function_name_from_attributes(target_match.group(1))
 
+                # Skip if no function name found
                 if not function_name:
                     continue
 
@@ -491,9 +726,17 @@ class ToolCaller(WARCaller):
                         # Use unified parser to handle XML, JSON, or plain text
                         arguments_dict[arg_name] = self._convert_function_parameter_value(arg_value.strip())
 
-                    # If no balanced arguments found, try tolerant parsing
+                    # If no XML tags found, try parsing entire content as JSON or other format
                     if not arg_matches:
-                        arguments_dict = self._parse_tool_call_arguments_with_error_recovery(arguments_xml)
+                        # Try to parse the entire arguments_xml as a value (handles JSON, nested XML, etc.)
+                        parsed_value = self._convert_function_parameter_value(arguments_xml)
+
+                        # If it parsed to a dict, merge it into arguments_dict
+                        if isinstance(parsed_value, dict):
+                            arguments_dict.update(parsed_value)
+                        else:
+                            # Fall back to tolerant XML parsing for malformed tags
+                            arguments_dict = self._parse_tool_call_arguments_with_error_recovery(arguments_xml)
 
                 # Add method to arguments if present
                 if method and method.strip():
@@ -678,19 +921,100 @@ class ToolCaller(WARCaller):
         value = value.strip()
         return value.startswith("<") and value.endswith(">")
 
+    def _element_to_python(self, element) -> Any:
+        """
+        Convert an ElementTree Element to a Python object.
+
+        Conventions:
+        - Element with only text → typed value (string, int, bool, etc.)
+        - Element with children → dict or list
+        - Multiple children with same tag → list
+        - Mixed children tags → dict
+
+        Args:
+            element: xml.etree.ElementTree.Element
+
+        Returns:
+            Python object (dict, list, or primitive)
+        """
+        # If element has no children, return its text content
+        if len(element) == 0:
+            text = element.text or ""
+            return self._convert_text_to_typed_value(text.strip())
+
+        # Group children by tag name
+        children_by_tag = {}
+        for child in element:
+            tag = child.tag
+            if tag not in children_by_tag:
+                children_by_tag[tag] = []
+            children_by_tag[tag].append(child)
+
+        # Single tag type with multiple instances → list
+        if len(children_by_tag) == 1:
+            tag, children = next(iter(children_by_tag.items()))
+            if len(children) > 1:
+                return [self._element_to_python(child) for child in children]
+            else:
+                # Single child - check if parent suggests it should be a list
+                # (e.g., <todos><todo>...</todo></todos> should return a list)
+                parsed = self._element_to_python(children[0])
+                parent_tag = element.tag
+                if parent_tag.endswith("s") and not tag.endswith("s"):
+                    return [parsed]
+                return parsed
+
+        # Multiple tag types → dict
+        result = {}
+        for tag, children in children_by_tag.items():
+            if len(children) > 1:
+                result[tag] = [self._element_to_python(child) for child in children]
+            else:
+                result[tag] = self._element_to_python(children[0])
+        return result
+
     def _convert_xml_to_python_object(self, xml_str: str, parent_tag: str | None = None) -> Any:
         """
-        Parse XML string to Python objects using smart conventions:
+        Parse XML string to Python objects using smart conventions.
 
-        1. Repeated tags → list
-        2. Tags with children → dict
-        3. Tags with only text → string (with type coercion)
-        4. Empty tags → None
+        Uses hybrid approach:
+        1. Try proper XML parser (ElementTree) for well-formed XML
+        2. Fall back to regex-based tolerant parsing for malformed XML
+
+        Conventions:
+        - Repeated tags → list
+        - Tags with children → dict
+        - Tags with only text → string (with type coercion)
+        - Empty tags → None
         """
         import re
+        import xml.etree.ElementTree as ET
 
         xml_str = xml_str.strip()
 
+        # Strategy 1: Try proper XML parser (best for nested structures)
+        try:
+            # Wrap in root element if there are multiple root elements
+            # or if it's a fragment
+            wrapped_xml = f"<root>{xml_str}</root>"
+            root = ET.fromstring(wrapped_xml)
+
+            # If root has only one child, unwrap it
+            if len(root) == 1:
+                return self._element_to_python(root[0])
+            elif len(root) > 1:
+                # Multiple children at root level
+                return self._element_to_python(root)
+            else:
+                # Root has no children, just text
+                text = root.text or ""
+                return self._convert_text_to_typed_value(text.strip())
+
+        except ET.ParseError:
+            # Fall through to regex-based tolerant parsing
+            pass
+
+        # Strategy 2: Regex-based tolerant parsing (for malformed XML)
         # Handle simple single-tag case: <tag>value</tag>
         simple_match = re.match(r"^<(\w+)>(.*?)</\1>$", xml_str, re.DOTALL)
         if simple_match:
@@ -821,7 +1145,14 @@ class ToolCaller(WARCaller):
         # Extract target-based parameters
         target = arguments.get("target")
         method = arguments.get("method", "execute")
+
+        # Handle both nested and flat parameter structures:
+        # - Nested: arguments = {"target": "x", "method": "y", "arguments": {"param1": "value1"}}
+        # - Flat:   arguments = {"target": "x", "method": "y", "param1": "value1"}
         params = arguments.get("arguments", {})
+        if not params:
+            # Extract all non-reserved keys as parameters (flat structure from XML parsing)
+            params = {k: v for k, v in arguments.items() if k not in ["target", "method"]}
 
         # Try to find target in available objects
         try:
@@ -859,3 +1190,241 @@ class ToolCaller(WARCaller):
 
         except Exception as e:
             return self._create_tool_error("parsing", target or "unknown", f"Fault-tolerant parsing failed: {str(e)}")
+
+
+class CodecToolCaller(WARCaller):
+    def __init__(self, agent: "STARAgent", codec: type[AbstractCodec]):
+        super().__init__(agent, self)
+        self._agent = agent
+        self._codec = codec
+
+    @observable
+    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using codec-based format.
+        """
+        return self.parse_llm_response_symbolic(llm_response)
+
+    @observable
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using codec-based format.
+
+        Handles codec format with <thinking> and <function_call> blocks.
+        Falls back to parent implementation for old formats.
+
+        Args:
+            llm_response: The LLM response object containing content and tool calls
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        if not llm_response:
+            return None, None, []
+
+        # Work with a copy to avoid mutating the input
+        content = llm_response.content.strip()
+        try:
+            return self._parse_codec_response(llm_response, content)
+        except Exception as _:
+            return content, None, []
+
+    def _parse_codec_response(self, llm_response: LLMResponse, content: str) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse codec-based response format using codec's parse_response method.
+
+        Uses self._codec.parse_response() to parse the content and converts
+        the result to the expected format.
+
+        Args:
+            llm_response: The LLM response object
+            content: The response content string
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        # Handle structured tool calls from LLM providers first
+        result_tool_calls = []
+        if llm_response.tool_calls:
+            if len(llm_response.tool_calls) == 1 and llm_response.tool_calls[0].function.name == "<|constrain|>response":
+                # Response passed as tool call (openai/gpt-oss-20b)
+                content = llm_response.tool_calls[0].function.arguments
+                if content:
+                    content = content.strip()
+            else:
+                # Structured (JSON) tool calls
+                result_tool_calls.extend(self._to_tool_call_dicts(llm_response.tool_calls))
+
+        # Parse using codec's parse_response method
+        parsed_response = self._codec.parse_response(content)
+        
+        # Extract thinking as reasoning
+        response_reasoning = parsed_response.thinking if parsed_response.thinking else None
+        response_text = parsed_response.response if parsed_response.response else None
+
+
+
+
+        if response_reasoning and not (parsed_response.tool_calls or response_text):
+            suggestion_message = f"[Error] invalid format, please follow the following instruction.\n{self._codec.get_instruction()}"
+            return "No response generated", suggestion_message, []
+
+        if not (response_reasoning or response_text or parsed_response.tool_calls):
+            # If no xml tags parsed, likely there is a direct answer
+            return llm_response.content, None, []
+
+        if not response_reasoning:
+            print(f"Response reasoning: {response_reasoning}")
+        
+        # Convert tool calls to DictParams format
+        if parsed_response.tool_calls:
+            for tool_call in parsed_response.tool_calls:
+                function_name = f"{tool_call.class_name}:{tool_call.name}"
+                result_tool_calls.append({
+                    "function": function_name,
+                    "arguments": tool_call.parameters
+                })
+            return "No response generated", response_reasoning , result_tool_calls
+        else:
+            return response_text, response_reasoning , result_tool_calls
+
+
+    def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
+        """Convert structured function calls to our internal format."""
+        tool_call_dicts = []
+
+        for llm_tool_call in llm_tool_calls:
+            try:
+                function_name = llm_tool_call.function.name
+                arguments = llm_tool_call.function.arguments
+
+                # Non-string arguments (already parsed) - use outer function name
+                tool_call_dicts.append({"function": function_name, "arguments": arguments})
+
+            except Exception:
+                continue
+
+        return tool_call_dicts
+
+    @observable
+    def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [self._execute_single_call(call) for call in parsed_tool_calls]
+
+    @observable
+    def _execute_single_call(self, tool_call: dict[str, Any]) -> dict[str, Any]:
+        function_name = tool_call.get("function", "")
+        arguments = tool_call.get("arguments", {})
+        if ":" not in function_name:
+            return self._create_tool_error(
+                "codec_format", function_name, "Expected ClassName:methodName format"
+            )
+        
+        parts = function_name.split(":", 1)
+        class_name = parts[0]
+        method_name = parts[1]
+
+        obj_info = self._find_object_by_class_name(class_name)
+        if not obj_info:
+            available_classes = self._get_available_class_names()
+            return self._create_tool_error(
+                "class_not_found",
+                class_name,
+                f"Class '{class_name}' not found in available agents/resources/workflows. "
+                f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}"
+            )
+
+        # Method signature validation and conversion to the expected type
+        if hasattr(obj_info["object"], method_name):
+            method = getattr(obj_info["object"], method_name)
+            signature = Misc.parse_method_signature(method)
+            for param in signature.parameters:
+                if param.type_object and param.name in arguments:
+                    if hasattr(param.type_object, "__args__"):
+                        hinted_types = param.type_object.__args__
+                    else:
+                        hinted_types = [param.type_object]
+                    for _type in hinted_types:
+                        if _type in (str, int, float):
+                            try:
+                                arguments[param.name] = _type(arguments[param.name])
+                                break
+                            except Exception:
+                                continue
+                        elif _type in (bool, list, dict):
+                            try:
+                                arguments[param.name] = eval(arguments[param.name])
+                                break
+                            except Exception:
+                                continue
+                        elif issubclass(_type, BaseModel):
+                            try:
+                                arguments[param.name] = _type.model_validate_json(arguments[param.name])
+                                break
+                            except Exception:
+                                continue
+                            
+            try:
+                # Set session_id for EventLog if it exists
+                if obj_info["type"] == "agent":
+                    if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
+                        session_id = self._agent._event_log._current_session_id
+                        if session_id is not None:
+                            arguments["session_id"] = session_id
+                if asyncio.iscoroutinefunction(method):
+                    result = Misc.safe_asyncio_run(method, **arguments)
+                else:
+                    result = method(**arguments)
+                return {"type": obj_info["type"], "object": obj_info["object"], "result": result}
+            except Exception as e:
+                return self._create_tool_error(
+                    "execution_error",
+                    f"{class_name}.{method_name}",
+                    f"Error executing call {class_name}.{method_name}: {str(e)}\n{traceback.format_exc()}"
+                )
+        else:
+            return self._create_tool_error(
+                "method_not_found",
+                f"{class_name}.{method_name}",
+                f"Method '{method_name}' not found in class '{class_name}'\n{traceback.format_exc()}"
+            )
+
+    def _find_object_by_class_name(self, class_name: str) -> dict[str, Any] | None:
+        """
+        Find an object by its class name in available agents, resources, and workflows.
+
+        Note: This matches the first occurrence found. If multiple objects of the
+        same class exist, only the first one will be matched, which may cause issues.
+
+        Args:
+            class_name: The class name to search for (__class__.__name__)
+
+        Returns:
+            Dictionary with "type" and "object" keys, or None if not found
+        """
+        # Search in agents
+        for agent in self._agent.available_agents:
+            if agent.__class__.__name__ == class_name:
+                return {"type": "agent", "object": agent}
+        
+        # Search in resources
+        for resource in self._agent.available_resources:
+            if resource.__class__.__name__ == class_name:
+                return {"type": "resource", "object": resource}
+        
+        # Search in workflows
+        for workflow in self._agent.available_workflows:
+            if workflow.__class__.__name__ == class_name:
+                return {"type": "workflow", "object": workflow}
+        
+        return None
+
+    def _get_available_class_names(self) -> list[str]:
+        """Get list of available class names from all objects."""
+        class_names = []
+        for agent in self._agent.available_agents:
+            class_names.append(agent.__class__.__name__)
+        for resource in self._agent.available_resources:
+            class_names.append(resource.__class__.__name__)
+        for workflow in self._agent.available_workflows:
+            class_names.append(workflow.__class__.__name__)
+        return sorted(set(class_names))

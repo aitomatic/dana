@@ -10,15 +10,26 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
+import structlog
+
+from uuid import uuid4
+
+import json
+
 from dana.common.llm.llm import LLM
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
 from dana.core.resource.todo import ToDoResource
-
+from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from .base_star_agent import BaseSTARAgent
-from .components import Communicator, Learner, PromptEngineer, State, ToolCaller
+from .components import Communicator, Learner, PromptEngineer, State, ToolCaller, LearnerProtocol
+from .components.tool_caller import CodecToolCaller
+from .components.observer import ObserverProtocol
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
+
+
+logger = structlog.get_logger()
 
 
 # from dana.apps.dana.thought_logger import ThoughtLogger  # Moved to avoid circular import
@@ -26,6 +37,9 @@ from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 class STARAgent(BaseSTARAgent):
     """STARAgent implementation using composition-based architecture."""
+
+    # Configuration constants
+    MAX_EMPTY_RESPONSE_RETRIES = 3  # Maximum retries when LLM returns empty response with no tool calls
 
     def __init__(
         self,
@@ -37,6 +51,10 @@ class STARAgent(BaseSTARAgent):
         max_context_tokens: int = 4000,
         auto_register: bool = True,
         registry=None,
+        codec=None,
+        prompt_api : PromptAPIProtocol | None = None,
+        observer: ObserverProtocol | None = None,
+        learner: LearnerProtocol | None = None,
         **kwargs,
     ):
         """
@@ -51,6 +69,7 @@ class STARAgent(BaseSTARAgent):
             max_context_tokens: Maximum tokens for timeline context
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
+            codec: Codec class to use for new prompt/tool system (if None, uses old system)
             **kwargs: Additional arguments passed to components
         """
         # Initialize base class first (handles registration)
@@ -68,17 +87,61 @@ class STARAgent(BaseSTARAgent):
             "model": model,
         }
 
-        # Initialize components with composition
-        self._prompt_engineer = PromptEngineer(self)
+
+        self._session_id = str(uuid4())
+        # Conditional component initialization based on codec
+        self._codec = codec
+        if codec is not None:
+            # Use new PromptEngineerManager and CodecToolCaller
+            from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
+            from dana.config.storage_config import FileStorageConfig
+            self._prompt_engineer = prompt_api or LocalPromptAPI(self, codec=codec, storage_config=FileStorageConfig())
+            self._tool_caller = CodecToolCaller(self, codec=codec)
+        else:
+            # Use old PromptEngineer and ToolCaller (backward compatibility)
+            self._prompt_engineer = PromptEngineer(self)
+            self._tool_caller = ToolCaller(self)
+
+        # Initialize other components
         self._communicator = Communicator(self)
         self._state = State(self)
-        self._learner = Learner(self)
-        self._tool_caller = ToolCaller(self)
+        self._learner = learner or Learner(self)
+        self._learner._agent = self
 
-        # Initialize timeline at agent level
-        self._timeline = Timeline(max_context_tokens=max_context_tokens)
+        # Determine storage_config for timeline and event_log
+        from dana.config.storage_config import FileStorageConfig
+        storage_config = FileStorageConfig()  # Use default or passed config
+        self._storage_config = storage_config
+
+        # Initialize timeline at agent level with agent, codec, and storage_config
+        self._timeline = Timeline(
+            max_context_tokens=max_context_tokens,
+            agent=self,
+            codec=codec,
+            storage_config=storage_config,
+        )
+
+        # Initialize EventLog API (only if observer AND codec provided)
+        # Events ONLY come from Observer - no observer = no EventLog
+        if observer is not None:
+            from dana.core.agent.components.event_log_api import EventLogAPI
+            
+            self._event_log = EventLogAPI(
+                agent=self,
+                codec=codec,
+                storage_config=storage_config,
+                observer=observer,  # REQUIRED - EventLog only works with Observer
+            )
+        else:
+            # No observer or codec = no EventLog (events only come from Observer)
+            self._event_log = None
 
         self.with_resources(ToDoResource(resource_id="todo-resource"))
+
+
+    def set_session_id(self, session_id: str) -> None:
+        """Set the session id for the agent."""
+        self._session_id = session_id
 
     @property
     def llm_client(self) -> LLM:
@@ -156,9 +219,41 @@ class STARAgent(BaseSTARAgent):
         """Get a summary of the agent's timeline."""
         return self._timeline.get_timeline_summary()
 
-    def converse(self, initial_message: str | None = None) -> None:
-        """Interactive conversation loop with a human user."""
-        self._communicator.converse(initial_message=initial_message)
+
+    def query(self, **kwargs) -> DictParams:
+        # Generate session_id if not provided
+        new_session_id = kwargs.get("session_id")
+        if new_session_id is not None:
+            self.set_session_id(new_session_id)
+        session_id = self._session_id
+            
+
+        # Set session_id for EventLog if it exists
+        if hasattr(self, "_event_log") and self._event_log is not None:
+            self._event_log._current_session_id = session_id
+
+        try:
+            result = super().query(**kwargs)
+            return result
+        finally:
+            # Save events if EventLog exists
+            if hasattr(self, "_event_log") and self._event_log is not None:
+                self._event_log.save(session_id)
+            
+            # Save timeline (agent, codec, storage_config already set in __init__)
+            if hasattr(self, "_timeline") and self._timeline is not None:
+                self._timeline.save(session_id)
+
+
+
+    def converse(self, initial_message: str | None = None, session_id: str | None = None) -> None:
+        """Interactive conversation loop with a human user.
+        
+        Args:
+            initial_message: Optional initial message to start the conversation
+            session_id: Optional session identifier. If None, generates UUID.
+        """
+        self._communicator.converse(initial_message=initial_message, session_id=session_id)
 
     def __getattr__(self, name: str):
         """
@@ -242,7 +337,7 @@ class STARAgent(BaseSTARAgent):
             # Add caller_message to timeline with caller tracking
             if isinstance(caller_message, str):
                 # Create new entry and mark it as latest
-                new_entry = TimelineEntry(entry_type=TimelineEntryType.CALLER_MESSAGE, content=caller_message, is_latest_user_message=True)
+                new_entry = TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=caller_message, is_latest_user_message=True)
                 self._timeline.add_entry(new_entry)
 
             # Preserve caller_message for notifications but remove original keys
@@ -250,6 +345,8 @@ class STARAgent(BaseSTARAgent):
             # Keep caller_message in trace_inputs for notification
             if "caller_message" not in trace_inputs:
                 trace_inputs["caller_message"] = caller_message
+
+        
 
         trace_inputs |= {"timeline": self._timeline}
 
@@ -281,23 +378,60 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
 
-        # Query LLM with agent information for logging
-        llm_response = self.llm_client.chat_response_sync(llm_messages, agent_id=self.object_id, agent_type=self.agent_type)
-        response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
+        # Query LLM with retry logic for empty responses
+        response, reasoning, tool_calls = None, None, None
+        failed_tool_calls = []
+        for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
+            llm_response = self.llm_client.chat_response_sync(llm_messages, agent_id=self.object_id, agent_type=self.agent_type)
+            response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
+
+            # Retry if both response and tool_calls are empty
+            has_content = response and response.strip()
+            has_tool_calls = tool_calls and len(tool_calls) > 0
+            if has_content or has_tool_calls:
+                break
+            elif reasoning and "error" in reasoning.lower():
+                from dana.common.llm.types import LLMMessage
+                suggestion_message = LLMMessage(role="user", content=reasoning)
+                failed_tool_calls.append(llm_response.content)
+                if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
+                    # Replace old suggestion message in case of consecutive errors
+                    llm_messages[-1] = suggestion_message
+                else:
+                    # Add new suggestion message
+                    llm_messages.append(suggestion_message)
+            if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
+                logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
+
+        if failed_tool_calls:
+            timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.FAILED_TOOL_CALL,
+                    content=json.dumps(failed_tool_calls),
+                )
+            )
 
         if not tool_calls or len(tool_calls) == 0:
             response = response if (response and len(response) > 0) else "No response generated"
             timeline.add_entry(
                 TimelineEntry(
-                    entry_type=TimelineEntryType.MY_RESPONSE,
+                    entry_type=TimelineEntryType.AGENT_RESPONSE,
                     content=response,
                 )
             )
         else:
+            if reasoning and len(reasoning) > 0:
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                        content=reasoning,
+                    )
+                )
+
             if response and len(response) > 0:
                 timeline.add_entry(
                     TimelineEntry(
-                        entry_type=TimelineEntryType.MY_THOUGHTS,
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
                         content=response,
                     )
                 )
@@ -365,7 +499,7 @@ class STARAgent(BaseSTARAgent):
                     # Determine entry type based on tool type
                     tool_type = tool_result.get("type")
                     if tool_type == "agent":
-                        entry_type = TimelineEntryType.AGENT_RESPONSE
+                        entry_type = TimelineEntryType.SUB_AGENT_RESPONSE
                     elif tool_type == "resource":
                         entry_type = TimelineEntryType.RESOURCE_RESULT
                     elif tool_type == "workflow":
@@ -382,13 +516,18 @@ class STARAgent(BaseSTARAgent):
 
             # Add a synthetic user message to prompt the agent to respond based on tool results
             # This ensures the next THINK phase has a user message to respond to
-            self._timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.CALLER_MESSAGE,
-                    content="Please provide a response based on the tool results above.",
-                    is_latest_user_message=True,
-                )
-            )
+            # last_command_message = ""
+            # for entry in self._timeline.timeline[::-1]:
+            #     if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+            #         last_command_message = entry.content and "Please provide a response" not in entry.content
+            #         break
+            # self._timeline.add_entry(
+            #     TimelineEntry(
+            #         entry_type=TimelineEntryType.USER_MESSAGE,
+            #         content=f"Please provide a response based on the tool results above to answer : {last_command_message}",
+            #         is_latest_user_message=True,
+            #     )
+            # )
 
         # Output parameter checking
         assert isinstance(tool_results, list)
@@ -396,7 +535,7 @@ class STARAgent(BaseSTARAgent):
 
         return super()._act(trace_thoughts)
 
-    @observable
+    # @observable
     def _reflect(self, trace_outputs: DictParams) -> DictParams:
         """
         REFLECT: Reflect on the actions or episode, depending on the reflection phase.
@@ -450,7 +589,7 @@ class STARAgent(BaseSTARAgent):
         # Add to timeline for persistence
         self._timeline.add_entry(
             TimelineEntry(
-                entry_type=TimelineEntryType.MY_LEARNING,
+                entry_type=TimelineEntryType.AGENT_LEARNING,
                 content=f"Learning ({phase.value}): {trace_learning.get('learning_note', 'No learning note')}",
             )
         )

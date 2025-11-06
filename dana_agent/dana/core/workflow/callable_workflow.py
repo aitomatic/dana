@@ -15,7 +15,7 @@ class CallableWorkflow(BaseWorkflow):
     Wrapper workflow that adapts a callable function into a workflow.
 
     This workflow inspects the callable's signature and extracts the required
-    parameters from the "result" field of the incoming context.
+    parameters from the incoming kwargs context.
 
     Example:
         ```python
@@ -28,7 +28,7 @@ class CallableWorkflow(BaseWorkflow):
 
         composed = workflow | extract_titles
         result = composed.execute(query="search term")
-        # result["result"] contains the list of titles
+        # result contains merged workflow outputs including the list of titles
         ```
     """
 
@@ -73,12 +73,12 @@ class CallableWorkflow(BaseWorkflow):
             **kwargs,
         )
 
-    def _extract_callable_params(self, result_data: Any, sig: inspect.Signature) -> dict:
+    def _extract_callable_params(self, kwargs_data: Any, sig: inspect.Signature) -> dict:
         """
-        Extract parameters for the callable from result_data based on its signature.
+        Extract parameters for the callable from kwargs based on its signature.
 
         Args:
-            result_data: The data from kwargs["result"]
+            kwargs_data: The kwargs dict to extract from
             sig: The signature of the callable
 
         Returns:
@@ -86,16 +86,14 @@ class CallableWorkflow(BaseWorkflow):
         """
         params = {}
 
-        # If result_data is not a dict, we can't extract named parameters
-        if not isinstance(result_data, dict):
-            # If callable accepts a single positional parameter, pass result_data as-is
+        # If not a dict, try to pass as single parameter
+        if not isinstance(kwargs_data, dict):
             param_list = [
                 p for p in sig.parameters.values() if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             ]
             if len(param_list) == 1:
                 param_name = param_list[0].name
-                return {param_name: result_data}
-            # Otherwise, return empty dict (callable will be called with no args)
+                return {param_name: kwargs_data}
             return {}
 
         # Extract parameters based on signature
@@ -104,9 +102,27 @@ class CallableWorkflow(BaseWorkflow):
             if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
                 continue
 
-            # Extract value from result_data if available
-            if param_name in result_data:
-                params[param_name] = result_data[param_name]
+            # Priority 1: Check "result" key first for chaining support
+            if "result" in kwargs_data:
+                result_value = kwargs_data["result"]
+                # If result is a dict and has the parameter
+                if isinstance(result_value, dict) and param_name in result_value:
+                    params[param_name] = result_value[param_name]
+                    continue
+                # If result is not a dict and callable has single param, use it
+                elif not isinstance(result_value, dict):
+                    param_list = [
+                        p
+                        for p in sig.parameters.values()
+                        if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                    ]
+                    if len(param_list) == 1 and param_name == param_list[0].name:
+                        params[param_name] = result_value
+                        continue
+
+            # Priority 2: Check top-level kwargs
+            if param_name in kwargs_data:
+                params[param_name] = kwargs_data[param_name]
             elif param.default is not inspect.Parameter.empty:
                 # Has default, will be handled by callable
                 continue
@@ -117,35 +133,27 @@ class CallableWorkflow(BaseWorkflow):
 
     def _do_execute(self, **kwargs) -> DictParams:
         """
-        Execute the wrapped callable with parameters extracted from result.
+        Execute the wrapped callable with parameters extracted from kwargs.
 
         Args:
-            **kwargs: Keyword arguments - we look for previous workflow result
+            **kwargs: Keyword arguments containing data from previous workflow stages
 
         Returns:
-            The callable's return value (will be wrapped in "result" by execute())
+            The callable's return value
         """
-        # Note: BaseWorkflow.execute() handles pre_callable, post_callable, and wrapping
-        # This _do_execute is called by BaseWorkflow.execute() for single workflow execution
-
-        # If args_transform was used, pre_callable has already mapped parameters to kwargs
-        # In that case, use kwargs directly. Otherwise, extract from result field.
-        if self._has_args_transform:
-            # args_transform's pre_callable has already mapped parameters to top-level kwargs
-            # Extract parameters directly from kwargs based on signature
-            sig = inspect.signature(self._func)
-            callable_params = self._extract_callable_params(kwargs, sig)
-        else:
-            # No args_transform, extract from result field as before
-            # Manual pre_callable (if any) has already transformed the data
-            result_data = kwargs.get("result", kwargs)
-            sig = inspect.signature(self._func)
-            callable_params = self._extract_callable_params(result_data, sig)
+        # Extract parameters from kwargs based on callable signature
+        sig = inspect.signature(self._func)
+        callable_params = self._extract_callable_params(kwargs, sig)
 
         # Call the function with extracted parameters
         callable_result = self._func(**callable_params)
 
-        return callable_result
+        # If result is a dict, return it directly
+        # Otherwise, wrap in a result key for consistency
+        if isinstance(callable_result, dict):
+            return callable_result
+        else:
+            return {"result": callable_result}
 
     def __repr__(self) -> str:
         """Get string representation of the workflow."""

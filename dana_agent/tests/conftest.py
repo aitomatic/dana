@@ -4,8 +4,14 @@ Pytest configuration for LLM tests
 
 import asyncio
 from collections.abc import Generator
+import os
 
 import pytest
+
+
+# Disable Langfuse for all tests to prevent DuplicateFilter issues
+# This must be done before any imports that might trigger Langfuse initialization
+os.environ["LANGFUSE_ENABLED"] = "false"
 
 
 @pytest.fixture(scope="session")

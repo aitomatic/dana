@@ -268,10 +268,10 @@ class ThoughtLogger(Notifiable):
             entry: The timeline entry to display
         """
         # Only show certain entry types
-        if entry.entry_type == TimelineEntryType.MY_THOUGHTS:
+        if entry.entry_type == TimelineEntryType.AGENT_THOUGHTS:
             if self.verbose:
                 self._display_thought(agent_type, entry.content)
-        elif entry.entry_type == TimelineEntryType.MY_LEARNING:
+        elif entry.entry_type == TimelineEntryType.AGENT_LEARNING:
             if self.verbose:
                 self._clear_thought()
                 print(f"\n🧠 [{agent_type}] Learning: {entry.content}")

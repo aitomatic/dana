@@ -1,0 +1,1653 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import axios from 'axios';
+import type { AxiosInstance, AxiosResponse } from 'axios';
+import type { TopicRead, TopicCreate, TopicFilters } from '@/types/topic';
+import type {
+  DocumentRead,
+  DocumentUpdate,
+  DocumentFilters,
+  DocumentUploadData,
+  DocumentListResponse,
+  ExtractionOutput,
+} from '@/types/document';
+import type { AgentRead, AgentCreate, AgentFilters } from '@/types/agent';
+import type {
+  ConversationRead,
+  ConversationCreate,
+  ConversationWithMessages,
+} from '@/types/conversation';
+import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
+import type { KnowledgePackChatResponse, InterviewSessionUpdate } from '@/types/library';
+
+// API Configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_TIMEOUT = 3000000; // 5 minutes
+
+// API Response Types
+export interface ApiResponse<T = any> {
+  data: T;
+  status: number;
+  message?: string;
+}
+
+export interface HealthResponse {
+  status: string;
+  service: string;
+}
+
+export interface RootResponse {
+  service: string;
+  version: string;
+  status: string;
+  endpoints: Record<string, string>;
+}
+
+// V2 Document Upload Types
+export interface DocumentUploadResponse {
+  success: boolean;
+  document: DocumentRead | null;
+  message: string | null;
+  task_id: number | null;
+}
+
+export interface BackgroundTaskResponse {
+  id: number;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  result?: any;
+  error?: string;
+}
+
+// POET API Types
+export interface PoetConfigRequest {
+  domain?: string;
+  retries?: number;
+  timeout?: number;
+  enable_training?: boolean;
+}
+
+export interface PoetConfigResponse {
+  message: string;
+  config: {
+    domain?: string;
+    retries: number;
+    timeout?: number;
+    enable_training: boolean;
+  };
+}
+
+export interface DomainsResponse {
+  domains: string[];
+}
+
+// Error Types
+export interface ApiError {
+  message: string;
+  status?: number;
+  details?: any;
+}
+
+// Chat Types
+export interface ChatRequest {
+  message: string;
+  conversation_id?: number;
+  agent_id: number | string; // Support both integer IDs and string keys for prebuilt agents
+  context?: Record<string, any>;
+  websocket_id?: string;
+}
+
+export interface ChatResponse {
+  success: boolean;
+  message: string;
+  conversation_id: number;
+  message_id: number;
+  agent_response: string;
+  context?: Record<string, any>;
+  error?: string;
+}
+
+// Agent Suggestion Types
+export interface AgentSuggestionRequest {
+  user_message: string;
+}
+
+export interface AgentSuggestion {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  config: {
+    domain: string;
+    specialties: string[];
+    skills: string[];
+    expertise_level: string;
+    personality: string;
+    is_prebuilt: boolean;
+    topic: string;
+    role: string;
+    task: string;
+  };
+  generation_phase: string;
+  matching_percentage: number;
+  explanation: string;
+}
+
+export interface AgentSuggestionResponse {
+  success: boolean;
+  suggestions: AgentSuggestion[];
+  message: string;
+}
+
+// Build Agent from Suggestion Types
+export interface BuildAgentFromSuggestionRequest {
+  prebuilt_key: string;
+  user_input: string;
+  agent_name: string;
+}
+
+// Workflow Types
+export interface WorkflowStep {
+  name: string;
+  steps: string[];
+}
+
+export interface WorkflowInfo {
+  workflows: WorkflowStep[];
+  methods: string[];
+}
+
+// Workflow Execution Types
+export interface WorkflowExecutionRequest {
+  agent_id: number;
+  workflow_name: string;
+  input_data?: Record<string, any>;
+  execution_mode?: string;
+}
+
+export interface WorkflowExecutionResponse {
+  success: boolean;
+  execution_id: string;
+  status: string;
+  current_step: number;
+  total_steps: number;
+  execution_time: number;
+  result?: any;
+  error?: string;
+  step_results: WorkflowStepResult[];
+}
+
+export interface WorkflowStepResult {
+  step_index: number;
+  step_name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  start_time?: string;
+  end_time?: string;
+  execution_time: number;
+  result?: any;
+  error?: string;
+  input?: any;
+}
+
+export interface WorkflowExecutionStatus {
+  execution_id: string;
+  workflow_name: string;
+  status: string;
+  current_step: number;
+  total_steps: number;
+  execution_time: number;
+  step_results: WorkflowStepResult[];
+  error?: string;
+  last_update: string;
+}
+
+export interface WorkflowExecutionControl {
+  execution_id: string;
+  action: 'start' | 'stop' | 'pause' | 'resume' | 'cancel';
+}
+
+export interface WorkflowExecutionControlResponse {
+  success: boolean;
+  execution_id: string;
+  new_status: string;
+  message: string;
+  error?: string;
+}
+
+// Agent Generation Types
+export interface MessageData {
+  role: string;
+  content: string;
+}
+
+export interface AgentGenerationRequest {
+  messages: MessageData[];
+  current_code?: string;
+  multi_file?: boolean;
+  // Two-phase generation fields
+  phase?: 'description' | 'code_generation';
+  agent_id?: number;
+}
+
+export interface AgentCapabilities {
+  summary?: string;
+  knowledge?: string[];
+  workflow?: string[];
+  tools?: string[];
+}
+
+export interface DanaFile {
+  filename: string;
+  content: string;
+  file_type: 'agent' | 'workflow' | 'resources' | 'methods' | 'common' | 'other';
+  description?: string;
+  dependencies?: string[];
+}
+
+export interface MultiFileProject {
+  name: string;
+  description: string;
+  files: DanaFile[];
+  main_file: string;
+  structure_type: 'simple' | 'modular' | 'complex';
+}
+
+export interface AgentGenerationResponse {
+  success: boolean;
+  dana_code?: string; // Optional in Phase 1
+  agent_name?: string;
+  agent_description?: string;
+  capabilities?: AgentCapabilities;
+  needs_more_info?: boolean;
+  follow_up_message?: string;
+  suggested_questions?: string[];
+  error?: string;
+  multi_file_project?: MultiFileProject;
+  is_multi_file?: boolean;
+  auto_stored_files?: string[];
+  agent_id?: number;
+  ready_for_code_generation?: boolean;
+  agent_folder?: string;
+  folder_path?: string;
+}
+
+// Code Validation Types
+export interface CodeValidationRequest {
+  code?: string; // For single-file validation (backward compatibility)
+  agent_name?: string;
+  description?: string;
+
+  // Multi-file validation support
+  multi_file_project?: MultiFileProject;
+}
+
+export interface CodeValidationResponse {
+  success: boolean;
+  is_valid: boolean;
+  errors: CodeError[];
+  warnings: CodeWarning[];
+  suggestions: CodeSuggestion[];
+  fixed_code?: string;
+  error?: string;
+
+  // Multi-file validation results
+  file_results?: any[]; // Results for each file in multi-file project
+  dependency_errors?: any[]; // Dependency validation errors
+  overall_errors?: any[]; // Project-level errors
+}
+
+export interface CodeError {
+  line: number;
+  column: number;
+  message: string;
+  severity: 'error' | 'warning';
+  code: string;
+}
+
+export interface CodeWarning {
+  line: number;
+  column: number;
+  message: string;
+  suggestion: string;
+}
+
+export interface CodeSuggestion {
+  type: 'syntax' | 'best_practice' | 'performance' | 'security';
+  message: string;
+  code: string;
+  description: string;
+}
+
+export interface CodeFixRequest {
+  code: string;
+  errors: CodeError[];
+  agent_name?: string;
+  description?: string;
+}
+
+export interface CodeFixResponse {
+  success: boolean;
+  fixed_code: string;
+  applied_fixes: string[];
+  remaining_errors: CodeError[];
+  error?: string;
+}
+
+// Phase 2 specific schemas
+export interface AgentCodeGenerationRequest {
+  agent_id: number;
+  multi_file?: boolean;
+}
+
+// Agent Test API Types
+export interface AgentTestRequest {
+  agent_code: string;
+  message: string;
+  agent_name?: string;
+  agent_description?: string;
+  context?: Record<string, any>;
+  folder_path?: string;
+  websocket_id?: string;
+}
+
+export interface AgentTestResponse {
+  success: boolean;
+  agent_response: string;
+  error?: string;
+}
+
+// Bulk Evaluation Types
+export interface BulkEvaluationQuestion {
+  question: string;
+  expected_answer?: string;
+  context?: string;
+  category?: string;
+}
+
+export interface BulkEvaluationRequest {
+  agent_code: string;
+  questions: BulkEvaluationQuestion[];
+  agent_name?: string;
+  agent_description?: string;
+  context?: Record<string, any>;
+  folder_path?: string;
+  websocket_id?: string;
+  batch_size?: number;
+}
+
+export interface BulkEvaluationResult {
+  question: string;
+  response: string;
+  response_time: number;
+  status: string;
+  error?: string;
+  expected_answer?: string;
+  question_index: number;
+}
+
+export interface BulkEvaluationResponse {
+  success: boolean;
+  results: BulkEvaluationResult[];
+  total_questions: number;
+  successful_count: number;
+  failed_count: number;
+  total_time: number;
+  average_response_time: number;
+  error?: string;
+}
+
+// Knowledge Status Types
+export interface KnowledgeTopicStatus {
+  id: string;
+  path: string;
+  file: string;
+  status: 'draft' | 'pending' | 'generating' | 'in_progress' | 'question_generated' | 'completed' | 'success' | 'failed';
+  last_generated: string | null;
+  last_topic_update: string;
+  error: string | null;
+}
+
+export interface KnowledgeStatusResponse {
+  topics: KnowledgeTopicStatus[];
+}
+
+export interface ProcessAgentDocumentsRequest {
+  document_folder: string;
+  conversation: string | string[];
+  summary: string;
+  agent_data?: Record<string, any>; // Include current agent data (name, description, capabilities, etc.)
+  current_code?: string; // Current dana code to be updated
+  multi_file_project?: MultiFileProject; // Current multi-file project structure
+}
+
+export interface ProcessAgentDocumentsResponse {
+  success: boolean;
+  message: string;
+  agent_name?: string;
+  agent_description?: string;
+  processing_details?: Record<string, any>;
+  // Include updated code with RAG integration
+  dana_code?: string; // Updated single-file code
+  multi_file_project?: MultiFileProject; // Updated multi-file project with RAG integration
+  error?: string;
+}
+
+export interface TarExportRequest {
+  agent_id: number;
+  include_dependencies: boolean;
+}
+
+export interface TarExportResponse {
+  success: boolean;
+  tar_path: string;
+  message: string;
+}
+
+export interface TarImportRequest {
+  agent_name: string;
+  agent_description?: string;
+}
+
+export interface TarImportResponse {
+  success: boolean;
+  agent_id: number;
+  message: string;
+}
+
+// API Service Class
+class ApiService {
+  private client: AxiosInstance;
+
+  constructor() {
+    this.client = axios.create({
+      baseURL: API_BASE_URL,
+      timeout: API_TIMEOUT,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Request interceptor
+    this.client.interceptors.request.use(
+      (config: any) => {
+        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        return config;
+      },
+      (error: any) => {
+        console.error('❌ API Request Error:', error);
+        return Promise.reject(error);
+      },
+    );
+
+    // Response interceptor
+    this.client.interceptors.response.use(
+      (response: AxiosResponse) => {
+        console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+        return response;
+      },
+      (error: any) => {
+        console.error('❌ API Response Error:', error);
+        const apiError: ApiError = {
+          message: error.response?.data?.detail || error.message || 'Unknown error occurred',
+          status: error.response?.status,
+          details: error.response?.data,
+        };
+        return Promise.reject(apiError);
+      },
+    );
+  }
+
+  // Health Check
+  async checkHealth(): Promise<HealthResponse> {
+    const response = await this.client.get<HealthResponse>('/health');
+    return response.data;
+  }
+
+  // Root Info
+  async getRootInfo(): Promise<RootResponse> {
+    const response = await this.client.get<RootResponse>('/');
+    return response.data;
+  }
+
+  // POET Service Methods
+  async configurePoet(config: PoetConfigRequest): Promise<PoetConfigResponse> {
+    const response = await this.client.post<PoetConfigResponse>('/poet/configure', config);
+    return response.data;
+  }
+
+  async getPoetDomains(): Promise<DomainsResponse> {
+    const response = await this.client.get<DomainsResponse>('/poet/domains');
+    return response.data;
+  }
+
+  // Topic API Methods
+  async getTopics(filters?: TopicFilters): Promise<TopicRead[]> {
+    const params = new URLSearchParams();
+    if (filters?.skip) params.append('skip', filters.skip.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const response = await this.client.get<TopicRead[]>(`/topics/?${params.toString()}`);
+    return response.data;
+  }
+
+  async getTopic(topicId: number): Promise<TopicRead> {
+    const response = await this.client.get<TopicRead>(`/topics/${topicId}`);
+    return response.data;
+  }
+
+  async createTopic(topic: TopicCreate): Promise<TopicRead> {
+    const response = await this.client.post<TopicRead>('/topics/', topic);
+    return response.data;
+  }
+
+  async updateTopic(topicId: number, topic: TopicCreate): Promise<TopicRead> {
+    const response = await this.client.put<TopicRead>(`/topics/${topicId}`, topic);
+    return response.data;
+  }
+
+  async deleteTopic(topicId: number, force: boolean = false): Promise<{ message: string }> {
+    const params = force ? '?force=true' : '';
+    const response = await this.client.delete<{ message: string }>(`/topics/${topicId}${params}`);
+    return response.data;
+  }
+
+  // Document API Methods
+  async getDocuments(filters?: DocumentFilters): Promise<DocumentListResponse> {
+    console.log('🌐 API: getDocuments called with filters:', filters);
+
+    const params = new URLSearchParams();
+    if (filters?.skip) params.append('offset', filters.skip.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
+    if (filters?.agent_id) params.append('agent_id', filters.agent_id.toString());
+
+    const url = `/documents/?${params.toString()}`;
+    console.log('🌐 API: Requesting URL:', url);
+
+    try {
+      const response = await this.client.get<DocumentListResponse>(url);
+      console.log('📥 API: getDocuments response:', {
+        status: response.status,
+        total: response.data?.total || 0,
+        count: response.data?.documents?.length || 0,
+        has_more: response.data?.has_more || false,
+        metadata: response.data?.metadata,
+        data: response.data?.documents?.map((d) => ({
+          id: d.id,
+          name: d.original_filename,
+          agent_id: d.agent_id,
+        })),
+      });
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: getDocuments error:', error);
+      throw error;
+    }
+  }
+
+  async getDocument(documentId: number): Promise<DocumentRead> {
+    const response = await this.client.get<DocumentRead>(`/documents/${documentId}`);
+    return response.data;
+  }
+
+  // Get document with deep extraction data (v2 API)
+  async getDocumentV2(documentId: number): Promise<DocumentRead> {
+    const response = await this.client.get<DocumentRead>(`/v2/documents/${documentId}`);
+    return response.data;
+  }
+
+  // Get extraction results for a document (v2 API)
+  async getExtractionResults(documentId: number): Promise<ExtractionOutput> {
+    const response = await this.client.get<ExtractionOutput>(`/v2/documents/${documentId}`);
+    return response.data;
+  }
+
+  async uploadDocument(uploadData: DocumentUploadData): Promise<DocumentRead> {
+    const v2Response = await this.uploadDocumentRaw(uploadData.file, {
+      topic_id: uploadData.topic_id,
+      build_index: true,
+      allow_duplicate: false,
+    });
+
+    if (!v2Response.success || !v2Response.document) {
+      throw new Error(v2Response.message || 'Upload failed');
+    }
+
+    return v2Response.document;
+  }
+
+  // Raw upload for a single file (no title/description required)
+  async uploadDocumentRaw(
+    file: File,
+    options?: {
+      topic_id?: number;
+      agent_id?: number;
+      build_index?: boolean;
+      allow_duplicate?: boolean;
+    },
+  ): Promise<DocumentUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.topic_id !== undefined) formData.append('topic_id', String(options.topic_id));
+    if (options?.build_index !== undefined)
+      formData.append('build_index', String(options.build_index));
+    if (options?.allow_duplicate !== undefined)
+      formData.append('allow_duplicate', String(options.allow_duplicate));
+
+    const response = await this.client.post<DocumentUploadResponse>(
+      '/v2/documents/upload',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    );
+    return response.data;
+  }
+
+  // Visual Document Deep Extraction
+  async deepExtract(request: {
+    document_id: number;
+    prompt?: string;
+    use_deep_extraction?: boolean;
+    config?: Record<string, any>;
+  }): Promise<{
+    file_object: {
+      file_name: string;
+      cache_key: string;
+      total_pages: number;
+      total_words: number;
+      file_full_path: string;
+      pages: Array<{ page_number: number; page_content: string; page_hash: string }>;
+    };
+  }> {
+    const response = await this.client.post('/extract-documents/extract', request);
+    return response.data;
+  }
+
+  async updateDocument(documentId: number, document: DocumentUpdate): Promise<DocumentRead> {
+    const response = await this.client.put<DocumentRead>(`/documents/${documentId}`, document);
+    return response.data;
+  }
+
+  async deleteDocument(documentId: number): Promise<{ message: string }> {
+    const response = await this.client.delete<{ message: string }>(`/documents/${documentId}`);
+    return response.data;
+  }
+
+  // Save extraction results as JSON file
+  async saveExtractionData(request: {
+    original_filename: string;
+    extraction_results: Record<string, any>;
+    source_document_id: number;
+  }): Promise<DocumentRead> {
+    const response = await this.client.post<DocumentRead>('/documents/save-extraction', request);
+    return response.data;
+  }
+
+  async downloadDocument(documentId: number): Promise<Blob> {
+    const response = await this.client.get(`/documents/${documentId}/download`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  // Agent API Methods
+  async getAgents(filters?: AgentFilters): Promise<AgentRead[]> {
+    const params = new URLSearchParams();
+    if (filters?.skip) params.append('skip', filters.skip.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const response = await this.client.get<AgentRead[]>(`/agents/?${params.toString()}`);
+    return response.data;
+  }
+
+  async getAgent(agentId: number): Promise<AgentRead> {
+    const response = await this.client.get<AgentRead>(`/agents/${agentId}`);
+    return response.data;
+  }
+
+  async createAgent(agent: AgentCreate): Promise<AgentRead> {
+    const response = await this.client.post<AgentRead>('/agents/', agent);
+    return response.data;
+  }
+
+  // File Operations API Methods
+  async openFileLocation(filePath: string): Promise<{ success: boolean; message: string }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.get<{ success: boolean; message: string }>(
+      `/agents/open-file/${encodedPath}`,
+    );
+    return response.data;
+  }
+
+  async uploadKnowledgeFile(formData: FormData): Promise<{
+    success: boolean;
+    file_path?: string;
+    error?: string;
+    generated_response?: string;
+    updated_capabilities?: any;
+    ready_for_code_generation?: boolean;
+  }> {
+    const response = await this.client.post<{
+      success: boolean;
+      file_path?: string;
+      error?: string;
+      generated_response?: string;
+      updated_capabilities?: any;
+      ready_for_code_generation?: boolean;
+    }>('/agents/upload-knowledge', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  async updateAgent(agentId: number, agent: AgentCreate): Promise<AgentRead> {
+    const response = await this.client.put<AgentRead>(`/agents/${agentId}`, agent);
+    return response.data;
+  }
+
+  async deleteAgent(agentId: number): Promise<{ message: string }> {
+    const response = await this.client.delete<{ message: string }>(`/agents/${agentId}`);
+    return response.data;
+  }
+
+  async associateKnowledgePackToAgent(
+    agentId: number,
+    kpId: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    agent_id: number;
+    kp_id: number;
+  }> {
+    const response = await this.client.post(
+      `/v2/agents/${agentId}/associate`,
+      { kp_id: kpId }
+    );
+    return response.data;
+  }
+
+  async disassociateKnowledgePackFromAgent(
+    agentId: number,
+    kpId: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    agent_id: number;
+    kp_id: number;
+  }> {
+    const response = await this.client.post(
+      `/v2/agents/${agentId}/disassociate`,
+      { kp_id: kpId }
+    );
+    return response.data;
+  }
+
+  // Agent Generation API Methods
+  async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, {
+      timeout: API_TIMEOUT,
+    });
+    return response.data;
+  }
+
+  // Phase 2: Code generation from existing description
+  async generateAgentCode(
+    agentId: number,
+    request: AgentCodeGenerationRequest,
+  ): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>(
+      `/agents/${agentId}/generate-code`,
+      request,
+      {
+        timeout: 3000000,
+      },
+    );
+    return response.data;
+  }
+
+  // Process Agent Documents for Deep Training
+  async processAgentDocuments(
+    request: ProcessAgentDocumentsRequest,
+  ): Promise<ProcessAgentDocumentsResponse> {
+    const response = await this.client.post<ProcessAgentDocumentsResponse>(
+      '/agents/process-agent-documents',
+      request,
+      {
+        timeout: 600000, // 10 minutes timeout for document processing
+      },
+    );
+    return response.data;
+  }
+
+  // Phase 2: Generate agent from prompt with conversation context and agent summary
+  async generateAgentFromPrompt(request: {
+    prompt: string;
+    messages: MessageData[];
+    agent_summary: {
+      name: string;
+      description: string;
+      capabilities: {
+        knowledge?: string[];
+        workflow?: string[];
+        tools?: string[];
+      };
+    };
+    multi_file?: boolean;
+  }): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>(
+      '/agents/generate-from-prompt',
+      request,
+    );
+    return response.data;
+  }
+
+  // Chat API Methods
+  async chatWithAgent(request: ChatRequest): Promise<ChatResponse> {
+    const response = await this.client.post<ChatResponse>('/chat/', request);
+    return response.data;
+  }
+
+  // Agent Test API Methods
+  async testAgent(request: AgentTestRequest): Promise<AgentTestResponse> {
+    const response = await this.client.post<AgentTestResponse>('/agent-test/', request, {
+      timeout: 3000000,
+    });
+    return response.data;
+  }
+
+  async bulkEvaluateAgent(request: BulkEvaluationRequest): Promise<BulkEvaluationResponse> {
+    const response = await this.client.post<BulkEvaluationResponse>('/agent-test/bulk', request, {
+      timeout: 3000000,
+    });
+    return response.data;
+  }
+
+  // Conversation API Methods
+  async getConversations(agentId?: number): Promise<ConversationRead[]> {
+    const params = new URLSearchParams();
+    if (agentId) params.append('agent_id', agentId.toString());
+
+    console.log('Fetching conversations for agent:', agentId);
+    const response = await this.client.get<ConversationRead[]>(
+      `/conversations/?${params.toString()}`,
+    );
+    console.log('Conversations response:', response.data);
+    return response.data;
+  }
+
+  async getConversation(conversationId: number): Promise<ConversationWithMessages> {
+    console.log('Fetching conversation:', conversationId);
+    const response = await this.client.get<ConversationWithMessages>(
+      `/conversations/${conversationId}`,
+    );
+    console.log('Conversation response:', response.data);
+    return response.data;
+  }
+
+  // Workflow Execution API Methods
+  async startWorkflowExecution(
+    request: WorkflowExecutionRequest,
+  ): Promise<WorkflowExecutionResponse> {
+    try {
+      const response = await this.client.post<WorkflowExecutionResponse>(
+        '/workflow-execution/start',
+        request,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: startWorkflowExecution error:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflowExecutionStatus(executionId: string): Promise<WorkflowExecutionStatus> {
+    try {
+      const response = await this.client.get<WorkflowExecutionStatus>(
+        `/workflow-execution/status/${executionId}`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: getWorkflowExecutionStatus error:', error);
+      throw error;
+    }
+  }
+
+  async controlWorkflowExecution(
+    control: WorkflowExecutionControl,
+  ): Promise<WorkflowExecutionControlResponse> {
+    try {
+      const response = await this.client.post<WorkflowExecutionControlResponse>(
+        '/workflow-execution/control',
+        control,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: controlWorkflowExecution error:', error);
+      throw error;
+    }
+  }
+
+  async streamWorkflowExecutionUpdates(executionId: string): Promise<EventSource> {
+    const url = `${this.client.defaults.baseURL}/workflow-execution/stream/${executionId}`;
+    return new EventSource(url);
+  }
+
+  async createConversation(conversation: ConversationCreate): Promise<ConversationRead> {
+    const response = await this.client.post<ConversationRead>('/conversations/', conversation);
+    return response.data;
+  }
+
+  async updateConversation(
+    conversationId: number,
+    conversation: ConversationCreate,
+  ): Promise<ConversationRead> {
+    const response = await this.client.put<ConversationRead>(
+      `/conversations/${conversationId}`,
+      conversation,
+    );
+    return response.data;
+  }
+
+  async deleteConversation(conversationId: number): Promise<{ message: string }> {
+    const response = await this.client.delete<{ message: string }>(
+      `/conversations/${conversationId}`,
+    );
+    return response.data;
+  }
+
+  // Code Validation API Methods
+  async validateCode(request: CodeValidationRequest): Promise<CodeValidationResponse> {
+    const response = await this.client.post<CodeValidationResponse>('/agents/validate', request);
+    return response.data;
+  }
+
+  async fixCode(request: CodeFixRequest): Promise<CodeFixResponse> {
+    const response = await this.client.post<CodeFixResponse>('/agents/fix', request);
+    return response.data;
+  }
+
+  // Utility method to check if API is available
+  async isApiAvailable(): Promise<boolean> {
+    try {
+      await this.checkHealth();
+      return true;
+    } catch (error) {
+      console.warn('API not available:', error);
+      return false;
+    }
+  }
+
+  async uploadAgentDocument(
+    agentId: string | number,
+    file: File,
+    topicId?: string | number,
+  ): Promise<DocumentRead> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (topicId) formData.append('topic_id', topicId.toString());
+    const response = await this.client.post<DocumentRead>(
+      `/agents/${agentId}/documents`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+    return response.data;
+  }
+
+  async associateDocumentsWithAgent(
+    agentId: string | number,
+    documentIds: number[],
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🌐 API call to associate documents:', { agentId, documentIds });
+
+    try {
+      const response = await this.client.post(`/agents/${agentId}/documents/associate`, {
+        document_ids: documentIds,
+      });
+      console.log('✅ API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config,
+      });
+      throw error;
+    }
+  }
+
+  async disassociateDocumentFromAgent(
+    agentId: string | number,
+    documentId: number,
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🌐 API call to disassociate document:', { agentId, documentId });
+
+    try {
+      const response = await this.client.delete(
+        `/agents/${agentId}/documents/${documentId}/disassociate`,
+      );
+      console.log('✅ API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config,
+      });
+      throw error;
+    }
+  }
+
+  async smartChat(agentId: string | number, message: string, conversationId?: string | number) {
+    const response = await this.client.post(`/agents/${agentId}/smart-chat`, {
+      message,
+      conversation_id: conversationId,
+    });
+    return response.data;
+  }
+
+  async getSmartChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=smart_chat`);
+    return response.data; // Should be an array of { sender, text }
+  }
+
+  async getTestChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=test_chat`);
+    return response.data; // Should be an array of { sender, text, created_at }
+  }
+
+  async getAllChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=all`);
+    return response.data; // Should be an array of { sender, text, type, created_at }
+  }
+
+  async getDomainKnowledge(agentId: string | number): Promise<DomainKnowledgeResponse> {
+    const response = await this.client.get(`/agents/${agentId}/domain-knowledge`);
+    return response.data; // Returns domain knowledge tree or { message: "No domain knowledge found" }
+  }
+
+  async deleteDomainKnowledgeNode(
+    agentId: string | number,
+    topicParts: string[],
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete(`/agents/${agentId}/domain-knowledge-node`, {
+      data: { topic_parts: topicParts },
+    });
+    return response.data;
+  }
+
+  // Agent File Management API Methods
+  async getAgentFiles(agentId: number): Promise<{
+    files: Array<{
+      name: string;
+      path: string;
+      full_path: string;
+      size: number;
+      modified: number;
+      type: 'dana' | 'document' | 'other';
+    }>;
+    message?: string;
+  }> {
+    const response = await this.client.get(`/agents/${agentId}/files`);
+    return response.data;
+  }
+
+  async getAgentFileContent(
+    agentId: number,
+    filePath: string,
+  ): Promise<{
+    content: string;
+    encoding: string;
+    file_path: string;
+    file_name: string;
+    file_size: number;
+  }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.get(`/agents/${agentId}/files/${encodedPath}`);
+    return response.data;
+  }
+
+  async updateAgentFileContent(
+    agentId: number,
+    filePath: string,
+    content: string,
+    encoding: string = 'utf-8',
+  ): Promise<{
+    success: boolean;
+    message: string;
+    file_path: string;
+    file_size: number;
+  }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.put(`/agents/${agentId}/files/${encodedPath}`, {
+      content,
+      encoding,
+    });
+    return response.data;
+  }
+
+  async generateKnowledge(agentId: string | number) {
+    const response = await this.client.post(`/agents/${agentId}/generate-knowledge`);
+    return response.data;
+  }
+
+  async getKnowledgeStatus(agentId: string | number): Promise<KnowledgeStatusResponse> {
+    const response = await this.client.get(`/agents/${agentId}/knowledge-status`);
+    return response.data;
+  }
+
+  async getTopicKnowledgeContent(
+    agentId: string | number,
+    topicPath: string,
+  ): Promise<{
+    success: boolean;
+    topic_path: string;
+    content?: any;
+    message?: string;
+    file_path?: string;
+  }> {
+    const encodedTopicPath = encodeURIComponent(topicPath);
+    const response = await this.client.get(
+      `/agents/${agentId}/knowledge-content/${encodedTopicPath}`,
+    );
+    return response.data;
+  }
+
+  async testAgentById(
+    agentId: string | number,
+    message: string,
+    context?: Record<string, any>,
+    websocket_id?: string,
+  ): Promise<{
+    success: boolean;
+    agent_response: string;
+    error?: string;
+    agent_id: number;
+    agent_name: string;
+  }> {
+    const response = await this.client.post(`/agents/${agentId}/test`, {
+      message,
+      context: context || { user_id: 'test_user', session_id: 'chat_session' },
+      websocket_id,
+    });
+    return response.data;
+  }
+
+  // Get prebuilt agents for the Explore tab
+  async getPrebuiltAgents(): Promise<any[]> {
+    const response = await this.client.get('/agents/prebuilt');
+    return response.data;
+  }
+
+  // Clone agent from prebuilt agent
+  async cloneAgentFromPrebuilt(
+    prebuiltKey: string,
+    config?: Record<string, any>,
+  ): Promise<AgentRead> {
+    const response = await this.client.post<AgentRead>('/agents/from-prebuilt', {
+      prebuilt_key: prebuiltKey,
+      config: config || {},
+    });
+    return response.data;
+  }
+
+  // Get agent suggestions based on user message
+  async getAgentSuggestions(userMessage: string): Promise<AgentSuggestionResponse> {
+    const response = await this.client.post<AgentSuggestionResponse>('/agents/suggest', {
+      user_message: userMessage,
+    });
+    return response.data;
+  }
+
+  // Build agent from suggestion (copies only .na files)
+  async buildAgentFromSuggestion(request: BuildAgentFromSuggestionRequest): Promise<AgentRead> {
+    const response = await this.client.post<AgentRead>('/agents/build-from-suggestion', request);
+    return response.data;
+  }
+
+  // Get workflow information from prebuilt agent
+  async getPrebuiltAgentWorkflowInfo(prebuiltKey: string): Promise<WorkflowInfo> {
+    const response = await this.client.get<WorkflowInfo>(`/agents/${prebuiltKey}/workflow-info`);
+    return response.data;
+  }
+
+  // Agent Export Methods
+  async exportAgentTar(
+    agentId: number,
+    includeDependencies: boolean = true,
+  ): Promise<TarExportResponse> {
+    const response = await this.client.post<TarExportResponse>(`/agents/${agentId}/export-tar`, {
+      agent_id: agentId,
+      include_dependencies: includeDependencies,
+    });
+    return response.data;
+  }
+
+  async downloadAgentTar(agentId: number, tarPath: string): Promise<Blob> {
+    const response = await this.client.get(
+      `/agents/${agentId}/download-tar?path=${encodeURIComponent(tarPath)}`,
+      {
+        responseType: 'blob',
+      },
+    );
+    return response.data;
+  }
+
+  async importAgentTar(
+    file: File,
+    agentName: string,
+    agentDescription: string = 'Imported agent',
+  ): Promise<TarImportResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('agent_name', agentName);
+    formData.append('agent_description', agentDescription);
+
+    const response = await this.client.post<TarImportResponse>('/agents/import-tar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  // Knowledge Pack Methods
+  async parseDocumentSpecialization(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await this.client.post(
+      '/v2/knowledge/structure/parse-document-specialization',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+    return response.data;
+  }
+
+  async parseTextSpecialization(text: string): Promise<any> {
+    const response = await this.client.post('/v2/knowledge/structure/parse-text-specialization', {
+      text,
+    });
+    return response.data;
+  }
+
+  async createKnowledgePack(data: {
+    specialization: {
+      domain: string;
+      role: string;
+      task: string;
+    };
+    document_ids: number[];
+  }): Promise<any> {
+    const response = await this.client.post('/v2/knowledge/create', data);
+    return response.data;
+  }
+
+  async listKnowledgePacks(limit: number = 20, offset: number = 0): Promise<any> {
+    const response = await this.client.get('/v2/knowledge/', {
+      params: { limit, offset },
+    });
+    return response.data;
+  }
+
+  async getKnowledgePack(knowledgeId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/${knowledgeId}`);
+    return response.data;
+  }
+
+  async deleteKnowledgePack(knowledgeId: number): Promise<any> {
+    const response = await this.client.delete(`/v2/knowledge/${knowledgeId}`);
+    return response.data;
+  }
+
+  async deleteKnowledgePackNode(
+    knowledgeId: number,
+    topicParts: string[],
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete(`/v2/knowledge/structure/${knowledgeId}/node`, {
+      data: { topic_parts: topicParts },
+    });
+    return response.data;
+  }
+
+  async chatWithKnowledgePack(
+    knowledgeId: number,
+    message: string,
+  ): Promise<KnowledgePackChatResponse> {
+    const response = await this.client.post(`/v2/knowledge/structure/${knowledgeId}/chat`, {
+      role: 'user',
+      content: message,
+    });
+    return response.data;
+  }
+
+  async getKnowledgePackConversation(knowledgeId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/structure/${knowledgeId}/conversation`);
+    return response.data;
+  }
+
+  async getKnowledgeNodePreview(
+    knowledgeId: number,
+    pathParts: string[],
+  ): Promise<{
+    success: boolean;
+    topic_path?: string;
+    content?: any;
+    data?: any;
+    message?: string;
+    file_path?: string;
+  }> {
+    const response = await this.client.post(`/v2/knowledge/structure/${knowledgeId}/preview`, {
+      path_parts: pathParts,
+    });
+    return response.data;
+  }
+
+  async generateKnowledgePackKnowledge(knowledgeId: number): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string | null;
+    task_id?: number | null;
+  }> {
+    const response = await this.client.post(`/v2/knowledge/gen/${knowledgeId}/generate-knowledge`);
+    return response.data;
+  }
+
+  /**
+   * Get knowledge generation status for a Knowledge Pack
+   * Returns status for all topics in the KP's domain knowledge tree
+   * @param knowledgePackId - Knowledge Pack ID
+   */
+  async getKnowledgePackStatus(knowledgePackId: number): Promise<KnowledgeStatusResponse> {
+    const response = await this.client.get<KnowledgeStatusResponse>(
+      `/v2/knowledge/gen/${knowledgePackId}/knowledge-status`,
+    );
+    return response.data;
+  }
+
+  // ========================================
+  // Interview Template Methods (Capture Template)
+  // ========================================
+
+  /**
+   * Create a new interview template from a Knowledge Pack
+   * @param kpId - Knowledge Pack ID to create template from
+   * @param templateData - Optional template configuration
+   */
+  async createInterviewTemplate(
+    kpId: number,
+    templateData?: {
+      name?: string;
+      description?: string;
+      folder_path?: string;
+      is_active?: boolean;
+      template_metadata?: Record<string, any>;
+    },
+  ): Promise<any> {
+    const response = await this.client.post('/v2/knowledge/template/create', {
+      kp_id: kpId,
+      folder_path: templateData?.folder_path || `templates/kp_${kpId}`,
+      name: templateData?.name,
+      description: templateData?.description,
+      is_active: templateData?.is_active ?? true,
+      is_master: false,
+      template_metadata: templateData?.template_metadata || {},
+    });
+    return response.data;
+  }
+
+  /**
+   * Duplicate an existing interview template
+   * @param sourceTemplateId - Template ID to duplicate from
+   * @param kpId - Knowledge Pack ID
+   * @param templateData - Optional template configuration
+   */
+  async duplicateInterviewTemplate(
+    sourceTemplateId: number,
+    kpId: number,
+    templateData?: {
+      name?: string;
+      description?: string;
+      template_metadata?: Record<string, any>;
+    },
+  ): Promise<any> {
+    const response = await this.client.post('/v2/knowledge/template/create', {
+      kp_id: kpId,
+      source_template_id: sourceTemplateId,
+      name: templateData?.name,
+      description: templateData?.description,
+      template_metadata: templateData?.template_metadata || {},
+      is_master: false,
+      is_active: true,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get interview template details by ID
+   * @param templateId - Template ID
+   */
+  async getInterviewTemplate(templateId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/template/${templateId}`);
+    return response.data;
+  }
+
+  /**
+   * Update interview template
+   * @param templateId - Template ID
+   * @param updates - Template updates
+   */
+  async updateInterviewTemplate(
+    templateId: number,
+    updates: {
+      name?: string;
+      description?: string;
+      template_metadata?: Record<string, any>;
+    },
+  ): Promise<any> {
+    const response = await this.client.put(`/v2/knowledge/template/${templateId}`, updates);
+    return response.data;
+  }
+
+  /**
+   * Update template README content
+   * @param templateId - Template ID
+   * @param readmeContent - New README markdown content
+   */
+  async updateTemplateContent(templateId: number, readmeContent: string): Promise<any> {
+    const response = await this.client.patch(`/v2/knowledge/template/${templateId}/content`, {
+      readme_content: readmeContent,
+    });
+    return response.data;
+  }
+
+  /**
+   * Delete interview template
+   * @param templateId - Template ID
+   */
+  async deleteInterviewTemplate(templateId: number): Promise<any> {
+    const response = await this.client.delete(`/v2/knowledge/template/${templateId}`);
+    return response.data;
+  }
+
+  /**
+   * List interview templates for a Knowledge Pack
+   * @param kpId - Knowledge Pack ID
+   * @param skip - Number of templates to skip (pagination)
+   * @param limit - Maximum number of templates to return
+   */
+  async listInterviewTemplates(kpId: number, skip: number = 0, limit: number = 100): Promise<any> {
+    const response = await this.client.get('/v2/knowledge/template/', {
+      params: { kp_id: kpId, skip, limit },
+    });
+    return response.data;
+  }
+
+  /**
+   * Chat with template for AI-powered interview
+   * @param templateId - Template ID
+   * @param message - User message/response
+   */
+  async chatWithTemplate(templateId: number, message: string): Promise<any> {
+    const response = await this.client.post(`/v2/knowledge/template/${templateId}/chat`, {
+      role: 'user',
+      content: message,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get template conversation history
+   * @param templateId - Template ID
+   */
+  async getTemplateConversation(templateId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/template/${templateId}/conversation`);
+    return response.data;
+  }
+
+  /**
+   * List all conversations for a template
+   * @param templateId - Template ID
+   */
+  async listTemplateConversations(templateId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/template/${templateId}/conversations`);
+    return response.data;
+  }
+
+  // ========================================
+  // Interview Session Methods (Capture Knowledge)
+  // ========================================
+
+  /**
+   * Create a new interview session for a Capture Template
+   * @param templateId - Template ID to create session from
+   * @param sessionData - Optional session configuration
+   */
+  async createInterviewSession(
+    templateId: number,
+    sessionData?: {
+      session_name?: string;
+      interviewee_name?: string;
+      interviewee_role?: string;
+      session_metadata?: Record<string, any>;
+    },
+  ): Promise<any> {
+    const response = await this.client.post('/v2/knowledge/session/create', {
+      interview_template_id: templateId,
+      session_name: sessionData?.session_name,
+      status: 'draft',
+      interviewee_name: sessionData?.interviewee_name,
+      interviewee_role: sessionData?.interviewee_role,
+      session_metadata: sessionData?.session_metadata || {},
+    });
+    return response.data;
+  }
+
+  /**
+   * Get interview session details by ID
+   * @param sessionId - Session ID
+   */
+  async getInterviewSession(sessionId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/session/${sessionId}`);
+    return response.data;
+  }
+
+  /**
+   * List interview sessions for a Capture Template
+   * @param templateId - Template ID (optional - if not provided, returns all sessions)
+   * @param skip - Number of sessions to skip (pagination)
+   * @param limit - Maximum number of sessions to return
+   */
+  async listInterviewSessions(
+    templateId?: number,
+    skip: number = 0,
+    limit: number = 100,
+  ): Promise<any> {
+    const params: any = { skip, limit };
+    if (templateId) {
+      params.template_id = templateId;
+    }
+    const response = await this.client.get('/v2/knowledge/session/', {
+      params,
+    });
+    return response.data;
+  }
+
+  /**
+   * Update interview session
+   * @param sessionId - Session ID
+   * @param updates - Session updates
+   */
+  async updateInterviewSession(sessionId: number, updates: InterviewSessionUpdate): Promise<any> {
+    const response = await this.client.put(`/v2/knowledge/session/${sessionId}`, updates);
+    return response.data;
+  }
+
+  /**
+   * Delete interview session
+   * @param sessionId - Session ID
+   */
+  async deleteInterviewSession(sessionId: number): Promise<any> {
+    const response = await this.client.delete(`/v2/knowledge/session/${sessionId}`);
+    return response.data;
+  }
+
+  /**
+   * Get conversation for an interview session
+   * @param sessionId - Session ID
+   */
+  async getSessionConversation(sessionId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/session/${sessionId}/conversation`);
+    return response.data;
+  }
+
+  /**
+   * Get interview session progress
+   */
+  async getSessionProgress(sessionId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/session/${sessionId}/progress`);
+    return response.data;
+  }
+
+  /**
+   * Chat with session for AI-powered interview
+   * @param sessionId - Session ID
+   * @param message - User message/response
+   */
+  async chatWithSession(sessionId: number, message: string): Promise<any> {
+    const response = await this.client.post(`/v2/knowledge/session/${sessionId}/chat`, {
+      sender: 'user',
+      content: message,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get generation status for a knowledge pack background task
+   * @param knowledgePackId - Knowledge Pack ID
+   * @param taskId - Generation task ID
+   */
+  async getGenerationStatus(
+    knowledgePackId: number,
+    taskId: number,
+  ): Promise<BackgroundTaskResponse> {
+    const response = await this.client.get<BackgroundTaskResponse>(
+      `/v2/knowledge/gen/${knowledgePackId}/generation-status/${taskId}`,
+    );
+    return response.data;
+  }
+}
+
+// Export singleton instance
+export const apiService = new ApiService();

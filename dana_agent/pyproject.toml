@@ -42,7 +42,7 @@ dependencies = [
     "tqdm>=4.65.0",
     # Data processing (if needed at runtime)
     "matplotlib>=3.10.6",
-    "pandas>=2.2.0,<2.3.0",  # Aligned with llama-index-embeddings-ibm requirements
+    "pandas>=2.2.0,<2.3.0", # Aligned with llama-index-embeddings-ibm requirements
     "langfuse>=3.5.1",
     # Web research dependencies
     "requests>=2.31.0",
@@ -50,6 +50,8 @@ dependencies = [
     "lxml>=5.0.0",
     "readability-lxml>=0.8.1",
     "html2text>=2024.2.26",
+    "pydantic-settings>=2.11.0",
+    "rank-bm25>=0.2.2",
 ]
 
 # Command-line entry points

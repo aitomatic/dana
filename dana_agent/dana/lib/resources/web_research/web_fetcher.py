@@ -195,6 +195,21 @@ class WebFetcher(BaseResource):
                 decoded_content = content.decode("utf-8", errors="replace")
                 logger.warning(f"Encoding error for {url}: {e}, using UTF-8")
 
+            # Check for blocked content patterns
+            if self._is_blocked_content(decoded_content):
+                return {
+                    "success": False,
+                    "error": "Content blocked by security service (Cloudflare, etc.)",
+                    "url": response.url,
+                    "status_code": response.status_code,
+                    "content_type": response.headers.get("content-type", ""),
+                    "content": decoded_content,
+                    "headers": dict(response.headers),
+                    "encoding": encoding,
+                    "size_bytes": len(content),
+                    "fetch_time_ms": int((time.time() - start_time) * 1000),
+                }
+
             fetch_time_ms = int((time.time() - start_time) * 1000)
 
             return {
@@ -216,6 +231,45 @@ class WebFetcher(BaseResource):
             return {"success": False, "error": f"Connection error: {str(e)}"}
         except Exception as e:
             return {"success": False, "error": f"Fetch error: {str(e)}"}
+
+    def _is_blocked_content(self, content: str) -> bool:
+        """
+        Check if content appears to be blocked by security services.
+
+        Args:
+            content: Decoded content to check
+
+        Returns:
+            True if content appears to be blocked
+        """
+        content_lower = content.lower()
+
+        # Common blocking patterns
+        blocking_patterns = [
+            "why have i been blocked",
+            "cloudflare",
+            "security service",
+            "access denied",
+            "blocked by security",
+            "please enable javascript",
+            "checking your browser",
+            "ddos protection",
+            "rate limited",
+            "too many requests",
+            "captcha",
+            "verification required",
+        ]
+
+        # Check for blocking patterns
+        for pattern in blocking_patterns:
+            if pattern in content_lower:
+                return True
+
+        # Check for very short content that might be a blocking page
+        if len(content.strip()) < 200 and any(word in content_lower for word in ["blocked", "denied", "security"]):
+            return True
+
+        return False
 
     def search(self, query: str, max_results: int = 5, search_engine: str = "google") -> DictParams:
         """
