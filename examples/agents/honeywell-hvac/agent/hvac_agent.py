@@ -110,27 +110,28 @@ if __name__ == "__main__":
     print("HVACAgent Demo")
     print("=" * 80)
     print()
-    print(get_env_status())
-    env_status = {
-  "room_name": "Conference Room A",
-  "current_time": "13:26",
-  "indoor_temp": 93.3,
-  "outdoor_temp": 92.4,
-  "meeting_plan": [
-    {
-      "start_time": "15:37",
-      "end_time": "17:27"
-    },
-    {
-      "start_time": "18:22",
-      "end_time": "18:52"
-    },
-    {
-      "start_time": "21:45",
-      "end_time": "22:00"
-    }
-  ]
-}
+    # print(get_env_status())
+#     env_status = {
+#   "room_name": "Conference Room A",
+#   "current_time": "13:26",
+#   "indoor_temp": 93.3,
+#   "outdoor_temp": 92.4,
+#   "meeting_plan": [
+#     {
+#       "start_time": "15:37",
+#       "end_time": "17:27"
+#     },
+#     {
+#       "start_time": "18:22",
+#       "end_time": "18:52"
+#     },
+#     {
+#       "start_time": "21:45",
+#       "end_time": "22:00"
+#     }
+#   ]
+# }
+    env_status = get_env_status()
 
     agent = HVACAgent()
     agent.enable_notifications(verbose=False)
@@ -166,5 +167,8 @@ if __name__ == "__main__":
         mode=plan["mode"],
         meeting_plan=env_status["meeting_plan"]
     )
+    
+    print("Raw feedback:")
+    print(json.dumps(feedback, indent=2))
     
     agent._learner.save_feedback(json.dumps(feedback, indent=2))
