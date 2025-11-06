@@ -1,27 +1,25 @@
 from abc import abstractmethod
+import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol
+import re
+from typing import TYPE_CHECKING
 
-from dana.config.storage_config import FileStorageConfig
+from structlog import get_logger
 
-from .prompt_engineer import BasePromptEngineer, ResourcePromptEngineer, WorkflowPromptEngineer, AgentPromptEngineer
-from .stores import LocalPromptStore
-from dana.common.protocols import Persistable, PrivatePromptsProtocol, PublicPromptsProtocol
-from dana.common.schemas import ComponentType
-from dana.core.knowledge.prompts.codecs import AbstractCodec
-from dana.core.agent.timeline import Timeline
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
-from structlog import get_logger
-import re
-import inspect
+from dana.common.protocols import Persistable, PrivatePromptsProtocol, PublicPromptsProtocol
+from dana.config.storage_config import FileStorageConfig
+from dana.core.agent.timeline import Timeline
+from dana.core.knowledge.prompts.codecs import AbstractCodec
+from dana.repositories.local_file_repository import LocalPromptRepository
+
+from .prompt_engineer import AgentPromptEngineer, BasePromptEngineer, ResourcePromptEngineer, WorkflowPromptEngineer
+
 
 logger = get_logger()
 
 if TYPE_CHECKING:
-    from dana.common.base_war import BaseWAR
-    from dana.core.resource.base_resource import BaseResource
-    from dana.core.workflow.base_workflow import BaseWorkflow
     from dana.core.agent.base_agent import BaseAgent
 
 
@@ -114,8 +112,12 @@ class LocalPromptAPI(PromptAPIProtocol):
         self._force_generate = force_generate
         self._check_conflicts = check_conflicts
         self._template_system_prompt = template_system_prompt
-        # NOTE: This agent store
-        self._store = LocalPromptStore(FileStorageConfig(workspace_folder=str(Path(self._storage_config.workspace_folder) / self.relative_path / "system_prompt_template")))
+        # NOTE: This agent repository (changed from store)
+        self._store = LocalPromptRepository(
+            self._storage_config,
+            self._agent,
+            component=None  # For system prompt template
+        )
         # NOTE : Registry management will be added later
         self._agent_prompt_engineers = {}
         self._resource_prompt_engineers = {}
@@ -126,11 +128,15 @@ class LocalPromptAPI(PromptAPIProtocol):
     def _instantiate_prompt_engineer(
         self, prompt_engineer_cls: type[BasePromptEngineer], component, relative_path: str, **kwargs
     ) -> BasePromptEngineer:
-        this_config = FileStorageConfig(workspace_folder=str(Path(self._storage_config.workspace_folder) / relative_path))
-        this_store = LocalPromptStore(this_config)
+        # Create repository instead of store
+        repository = LocalPromptRepository(
+            self._storage_config,
+            self._agent,
+            component=component
+        )
         return prompt_engineer_cls(
             component=component,
-            store=this_store,
+            repository=repository,
             codec=self._codec,
             force_generate=self._force_generate,
             check_conflicts=self._check_conflicts,

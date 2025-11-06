@@ -91,7 +91,6 @@ class Learner:
                 f"Processed acquisitions with {len(tool_results)} tool results"
             ),
             "timestamp": datetime.now().isoformat(),
-            "tool_results": tool_results,
         }
         return {"trace_learning": trace_learning}
 

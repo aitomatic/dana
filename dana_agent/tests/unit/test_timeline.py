@@ -3,10 +3,16 @@ Unit tests for Timeline and TimelineEntry classes.
 """
 
 from datetime import datetime
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
+from dana.config.storage_config import FileStorageConfig
+from dana.core.agent import BaseAgent
 from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.repositories import LocalTimelineRepository
 
 
 class TestTimelineEntry:
@@ -237,3 +243,176 @@ class TestTimeline:
         assert len(messages) == 1
         assert messages[0].role == "assistant"
         assert messages[0].content == "Response"
+
+
+class MockAgentForTimeline(BaseAgent):
+    """Mock agent for timeline testing."""
+    def __init__(self, codec=None, storage_config=None, **kwargs):
+        super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
+        if codec is None:
+            self._codec = Mock()
+            self._codec.__qualname__ = "TestCodec"
+        else:
+            self._codec = codec
+        if storage_config is None:
+            self._storage_config = FileStorageConfig(workspace_folder=tempfile.mkdtemp())
+        else:
+            self._storage_config = storage_config
+
+
+class TestTimelineWithRepository:
+    """Test Timeline with repository pattern."""
+
+    def test_timeline_initialization_with_repository(self):
+        """Test Timeline accepts repository parameter."""
+        agent = MockAgentForTimeline()
+        repository = LocalTimelineRepository(agent)
+        timeline = Timeline(max_context_tokens=1000, repository=repository)
+        
+        assert timeline._repository == repository
+        assert timeline.timeline == []
+
+    def test_timeline_initialization_creates_default_repository(self):
+        """Test Timeline creates default repository from agent if not provided."""
+        agent = MockAgentForTimeline()
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
+        
+        assert timeline._repository is not None
+        assert isinstance(timeline._repository, LocalTimelineRepository)
+        assert timeline._repository._agent == agent
+
+    def test_timeline_save_uses_repository(self):
+        """Test Timeline.save() uses repository."""
+        agent = MockAgentForTimeline()
+        repository = LocalTimelineRepository(agent)
+        timeline = Timeline(max_context_tokens=1000, repository=repository)
+        
+        entry = TimelineEntry(
+            entry_type=TimelineEntryType.USER_MESSAGE,
+            content="Test message",
+            timestamp=datetime.now(),
+        )
+        timeline.add_entry(entry)
+        
+        session_id = "test-session-001"
+        timeline.save(session_id)
+        
+        # Verify repository was called (check file exists)
+        session_folder = repository._events_path / session_id
+        timeline_file = session_folder / "timeline.json"
+        assert timeline_file.exists()
+
+    def test_timeline_read_since_extracts_session_id_from_agent(self):
+        """Test Timeline.read_since() extracts session_id from agent."""
+        agent = MockAgentForTimeline()
+        agent._session_id = "test-session-001"
+        repository = LocalTimelineRepository(agent)
+        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        
+        # Should work without session_id parameter
+        read_entries = list(timeline.read_since(checkpoint=0))
+        assert isinstance(read_entries, list)
+
+    def test_timeline_read_since_with_session_id(self):
+        """Test Timeline.read_since() works by extracting session_id from agent."""
+        agent = MockAgentForTimeline()
+        agent._session_id = "test-session-001"
+        repository = LocalTimelineRepository(agent)
+        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        
+        # Save some entries
+        entry = TimelineEntry(
+            entry_type=TimelineEntryType.USER_MESSAGE,
+            content="Test message",
+            timestamp=datetime.now(),
+        )
+        timeline.add_entry(entry)
+        session_id = agent._session_id
+        timeline.save(session_id)
+        
+        # Read back (no session_id parameter needed)
+        read_entries = list(timeline.read_since(checkpoint=0))
+        assert len(read_entries) == 1
+        assert read_entries[0].content == "Test message"
+
+    def test_timeline_read_since_checkpoint_negative(self):
+        """Test Timeline.read_since() with negative checkpoint."""
+        agent = MockAgentForTimeline()
+        agent._session_id = "test-session-001"
+        repository = LocalTimelineRepository(agent)
+        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        
+        # Save multiple entries
+        for i in range(5):
+            entry = TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content=f"Message {i}",
+                timestamp=datetime.now(),
+            )
+            timeline.add_entry(entry)
+        
+        session_id = agent._session_id
+        timeline.save(session_id)
+        
+        # Read last 2 entries (no session_id parameter needed)
+        read_entries = list(timeline.read_since(checkpoint=-2))
+        assert len(read_entries) == 2
+        assert read_entries[0].content == "Message 3"
+        assert read_entries[1].content == "Message 4"
+
+    def test_timeline_read_since_checkpoint_positive(self):
+        """Test Timeline.read_since() with positive checkpoint."""
+        agent = MockAgentForTimeline()
+        agent._session_id = "test-session-001"
+        repository = LocalTimelineRepository(agent)
+        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        
+        # Save multiple entries
+        for i in range(5):
+            entry = TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content=f"Message {i}",
+                timestamp=datetime.now(),
+            )
+            timeline.add_entry(entry)
+        
+        session_id = agent._session_id
+        timeline.save(session_id)
+        
+        # Read from index 2 onwards (no session_id parameter needed)
+        read_entries = list(timeline.read_since(checkpoint=2))
+        assert len(read_entries) == 3
+        assert read_entries[0].content == "Message 2"
+
+    def test_timeline_read_since_error_when_no_repository(self):
+        """Test Timeline.read_since() raises error when repository is None."""
+        timeline = Timeline(max_context_tokens=1000)
+        
+        with pytest.raises(ValueError, match="repository is None"):
+            list(timeline.read_since(checkpoint=0))
+
+    def test_timeline_read_since_error_when_no_agent(self):
+        """Test Timeline.read_since() raises error when agent is None."""
+        timeline = Timeline(max_context_tokens=1000)
+        # Manually set repository to None to test error case
+        timeline._repository = None
+        
+        with pytest.raises(ValueError, match="repository is None"):
+            list(timeline.read_since(checkpoint=0))
+
+    def test_timeline_read_since_error_when_no_session_id(self):
+        """Test Timeline.read_since() raises error when agent has no _session_id."""
+        agent = MockAgentForTimeline()
+        # Don't set _session_id
+        repository = LocalTimelineRepository(agent)
+        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        
+        with pytest.raises(ValueError, match="agent has no _session_id"):
+            list(timeline.read_since(checkpoint=0))
+
+    def test_timeline_save_error_when_no_repository(self):
+        """Test Timeline.save() raises error when repository is None."""
+        timeline = Timeline(max_context_tokens=1000)
+        
+        with pytest.raises(ValueError, match="repository is None"):
+            timeline.save("test-session")

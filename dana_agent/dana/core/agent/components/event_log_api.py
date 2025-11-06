@@ -7,9 +7,6 @@ Events come ONLY from Observer.observe() - no action events, no tool call events
 
 from collections.abc import Iterator
 from datetime import datetime
-import inspect
-import json
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from structlog import get_logger
@@ -21,6 +18,7 @@ from dana.config.storage_config import FileStorageConfig
 if TYPE_CHECKING:
     from dana.core.agent.base_agent import BaseAgent
     from dana.core.knowledge.prompts.codecs import AbstractCodec
+    from dana.repositories.repository_protocol import EventRepositoryProtocol
 
 from .observer import ObserverProtocol
 
@@ -46,37 +44,35 @@ class EventLogAPI:
         codec: type["AbstractCodec"] | None,
         storage_config: FileStorageConfig,
         observer: ObserverProtocol,
+        repository: "EventRepositoryProtocol | None" = None,
     ):
         """
         Initialize EventLog API.
-        
+
         Args:
             agent: Agent instance
-            codec: Codec class for path structure
-            storage_config: Storage configuration
+            codec: Codec class for path structure (for backward compatibility)
+            storage_config: Storage configuration (for backward compatibility)
             observer: Observer for environment data (REQUIRED)
-        
+            repository: Event repository (if None and agent provided, creates default)
+
         Note: Observer is required - EventLog only works with Observer.
         """
         self._agent = agent
         self._codec = codec
-        self._codec_prefix = codec.__qualname__ if codec else "default"
         self._storage_config = storage_config
         self._observer = observer
         self._current_session_id: str | None = None
         self._event_buffer: list[Event] = []  # Buffer for observations only
-        
-        # Calculate path following prompt_api.py pattern
-        # Path: {codec.__qualname__}/{agent.__class__.__qualname__}__{filename}/events/{session_id}
-        self._workspace_folder = Path(storage_config.workspace_folder) / self.relative_path
-        self._workspace_folder.mkdir(parents=True, exist_ok=True)
-    
-    @property
-    def relative_path(self) -> str:
-        """Calculate relative path following prompt_api.py pattern."""
-        filepath = inspect.getfile(self._agent.__class__)
-        filename = Path(filepath).stem
-        return f"{self._codec_prefix}/{self._agent.__class__.__qualname__}__{filename}/events"
+
+        # Initialize repository if provided, otherwise create default from agent
+        if repository:
+            self._repository = repository
+        elif agent:
+            from dana.repositories import LocalEventRepository
+            self._repository = LocalEventRepository(agent)
+        else:
+            self._repository = None
     
     def observe_and_record(self) -> Event | None:
         """
@@ -109,22 +105,18 @@ class EventLogAPI:
     def save(self, session_id: str) -> None:
         """
         Save events for a session.
-        
+
         Args:
             session_id: Session identifier
         """
+        if self._repository is None:
+            raise ValueError("Cannot save events: repository is None. Initialize EventLogAPI with repository or agent.")
+
         self._current_session_id = session_id
-        
-        # Create session folder
-        session_folder = self._workspace_folder / session_id
-        session_folder.mkdir(parents=True, exist_ok=True)
-        
-        # Save events to JSONL
-        events_file = session_folder / "events.jsonl"
-        with open(events_file, "a") as f:
-            for event in self._event_buffer:
-                f.write(json.dumps(event.to_dict()) + "\n")
-        
+
+        # Save events using repository
+        self._repository.save(session_id, self._event_buffer)
+
         # Log before clearing buffer
         num_events = len(self._event_buffer)
         # Clear buffer after save
@@ -133,53 +125,37 @@ class EventLogAPI:
     
     def read_since(self, checkpoint: int) -> Iterator[Event]:
         """
-        Read events since checkpoint (for learning pipeline).
-        
+        Read events since checkpoint for the current session.
+
         Args:
             checkpoint: Starting index for reading events.
                 Negative values are supported (e.g., -10 means "last 10 events").
                 -1 means "last event only", -2 means "last 2 events", etc.
-            
+
         Yields:
             Event objects since checkpoint
         """
-        # First pass: collect all events to support negative checkpoints
-        all_events: list[Event] = []
-        
-        # Read from all session folders
-        for session_folder in self._workspace_folder.iterdir():
-            if not session_folder.is_dir():
-                continue
-            
-            events_file = session_folder / "events.jsonl"
-            if not events_file.exists():
-                continue
-            
-            with open(events_file) as f:
-                for line in f:
-                    try:
-                        event_data = json.loads(line)
-                        # Reconstruct Event from dict
-                        event = Event(
-                            type=event_data.get("type", "observation"),
-                            timestamp=datetime.fromisoformat(event_data["timestamp"]),
-                            agent_id=event_data.get("agent_id", ""),
-                            session_id=event_data.get("session_id"),
-                            data=event_data.get("data", {}),
-                            metadata=event_data.get("metadata", {}),
-                        )
-                        all_events.append(event)
-                    except Exception as e:
-                        logger.warning(f"Failed to parse event: {e}")
-                        continue
-        
+        if self._repository is None:
+            raise ValueError("Cannot read events: repository is None. Initialize EventLogAPI with repository or agent.")
+
+        if self._agent is None:
+            raise ValueError("Cannot read events: agent is None. Session ID cannot be extracted.")
+
+        # Extract session_id from agent
+        session_id = getattr(self._agent, "_session_id", None)
+        if session_id is None:
+            raise ValueError("Cannot read events: agent has no _session_id. Set session_id on agent first.")
+
+        # Collect all events from the session
+        all_events = list(self._repository.read_session_events(session_id))
+
         # Convert negative checkpoint to positive index
         if checkpoint < 0:
             total_count = len(all_events)
             # Convert negative index: -1 = last event, -2 = second to last, etc.
             # Similar to Python list slicing: checkpoint = total_count + checkpoint
             checkpoint = max(0, total_count + checkpoint)
-        
+
         # Yield events from checkpoint onwards
         for i in range(checkpoint, len(all_events)):
             yield all_events[i]

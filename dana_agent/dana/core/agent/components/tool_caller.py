@@ -1374,7 +1374,7 @@ class CodecToolCaller(WARCaller):
                     result = Misc.safe_asyncio_run(method, **arguments)
                 else:
                     result = method(**arguments)
-                return {"type": obj_info["type"], "object": obj_info["object"], "result": result}
+                return self._create_tool_success(obj_info["type"], f"{class_name}.{method_name}", result)
             except Exception as e:
                 return self._create_tool_error(
                     "execution_error",
