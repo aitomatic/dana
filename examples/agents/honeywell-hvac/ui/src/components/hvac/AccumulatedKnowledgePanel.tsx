@@ -52,7 +52,7 @@ export function AccumulatedKnowledgePanel() {
             <div className="text-sm text-muted-foreground">
               Last updated: {episodicLearning.timestamp ? new Date(episodicLearning.timestamp).toLocaleString() : 'Unknown'}
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none bg-muted rounded-lg p-4 max-h-[400px] overflow-y-auto">
+            <div className="prose prose-sm dark:prose-invert max-w-none bg-muted rounded-lg max-h-[400px] overflow-y-auto">
               <pre className="whitespace-pre-wrap font-sans text-sm">
                 {episodicLearning.content}
               </pre>

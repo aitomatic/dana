@@ -21,15 +21,15 @@ export function ExecutionLearningCard({
     <Card className="mb-4">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger className="w-full">
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="cursor-pointer p-4 hover:bg-muted/50 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {isOpen ? (
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 ) : (
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 )}
-                <CardTitle className="text-base">
+                <CardTitle className="text-sm">
                   Execution #{executionNumber} - {timestamp}
                 </CardTitle>
               </div>
@@ -43,14 +43,14 @@ export function ExecutionLearningCard({
         <CollapsibleContent>
           <CardContent className="pt-0 space-y-4">
             {/* Learning Note - Prominently Displayed */}
-            <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="w-4 h-4 text-green-500" />
+            <div className="mt-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+        
                 <span className="text-sm font-medium text-green-700 dark:text-green-400">
                   What the agent learned:
                 </span>
               </div>
-              <div className="text-sm font-medium leading-relaxed text-foreground ml-6">
+              <div className="text-sm leading-relaxed text-foreground">
                 {learning.learning_note || 'No learning note available'}
               </div>
             </div>
