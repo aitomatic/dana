@@ -12,16 +12,20 @@ with different capabilities:
 """
 
 from .communicator import Communicator
-from .learner import Learner
+from .learner import Learner, LearnerProtocol
+from .observer import NullObserver, ObserverProtocol
 from .prompt_engineer import PromptEngineer
 from .state import State
 from .tool_caller import ToolCaller
 
 
 __all__ = [
-    "PromptEngineer",
     "Communicator",
-    "State",
     "Learner",
+    "LearnerProtocol",
+    "NullObserver",
+    "ObserverProtocol",
+    "PromptEngineer",
+    "State",
     "ToolCaller",
 ]

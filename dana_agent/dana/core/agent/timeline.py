@@ -5,12 +5,25 @@ This module provides a unified, chronological record of all agent interactions
 with efficient context management to prevent context window explosion.
 """
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Final
+import inspect
+import json
+from pathlib import Path
+from typing import TYPE_CHECKING, Final
+
+from structlog import get_logger
 
 from dana.common.llm.types import LLMMessage
+
+if TYPE_CHECKING:
+    from dana.config.storage_config import FileStorageConfig
+    from dana.core.agent.base_agent import BaseAgent
+    from dana.core.knowledge.prompts.codecs import AbstractCodec
+
+logger = get_logger()
 
 
 class TimelineEntryType(Enum):
@@ -18,6 +31,7 @@ class TimelineEntryType(Enum):
     AGENT_RESPONSE = "agent_response"
     AGENT_THOUGHTS = "agent_thoughts"
     TOOL_CALL = "tool_call"
+    FAILED_TOOL_CALL = "failed_tool_call"
     SUB_AGENT_RESPONSE = "sub_agent_response"
     RESOURCE_RESULT = "resource_result"
     WORKFLOW_RESULT = "workflow_result"
@@ -145,15 +159,39 @@ class Timeline:
     with efficient context management to prevent context window explosion.
     """
 
-    def __init__(self, max_context_tokens: int = 4000):
+    def __init__(
+        self,
+        max_context_tokens: int = 4000,
+        agent: "BaseAgent | None" = None,
+        codec: type["AbstractCodec"] | None = None,
+        storage_config: "FileStorageConfig | None" = None,
+    ):
         """
         Initialize the Timeline.
 
         Args:
             max_context_tokens: Maximum number of tokens to include in context
+            agent: Agent instance (can be None)
+            codec: Codec class for path structure (can be None)
+            storage_config: Storage configuration (can be None)
         """
-        self.timeline: list[TimelineEntry] = []
         self.max_context_tokens = max_context_tokens
+        self._agent = agent
+        self._codec = codec
+        self._storage_config = storage_config
+        self._codec_prefix = codec.__qualname__ if codec else "default"
+        self.timeline: list[TimelineEntry] = []
+        # If you want to load back the timeline, you can do it like this:
+        # self.timeline = list(self.read_since(checkpoint=-100))
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the timeline.
+
+        Returns:
+            String representation of the timeline
+        """
+        return f"Timeline(max_context_tokens={self.max_context_tokens}, timeline={self.timeline[-10:]})"
 
     def add_entry(self, entry: TimelineEntry) -> None:
         """
@@ -390,3 +428,119 @@ class Timeline:
         for entry in self.timeline:
             counts[entry.entry_type] = counts.get(entry.entry_type, 0) + 1
         return counts
+
+    def save(self, session_id: str) -> None:
+        """
+        Save timeline for a session.
+
+        Args:
+            session_id: Session identifier
+        """
+        if self._agent is None:
+            raise ValueError("Cannot save timeline: agent is None. Initialize Timeline with agent parameter.")
+        
+        if self._storage_config is None:
+            raise ValueError("Cannot save timeline: storage_config is None. Initialize Timeline with storage_config parameter.")
+
+        # Calculate workspace folder path
+        filepath = inspect.getfile(self._agent.__class__)
+        filename = Path(filepath).stem
+        relative_path = f"{self._codec_prefix}/{self._agent.__class__.__qualname__}__{filename}/events"
+        workspace_folder = Path(self._storage_config.workspace_folder) / relative_path
+
+        # Create session folder
+        session_folder = workspace_folder / session_id
+        session_folder.mkdir(parents=True, exist_ok=True)
+
+        # Save timeline to JSON
+        timeline_file = session_folder / "timeline.json"
+        timeline_data = {
+            "session_id": session_id,
+            "agent_id": self._agent.object_id,
+            "agent_type": self._agent.agent_type if hasattr(self._agent, "agent_type") else None,
+            "entries": [
+                {
+                    "timestamp": entry.timestamp.isoformat(),
+                    "type": entry.entry_type.value,
+                    "content": entry.content,
+                    "metadata": entry.metadata,
+                }
+                for entry in self.timeline
+            ]
+        }
+        with open(timeline_file, "w") as f:
+            json.dump(timeline_data, f, indent=2)
+
+        logger.info(f"Saved timeline with {len(self.timeline)} entries for session {session_id}")
+
+    def read_since(self, checkpoint: int) -> Iterator[TimelineEntry]:
+        """
+        Read timeline entries since checkpoint (for learning pipeline).
+
+        Args:
+            checkpoint: Starting index for reading entries.
+                Negative values are supported (e.g., -10 means "last 10 entries").
+                -1 means "last entry only", -2 means "last 2 entries", etc.
+
+        Yields:
+            TimelineEntry objects since checkpoint
+        """
+        if self._agent is None:
+            raise ValueError("Cannot read timeline: agent is None. Initialize Timeline with agent parameter.")
+        
+        if self._storage_config is None:
+            raise ValueError("Cannot read timeline: storage_config is None. Initialize Timeline with storage_config parameter.")
+
+        # Calculate workspace folder path
+        filepath = inspect.getfile(self._agent.__class__)
+        filename = Path(filepath).stem
+        relative_path = f"{self._codec_prefix}/{self._agent.__class__.__qualname__}__{filename}/events"
+        workspace_folder = Path(self._storage_config.workspace_folder) / relative_path
+
+        # First pass: collect all entries to support negative checkpoints
+        all_entries: list[TimelineEntry] = []
+
+        # Read from all session folders
+        if workspace_folder.exists():
+            for session_folder in workspace_folder.iterdir():
+                if not session_folder.is_dir():
+                    continue
+
+                timeline_file = session_folder / "timeline.json"
+                if not timeline_file.exists():
+                    continue
+
+                try:
+                    with open(timeline_file) as f:
+                        timeline_data = json.load(f)
+                        entries_data = timeline_data.get("entries", [])
+                        for entry_data in entries_data:
+                            try:
+                                # Reconstruct TimelineEntry from dict
+                                entry_type_str = entry_data.get("type", "user_message")
+                                # Convert string to TimelineEntryType enum
+                                entry_type = TimelineEntryType(entry_type_str)
+                                entry = TimelineEntry(
+                                    entry_type=entry_type,
+                                    timestamp=datetime.fromisoformat(entry_data["timestamp"]),
+                                    content=entry_data.get("content", ""),
+                                    metadata=entry_data.get("metadata", {}),
+                                )
+                                all_entries.append(entry)
+                            except Exception as e:
+                                logger.warning(f"Failed to parse timeline entry: {e}")
+                                continue
+                except Exception as e:
+                    logger.warning(f"Failed to read timeline file {timeline_file}: {e}")
+                    continue
+
+        # Convert negative checkpoint to positive index
+        if checkpoint < 0:
+            total_count = len(all_entries)
+            # Convert negative index: -1 = last entry, -2 = second to last, etc.
+            # Similar to Python list slicing: checkpoint = total_count + checkpoint
+            checkpoint = max(0, total_count + checkpoint)
+
+        # Yield entries from checkpoint onwards
+        for i in range(checkpoint, len(all_entries)):
+            yield all_entries[i]

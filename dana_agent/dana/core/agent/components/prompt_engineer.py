@@ -21,6 +21,7 @@ from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
+from dana.common.protocols.types import LearningPhase
 
 
 class PromptFormatter:
@@ -511,6 +512,14 @@ class PromptEngineer:
     # SYSTEM PROMPT GENERATION
     # ============================================================================
 
+    def _get_learnings_section(self) -> str:
+        """Get the learnings section."""
+        episodic_learnings = self._agent._learner.query_learnings("ANYTHING", LearningPhase.EPISODIC)
+        episodic_content = episodic_learnings if episodic_learnings else None
+        return f"""<LEARNINGS>
+{episodic_content}
+</LEARNINGS>"""
+
     def _get_system_prompt(self) -> str:
         """
         Generate system prompt with optimal section ordering for context engineering.
@@ -538,6 +547,8 @@ class PromptEngineer:
 {self._get_available_tools_section()}
 
 {self._get_postscript_section()}
+
+{self._get_learnings_section()}
 
 {self._get_system_last_word_section()}
 """.strip()
@@ -644,7 +655,12 @@ class PromptEngineer:
         agents = self._agent.available_agents
         if not agents or len(agents) == 0:
             return "None"
-        return "\n".join([f"- {a.agent_type} (ID: {a.object_id}): {a.public_description}" for a in agents])
+        descriptions = []
+        for a in agents:
+            desc = a.public_description
+            # If using text_flattened format, desc already has hyphens
+            descriptions.append(f"- {a.agent_type} (ID: {a.object_id}): {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_resource_descriptions(self) -> str:
@@ -653,7 +669,15 @@ class PromptEngineer:
         if not resources or len(resources) == 0:
             return "None"
         # return "\n".join([f"- {r.resource_type} (ID: {r.object_id}): {r.public_description}" for r in resources]
-        return "\n".join([f"- {r.public_description}" for r in resources])
+        descriptions = []
+        for r in resources:
+            desc = r.public_description
+            # If using text_flattened format, don't add extra hyphen prefix
+            if desc.startswith("- "):
+                descriptions.append(desc)
+            else:
+                descriptions.append(f"- {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_workflow_descriptions(self) -> str:
@@ -662,7 +686,15 @@ class PromptEngineer:
         if not workflows or len(workflows) == 0:
             return "None"
         # return "\n".join([f"- {w.workflow_type} (ID: {w.object_id}): {w.public_description}" for w in workflows])
-        return "\n".join([f"- {w.public_description}" for w in workflows])
+        descriptions = []
+        for w in workflows:
+            desc = w.public_description
+            # If using text_flattened format, don't add extra hyphen prefix
+            if desc.startswith("- "):
+                descriptions.append(desc)
+            else:
+                descriptions.append(f"- {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_usage_examples(self) -> str:
@@ -777,6 +809,13 @@ class PromptEngineer:
                 messages.extend(timeline_messages)
 
         # Hack: put the user state/locale here for now
+        latest_msg = messages[-1].content if messages else None
+        if latest_msg:
+            related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
+            if related_acquisitive_learnings:
+                messages.append(LLMMessage(role="system", content=f"Learning from the past : {related_acquisitive_learnings}"))
+
+        
         state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]
         state_info_content = "\n".join(state_info)
         messages.append(LLMMessage(role="user", content=state_info_content))
