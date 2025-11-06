@@ -134,13 +134,27 @@ if __name__ == "__main__":
 
     agent = HVACAgent()
     agent.enable_notifications(verbose=False)
-    learner = WilliamLearner(agent=agent)
+    agent._learner = WilliamLearner(agent=agent)
 
+    session_id = "hvac-agent-session-001"
     agent_prompt = f"""
         CURRENT ENVIRONMENT:
         {json.dumps(env_status, indent=2)}
     """
-    result = agent.query(caller_message=agent_prompt)
+    
+    result = agent.query(
+        caller_message=agent_prompt,
+        session_id=session_id
+    )
+    
+    # Manually trigger acquisitive learning to ensure it completes
+    # (async thread may not finish before script exits)
+    acquisitive_input = result.copy()
+    acquisitive_input.setdefault("caller_message", agent_prompt)
+    acquisitive_input.setdefault("tool_calls", [])
+    acquisitive_input.setdefault("tool_results", [])
+    agent._learner._reflect_acquisitive(acquisitive_input)
+    
     plan = json.loads(result["response"])
     print(plan)
     feedback = get_feedback(
@@ -153,4 +167,4 @@ if __name__ == "__main__":
         meeting_plan=env_status["meeting_plan"]
     )
     
-    learner.save_feedback(json.dumps(feedback, indent=2))
+    agent._learner.save_feedback(json.dumps(feedback, indent=2))
