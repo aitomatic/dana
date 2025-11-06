@@ -4,17 +4,18 @@ import { CheckCircle, Circle, Loader2 } from 'lucide-react';
 
 export function ExecutionProgress() {
   const { executionStep } = useHVACStore();
-  
+
   const steps = [
     { id: 'environment', label: 'Get Environment' },
     { id: 'planning', label: 'Agent Creates Plan' },
     { id: 'validation', label: 'Validate Plan' },
+    { id: 'learning', label: 'Learning Agent Analysis' },
   ];
-  
+
   const getStepStatus = (stepId: string) => {
-    const stepIndex = steps.findIndex(s => s.id === stepId);
-    const currentIndex = steps.findIndex(s => s.id === executionStep);
-    
+    const stepIndex = steps.findIndex((s) => s.id === stepId);
+    const currentIndex = steps.findIndex((s) => s.id === executionStep);
+
     if (executionStep === stepId) {
       return 'active';
     }
@@ -23,7 +24,7 @@ export function ExecutionProgress() {
     }
     return 'pending';
   };
-  
+
   return (
     <Card>
       <CardHeader>
@@ -31,7 +32,7 @@ export function ExecutionProgress() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {steps.map((step, i) => {
+          {steps.map((step) => {
             const status = getStepStatus(step.id);
             return (
               <div key={step.id} className="flex items-center gap-3">
@@ -51,4 +52,3 @@ export function ExecutionProgress() {
     </Card>
   );
 }
-

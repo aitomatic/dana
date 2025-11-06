@@ -4,17 +4,17 @@ import { CheckCircle, Circle, Loader2 } from 'lucide-react';
 
 export function TimelinePanel() {
   const { executionStep, environment, agentPlan, feedback } = useHVACStore();
-  
+
   const steps = [
     { id: 'environment', label: 'Get Environment' },
     { id: 'planning', label: 'Agent Creates Plan' },
     { id: 'validation', label: 'Validate Plan' },
   ];
-  
+
   const getStepStatus = (stepId: string) => {
-    const stepIndex = steps.findIndex(s => s.id === stepId);
-    const currentIndex = steps.findIndex(s => s.id === executionStep);
-    
+    const stepIndex = steps.findIndex((s) => s.id === stepId);
+    const currentIndex = steps.findIndex((s) => s.id === executionStep);
+
     if (executionStep === stepId) {
       return 'active';
     }
@@ -23,7 +23,7 @@ export function TimelinePanel() {
     }
     return 'pending';
   };
-  
+
   return (
     <div className="space-y-4">
       {/* Progress Indicator */}
@@ -33,7 +33,7 @@ export function TimelinePanel() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            {steps.map((step, i) => {
+            {steps.map((step) => {
               const status = getStepStatus(step.id);
               return (
                 <div key={step.id} className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export function TimelinePanel() {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Temperature Graph placeholder */}
       <Card>
         <CardHeader>
@@ -74,7 +74,7 @@ export function TimelinePanel() {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Timeline Bar placeholder */}
       {(environment || agentPlan) && (
         <Card>
@@ -95,19 +95,21 @@ export function TimelinePanel() {
               {agentPlan?.plan.map((action, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
                   <div className="w-24 text-muted-foreground">{action.time_on}</div>
-                  <div 
+                  <div
                     className={`flex-1 h-6 rounded border flex items-center px-2 ${
-                      agentPlan.mode === 'cool' 
-                        ? 'bg-blue-100 dark:bg-blue-500/20 border-blue-300 dark:border-blue-500/40' 
+                      agentPlan.mode === 'cool'
+                        ? 'bg-blue-100 dark:bg-blue-500/20 border-blue-300 dark:border-blue-500/40'
                         : 'bg-red-100 dark:bg-red-500/20 border-red-300 dark:border-red-500/40'
                     }`}
                     style={{ opacity: action.use_turbo ? 1 : 0.6 }}
                   >
-                    <span className={`text-xs ${
-                      agentPlan.mode === 'cool' 
-                        ? 'text-blue-900 dark:text-blue-100' 
-                        : 'text-red-900 dark:text-red-100'
-                    }`}>
+                    <span
+                      className={`text-xs ${
+                        agentPlan.mode === 'cool'
+                          ? 'text-blue-900 dark:text-blue-100'
+                          : 'text-red-900 dark:text-red-100'
+                      }`}
+                    >
                       {agentPlan.mode === 'cool' ? 'Cooling' : 'Heating'}
                       {action.use_turbo && ' (Turbo)'}
                     </span>
@@ -122,4 +124,3 @@ export function TimelinePanel() {
     </div>
   );
 }
-

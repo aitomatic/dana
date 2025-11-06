@@ -21,7 +21,9 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   const location = useLocation();
   const { agent_id } = useParams();
   const navigate = useNavigate();
-  const { fetchAgent, selectedAgent } = useAgentStore();
+  const agentStore = useAgentStore();
+  const fetchAgent = agentStore.fetchAgent || (async () => {});
+  const selectedAgent = agentStore.selectedAgent;
   const [prebuiltAgent, setPrebuiltAgent] = useState<any>(null);
   const { trackTabNavigation, trackError } = useDanaAnalytics();
 
@@ -70,8 +72,9 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
             return prebuiltAgent?.name || 'Chat with agent';
           }
           // Check if this is a regular agent (numeric ID)
-          return selectedAgent?.id === parseInt(agent_id || '0')
-            ? selectedAgent?.name
+          const selectedAgentValue = selectedAgent as { id?: number; name?: string } | null;
+          return selectedAgentValue?.id === parseInt(agent_id || '0')
+            ? selectedAgentValue?.name
             : 'Chat with agent';
         }
         if (location.pathname.startsWith('/agents/')) {
@@ -79,7 +82,12 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
         }
         return 'Agent workspace';
     }
-  }, [location.pathname, selectedAgent?.name, agent_id, prebuiltAgent?.name]);
+  }, [
+    location.pathname,
+    (selectedAgent as { name?: string } | null)?.name,
+    agent_id,
+    prebuiltAgent?.name,
+  ]);
 
   const isChatPage = location.pathname.includes('/chat');
 
