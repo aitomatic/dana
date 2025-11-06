@@ -722,6 +722,8 @@ def validate_plan_success(
         # Check if the action reaches target before meeting starts
         final_schedule_success = schedule_result["reached_temp"]
         final_error = schedule_result["error"]
+        is_comfort = False
+        wasted_minutes = 0
         
         if (schedule_result["reached_temp"] == "success" and
                 meeting_start_time and
@@ -738,14 +740,26 @@ def validate_plan_success(
                                f"but meeting starts at {meeting_start_time}. "
                                f"HVAC should have started earlier to reach target "
                                f"before meeting begins.")
+                is_comfort = False
+                wasted_minutes = 0  # Not wasted, just failed
             else:
                 # Success case - check if there's wasted energy time
                 meeting_time_diff_minutes = meeting_start_minutes - reached_minutes
+                is_comfort = True
+                wasted_minutes = int(max(0, meeting_time_diff_minutes))
                 if meeting_time_diff_minutes > 5:  # More than 5 minutes early
                     final_error = (f"Target reached at {schedule_result['reached_time']}, "
                                    f"meeting starts at {meeting_start_time}. "
                                    f"Wasted energy time: {meeting_time_diff_minutes} min "
                                    f"(target reached {meeting_time_diff_minutes} min before meeting)")
+        elif schedule_result["reached_temp"] == "success":
+            # Success case but no meeting - comfort depends on reaching target
+            is_comfort = True
+            wasted_minutes = int(max(0, schedule_result.get("redundant_time_minutes", 0)))
+        else:
+            # Failed case - not comfortable
+            is_comfort = False
+            wasted_minutes = int(max(0, schedule_result.get("redundant_time_minutes", 0)))
         
         # Store action result
         action_result = {
@@ -761,7 +775,9 @@ def validate_plan_success(
             "time_available_minutes": schedule_result["time_available_minutes"],
             "reached_time": schedule_result["reached_time"],
             "redundant_time_minutes": schedule_result["redundant_time_minutes"],
-            "error": final_error
+            "error": final_error,
+            "is_comfort": is_comfort,
+            "wasted": wasted_minutes
         }
         
         # Add meeting start time if found
