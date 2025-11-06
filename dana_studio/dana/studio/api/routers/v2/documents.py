@@ -11,7 +11,7 @@ from dana.studio.api.routers.v1.extract_documents import deep_extract
 from dana.studio.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 from dana.studio.api.background.task_manager import get_task_manager
 from dana.studio.api.repositories import get_background_task_repo, AbstractBackgroundTaskRepo, get_document_repo, AbstractDocumentRepo
-from dana.studio.api.core.schemas_v2 import BackgroundTaskResponse, ExtractionOutput
+from dana.studio.api.core.schemas_v2 import BackgroundTaskResponse, ExtractionOutput, BackgroundTaskType
 from dana.lang.common.sys_resource.rag import get_global_rag_resource, RAGResourceV2
 
 
@@ -143,6 +143,15 @@ async def get_deep_extraction_status(
     """Get the status of a deep extraction task."""
     task = await bg_repo.get_task_by_id(task_id, db=db)
     return task
+
+
+@router.get("/all-deep-extraction-status", response_model=list[BackgroundTaskResponse])
+async def get_all_deep_extraction_status(
+    db: Session = Depends(get_db), bg_repo: AbstractBackgroundTaskRepo = Depends(get_background_task_repo)
+):
+    """Get the status of all deep extraction tasks."""
+    tasks = await bg_repo.get_tasks_by_type(type=BackgroundTaskType.DEEP_EXTRACT, db=db)
+    return tasks
 
 
 @router.get("/{document_id}", response_model=ExtractionOutput)

@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { apiService } from '@/lib/api';
 import { analytics } from '@/lib/analytics';
+import { useDeepExtractStatusManager } from './deep-extract-status-manager';
 
 function unwrapMarkdownFences(content: string | undefined): string {
   if (!content) return '';
@@ -368,6 +369,12 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
                 selectedFile: updatedSelectedFile,
               };
             });
+
+            // Register with global status manager
+            if (uploaded.task_id && documentId) {
+              const statusManager = useDeepExtractStatusManager.getState();
+              statusManager.registerTask(uploaded.task_id, documentId, file.name);
+            }
           } catch (extractionError: any) {
             // Handle extraction-specific errors
             const errorMessage = extractionError?.message || '';
@@ -587,6 +594,12 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
           selectedFile: updatedSelectedFile,
         };
       });
+
+      // Register with global status manager
+      if (uploaded.task_id && documentId && file.file) {
+        const statusManager = useDeepExtractStatusManager.getState();
+        statusManager.registerTask(uploaded.task_id, documentId, file.file.name);
+      }
 
       closeDuplicateDialog();
     } catch (error: any) {

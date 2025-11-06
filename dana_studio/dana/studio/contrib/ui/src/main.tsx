@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -15,6 +15,7 @@ import StyleGuidePage from './pages/StyleGuide';
 import './index.css';
 import AgentChat from './pages/Agents/chat';
 import { analytics } from './lib/analytics';
+import { useDeepExtractStatusManager } from './stores/deep-extract-status-manager';
 
 // Initialize Google Analytics
 analytics.initialize();
@@ -22,9 +23,24 @@ analytics.initialize();
 // Initialize session tracking
 analytics.initializeSession();
 
+// App wrapper component to initialize deep extract status manager
+function AppWrapper({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    const statusManager = useDeepExtractStatusManager.getState();
+    statusManager.initialize();
+
+    return () => {
+      statusManager.cleanup();
+    };
+  }, []);
+
+  return <>{children}</>;
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <AppWrapper>
+      <BrowserRouter>
       <Toaster
         position="top-right"
         closeButton
@@ -194,6 +210,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/landing" element={<Layout hideLayout={true}><LandingPage /></Layout>} />
         */}
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AppWrapper>
   </StrictMode>,
 );

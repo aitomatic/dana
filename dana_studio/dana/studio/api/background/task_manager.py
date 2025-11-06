@@ -269,34 +269,7 @@ class TaskManager:
 
             if task["type"] == BackgroundTaskType.KNOWLEDGE_GEN:
                 # Load tree structure from domain_knowledge_path
-                self._update_knowledge_gen_status(
-                    task["data"]["knowledge_id"], KnowledgeGenerationStatus.GENERATING, TemplateGenerationStatus.GENERATING
-                )
-
-                knowledge_gen_tool = KnowledgeGenerationTool(
-                    knowledge_id=task["data"]["knowledge_id"],
-                    knowledge_status_path=task["data"]["knowledge_status_path"],
-                    storage_path=task["data"]["storage_path"],
-                    document_paths=task["data"].get("document_paths", []),  # List of document file paths
-                    tree_structure_path=task["data"]["domain_knowledge_path"],
-                    domain=task["data"]["domain"],
-                    role=task["data"]["role"],
-                    tasks=task["data"]["tasks"],
-                )
-
-                # Execute knowledge generation
-                result = Misc.safe_asyncio_run(
-                    knowledge_gen_tool._execute,
-                    user_message="Generate knowledge from pre-generated questions",
-                    counts="Not specified",
-                    context="Background task execution",
-                )
-
-                logger.info(f"Knowledge generation completed for knowledge pack {task['data']['knowledge_id']}: {result.result}")
-
-                self._update_knowledge_gen_status(
-                    task["data"]["knowledge_id"], KnowledgeGenerationStatus.COMPLETED, TemplateGenerationStatus.COMPLETED
-                )
+                self._process_knowledge_gen_task(task)
 
             elif task["type"] == BackgroundTaskType.DEEP_EXTRACT:
                 self._process_deep_extract_task(task)
@@ -314,6 +287,36 @@ class TaskManager:
                 from dana.studio.api.core.schemas_v2 import BackgroundTaskStatus
 
                 self._update_task_status(task_id, BackgroundTaskStatus.FAILED, str(e))
+
+    def _process_knowledge_gen_task(self, task: dict):
+        self._update_knowledge_gen_status(
+            task["data"]["knowledge_id"], KnowledgeGenerationStatus.GENERATING, TemplateGenerationStatus.GENERATING
+        )
+
+        knowledge_gen_tool = KnowledgeGenerationTool(
+            knowledge_id=task["data"]["knowledge_id"],
+            knowledge_status_path=task["data"]["knowledge_status_path"],
+            storage_path=task["data"]["storage_path"],
+            document_paths=task["data"].get("document_paths", []),  # List of document file paths
+            tree_structure_path=task["data"]["domain_knowledge_path"],
+            domain=task["data"]["domain"],
+            role=task["data"]["role"],
+            tasks=task["data"]["tasks"],
+        )
+
+        # Execute knowledge generation
+        result = Misc.safe_asyncio_run(
+            knowledge_gen_tool._execute,
+            user_message="Generate knowledge from pre-generated questions",
+            counts="Not specified",
+            context="Background task execution",
+        )
+
+        logger.info(f"Knowledge generation completed for knowledge pack {task['data']['knowledge_id']}: {result.result}")
+
+        self._update_knowledge_gen_status(
+            task["data"]["knowledge_id"], KnowledgeGenerationStatus.COMPLETED, TemplateGenerationStatus.COMPLETED
+        )
 
     def _process_deep_extract_task(self, task: dict):
         """Process deep extraction task in background."""

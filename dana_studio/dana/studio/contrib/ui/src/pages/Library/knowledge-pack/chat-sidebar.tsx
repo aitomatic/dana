@@ -16,7 +16,7 @@ const SimplePlaceholder: React.FC<{
 }> = ({ isDisabled }) => {
   // If disabled, show disabled message
   if (isDisabled) {
-    return <span className="text-gray-400">Chat disabled - knowledge generation in progress or completed</span>;
+    return <span className="text-gray-400">Chat disabled during generation</span>;
   }
 
   // Simple static placeholder

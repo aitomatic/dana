@@ -1770,9 +1770,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
         if (response.task_id) {
           setBackgroundTaskStatus({
             id: response.task_id,
+            type: 'knowledge_gen',
             status: 'running',
-            progress: 0,
-            error: undefined,
+            data: {},
+            error: null,
           });
         }
 

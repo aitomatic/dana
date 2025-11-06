@@ -16,7 +16,6 @@ import { Check } from 'iconoir-react';
 import { ExtractedFile } from './extracted-file';
 import { cn } from '@/lib/utils';
 import { DuplicateFileDialog } from '@/components/duplicate-file-dialog';
-import { toast } from 'sonner';
 
 // Helper function to get file status
 function getFileStatus(file: any): 'uploading' | 'extracting' | 'ready' | 'error' {
@@ -50,7 +49,6 @@ interface ExtractionFilePopupProps {
 
 export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const activeToastIds = useRef<string[]>([]);
 
   const {
     isExtractionPopupOpen,
@@ -78,48 +76,6 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     // Cleanup: remove callback when component unmounts
     return () => setOnSaveCompletedCallback(undefined);
   }, [onSaveCompleted]); // Remove setOnSaveCompletedCallback from dependencies
-
-  // Monitor deep extraction status changes and show toast notifications
-  useEffect(() => {
-    if (selectedFile) {
-      const status = selectedFile.deep_extraction_status;
-      const taskId = selectedFile.task_id;
-      const fileName = selectedFile.original_filename;
-
-      // Only show toast for files that support deep extraction
-      if (isDeepExtractionSupported(fileName)) {
-        // Show toast when deep extraction starts
-        if (taskId && status === 'running') {
-          const toastId = `deep-extraction-${taskId}`;
-          activeToastIds.current.push(toastId);
-          toast.loading(`Deep extraction in progress for "${fileName}"`, {
-            duration: Infinity,
-            position: 'bottom-left',
-            id: toastId,
-            dismissible: true,
-          });
-        }
-
-        // Show toast when deep extraction fails
-        if (status === 'failed') {
-          const toastId = `deep-extraction-failed-${taskId}`;
-          activeToastIds.current.push(toastId);
-          toast.warning(`Deep extraction failed for "${fileName}"`, {
-            description: 'Standard extraction results are still available.',
-            duration: Infinity,
-            position: 'bottom-left',
-            id: toastId,
-            dismissible: true,
-          });
-        }
-      }
-    }
-  }, [
-    selectedFile?.deep_extraction_status,
-    selectedFile?.task_id,
-    selectedFile?.deep_extracted_documents?.length,
-    selectedFile?.original_filename,
-  ]);
 
   // Determine if buttons should be disabled (during extraction, but allow finishing during deep extraction)
   const isDisabled = isExtracting;

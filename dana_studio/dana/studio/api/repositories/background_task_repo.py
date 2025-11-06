@@ -27,7 +27,16 @@ class AbstractBackgroundTaskRepo(ABC):
 
     @classmethod
     @abstractmethod
-    async def get_tasks(cls, **kwargs) -> list[BackgroundTaskResponse]:
+    async def get_tasks(
+        cls, status: str | BackgroundTaskStatus | list[str | BackgroundTaskStatus] | None = "pending", **kwargs
+    ) -> list[BackgroundTaskResponse]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def get_tasks_by_type(
+        cls, type: str, status: str | BackgroundTaskStatus | list[str | BackgroundTaskStatus] | None = None, **kwargs
+    ) -> list[BackgroundTaskResponse]:
         pass
 
     @classmethod
@@ -98,6 +107,31 @@ class SQLBackgroundTaskRepo(AbstractBackgroundTaskRepo):
             # Convert single enum to string if needed
             status_value = status.value if hasattr(status, "value") else str(status)
             tasks = db.query(BackGroundTask).filter(BackGroundTask.status == status_value).all()
+        return [
+            BackgroundTaskResponse(
+                id=task.id,
+                type=task.type,
+                status=task.status,
+                data=task.data,
+                error=task.error,
+                created_at=task.created_at,
+                updated_at=task.updated_at,
+            )
+            for task in tasks
+        ]
+
+    @classmethod
+    async def get_tasks_by_type(
+        cls, type: str, status: str | BackgroundTaskStatus | list[str | BackgroundTaskStatus] | None = None, **kwargs
+    ) -> list[BackgroundTaskResponse]:
+        conditions = [BackGroundTask.type == type]
+        if status is not None:
+            if isinstance(status, list):
+                conditions.append(BackGroundTask.status.in_(status))
+            else:
+                conditions.append(BackGroundTask.status == status)
+        db = cls._get_db(**kwargs)
+        tasks = db.query(BackGroundTask).filter(*conditions).all()
         return [
             BackgroundTaskResponse(
                 id=task.id,

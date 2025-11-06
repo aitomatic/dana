@@ -52,10 +52,16 @@ export interface DocumentUploadResponse {
 
 export interface BackgroundTaskResponse {
   id: number;
+  type: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
-  progress: number;
-  result?: any;
-  error?: string;
+  data: {
+    document_id?: number;
+    original_filename?: string;
+    [key: string]: any;
+  };
+  error?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 // POET API Types
@@ -639,6 +645,22 @@ class ApiService {
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       },
+    );
+    return response.data;
+  }
+
+  // Get all deep extraction task statuses
+  async getAllDeepExtractionStatus(): Promise<BackgroundTaskResponse[]> {
+    const response = await this.client.get<BackgroundTaskResponse[]>(
+      '/v2/documents/all-deep-extraction-status',
+    );
+    return response.data;
+  }
+
+  // Get specific deep extraction task status
+  async getDeepExtractionStatus(taskId: number): Promise<BackgroundTaskResponse> {
+    const response = await this.client.get<BackgroundTaskResponse>(
+      `/v2/documents/deep-extraction-status/${taskId}`,
     );
     return response.data;
   }
