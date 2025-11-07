@@ -75,6 +75,7 @@ from dana.config.storage_config import FileStorageConfig
 class PlanRequest(BaseModel):
     environment: Dict[str, Any]
     session_id: Optional[str] = "hvac-agent-session-001"
+    with_learner: bool = True
 
 class ValidatePlanRequest(BaseModel):
     environment: Dict[str, Any]
@@ -100,7 +101,7 @@ app.add_middleware(
 # Global agent instance (will be initialized per request with session)
 _agent_cache: Dict[str, Any] = {}
 
-def get_agent_with_session(session_id: str = "hvac-agent-session-001"):
+def get_agent_with_session(session_id: str = "hvac-agent-session-001", with_learner: bool = True):
     """Get or create agent instance for a session."""
     cache_key = f"agent_{session_id}"
     if cache_key not in _agent_cache:
@@ -110,7 +111,8 @@ def get_agent_with_session(session_id: str = "hvac-agent-session-001"):
         )
         agent.enable_notifications(verbose=False)
         agent.set_session_id(session_id)
-        agent._learner = WilliamLearner(agent=agent)
+        if with_learner:
+            agent._learner = WilliamLearner(agent=agent)
         _agent_cache[cache_key] = agent
     return _agent_cache[cache_key]
 
@@ -157,7 +159,7 @@ CURRENT ENVIRONMENT:
                 agent_prompt += f"  - {meeting['start_time']} to {meeting['end_time']}\n"
         
         print(f"Creating HVAC agent for session {session_id}...")
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=request.with_learner)
         print(f"Querying agent with prompt...")
         
         # Run synchronous query in thread pool to avoid event loop conflict
