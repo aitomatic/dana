@@ -1,45 +1,75 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useHVACStore } from '@/stores/hvac-store';
-import { CheckCircle, Clock, Brain } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ConfirmDialog } from '@/components/library/confirm-dialog';
+import { hvacApi } from '@/lib/hvac-api';
 
 export function ExecutionLearningCard({
   learning,
   executionNumber,
+  onDelete,
 }: {
   learning: any;
   executionNumber: number;
+  onDelete: (loopId: string) => Promise<void>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const timestamp = new Date(learning.timestamp).toLocaleString();
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(learning.loop_id);
+    } catch (error) {
+      console.error('Failed to delete learning:', error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
-    <Card className="mb-4">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger className="w-full">
-          <CardHeader className="cursor-pointer p-4 hover:bg-muted/50 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isOpen ? (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                )}
-                <CardTitle className="text-sm">
-                  Execution #{executionNumber} - {timestamp}
-                </CardTitle>
+    <>
+      <Card className="mb-4">
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="cursor-pointer p-4 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex  gap-2">
+                  {isOpen ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
+                  <CardTitle className="text-sm font-medium">
+                    Execution #{executionNumber} - {timestamp}
+                  </CardTitle>
+                </div>
+                <div className="flex  gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-gray-500 hover:text-gray-500 hover:bg-destructive/10"
+                    onClick={handleDeleteClick}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Learned
-              </Badge>
-            </div>
-          </CardHeader>
-        </CollapsibleTrigger>
+            </CardHeader>
+          </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="pt-0 space-y-4">
             {/* Learning Note - Prominently Displayed */}
@@ -73,19 +103,40 @@ export function ExecutionLearningCard({
         </CollapsibleContent>
       </Collapsible>
     </Card>
+    <ConfirmDialog
+      isOpen={showDeleteDialog}
+      onClose={() => setShowDeleteDialog(false)}
+      onConfirm={handleConfirmDelete}
+      title="Delete Learning"
+      description="Are you sure you want to delete this learning? This action cannot be undone."
+      confirmText="Delete"
+      variant="destructive"
+    />
+  </>
   );
 }
 
 export function LearningGrowthTracker() {
-  const { acquisitiveLearnings } = useHVACStore();
+  const { acquisitiveLearnings, currentSession, removeAcquisitiveLearning } = useHVACStore();
+
+  const handleDeleteLearning = async (loopId: string) => {
+    try {
+      const sessionId = currentSession?.session_id || 'hvac-agent-session-001';
+      await hvacApi.deleteAcquisitiveLearning(loopId, sessionId);
+      removeAcquisitiveLearning(loopId);
+    } catch (error) {
+      console.error('Failed to delete learning:', error);
+      throw error;
+    }
+  };
 
   if (acquisitiveLearnings.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-green-500" />
-            Learning Growth Tracker
+         
+            Learned Insights
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -101,8 +152,8 @@ export function LearningGrowthTracker() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Brain className="w-5 h-5 text-green-500" />
-          Learning Growth Tracker ({acquisitiveLearnings.length} learnings)
+    
+          Learned Insights
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -112,6 +163,7 @@ export function LearningGrowthTracker() {
               key={learning.loop_id}
               learning={learning}
               executionNumber={acquisitiveLearnings.length - index}
+              onDelete={handleDeleteLearning}
             />
           ))}
         </div>

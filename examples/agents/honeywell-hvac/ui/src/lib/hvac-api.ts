@@ -57,6 +57,16 @@ export const hvacApi = {
     return data;
   },
 
+  async deleteAcquisitiveLearning(
+    loopId: string,
+    sessionId: string = 'hvac-agent-session-001',
+  ): Promise<{ success: boolean; message: string }> {
+    const { data } = await axios.delete(`${API_BASE}/learnings/acquisitive/${loopId}`, {
+      params: { session_id: sessionId },
+    });
+    return data;
+  },
+
   async getEpisodicLearning(
     sessionId: string = 'hvac-agent-session-001',
   ): Promise<EpisodicLearning> {

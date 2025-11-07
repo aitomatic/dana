@@ -30,6 +30,7 @@ interface HVACState {
   setExecutionStep: (step: ExecutionStep) => void;
   setCurrentSession: (session: Session | null) => void;
   setAcquisitiveLearnings: (learnings: AcquisitiveLearning[]) => void;
+  removeAcquisitiveLearning: (loopId: string) => void;
   setEpisodicLearning: (learning: EpisodicLearning | null) => void;
   setLearningMetrics: (metrics: LearningMetrics | null) => void;
   setCurrentExecutionLearning: (learning: AcquisitiveLearning | null) => void;
@@ -57,6 +58,19 @@ export const useHVACStore = create<HVACState>((set) => ({
   setExecutionStep: (executionStep) => set({ executionStep }),
   setCurrentSession: (currentSession) => set({ currentSession }),
   setAcquisitiveLearnings: (acquisitiveLearnings) => set({ acquisitiveLearnings }),
+  removeAcquisitiveLearning: (loopId) =>
+    set((state) => {
+      const filtered = state.acquisitiveLearnings.filter((l) => l.loop_id !== loopId);
+      // Also clear currentExecutionLearning if it matches the deleted one
+      const clearedCurrent =
+        state.currentExecutionLearning?.loop_id === loopId
+          ? null
+          : state.currentExecutionLearning;
+      return {
+        acquisitiveLearnings: filtered,
+        currentExecutionLearning: clearedCurrent,
+      };
+    }),
   setEpisodicLearning: (episodicLearning) => set({ episodicLearning }),
   setLearningMetrics: (learningMetrics) => set({ learningMetrics }),
   setCurrentExecutionLearning: (currentExecutionLearning) => set({ currentExecutionLearning }),
