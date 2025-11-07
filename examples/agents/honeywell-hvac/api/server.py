@@ -315,7 +315,7 @@ async def list_sessions():
 async def get_acquisitive_learnings(session_id: str = "hvac-agent-session-001"):
     """Get all acquisitive learnings for a session"""
     try:
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Load acquisitive learnings
         acquisitive_learnings = await asyncio.to_thread(agent._learner._load_acquisitive)
