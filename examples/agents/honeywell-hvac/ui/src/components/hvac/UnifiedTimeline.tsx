@@ -395,7 +395,7 @@ export function UnifiedTimeline() {
                   }}
                 >
                   <div className="flex items-center text-xs font-semibold">
-                    <Calendar className="w-3 h-3 mr-1" />
+                   
                     Meeting
                   </div>
                   <div className="text-[10px] opacity-90">
@@ -426,7 +426,7 @@ export function UnifiedTimeline() {
                   }}
                 >
                   <div className="flex items-center text-xs font-semibold">
-                    <Clock className="w-3 h-3 mr-1" />
+             
                     {isCool ? 'Cooling' : 'Heating'}
                     {action.use_turbo && (
                       <span className="bg-orange-500 px-1 rounded text-[10px] ml-1">TURBO</span>

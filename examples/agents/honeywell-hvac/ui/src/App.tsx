@@ -13,9 +13,10 @@ import { useHVACStore } from './stores/hvac-store';
 
 export default function App() {
   const { loadLearnings } = useHVACFlow();
-  const { currentSession, agentPlan, feedback, environment } = useHVACStore();
+  const { currentSession, agentPlan, feedback, environment, isLoading } = useHVACStore();
   const [showFeedback, setShowFeedback] = useState(false);
   const [showLearning, setShowLearning] = useState(false);
+  const [hasRunAgent, setHasRunAgent] = useState(false);
 
   useEffect(() => {
     if (currentSession) {
@@ -47,9 +48,19 @@ export default function App() {
     }
   }, [feedback, showFeedback]);
 
+  // Track if agent has been run - hide Learned Insights once agent runs
+  useEffect(() => {
+    if (isLoading || agentPlan) {
+      setHasRunAgent(true);
+    }
+  }, [isLoading, agentPlan]);
+
+  // Show Learned Insights only on first arrival (before any agent run)
+  const showLearnedInsights = !hasRunAgent;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border px-6 py-4">
+      <header className="border-border px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">HVAC Agent Demo</h1>
@@ -96,10 +107,10 @@ export default function App() {
           </div>
         )}
 
-        {/* Right Panel: New Learning + Learned Insights - Always visible */}
+        {/* Right Panel: New Learning + Learned Insights */}
         <div className={`space-y-4 overflow-y-auto ${feedback ? 'col-span-3' : 'col-span-12'}`}>
-          {showLearning && <CurrentLearningHighlight />}
-          <LearningGrowthTracker />
+          {showLearning && <CurrentLearningHighlight onShowLearnedInsights={() => setHasRunAgent(false)} />}
+          {showLearnedInsights && <LearningGrowthTracker />}
         </div>
       </main>
     </div>

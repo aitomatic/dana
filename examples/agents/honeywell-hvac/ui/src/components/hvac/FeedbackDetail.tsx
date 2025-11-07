@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useHVACStore } from '@/stores/hvac-store';
 import { Clock, Zap } from 'lucide-react';
-import { useState } from 'react';
 import {
   Line,
   XAxis,
@@ -15,11 +14,10 @@ import {
   ResponsiveContainer,
   ComposedChart,
 } from 'recharts';
-import { calculateTemperaturePoints, parseTimeToMinutes } from '@/lib/temperature-calculator';
+import { calculateTemperaturePoints, parseTimeToMinutes, minutesToTime } from '@/lib/temperature-calculator';
 
 export function FeedbackDetail() {
   const { feedback, environment, agentPlan } = useHVACStore();
-  const [hoveredReachedTarget, setHoveredReachedTarget] = useState<number | null>(null);
 
   if (!feedback) {
     return (
@@ -60,20 +58,65 @@ export function FeedbackDetail() {
                   time: point.time,
                   minutes: point.minutes,
                   indoor: point.indoorTemp,
-                  outdoor: point.outdoorTemp,
                   target: point.targetTemp || null,
                 }));
+
+                // Calculate Y-axis domain and ticks based on actual data range
+                const allTemps = chartData.flatMap((p) => [p.indoor, p.target].filter(Boolean)) as number[];
+                const minTemp = Math.min(...allTemps);
+                const maxTemp = Math.max(...allTemps);
+                const yAxisMin = Math.floor(minTemp / 10) * 10;
+                const yAxisMax = Math.ceil(maxTemp / 10) * 10;
+                const domainRange = yAxisMax - yAxisMin;
+                
+                // Use 5°F intervals if range < 30°F to ensure at least 4 ticks, otherwise use 10°F intervals
+                const tickInterval = domainRange < 30 ? 5 : 10;
+                const yAxisTicks: number[] = [];
+                for (let i = yAxisMin; i <= yAxisMax; i += tickInterval) {
+                  yAxisTicks.push(i);
+                }
+                
+                // Ensure at least 4 ticks
+                if (yAxisTicks.length < 4) {
+                  // Expand domain if needed to get at least 4 ticks
+                  const neededRange = (4 - 1) * tickInterval;
+                  const center = (yAxisMin + yAxisMax) / 2;
+                  const expandedMin = Math.floor((center - neededRange / 2) / tickInterval) * tickInterval;
+                  const expandedMax = Math.ceil((center + neededRange / 2) / tickInterval) * tickInterval;
+                  yAxisTicks.length = 0;
+                  for (let i = expandedMin; i <= expandedMax; i += tickInterval) {
+                    yAxisTicks.push(i);
+                  }
+                }
+
+                // Calculate X-axis ticks at 30-minute intervals
+                const minMinutes = Math.min(...chartData.map(p => p.minutes));
+                const maxMinutes = Math.max(...chartData.map(p => p.minutes));
+                const xAxisTicks: string[] = [];
+                // Round down to nearest 30-minute interval
+                const startMinutes = Math.floor(minMinutes / 30) * 30;
+                // Round up to nearest 30-minute interval
+                const endMinutes = Math.ceil(maxMinutes / 30) * 30;
+                for (let minutes = startMinutes; minutes <= endMinutes; minutes += 30) {
+                  xAxisTicks.push(minutesToTime(minutes));
+                }
 
                 // Prepare reached target data for custom rendering
                 const reachedTargets = feedback.action_results
                   .map((action, i) => {
                     if (!action.reached_time) return null;
                     const reachedMinutes = parseTimeToMinutes(action.reached_time);
-                    const closestPointIndex = chartData.findIndex(
-                      (point) => Math.abs(point.minutes - reachedMinutes) < 30
-                    );
-                    if (closestPointIndex === -1) return null;
-                    return { action, index: i, closestPointIndex, targetTemp: action.target_temp_f };
+                    const closestPointWithIndex = chartData.reduce((closest, point, index) => {
+                      const currentDiff = Math.abs(point.minutes - reachedMinutes);
+                      const closestDiff = closest ? Math.abs(chartData[closest.index].minutes - reachedMinutes) : Infinity;
+                      return currentDiff < closestDiff ? { point, index } : closest;
+                    }, null as { point: typeof chartData[0]; index: number } | null);
+                    
+                    if (!closestPointWithIndex || Math.abs(closestPointWithIndex.point.minutes - reachedMinutes) >= 30) {
+                      return null;
+                    }
+                    const closestPointIndex = closestPointWithIndex.index;
+                    return { action, index: i, closestPointIndex, targetTemp: action.target_temp_f, reachedMinutes };
                   })
                   .filter((item): item is NonNullable<typeof item> => item !== null);
 
@@ -94,6 +137,8 @@ export function FeedbackDetail() {
                           stroke="rgba(255, 255, 255, 0.8)"
                           tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
                           label={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
+                          ticks={xAxisTicks}
+                          interval={0}
                         />
                         <YAxis
                           stroke="rgba(255, 255, 255, 0.8)"
@@ -106,6 +151,8 @@ export function FeedbackDetail() {
                             fontSize: 12,
                             fill: 'rgba(255, 255, 255, 0.8)',
                           }}
+                          domain={[yAxisTicks[0], yAxisTicks[yAxisTicks.length - 1]]}
+                          ticks={yAxisTicks}
                         />
                         <Tooltip
                           contentStyle={{
@@ -117,9 +164,7 @@ export function FeedbackDetail() {
                             `${value.toFixed(1)}°F`,
                             name === 'indoor'
                               ? 'Indoor'
-                              : name === 'outdoor'
-                                ? 'Outdoor'
-                                : 'Target',
+                              : 'Target',
                           ]}
                         />
                         <Legend />
@@ -138,11 +183,16 @@ export function FeedbackDetail() {
                         {environment.meeting_plan.map((meeting, i) => {
                           // Find the data point closest to meeting start time
                           const meetingStartMinutes = parseTimeToMinutes(meeting.start_time);
-                          const closestPoint = chartData.find(
-                            (point) => Math.abs(point.minutes - meetingStartMinutes) < 30
-                          );
+                          const closestPoint = chartData.reduce((closest, point) => {
+                            const currentDiff = Math.abs(point.minutes - meetingStartMinutes);
+                            const closestDiff = closest ? Math.abs(closest.minutes - meetingStartMinutes) : Infinity;
+                            return currentDiff < closestDiff ? point : closest;
+                          }, null as typeof chartData[0] | null);
                           
-                          if (!closestPoint) return null;
+                          // Only render if within reasonable distance (e.g., 30 minutes)
+                          if (!closestPoint || Math.abs(closestPoint.minutes - meetingStartMinutes) >= 30) {
+                            return null;
+                          }
                           
                           return (
                             <ReferenceLine
@@ -163,9 +213,27 @@ export function FeedbackDetail() {
                           );
                         })}
 
-                        {/* Reference lines for target reached times */}
+                        {/* Reference lines for target reached times with triangular indicators */}
                         {reachedTargets.map(({ index: i, closestPointIndex, targetTemp }) => {
                           const closestPoint = chartData[closestPointIndex];
+                          if (!closestPoint) return null;
+                          
+                          // Custom label renderer for triangle - receives Recharts label props
+                          const TriangleLabel = (props: any) => {
+                            // Recharts passes x, y, and viewBox to label functions
+                            const x = props.x ?? props.viewBox?.x ?? 0;
+                            const y = props.y ?? props.viewBox?.y ?? 0;
+                            
+                            return (
+                              <g>
+                                {/* Triangle pointing down at intersection */}
+                                <polygon
+                                  points={`${x},${y} ${x - 6},${y + 8} ${x + 6},${y + 8}`}
+                                  fill="hsl(25, 95%, 53%)"
+                                />
+                              </g>
+                            );
+                          };
                           
                           return (
                             <ReferenceLine
@@ -175,20 +243,10 @@ export function FeedbackDetail() {
                               stroke="hsl(25, 95%, 53%)"
                               strokeWidth={2}
                               strokeDasharray="0"
+                              label={TriangleLabel}
                             />
                           );
                         })}
-
-                        {/* Outdoor temperature line (dashed) */}
-                        <Line
-                          type="monotone"
-                          dataKey="outdoor"
-                          stroke="hsl(210, 100%, 50%)"
-                          strokeDasharray="5 5"
-                          strokeWidth={2}
-                          dot={false}
-                          name="Outdoor"
-                        />
 
                         {/* Indoor temperature line */}
                         <Line
@@ -201,69 +259,6 @@ export function FeedbackDetail() {
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
-                    
-                    {/* Triangular indicators for reached targets */}
-                    {reachedTargets.map(({ action, index: i, closestPointIndex, targetTemp }) => {
-                      // Calculate positions relative to chart container
-                      const chartAreaHeight = 256 - 45; // h-64 = 256px, minus margins (top: 40, bottom: 5)
-                      const dataLength = chartData.length;
-                      
-                      // Calculate x position based on data point index (matching Recharts categorical spacing)
-                      // Recharts spaces categorical data evenly, so we use index-based calculation
-                      // Account for left margin (40px) and right margin (20px)
-                      // The chart area width is container width - 60px (40 + 20)
-                      // Position within chart area: index / (length - 1) for even spacing
-                      const positionInChart = dataLength > 1 ? closestPointIndex / (dataLength - 1) : 0.5;
-                      
-                      // Calculate percentage: left margin + position in chart area
-                      // Using calc() approach: left margin is ~5% (40px of ~800px), chart area is ~92.5%
-                      const leftMarginPercent = 5;
-                      const chartAreaWidthPercent = 92.5;
-                      const xPercent = leftMarginPercent + (positionInChart * chartAreaWidthPercent);
-                      
-                      // Calculate y position for target temperature
-                      const allTemps = chartData.flatMap((p) =>
-                        [p.indoor, p.outdoor, p.target].filter(Boolean),
-                      );
-                      const minTemp = Math.min(...(allTemps as number[]));
-                      const maxTemp = Math.max(...(allTemps as number[]));
-                      const tempRange = maxTemp - minTemp || 1;
-                      const normalizedY = ((targetTemp - minTemp) / tempRange) * chartAreaHeight;
-                      const targetYPercent = ((40 + chartAreaHeight - normalizedY) / 256) * 100;
-                      
-                      return (
-                        <div
-                          key={`triangle-${i}`}
-                          className="absolute pointer-events-none"
-                          style={{
-                            left: `${xPercent}%`,
-                            top: `${targetYPercent}%`,
-                            transform: 'translate(-50%, -100%)',
-                          }}
-                        >
-                          <div
-                            className="relative"
-                            onMouseEnter={() => setHoveredReachedTarget(i)}
-                            onMouseLeave={() => setHoveredReachedTarget(null)}
-                            style={{ cursor: 'pointer', pointerEvents: 'auto' }}
-                          >
-                            {/* Triangle */}
-                            <div
-                              className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent"
-                              style={{ borderBottomColor: 'hsl(25, 95%, 53%)' }}
-                            />
-                            {/* Tooltip */}
-                            {hoveredReachedTarget === i && (
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap">
-                                <div className="inline-flex items-center rounded-md bg-orange-500/90 text-white text-xs font-medium px-2 py-1 shadow-sm">
-                                  Reached target at {action.reached_time}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
                   </div>
                 );
               })()}
@@ -335,8 +330,11 @@ export function FeedbackDetail() {
                     </div>
                   )}
                   {action.reached_time && (
-                    <div className="text-muted-foreground">
-                      <span className="font-medium">Reached target:</span> {action.reached_time}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-muted-foreground">Reached target:</span>
+                      <Badge variant="outline" className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30">
+                        {action.reached_time}
+                      </Badge>
                     </div>
                   )}
                   {action.cost_kwh && (

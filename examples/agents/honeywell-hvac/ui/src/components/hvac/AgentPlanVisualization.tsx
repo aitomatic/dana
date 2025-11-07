@@ -51,13 +51,9 @@ export function AgentPlanVisualization() {
       <CardContent className="space-y-4">
         {/* Summary Section */}
         <div className="space-y-3">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 space-between ">
             <div className="flex items-center gap-2">
-              {agentPlan.mode === 'cool' ? (
-                <Snowflake className="w-5 h-5 text-blue-500" />
-              ) : (
-                <Flame className="w-5 h-5 text-red-500" />
-              )}
+             
               <Badge 
                 variant="default" 
                 className={
@@ -66,6 +62,11 @@ export function AgentPlanVisualization() {
                     : 'bg-red-500 text-white'
                 }
               >
+                 {agentPlan.mode === 'cool' ? (
+                <Snowflake className="w-5 h-5 mr-2 " />
+              ) : (
+                <Flame className="w-5 h-5 mr-2 " />
+              )}
                 {agentPlan.mode === 'cool' ? 'Cooling' : 'Heating'} Mode
               </Badge>
             </div>
@@ -76,15 +77,7 @@ export function AgentPlanVisualization() {
                 {uniqueTargets.map(t => `${t}°F`).join(', ')}
               </span>
             </div>
-            
-            {turboActionsCount > 0 && (
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-yellow-500" />
-                <Badge variant="outline" className="border-yellow-500 text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10">
-                  {turboActionsCount} Turbo
-                </Badge>
-              </div>
-            )}
+
           </div>
           
           <div className="grid grid-cols-4 gap-4 text-sm">
@@ -116,6 +109,19 @@ export function AgentPlanVisualization() {
               </div>
             </div>
           </div>
+          
+          {/* Learning Indicators */}
+          {acquisitiveLearnings.length > 0 && (
+            <div className="pt-2">
+              <Badge
+                variant="outline"
+                className="border-success-500 text-success-700 dark:text-success-400 bg-success-50 dark:bg-success-500/10 justify-start p-2"
+              >
+                <Brain className="w-4 h-4 mr-1" />
+                {acquisitiveLearnings.length} previous learning{acquisitiveLearnings.length !== 1 ? 's' : ''} inform this plan
+              </Badge>
+            </div>
+          )}
         </div>
         
         <Separator />
