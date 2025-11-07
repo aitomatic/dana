@@ -76,17 +76,7 @@ export function AgentPlanVisualization() {
                 {uniqueTargets.map(t => `${t}°F`).join(', ')}
               </span>
             </div>
-            {acquisitiveLearnings.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10"
-                >
-                  <Brain className="w-4 h-4 mr-1" />
-                  Informed by {acquisitiveLearnings.length} learning{acquisitiveLearnings.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            )}
+            
             {turboActionsCount > 0 && (
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-yellow-500" />

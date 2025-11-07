@@ -39,7 +39,8 @@ class SingleRoomEnvironment:
         Randomly varies throughout extended hours (08:00-21:59).
         """
         hour = random.randint(8, 21)
-        minute = random.randint(0, 59)
+        minute = random.randint(0, 1)
+        minute = minute * 30
         return f"{hour:02d}:{minute:02d}"
 
     def get_outdoor_temperature(self) -> float:

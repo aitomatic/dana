@@ -13,7 +13,7 @@ import { useHVACStore } from './stores/hvac-store';
 
 export default function App() {
   const { loadLearnings } = useHVACFlow();
-  const { currentSession, agentPlan, feedback } = useHVACStore();
+  const { currentSession, agentPlan, feedback, environment } = useHVACStore();
   const [showFeedback, setShowFeedback] = useState(false);
   const [showLearning, setShowLearning] = useState(false);
 
@@ -50,7 +50,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">HVAC Agent Demo</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -62,28 +62,32 @@ export default function App() {
             <LearningMetrics />
           </div>
         </div>
+        <ExecutionProgress 
+          showPlanComplete={!!agentPlan}
+          showValidationComplete={showFeedback}
+          showLearningComplete={showLearning}
+        />
+        {environment && (
+          <div className="mt-4 animate-fade-in-up">
+            <EnvironmentPanel />
+          </div>
+        )}
       </header>
 
-      <main className="grid grid-cols-12 gap-4 p-6 h-[calc(100vh-100px)]">
-        {/* Left Panel: Environment + Execution Progress */}
-        <div className="col-span-3 space-y-4 overflow-y-auto">
-          <EnvironmentPanel />
-          <ExecutionProgress 
-            showPlanComplete={!!agentPlan}
-            showValidationComplete={showFeedback}
-            showLearningComplete={showLearning}
-          />
+      <main className="grid grid-cols-12 gap-4 p-6 ]">
+        {/* Left Panel: Agent Plan */}
+        <div className="col-span-4 space-y-4 overflow-y-auto">
+          {agentPlan && (
+            <div className="animate-fade-in-up animation-delay-100">
+              <AgentPlanVisualization />
+            </div>
+          )}
         </div>
 
-        {/* Center Panel: Agent Plan + Feedback + Accumulated Knowledge */}
-        {(agentPlan || feedback) && (
-          <div className="col-span-6 space-y-4 overflow-y-auto animate-fade-in-up">
-            {agentPlan && (
-              <div className="animate-fade-in-up animation-delay-100">
-                <AgentPlanVisualization />
-              </div>
-            )}
-            {feedback && showFeedback && (
+        {/* Center Panel: Feedback + Accumulated Knowledge */}
+        {feedback && (
+          <div className="col-span-5 space-y-4 overflow-y-auto animate-fade-in-up">
+            {showFeedback && (
               <div className="animate-fade-in-up animation-delay-200">
                 <FeedbackDetail />
               </div>
@@ -92,8 +96,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Right Panel: New Learning + Learned Insights */}
-        <div className="col-span-3 space-y-4 overflow-y-auto">
+        {/* Right Panel: New Learning + Learned Insights - Always visible */}
+        <div className={`space-y-4 overflow-y-auto ${feedback ? 'col-span-3' : 'col-span-12'}`}>
           {showLearning && <CurrentLearningHighlight />}
           <LearningGrowthTracker />
         </div>

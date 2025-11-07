@@ -47,10 +47,10 @@ export function CurrentLearningHighlight() {
       }`}
     >
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex  items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-green-500" />
-            New Learning from This Execution
+            New Learning
           </CardTitle>
           {isNew && (
             <Badge className="bg-green-500 text-white animate-pulse">

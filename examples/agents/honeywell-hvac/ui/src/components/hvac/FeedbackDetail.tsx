@@ -86,22 +86,25 @@ export function FeedbackDetail() {
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
-                          stroke="hsl(var(--muted-foreground))"
+                          stroke="rgba(255, 255, 255, 0.8)"
                           opacity={0.2}
                         />
                         <XAxis
                           dataKey="time"
-                          stroke="hsl(var(--muted-foreground))"
-                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                          stroke="rgba(255, 255, 255, 0.8)"
+                          tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
+                          label={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
                         />
                         <YAxis
-                          stroke="hsl(var(--muted-foreground))"
-                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                          stroke="rgba(255, 255, 255, 0.8)"
+                          tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
                           label={{
                             value: 'Temperature (°F)',
                             angle: -90,
                             position: 'left',
                             offset: 10,
+                            fontSize: 12,
+                            fill: 'rgba(255, 255, 255, 0.8)',
                           }}
                         />
                         <Tooltip
@@ -312,11 +315,11 @@ export function FeedbackDetail() {
                   </div>
                   {action.schedule_success === 'success' ? (
                     <Badge variant="default" className="bg-success-500 text-white text-xs">
-                      Success
+                      Satisfied
                     </Badge>
                   ) : (
                     <Badge variant="destructive" className="bg-error-500 text-white">
-                      Failed
+                      Dissatisfied
                     </Badge>
                   )}
                 </div>
@@ -347,7 +350,7 @@ export function FeedbackDetail() {
                 </div>
 
                 {action.error && (
-                  <div className="mt-2 text-sm font-medium dark:bg-error-500/20 rounded">
+                  <div className="mt-2 text-sm font-medium  rounded">
                     {action.error}
                   </div>
                 )}
