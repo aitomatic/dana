@@ -62,6 +62,11 @@ export function useHVACFlow() {
 
   const runFlow = useCallback(async () => {
     try {
+      // Clear previous run's data to hide cards immediately
+      setAgentPlan(null);
+      setFeedback(null);
+      setCurrentExecutionLearning(null);
+      
       setLoading(true);
       setError(null);
 
@@ -76,7 +81,7 @@ export function useHVACFlow() {
       // Step 2: Get agent plan (this triggers acquisitive learning automatically)
       setExecutionStep('planning');
       const previousLearningsCount = store.acquisitiveLearnings.length;
-      const plan = await hvacApi.createPlan(env, sessionId);
+      const plan = await hvacApi.createPlan(env, sessionId, store.withLearner);
       setAgentPlan(plan);
       await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -134,6 +139,7 @@ export function useHVACFlow() {
     setLearningMetrics,
     currentSession,
     store.acquisitiveLearnings.length,
+    store.withLearner,
   ]);
 
   const loadLearningsForSession = useCallback(

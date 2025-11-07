@@ -8,12 +8,13 @@ import { AccumulatedKnowledgePanel } from './components/hvac/AccumulatedKnowledg
 import { CurrentLearningHighlight } from './components/hvac/CurrentLearningHighlight';
 import { SessionSelector } from './components/hvac/SessionSelector';
 import { LearningMetrics } from './components/hvac/LearningMetrics';
+import { LearningModeToggle } from './components/hvac/LearningModeToggle';
 import { useHVACFlow } from './hooks/use-hvac-flow';
 import { useHVACStore } from './stores/hvac-store';
 
 export default function App() {
   const { loadLearnings } = useHVACFlow();
-  const { currentSession, agentPlan, feedback, environment, isLoading } = useHVACStore();
+  const { currentSession, agentPlan, feedback, environment, isLoading, withLearner } = useHVACStore();
   const [showFeedback, setShowFeedback] = useState(false);
   const [showLearning, setShowLearning] = useState(false);
   const [hasRunAgent, setHasRunAgent] = useState(false);
@@ -23,6 +24,15 @@ export default function App() {
       loadLearnings(currentSession.session_id);
     }
   }, [currentSession, loadLearnings]);
+
+  // Reset local state when runFlow starts
+  useEffect(() => {
+    if (isLoading) {
+      // Reset local state when runFlow starts (isLoading becomes true)
+      setShowFeedback(false);
+      setShowLearning(false);
+    }
+  }, [isLoading]);
 
   // Show feedback card 5 seconds after agent plan appears
   useEffect(() => {
@@ -69,6 +79,7 @@ export default function App() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <LearningModeToggle />
             <SessionSelector />
             <LearningMetrics />
           </div>
@@ -109,7 +120,7 @@ export default function App() {
 
         {/* Right Panel: New Learning + Learned Insights */}
         <div className={`space-y-4 overflow-y-auto ${feedback ? 'col-span-3' : 'col-span-12'}`}>
-          {showLearning && <CurrentLearningHighlight onShowLearnedInsights={() => setHasRunAgent(false)} />}
+          {showLearning && withLearner && <CurrentLearningHighlight onShowLearnedInsights={() => setHasRunAgent(false)} />}
           {showLearnedInsights && <LearningGrowthTracker />}
         </div>
       </main>

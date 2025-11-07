@@ -21,10 +21,12 @@ export const hvacApi = {
   async createPlan(
     environment: Environment,
     sessionId?: string,
+    withLearner?: boolean,
   ): Promise<AgentPlan> {
     const { data } = await axios.post(`${API_BASE}/plan`, {
       environment,
       session_id: sessionId,
+      with_learner: withLearner,
     });
     return data;
   },

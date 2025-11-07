@@ -102,19 +102,63 @@ app.add_middleware(
 _agent_cache: Dict[str, Any] = {}
 
 def get_agent_with_session(session_id: str = "hvac-agent-session-001", with_learner: bool = True):
-    """Get or create agent instance for a session."""
-    cache_key = f"agent_{session_id}"
-    if cache_key not in _agent_cache:
-        agent = HVACAgent(
-            agent_id="hvac-agent-001",
-            model="gpt-4.1",
-        )
-        agent.enable_notifications(verbose=False)
-        agent.set_session_id(session_id)
-        if with_learner:
-            agent._learner = WilliamLearner(agent=agent)
-        _agent_cache[cache_key] = agent
-    return _agent_cache[cache_key]
+    """Get or create agent instance for a session.
+    
+    Args:
+        session_id: Session identifier
+        with_learner: Whether to create agent with learner enabled
+        
+    Returns:
+        HVACAgent instance with appropriate learner configuration
+    """
+    # Include with_learner in cache key to ensure separate cache entries for each mode
+    cache_key = f"agent_{session_id}_{with_learner}"
+    
+    # Check if cached agent exists and matches requested configuration
+    if cache_key in _agent_cache:
+        cached_agent = _agent_cache[cache_key]
+        # Validate that cached agent matches requested with_learner setting
+        has_learner = cached_agent._learner is not None
+        if has_learner == with_learner:
+            return cached_agent
+        else:
+            # Mismatch detected - remove from cache and create new agent
+            print(f"Warning: Cached agent learner mismatch for {session_id}. Recreating agent.")
+            del _agent_cache[cache_key]
+    
+    # Create new agent instance
+    agent = HVACAgent(
+        agent_id="hvac-agent-001",
+        model="gpt-4.1",
+    )
+    agent.enable_notifications(verbose=False)
+    agent.set_session_id(session_id)
+    if with_learner:
+        agent._learner = WilliamLearner(agent=agent)
+    _agent_cache[cache_key] = agent
+    return agent
+
+def clear_agent_cache(session_id: Optional[str] = None):
+    """Clear agent cache for a specific session or all sessions.
+    
+    Args:
+        session_id: If provided, clears cache only for this session (both with/without learner).
+                   If None, clears entire cache.
+    """
+    if session_id:
+        # Clear both with_learner=True and with_learner=False entries for this session
+        keys_to_remove = [
+            key for key in _agent_cache.keys()
+            if key.startswith(f"agent_{session_id}_")
+        ]
+        for key in keys_to_remove:
+            del _agent_cache[key]
+        print(f"Cleared agent cache for session: {session_id} ({len(keys_to_remove)} entries)")
+    else:
+        # Clear entire cache
+        count = len(_agent_cache)
+        _agent_cache.clear()
+        print(f"Cleared entire agent cache ({count} entries)")
 
 def get_learner_storage_path(agent, session_id: str) -> Path:
     """Get the storage path for learnings."""
@@ -262,8 +306,8 @@ async def create_session(request: SessionRequest):
     try:
         session_id = request.session_id or f"hvac-agent-session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
-        # Initialize agent for this session
-        agent = get_agent_with_session(session_id)
+        # Initialize agent for this session (with learner to access learnings)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Count learnings
         learnings_count = 0
@@ -289,7 +333,7 @@ async def list_sessions():
     """List available sessions (simplified - returns default session)"""
     try:
         default_session = "hvac-agent-session-001"
-        agent = get_agent_with_session(default_session)
+        agent = get_agent_with_session(default_session, with_learner=True)
         
         learnings_count = 0
         try:
@@ -361,7 +405,7 @@ async def get_acquisitive_learnings(session_id: str = "hvac-agent-session-001"):
 async def delete_acquisitive_learning(loop_id: str, session_id: str = "hvac-agent-session-001"):
     """Delete a specific acquisitive learning by loop_id"""
     try:
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Get storage path
         storage_path = agent._learner._get_acquisitive_storage_path()
@@ -398,7 +442,7 @@ async def delete_acquisitive_learning(loop_id: str, session_id: str = "hvac-agen
 async def get_episodic_learning(session_id: str = "hvac-agent-session-001"):
     """Get episodic learning for a session"""
     try:
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Load episodic learning
         episodic_content = await asyncio.to_thread(agent._learner._load_episodic)
@@ -427,12 +471,11 @@ async def get_episodic_learning(session_id: str = "hvac-agent-session-001"):
 async def trigger_episodic_learning(session_id: str = "hvac-agent-session-001"):
     """Trigger episodic learning for a session"""
     try:
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Run episodic learning
         trace_learning = await asyncio.to_thread(agent._learner._reflect_episodic, {})
         learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
-        await asyncio.to_thread(agent._learner._store_episodic_learning, learning_content)
         
         return {
             "success": True,
@@ -449,7 +492,7 @@ async def trigger_episodic_learning(session_id: str = "hvac-agent-session-001"):
 async def get_stored_feedback(session_id: str = "hvac-agent-session-001"):
     """Get stored feedback for a session"""
     try:
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Load feedback
         feedback_content = await asyncio.to_thread(agent._learner._load_feedback)
@@ -481,7 +524,7 @@ async def save_feedback(request: FeedbackRequest):
         session_id = request.session_id or "hvac-agent-session-001"
         feedback_content = request.feedback
         
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Save feedback
         await asyncio.to_thread(agent._learner.save_feedback, feedback_content)
@@ -500,7 +543,7 @@ async def save_feedback(request: FeedbackRequest):
 async def get_learning_metrics(session_id: str = "hvac-agent-session-001"):
     """Get learning metrics for a session"""
     try:
-        agent = get_agent_with_session(session_id)
+        agent = get_agent_with_session(session_id, with_learner=True)
         
         # Load learnings
         acquisitive_learnings = await asyncio.to_thread(agent._learner._load_acquisitive)
