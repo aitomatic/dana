@@ -432,6 +432,7 @@ async def trigger_episodic_learning(session_id: str = "hvac-agent-session-001"):
         # Run episodic learning
         trace_learning = await asyncio.to_thread(agent._learner._reflect_episodic, {})
         learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
+        await asyncio.to_thread(agent._learner._store_episodic_learning, learning_content)
         
         return {
             "success": True,
