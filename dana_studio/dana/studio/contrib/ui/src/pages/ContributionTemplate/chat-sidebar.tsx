@@ -7,6 +7,14 @@ import { toast } from 'sonner';
 import { HybridRenderer } from '@/pages/Agents/chat/hybrid-renderer';
 import { DiffRenderer } from '@/components/animated-diff';
 import { parseDiffResponse, getChangedSections } from '@/lib/diff-utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { IconChevronDown } from '@tabler/icons-react';
 
 // CSS for blinking cursor animation
 const cursorBlinkStyle = `
@@ -221,6 +229,7 @@ const ContributionTemplateChat: React.FC<{
   const [isFocused, setIsFocused] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+  const [chatMode, setChatMode] = useState<'chat' | 'editor'>('chat');
 
   // Create template-specific chat store
   const useTemplateChatStore = useMemo(() => {
@@ -331,7 +340,7 @@ const ContributionTemplateChat: React.FC<{
         setIsHistoryExpanded(true);
 
         // Send message via contribution store
-        const result = await sendMessage(userInput);
+        const result = await sendMessage(userInput, chatMode);
 
         // Remove the thinking message by ID if it exists
         if (thinkingMessageId) {
@@ -413,6 +422,7 @@ const ContributionTemplateChat: React.FC<{
       deactivateAllButtons,
       sendMessage,
       useTemplateChatStore,
+      chatMode,
     ],
   );
 
@@ -596,7 +606,27 @@ const ContributionTemplateChat: React.FC<{
             </button>
           </div>
         ) : (
-          <div className="relative">
+          <div className="flex flex-col gap-2">
+            {/* Mode Dropdown */}
+            <div className="flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    Mode: {chatMode === 'chat' ? 'Chat' : 'Editor'}
+                    <IconChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setChatMode('chat')}>
+                    Chat
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setChatMode('editor')}>
+                    Editor
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="relative">
             {/* Animated placeholder overlay */}
             {!input && !isSendingMessage && (
               <div className="absolute top-3 left-3 z-10 text-sm text-gray-500 pointer-events-none">
@@ -642,6 +672,7 @@ const ContributionTemplateChat: React.FC<{
                 <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
               </button>
             )}
+            </div>
           </div>
         )}
       </div>

@@ -50,7 +50,7 @@ export interface ContributionActions {
   duplicateCurrentTemplate: () => Promise<void>;
 
   // Interview Chat
-  sendMessage: (message: string) => Promise<{
+  sendMessage: (message: string, mode?: 'chat' | 'editor') => Promise<{
     response: string;
     templateModified: boolean;
     templateDiff?: any;
@@ -277,7 +277,7 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
   // Interview Chat
   // ========================================
 
-  sendMessage: async (message: string) => {
+  sendMessage: async (message: string, mode?: 'chat' | 'editor') => {
     const { currentTemplate } = get();
 
     if (!currentTemplate) {
@@ -296,6 +296,7 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
       const response: TemplateFinetuneChannelResponse = await apiService.chatWithTemplate(
         currentTemplate.id,
         message,
+        { mode: mode || 'chat' },
       );
 
       if (response.success) {

@@ -150,7 +150,7 @@ class TemplateFinetuneHandler(AbstractHandler):
         conversation = request.chat_history
 
         if len(conversation) >= 10:  # FOR NOW, ONLY USE LAST 10 MESSAGES
-            conversation = conversation[-10:]
+            conversation = [conversation[0]] + conversation[-10:]
 
         # Track if template was modified
         template_modified = False

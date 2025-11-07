@@ -22,6 +22,9 @@ from dana.studio.api.repositories import (
 from dana.studio.api.repositories.interview_template_repo import AbstractInterviewTemplateRepo
 from dana.studio.api.repositories.domain_knowledge_repo import AbstractDomainKnowledgeRepo
 from dana.studio.api.services.knowledge_pack.template_handler.template_finetune_handler import TemplateFinetuneHandler
+from dana.studio.api.services.knowledge_pack.document_handler.document_exploration_handler import DocumentExplorationHandler
+from dana.studio.api.repositories import get_document_repo
+from dana.studio.api.services.extraction_service import get_extraction_service
 from .common import KPConversationType
 from pathlib import Path
 
@@ -298,6 +301,48 @@ async def update_template_content(
         return InterviewTemplateResponse(success=False, message="Failed to update template README", error=str(e))
 
 
+async def legacy_chat(chat_history: list[MessageData]):
+    from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana.lang.common.types import BaseRequest
+    from dana.lang.common.utils import Misc
+    from dana.studio.api.core.schemas_v2 import SenderRole
+
+    llm = LegacyLLMResource()
+
+    messages = [{"role": message.role, "content": message.content} for message in chat_history]
+    llm_request = BaseRequest(
+        arguments={
+            "messages": [
+                {
+                    "role": "system",
+                    "content": """
+                You are ChatGPT, a large language model based on the GPT-5 model and trained by OpenAI. Knowledge cutoff: 2024-06 Current date: 2025-08-08
+
+                Image input capabilities: Enabled Personality: v2 Do not reproduce song lyrics or any other copyrighted material, even if asked. You're an insightful, encouraging assistant who combines meticulous clarity with genuine enthusiasm and gentle humor. Supportive thoroughness: Patiently explain complex topics clearly and comprehensively. Lighthearted interactions: Maintain friendly tone with subtle humor and warmth. Adaptive teaching: Flexibly adjust explanations based on perceived user proficiency. Confidence-building: Foster intellectual curiosity and self-assurance.
+
+                Do not end with opt-in questions or hedging closers. Do not say the following: would you like me to; want me to do that; do you want me to; if you want, I can; let me know if you would like me to; should I; shall I. Ask at most one necessary clarifying question at the start, not the end. If the next step is obvious, do it. Example of bad: I can write playful examples. would you like me to? Example of good: Here are three playful examples:.. ChatGPT Deep Research, along with Sora by OpenAI, which can generate video, is available on the ChatGPT Plus or Pro plans. If the user asks about the GPT-4.5, o3, or o4-mini models, inform them that logged-in users can use GPT-4.5, o4-mini, and o3 with the ChatGPT Plus or Pro plans. GPT-4.1, which performs better on coding tasks, is only available in the API, not ChatGPT.
+                Always respond in markdown format but inside <response> tags.
+            """,
+                }
+            ]
+            + messages,
+            "temperature": 0.1,
+        }
+    )
+
+    response = await llm.query(llm_request)
+    content = Misc.get_response_content(response)
+    internal_conversation = [MessageData(role=SenderRole.ASSISTANT, content=content)]
+    result = {
+        "status": "success",
+        "message": content,
+        "conversation": internal_conversation,
+        "template_modified": False,
+        "error": None,
+    }
+    return result
+
+
 @router.post("/{template_id}/chat", response_model=TemplateFinetuneChannelResponse)
 async def template_finetune_chat(
     template_id: int,
@@ -408,42 +453,90 @@ async def template_finetune_chat(
         ]
         logger.debug(f"Built chat history with {len(chat_history)} messages")
 
-        # Create IntentDetectionRequest for handler
-        intent_request = IntentDetectionRequest(
-            user_message=request.content, chat_history=chat_history, current_domain_tree=None, agent_id=template.kp_id
-        )
-
-        # Read old content before modification
+        # Initialize old_content for template diff computation (only used in editor mode)
         old_content = None
-        try:
-            old_content = template_file_path.read_text(encoding="utf-8")
-            logger.debug(f"📄 Read old template content ({len(old_content)} chars)")
-        except Exception as e:
-            logger.warning(f"⚠️ Could not read old template content: {e}")
-            old_content = ""
 
-        # Initialize TemplateFinetuneHandler
-        logger.debug(f"Initializing TemplateFinetuneHandler for template {template_id}")
-        handler = TemplateFinetuneHandler(
-            template_path=str(template_file_path),
-            knowledge_pack_path=knowledge_pack_path,
-            kp_id=template.kp_id,
-            doc_paths=None,  # TODO: Get document paths if available
-            domain=spec.domain,
-            role=spec.role,
-            notifier=None,  # TODO: Add WebSocket notifier if available
-        )
-        
-        # Store db session for tools that need it
-        handler.db = db
+        if request.metadata.get("mode", "editor") == "editor":
+            # Create IntentDetectionRequest for handler
+            intent_request = IntentDetectionRequest(
+                user_message=request.content, chat_history=chat_history, current_domain_tree=None, agent_id=template.kp_id
+            )
 
-        logger.info(f"🚀 Starting TemplateFinetuneHandler for template {template_id}")
-        result = await handler.handle(intent_request)
-        logger.info(f"✅ TemplateFinetuneHandler completed for template {template_id}: status={result.get('status')}")
+            # Read old content before modification
+            try:
+                old_content = template_file_path.read_text(encoding="utf-8")
+                logger.debug(f"📄 Read old template content ({len(old_content)} chars)")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not read old template content: {e}")
+                old_content = ""
 
-        # Extract new messages from result and add to conversation
-        internal_conversation = result.get("conversation", [])
-        logger.debug(f"Handler returned {len(internal_conversation)} messages")
+            # Initialize TemplateFinetuneHandler
+            logger.debug(f"Initializing TemplateFinetuneHandler for template {template_id}")
+            handler = TemplateFinetuneHandler(
+                template_path=str(template_file_path),
+                knowledge_pack_path=knowledge_pack_path,
+                kp_id=template.kp_id,
+                doc_paths=None,  # TODO: Get document paths if available
+                domain=spec.domain,
+                role=spec.role,
+                notifier=None,  # TODO: Add WebSocket notifier if available
+            )
+
+            # Store db session for tools that need it
+            handler.db = db
+
+            logger.info(f"🚀 Starting TemplateFinetuneHandler for template {template_id}")
+            result = await handler.handle(intent_request)
+            logger.info(f"✅ TemplateFinetuneHandler completed for template {template_id}: status={result.get('status')}")
+
+            # Extract new messages from result and add to conversation
+            internal_conversation = result.get("conversation", [])
+            logger.debug(f"Handler returned {len(internal_conversation)} messages")
+        else:
+            # Use DocumentExplorationHandler for document exploration and Q&A
+            logger.debug(f"Initializing DocumentExplorationHandler for template {template_id}")
+
+            # Get document paths from knowledge pack metadata
+            doc_repo = get_document_repo()
+            extraction_service = get_extraction_service()
+            kp_metadata = kb.kp_metadata or {}
+            associated_documents = kp_metadata.get("associated_documents", [])
+            doc_paths = []
+            if associated_documents:
+                documents = await doc_repo.get_document_by_ids(document_ids=associated_documents, db=db)
+                for document in documents:
+                    # Get document file path
+                    doc_path = Path(extraction_service.base_upload_directory) / str(document.file_path)
+                    if doc_path.exists():
+                        doc_paths.append(str(doc_path))
+
+            logger.debug(f"Found {len(doc_paths)} document paths for knowledge pack {template.kp_id}")
+
+            # Create IntentDetectionRequest for handler
+            intent_request = IntentDetectionRequest(
+                user_message=request.content, chat_history=chat_history, current_domain_tree=None, agent_id=template.kp_id
+            )
+
+            # Initialize DocumentExplorationHandler
+            handler = DocumentExplorationHandler(
+                kp_id=template.kp_id,
+                doc_paths=doc_paths if doc_paths else None,
+                template_path=str(template_file_path),
+                domain=spec.domain,
+                role=spec.role,
+                notifier=None,  # TODO: Add WebSocket notifier if available
+            )
+
+            # Store db session for tools that need it
+            handler.db = db
+
+            logger.info(f"🚀 Starting DocumentExplorationHandler for template {template_id}")
+            result = await handler.handle(intent_request)
+            logger.info(f"✅ DocumentExplorationHandler completed for template {template_id}: status={result.get('status')}")
+
+            # Extract new messages from result and add to conversation
+            internal_conversation = result.get("conversation", [])
+            logger.debug(f"DocumentExplorationHandler returned {len(internal_conversation)} messages")
 
         # Convert handler messages to MessageCreate format and add to conversation
         # Implement deduplication logic similar to knowledge_structuring_chat
@@ -472,10 +565,17 @@ async def template_finetune_chat(
         else:
             logger.debug("No new messages to add to conversation")
 
-        # Convert MessageData to dict for response (HandlerMessage-like structure)
+        # Convert MessageData to HandlerMessage for response
         # Use the deduplicated messages for the response
+        from dana.studio.api.core.schemas_v2._conversation import HandlerMessage
+
         internal_conversation_response = [
-            {"role": msg.role, "content": msg.content, "require_user": msg.require_user, "treat_as_tool": msg.treat_as_tool}
+            HandlerMessage(
+                sender=msg.role,
+                content=msg.content,
+                require_user=msg.require_user,
+                treat_as_tool=msg.treat_as_tool,
+            )
             for msg in internal_conversation[-len(new_messages) :]
             if new_messages
         ]
@@ -493,63 +593,59 @@ async def template_finetune_chat(
                 logger.info(f"📄 Read new template content ({len(new_content)} chars)")
                 logger.info(f"📊 Old content length: {len(old_content) if old_content else 0}")
                 logger.info(f"📊 Contents are same: {old_content == new_content}")
-                
+
                 # Import diff computation utilities
                 from dana.studio.api.core.schemas_v2._interview_template import TemplateDiff, TemplateDiffSection
                 import difflib
-                
+
                 # Use difflib to compute line-based diff
                 old_lines = old_content.splitlines(keepends=True) if old_content else []
                 new_lines = new_content.splitlines(keepends=True)
-                
+
                 differ = difflib.Differ()
                 diff_result = list(differ.compare(old_lines, new_lines))
-                
+
                 # Parse diff into sections
                 sections = []
                 current_section = None
                 line_num = 0
-                
+
                 for line in diff_result:
-                    if line.startswith('+ '):
+                    if line.startswith("+ "):
                         # Addition
-                        if current_section and current_section['type'] == 'add':
-                            current_section['content'] += line[2:]
+                        if current_section and current_section["type"] == "add":
+                            current_section["content"] += line[2:]
                         else:
                             if current_section:
                                 sections.append(TemplateDiffSection(**current_section))
-                            current_section = {'type': 'add', 'content': line[2:], 'line_start': line_num, 'line_end': line_num}
+                            current_section = {"type": "add", "content": line[2:], "line_start": line_num, "line_end": line_num}
                         line_num += 1
-                    elif line.startswith('- '):
+                    elif line.startswith("- "):
                         # Removal
-                        if current_section and current_section['type'] == 'remove':
-                            current_section['content'] += line[2:]
+                        if current_section and current_section["type"] == "remove":
+                            current_section["content"] += line[2:]
                         else:
                             if current_section:
                                 sections.append(TemplateDiffSection(**current_section))
-                            current_section = {'type': 'remove', 'content': line[2:], 'line_start': line_num, 'line_end': line_num}
-                    elif line.startswith('  '):
+                            current_section = {"type": "remove", "content": line[2:], "line_start": line_num, "line_end": line_num}
+                    elif line.startswith("  "):
                         # Unchanged
-                        if current_section and current_section['type'] == 'unchanged':
-                            current_section['content'] += line[2:]
-                            current_section['line_end'] = line_num
+                        if current_section and current_section["type"] == "unchanged":
+                            current_section["content"] += line[2:]
+                            current_section["line_end"] = line_num
                         else:
                             if current_section:
                                 sections.append(TemplateDiffSection(**current_section))
-                            current_section = {'type': 'unchanged', 'content': line[2:], 'line_start': line_num, 'line_end': line_num}
+                            current_section = {"type": "unchanged", "content": line[2:], "line_start": line_num, "line_end": line_num}
                         line_num += 1
-                
+
                 # Add last section
                 if current_section:
                     sections.append(TemplateDiffSection(**current_section))
-                
-                template_diff = TemplateDiff(
-                    sections=sections,
-                    old_content=old_content,
-                    new_content=new_content
-                )
+
+                template_diff = TemplateDiff(sections=sections, old_content=old_content, new_content=new_content)
                 logger.info(f"✅ Computed template diff with {len(sections)} sections")
-                
+
             except Exception as e:
                 logger.error(f"❌ Error computing template diff: {e}")
                 template_diff = None

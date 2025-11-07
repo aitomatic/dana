@@ -1774,6 +1774,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
             status: 'running',
             data: {},
             error: null,
+            created_at: null,
+            updated_at: null,
           });
         }
 

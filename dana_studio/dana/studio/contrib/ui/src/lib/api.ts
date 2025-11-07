@@ -1525,11 +1525,13 @@ class ApiService {
    * Chat with template for AI-powered interview
    * @param templateId - Template ID
    * @param message - User message/response
+   * @param metadata - Optional metadata to include in the request
    */
-  async chatWithTemplate(templateId: number, message: string): Promise<any> {
+  async chatWithTemplate(templateId: number, message: string, metadata?: Record<string, any>): Promise<any> {
     const response = await this.client.post(`/v2/knowledge/template/${templateId}/chat`, {
       role: 'user',
       content: message,
+      metadata: metadata || {},
     });
     return response.data;
   }

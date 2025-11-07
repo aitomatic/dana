@@ -8,8 +8,11 @@ class BaseModelUseEnum(BaseModel):
 
 
 class BaseMessage(BaseModelUseEnum):
-    sender: SenderRole = Field(default=SenderRole.USER, validation_alias=AliasChoices("sender", "role"))  # Allow both "sender" and "role" as aliases
+    sender: SenderRole = Field(
+        default=SenderRole.USER, validation_alias=AliasChoices("sender", "role")
+    )  # Allow both "sender" and "role" as aliases
     content: str
+    metadata: dict = {}
 
 
 class HandlerMessage(BaseMessage):

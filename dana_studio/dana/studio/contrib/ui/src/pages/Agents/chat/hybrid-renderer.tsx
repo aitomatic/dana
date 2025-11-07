@@ -23,6 +23,22 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
   messageId,
   hasActiveButtons = true,
 }) => {
+  // Normalize content: convert escaped newlines to actual newlines
+  const normalizeContent = (text: string): string => {
+    let normalized = text;
+    
+    // Convert escaped newlines (\n) to actual newlines
+    normalized = normalized.replace(/\\n/g, '\n');
+    
+    // Convert escaped tabs (\t) to spaces for better formatting
+    normalized = normalized.replace(/\\t/g, '  ');
+    
+    return normalized;
+  };
+
+  // Normalize content before processing
+  const normalizedContent = normalizeContent(content);
+
   // Detect if content contains HTML tags
   const containsHTML = (text: string): boolean => {
     const htmlRegex = /<[^>]*>/;
@@ -63,13 +79,16 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
   // Check if content should be rendered as HTML
   const shouldRenderAsHTML =
     forceHtml ||
-    isToolGeneratedHTML(content) ||
-    (containsHTML(content) && isPrimarilyHTML(content));
+    isToolGeneratedHTML(normalizedContent) ||
+    (containsHTML(normalizedContent) && isPrimarilyHTML(normalizedContent));
 
   if (shouldRenderAsHTML) {
+    // Convert newlines to <br> tags for HTML rendering
+    const htmlContent = normalizedContent.replace(/\n/g, '<br>');
+    
     return (
       <HTMLRenderer
-        html={content}
+        html={htmlContent}
         className={className}
         theme={theme}
         backgroundContext={backgroundContext}
@@ -87,7 +106,7 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
       theme={theme}
       backgroundContext={backgroundContext}
     >
-      {content}
+      {normalizedContent}
     </MarkdownViewerSmall>
   );
 };

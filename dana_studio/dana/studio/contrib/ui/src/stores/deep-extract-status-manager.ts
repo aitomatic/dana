@@ -3,9 +3,10 @@ import { create } from 'zustand';
 import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import type { BackgroundTaskResponse } from '@/lib/api';
+import { useDocumentStore } from './document-store';
 
 // Constants
-const POLLING_INTERVAL = 30000; // 30 seconds
+const POLLING_INTERVAL = 10000; // 10 seconds
 const AGGREGATED_TOAST_ID = 'deep-extraction-active';
 
 // Types
@@ -269,6 +270,7 @@ export const useDeepExtractStatusManager = create<DeepExtractStatusManagerState>
     const { tasks } = get();
     const newTasks = new Map(tasks);
     let hasChanges = false;
+    let hasCompletedTasks = false;
 
     // Process backend tasks
     backendTasks.forEach((backendTask) => {
@@ -293,6 +295,7 @@ export const useDeepExtractStatusManager = create<DeepExtractStatusManagerState>
               newStatus === 'completed'
             ) {
               showCompletedToast(existingTask.filename);
+              hasCompletedTasks = true;
             } else if (
               (oldStatus === 'pending' || oldStatus === 'running') &&
               newStatus === 'failed'
@@ -320,6 +323,17 @@ export const useDeepExtractStatusManager = create<DeepExtractStatusManagerState>
       // Update aggregated toast
       const activeCount = countActiveTasks(filteredTasks);
       showAggregatedToast(activeCount);
+
+      // Refresh documents in Knowledge Center when tasks complete
+      if (hasCompletedTasks) {
+        console.log('[DeepExtractStatusManager] Refreshing documents in Knowledge Center...');
+        try {
+          const documentStore = useDocumentStore.getState();
+          documentStore.fetchDocuments();
+        } catch (error) {
+          console.error('[DeepExtractStatusManager] Error refreshing documents:', error);
+        }
+      }
     }
   },
 
