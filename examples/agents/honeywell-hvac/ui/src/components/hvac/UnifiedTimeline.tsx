@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useHVACStore } from '@/stores/hvac-store';
 import { Clock, Zap, Calendar, ChevronUp } from 'lucide-react';
-import type { Meeting, HVACAction } from '@/types/hvac';
+import type { Meeting, HVACAction, AgentPlan, Environment } from '@/types/hvac';
 
 interface TimelineItem {
   type: 'meeting' | 'action';
@@ -124,8 +124,15 @@ const calculateBarStacks = (
   return result;
 };
 
-export function UnifiedTimeline() {
-  const { environment, agentPlan, feedback } = useHVACStore();
+interface UnifiedTimelineProps {
+  agentPlan?: AgentPlan | null;
+  environment?: Environment | null;
+}
+
+export function UnifiedTimeline({ agentPlan: propAgentPlan, environment: propEnvironment }: UnifiedTimelineProps = {}) {
+  const { environment: storeEnvironment, agentPlan: storeAgentPlan, feedback } = useHVACStore();
+  const environment = propEnvironment ?? storeEnvironment;
+  const agentPlan = propAgentPlan ?? storeAgentPlan;
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   if (!environment || !agentPlan) {

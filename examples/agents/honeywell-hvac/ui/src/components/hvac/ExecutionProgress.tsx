@@ -19,10 +19,10 @@ export function ExecutionProgress({
   const { runFlow, reset, isLoading } = useHVACFlow();
 
   const steps = [
-    { id: 'environment', label: 'Get Environment' },
-    { id: 'planning', label: 'Agent Creates Plan' },
-    { id: 'validation', label: 'Validate Plan' },
-    { id: 'learning', label: 'Agent Learns from Execution' },
+    { id: 'environment', label: 'Read environment data' },
+    { id: 'planning', label: 'Create control plan' },
+    { id: 'validation', label: 'Execute plan & Get feedback' },
+    { id: 'learning', label: 'Learn new insights' },
   ];
 
   const getStepStatus = (stepId: string) => {
@@ -38,7 +38,7 @@ export function ExecutionProgress({
         return 'active';
       }
     }
-    
+
     if (stepId === 'validation') {
       if (showValidationComplete) {
         return 'complete';
@@ -51,7 +51,7 @@ export function ExecutionProgress({
         return 'pending';
       }
     }
-    
+
     if (stepId === 'learning') {
       if (showLearningComplete) {
         return 'complete';
@@ -83,7 +83,7 @@ export function ExecutionProgress({
             {steps.map((step, index) => {
               const status = getStepStatus(step.id);
               const stepNumber = index + 1;
-              
+
               return (
                 <div key={step.id} className="flex items-center gap-4 flex-1">
                   <div className="flex items-center gap-2">
@@ -103,9 +103,7 @@ export function ExecutionProgress({
                       ) : (
                         <span
                           className={`text-xs font-medium ${
-                            status === 'pending'
-                              ? 'text-muted-foreground'
-                              : 'text-foreground'
+                            status === 'pending' ? 'text-muted-foreground' : 'text-foreground'
                           }`}
                         >
                           {stepNumber}
@@ -149,7 +147,7 @@ export function ExecutionProgress({
                 </>
               )}
             </Button>
-            <Button onClick={reset} variant="outline">
+            <Button onClick={reset} className="bg-transparent border-white/10 border-2">
               Reset
             </Button>
           </div>
