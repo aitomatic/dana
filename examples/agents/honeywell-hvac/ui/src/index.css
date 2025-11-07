@@ -488,6 +488,14 @@
   animation: blob 7s infinite;
 }
 
+.animation-delay-100 {
+  animation-delay: 150ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 300ms;
+}
+
 .animation-delay-2000 {
   animation-delay: 2s;
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { EnvironmentPanel } from './components/hvac/EnvironmentPanel';
 import { ExecutionProgress } from './components/hvac/ExecutionProgress';
 import { AgentPlanVisualization } from './components/hvac/AgentPlanVisualization';
@@ -13,13 +13,39 @@ import { useHVACStore } from './stores/hvac-store';
 
 export default function App() {
   const { loadLearnings } = useHVACFlow();
-  const { currentSession } = useHVACStore();
+  const { currentSession, agentPlan, feedback } = useHVACStore();
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showLearning, setShowLearning] = useState(false);
 
   useEffect(() => {
     if (currentSession) {
       loadLearnings(currentSession.session_id);
     }
   }, [currentSession, loadLearnings]);
+
+  // Show feedback card 5 seconds after agent plan appears
+  useEffect(() => {
+    if (agentPlan) {
+      const timer = setTimeout(() => {
+        setShowFeedback(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowFeedback(false);
+    }
+  }, [agentPlan]);
+
+  // Show learning card 5 seconds after feedback appears
+  useEffect(() => {
+    if (feedback && showFeedback) {
+      const timer = setTimeout(() => {
+        setShowLearning(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowLearning(false);
+    }
+  }, [feedback, showFeedback]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -42,20 +68,34 @@ export default function App() {
         {/* Left Panel: Environment + Execution Progress */}
         <div className="col-span-3 space-y-4 overflow-y-auto">
           <EnvironmentPanel />
-          <ExecutionProgress />
+          <ExecutionProgress 
+            showPlanComplete={!!agentPlan}
+            showValidationComplete={showFeedback}
+            showLearningComplete={showLearning}
+          />
         </div>
 
         {/* Center Panel: Agent Plan + Feedback + Accumulated Knowledge */}
-        <div className="col-span-6 space-y-4 overflow-y-auto">
-          <AgentPlanVisualization />
-          <FeedbackDetail />
-          <AccumulatedKnowledgePanel />
-        </div>
+        {(agentPlan || feedback) && (
+          <div className="col-span-6 space-y-4 overflow-y-auto animate-fade-in-up">
+            {agentPlan && (
+              <div className="animate-fade-in-up animation-delay-100">
+                <AgentPlanVisualization />
+              </div>
+            )}
+            {feedback && showFeedback && (
+              <div className="animate-fade-in-up animation-delay-200">
+                <FeedbackDetail />
+              </div>
+            )}
+            <AccumulatedKnowledgePanel />
+          </div>
+        )}
 
-        {/* Right Panel: Learning Growth Tracker + Current Learning Highlight */}
+        {/* Right Panel: New Learning + Learned Insights */}
         <div className="col-span-3 space-y-4 overflow-y-auto">
+          {showLearning && <CurrentLearningHighlight />}
           <LearningGrowthTracker />
-          <CurrentLearningHighlight />
         </div>
       </main>
     </div>

@@ -76,7 +76,7 @@ const calculateBarStacks = (
 ): Array<{ item: TimelineItem; index: number; top: number; zIndex: number }> => {
   const stacks: Array<Array<{ item: TimelineItem; index: number; start: number; end: number }>> =
     [];
-  const barHeight = 2.5; // rem (h-10)
+  const barHeight = 3.0; // rem (h-12)
   const spacing = 0.25; // rem (top padding)
 
   // Group overlapping items
@@ -195,7 +195,7 @@ export function UnifiedTimeline() {
 
   // Calculate bar stacks for vertical positioning
   const barStacks = calculateBarStacks(timelineItems);
-  const maxStackHeight = Math.max(...barStacks.map((b) => b.top), 0) + 2.5; // Add bar height
+  const maxStackHeight = Math.max(...barStacks.map((b) => b.top), 0) + 3.0; // Add bar height
 
   // Helper to render expanded card
   const renderExpandedCard = (item: TimelineItem, itemId: string) => {
@@ -381,11 +381,12 @@ export function UnifiedTimeline() {
             const width = getItemWidth(item.startTime, item.endTime, timelineSpan.total);
 
             if (item.type === 'meeting') {
+              const meeting = item.meeting!;
               return (
                 <div
                   key={itemId}
                   onClick={() => handleItemClick(itemId)}
-                  className="absolute cursor-pointer transition-all duration-200 flex items-center justify-center h-10 rounded-md bg-gradient-to-r from-purple-400 to-purple-500 hover:shadow-lg hover:from-purple-500 hover:to-purple-600 text-white text-xs font-semibold shadow-md"
+                  className="absolute cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-0.5 h-12 rounded-md bg-gradient-to-r from-purple-400 to-purple-500 hover:shadow-lg hover:from-purple-500 hover:to-purple-600 text-white shadow-md"
                   style={{
                     left: `${position}%`,
                     width: `${width}%`,
@@ -393,8 +394,13 @@ export function UnifiedTimeline() {
                     zIndex: zIndex,
                   }}
                 >
-                  <Calendar className="w-3 h-3 mr-1" />
-                  Meeting
+                  <div className="flex items-center text-xs font-semibold">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    Meeting
+                  </div>
+                  <div className="text-[10px] opacity-90">
+                    {meeting.start_time} - {meeting.end_time}
+                  </div>
                 </div>
               );
             } else {
@@ -409,7 +415,7 @@ export function UnifiedTimeline() {
                 <div
                   key={itemId}
                   onClick={() => handleItemClick(itemId)}
-                  className={`absolute cursor-pointer transition-all duration-200 flex items-center justify-center h-10 rounded-md bg-gradient-to-r ${gradientFrom} ${gradientTo} ${hoverFrom} ${hoverTo} hover:shadow-lg text-white text-xs font-semibold shadow-md ${
+                  className={`absolute cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-0.5 h-12 rounded-md bg-gradient-to-r ${gradientFrom} ${gradientTo} ${hoverFrom} ${hoverTo} hover:shadow-lg text-white shadow-md ${
                     action.use_turbo ? 'ring-2 ring-yellow-400' : ''
                   }`}
                   style={{
@@ -419,11 +425,16 @@ export function UnifiedTimeline() {
                     zIndex: zIndex,
                   }}
                 >
-                  <Clock className="w-3 h-3 mr-1" />
-                  {isCool ? 'Cooling' : 'Heating'}
-                  {action.use_turbo && (
-                    <span className="bg-orange-500 px-1 rounded text-[10px] ml-1">TURBO</span>
-                  )}
+                  <div className="flex items-center text-xs font-semibold">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {isCool ? 'Cooling' : 'Heating'}
+                    {action.use_turbo && (
+                      <span className="bg-orange-500 px-1 rounded text-[10px] ml-1">TURBO</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] opacity-90">
+                    {action.time_on} - {action.time_off}
+                  </div>
                 </div>
               );
             }

@@ -42,7 +42,7 @@ export function EnvironmentPanel() {
                   variant="outline"
                   className="border-purple-500 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10"
                 >
-                  <Thermometer className="w-4 h-4 mr-1" />
+                 
                   Indoor: {environment.indoor_temp.toFixed(1)}°F
                 </Badge>
               </div>
@@ -52,7 +52,7 @@ export function EnvironmentPanel() {
                   variant="outline"
                   className="border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10"
                 >
-                  <Thermometer className="w-4 h-4 mr-1" />
+            
                   Outdoor: {environment.outdoor_temp.toFixed(1)}°F
                 </Badge>
               </div>
@@ -93,7 +93,7 @@ export function EnvironmentPanel() {
             </div>
           ) : (
             <div className="text-sm text-muted-foreground text-center py-8">
-              No environment loaded
+             Run Agent to get environment data
             </div>
           )}
         </CardContent>

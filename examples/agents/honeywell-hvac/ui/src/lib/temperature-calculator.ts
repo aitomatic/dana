@@ -42,34 +42,91 @@ export function calculateTemperaturePoints(
   }
 
   const points: TemperaturePoint[] = [];
-  const startMinutes = parseTimeToMinutes(environment.current_time);
-  const endMinutes = startMinutes + 24 * 60; // 24 hours max
+  const currentTimeMinutes = parseTimeToMinutes(environment.current_time);
   
-  // Get all important time points
-  const timePoints = new Set<number>();
-  timePoints.add(startMinutes);
+  // Get all important time points (before filtering)
+  const allTimePoints = new Set<number>();
+  allTimePoints.add(currentTimeMinutes);
   
   // Add action times
   agentPlan.plan.forEach(action => {
-    timePoints.add(parseTimeToMinutes(action.time_on));
-    timePoints.add(parseTimeToMinutes(action.time_off));
+    allTimePoints.add(parseTimeToMinutes(action.time_on));
+    allTimePoints.add(parseTimeToMinutes(action.time_off));
   });
   
   // Add meeting times
   environment.meeting_plan.forEach(meeting => {
-    timePoints.add(parseTimeToMinutes(meeting.start_time));
-    timePoints.add(parseTimeToMinutes(meeting.end_time));
+    allTimePoints.add(parseTimeToMinutes(meeting.start_time));
+    allTimePoints.add(parseTimeToMinutes(meeting.end_time));
   });
   
   // Add reached times from feedback
   feedback.action_results.forEach(result => {
     if (result.reached_time) {
-      timePoints.add(parseTimeToMinutes(result.reached_time));
+      allTimePoints.add(parseTimeToMinutes(result.reached_time));
     }
   });
   
+  // Calculate relevant time bounds
+  const allTimesArray = Array.from(allTimePoints);
+  const earliestTime = Math.min(...allTimesArray);
+  const latestTime = Math.max(...allTimesArray);
+  
+  // Start: current_time - 30 minutes (or earliest action start, whichever is earlier)
+  const startBuffer = 30; // minutes
+  const calculatedStart = Math.min(
+    currentTimeMinutes - startBuffer,
+    earliestTime
+  );
+  
+  // End: Latest event + 1 hour buffer
+  const endBuffer = 60; // minutes
+  const calculatedEnd = latestTime + endBuffer;
+  
+  // Maximum range: Cap at 12 hours total
+  const maxRangeMinutes = 12 * 60; // 12 hours
+  const calculatedRange = calculatedEnd - calculatedStart;
+  
+  let finalStart = calculatedStart;
+  let finalEnd = calculatedEnd;
+  
+  if (calculatedRange > maxRangeMinutes) {
+    // If range exceeds 12 hours, prioritize showing current_time and relevant events
+    // Strategy: Show a 12-hour window that includes current_time
+    // If current_time is closer to start, show from earliest to earliest + 12h
+    // If current_time is closer to end, show from latest - 12h to latest
+    // Otherwise, center around current_time
+    
+    const rangeFromStart = currentTimeMinutes - earliestTime;
+    const rangeToEnd = latestTime - currentTimeMinutes;
+    const halfRange = maxRangeMinutes / 2;
+    
+    if (rangeFromStart <= halfRange) {
+      // Current time is near the start, show from earliest
+      finalStart = earliestTime;
+      finalEnd = earliestTime + maxRangeMinutes;
+    } else if (rangeToEnd <= halfRange) {
+      // Current time is near the end, show to latest
+      finalStart = latestTime - maxRangeMinutes;
+      finalEnd = latestTime + endBuffer;
+    } else {
+      // Center around current time
+      finalStart = currentTimeMinutes - halfRange;
+      finalEnd = currentTimeMinutes + halfRange;
+    }
+    
+    // Ensure we don't go before earliest or after latest (with buffer)
+    finalStart = Math.max(finalStart, earliestTime);
+    finalEnd = Math.min(finalEnd, latestTime + endBuffer);
+  }
+  
+  // Filter time points to only include those within bounds
+  const filteredTimes = allTimesArray.filter(
+    (minutes) => minutes >= finalStart && minutes <= finalEnd
+  );
+  
   // Sort time points
-  const sortedTimes = Array.from(timePoints).sort((a, b) => a - b);
+  const sortedTimes = filteredTimes.sort((a, b) => a - b);
   
   // Calculate temperature at each point
   let currentTemp = environment.indoor_temp;
@@ -87,8 +144,6 @@ export function calculateTemperaturePoints(
   });
   
   sortedTimes.forEach((minutes, idx) => {
-    if (minutes < startMinutes || minutes > endMinutes) return;
-    
     const time = minutesToTime(minutes);
     
     // Find current action (if any)

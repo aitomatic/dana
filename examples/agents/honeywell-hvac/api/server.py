@@ -355,6 +355,43 @@ async def get_acquisitive_learnings(session_id: str = "hvac-agent-session-001"):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get acquisitive learnings: {str(e)}")
 
+@app.delete("/api/hvac/learnings/acquisitive/{loop_id}")
+async def delete_acquisitive_learning(loop_id: str, session_id: str = "hvac-agent-session-001"):
+    """Delete a specific acquisitive learning by loop_id"""
+    try:
+        agent = get_agent_with_session(session_id)
+        
+        # Get storage path
+        storage_path = agent._learner._get_acquisitive_storage_path()
+        
+        # Find the file matching the loop_id
+        loop_files = list(storage_path.glob("loop_*.json"))
+        target_file = None
+        
+        for loop_file in loop_files:
+            try:
+                loop_data = json.loads(loop_file.read_text())
+                if loop_data.get("loop_id") == loop_id:
+                    target_file = loop_file
+                    break
+            except Exception as e:
+                print(f"Error reading loop file {loop_file}: {e}")
+                continue
+        
+        if not target_file:
+            raise HTTPException(status_code=404, detail=f"Learning with loop_id {loop_id} not found")
+        
+        # Delete the file
+        target_file.unlink()
+        
+        return {"success": True, "message": f"Learning {loop_id} deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in delete_acquisitive_learning: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete acquisitive learning: {str(e)}")
+
 @app.get("/api/hvac/learnings/episodic")
 async def get_episodic_learning(session_id: str = "hvac-agent-session-001"):
     """Get episodic learning for a session"""
