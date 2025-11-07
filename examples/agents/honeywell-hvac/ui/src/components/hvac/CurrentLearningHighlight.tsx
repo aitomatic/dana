@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useHVACStore } from '@/stores/hvac-store';
-import { Sparkles, TrendingUp } from 'lucide-react';
+import { Sparkles, TrendingUp, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export function CurrentLearningHighlight() {
+export function CurrentLearningHighlight({ onShowLearnedInsights }: { onShowLearnedInsights?: () => void }) {
   const { currentExecutionLearning, feedback } = useHVACStore();
   const [isNew, setIsNew] = useState(false);
 
@@ -25,12 +26,25 @@ export function CurrentLearningHighlight() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Learning from This Execution</CardTitle>
+          <CardTitle>New Learning</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground text-center py-8">
             No learning yet. Run the agent to see what it learns.
           </div>
+          {/* View All Learned Insights Button */}
+          {onShowLearnedInsights && (
+            <div className="pt-2 border-t border-border">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onShowLearnedInsights}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View all learned insights
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -67,30 +81,20 @@ export function CurrentLearningHighlight() {
           </div>
         </div>
 
-       
 
-        {/* Impact Preview */}
-        <div className="bg-gray-50 dark:bg-gray-500/10 border border-gray-200 dark:border-blue-500/30 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700 dark:text-blue-400">
-              This learning will help:
-            </span>
+        {/* View All Learned Insights Button */}
+        {onShowLearnedInsights && (
+          <div className="pt-0 border-border">
+            <Button
+              
+              className="w-full bg-white/10"
+              onClick={onShowLearnedInsights}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View all insights
+            </Button>
           </div>
-          <ul className="text-sm text-gray-600 dark:text-blue-300 space-y-1 ml-6 list-disc">
-            <li>Improve future plan timing</li>
-            <li>Reduce energy waste</li>
-            <li>Better efficiency in similar scenarios</li>
-          </ul>
-        </div>
-
-         {/* Context */}
-         <div className="text-sm text-muted-foreground">
-          <div className="mb-1">
-            <span className="font-medium">Learned at:</span> {timestamp}
-          </div>
-          
-        </div>
+        )}
       </CardContent>
     </Card>
   );
