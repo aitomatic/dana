@@ -78,9 +78,6 @@ uploads
 dana/api/server/static/
 dana_studio/dana/studio/api/server/static
 
-# Ignore example legacy directory
-examples/honeywell/
-
 dana/contrib/ui/public/static/
 generated/
 /agents/
