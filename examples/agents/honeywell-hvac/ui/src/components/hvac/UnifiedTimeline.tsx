@@ -350,11 +350,11 @@ export function UnifiedTimeline() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold">Actions Timeline</h3>
+      <h3 className="text-sm font-semibold mb-10">Actions Timeline</h3>
 
       {/* Timeline Axis */}
       <div
-        className="relative bg-muted/30 rounded-lg border border-border overflow-visible"
+        className="relative bg-white/10 rounded-lg border border-border overflow-visible"
         style={{ minHeight: `${maxStackHeight + 0.5}rem` }}
       >
         {/* Time Labels */}
