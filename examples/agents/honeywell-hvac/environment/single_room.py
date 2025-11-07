@@ -215,7 +215,9 @@ class SingleRoomEnvironment:
 
             # Convert to HH:MM format
             start_h, start_m = divmod(start_minutes, 60)
+            start_m = start_m // 30 * 30
             end_h, end_m = divmod(end_minutes, 60)
+            end_m = end_m // 30 * 30
 
             meetings.append({
                 "start_time": f"{start_h:02d}:{start_m:02d}",
