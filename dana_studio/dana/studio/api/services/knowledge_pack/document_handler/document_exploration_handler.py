@@ -175,7 +175,28 @@ class DocumentExplorationHandler(AbstractHandler):
 
         tool_str = "\n\n".join([f"{tool}" for tool in self.tools.values()])
 
-        system_prompt = DOCUMENT_EXPLORATION_PROMPT.format(tools_str=tool_str, domain=self.domain, role=self.role, kp_id=self.kp_id)
+        # Read custom system prompt if it exists
+        custom_system_prompt = ""
+        if self.template_path:
+            try:
+                from pathlib import Path
+
+                template_folder = Path(self.template_path).parent
+                system_prompt_file = template_folder / "system_prompt.prompt"
+                if system_prompt_file.exists():
+                    custom_system_prompt = system_prompt_file.read_text(encoding="utf-8")
+                    logger.debug(f"Loaded custom system prompt from {system_prompt_file}")
+            except Exception as e:
+                logger.debug(f"Could not read system prompt file: {e}")
+
+        # Build base system prompt
+        base_system_prompt = DOCUMENT_EXPLORATION_PROMPT.format(tools_str=tool_str, domain=self.domain, role=self.role, kp_id=self.kp_id)
+
+        # Prepend custom system prompt if it exists
+        if custom_system_prompt:
+            system_prompt = f"{custom_system_prompt}\n\n{base_system_prompt}"
+        else:
+            system_prompt = base_system_prompt
 
         # Build messages array starting with system prompt
         messages = [{"role": "system", "content": system_prompt}]

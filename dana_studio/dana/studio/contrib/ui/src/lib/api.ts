@@ -1500,6 +1500,27 @@ class ApiService {
   }
 
   /**
+   * Get system prompt for a template
+   * @param templateId - Template ID
+   */
+  async getTemplateSystemPrompt(templateId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/template/${templateId}/system-prompt`);
+    return response.data;
+  }
+
+  /**
+   * Update system prompt for a template
+   * @param templateId - Template ID
+   * @param systemPrompt - System prompt content
+   */
+  async updateTemplateSystemPrompt(templateId: number, systemPrompt: string): Promise<any> {
+    const response = await this.client.patch(`/v2/knowledge/template/${templateId}/system-prompt`, {
+      system_prompt: systemPrompt,
+    });
+    return response.data;
+  }
+
+  /**
    * Delete interview template
    * @param templateId - Template ID
    */

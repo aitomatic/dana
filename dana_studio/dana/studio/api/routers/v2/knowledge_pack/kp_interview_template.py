@@ -301,6 +301,91 @@ async def update_template_content(
         return InterviewTemplateResponse(success=False, message="Failed to update template README", error=str(e))
 
 
+@router.get("/{template_id}/system-prompt")
+async def get_template_system_prompt(
+    template_id: int,
+    template_repo: type[AbstractInterviewTemplateRepo] = Depends(get_interview_template_repo),
+    db: Session = Depends(get_db),
+):
+    """
+    Get the system prompt for an interview template.
+
+    Args:
+        template_id: Template ID
+        template_repo: Template repository
+        db: Database session
+
+    Returns:
+        System prompt content or empty string if not found
+    """
+    try:
+        # Get template
+        template = await template_repo.get_template(template_id, db=db)
+        if not template:
+            return {"success": False, "error": f"Template {template_id} not found", "system_prompt": ""}
+
+        # Read system prompt file
+        system_prompt_file = Path(template.folder_path) / "system_prompt.prompt"
+
+        if system_prompt_file.exists():
+            try:
+                system_prompt = system_prompt_file.read_text(encoding="utf-8")
+                return {"success": True, "system_prompt": system_prompt}
+            except Exception as e:
+                logger.warning(f"Could not read system prompt file for template {template_id}: {e}")
+                return {"success": True, "system_prompt": ""}
+        else:
+            # Return empty string if file doesn't exist
+            return {"success": True, "system_prompt": ""}
+
+    except Exception as e:
+        logger.error(f"Error getting system prompt for template {template_id}: {e}")
+        return {"success": False, "error": str(e), "system_prompt": ""}
+
+
+@router.patch("/{template_id}/system-prompt")
+async def update_template_system_prompt(
+    template_id: int,
+    system_prompt: str = Body(..., embed=True),
+    template_repo: type[AbstractInterviewTemplateRepo] = Depends(get_interview_template_repo),
+    db: Session = Depends(get_db),
+):
+    """
+    Update the system prompt for an interview template.
+
+    Args:
+        template_id: Template ID
+        system_prompt: System prompt content
+        template_repo: Template repository
+        db: Database session
+
+    Returns:
+        Success response with updated system prompt
+    """
+    try:
+        # Get template
+        template = await template_repo.get_template(template_id, db=db)
+        if not template:
+            return {"success": False, "error": f"Template {template_id} not found", "system_prompt": ""}
+
+        # Check if master template (cannot edit)
+        if template.is_master:
+            return {"success": False, "error": "Master template cannot be edited", "system_prompt": ""}
+
+        # Write to system_prompt.prompt file
+        system_prompt_file = Path(template.folder_path) / "system_prompt.prompt"
+        system_prompt_file.parent.mkdir(parents=True, exist_ok=True)
+        system_prompt_file.write_text(system_prompt, encoding="utf-8")
+
+        logger.info(f"Updated system prompt for template {template_id}")
+
+        return {"success": True, "system_prompt": system_prompt}
+
+    except Exception as e:
+        logger.error(f"Error updating system prompt for template {template_id}: {e}")
+        return {"success": False, "error": str(e), "system_prompt": ""}
+
+
 async def legacy_chat(chat_history: list[MessageData]):
     from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
     from dana.lang.common.types import BaseRequest

@@ -9,6 +9,7 @@ import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { ChatSidebar } from './chat-sidebar';
 import { TemplatePanel } from './template-panel';
+import { SystemPromptPanel } from './system-prompt-panel';
 
 export default function ContributionTemplatePage() {
   const { templateId } = useParams<{ templateId: string }>();
@@ -139,6 +140,12 @@ export default function ContributionTemplatePage() {
                 >
                   Template Info
                 </TabsTrigger>
+                <TabsTrigger
+                  value="system-prompt"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:bg-transparent px-6 py-4"
+                >
+                  System Prompt
+                </TabsTrigger>
               </TabsList>
               <TooltipProvider>
           <Tooltip>
@@ -199,6 +206,9 @@ export default function ContributionTemplatePage() {
                   template={currentTemplate}
                   showContent={false}
                 />
+              </TabsContent>
+              <TabsContent value="system-prompt" className="h-full m-0">
+                <SystemPromptPanel template={currentTemplate} />
               </TabsContent>
             </div>
           </Tabs>

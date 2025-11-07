@@ -39,6 +39,10 @@ export interface ContributionState {
 
   // Error handling
   error: string | null;
+
+  // System prompt state
+  systemPrompt: string | null;
+  isLoadingSystemPrompt: boolean;
 }
 
 export interface ContributionActions {
@@ -73,6 +77,10 @@ export interface ContributionActions {
   // Structure Loading (kept for potential future use)
   loadTemplateStructure: (kpId: number) => Promise<void>;
 
+  // System Prompt Management
+  loadSystemPrompt: (templateId: number) => Promise<void>;
+  updateSystemPrompt: (templateId: number, systemPrompt: string) => Promise<void>;
+
   // Utility
   reset: () => void;
   clearError: () => void;
@@ -97,6 +105,8 @@ const initialState: ContributionState = {
   isSaving: false,
   saveError: null,
   error: null,
+  systemPrompt: null,
+  isLoadingSystemPrompt: false,
 };
 
 export const useContributionStore = create<ContributionStore>((set, get) => ({
@@ -169,6 +179,9 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
 
         // Load conversation history (KP structure not needed anymore)
         await get().loadConversation(templateId);
+        
+        // Load system prompt
+        await get().loadSystemPrompt(templateId);
       } else {
         throw new Error(response.error || 'Failed to load template');
       }
@@ -569,6 +582,67 @@ export const useContributionStore = create<ContributionStore>((set, get) => ({
 
       set({
         isLoadingStructure: false,
+        error: errorMessage,
+      });
+
+      throw error;
+    }
+  },
+
+  // ========================================
+  // System Prompt Management
+  // ========================================
+
+  loadSystemPrompt: async (templateId: number) => {
+    console.log('📝 Contribution: Loading system prompt for template:', templateId);
+    set({ isLoadingSystemPrompt: true, error: null });
+
+    try {
+      const response = await apiService.getTemplateSystemPrompt(templateId);
+
+      if (response.success) {
+        console.log('✅ Contribution: System prompt loaded');
+        set({
+          systemPrompt: response.system_prompt || '',
+          isLoadingSystemPrompt: false,
+        });
+      } else {
+        throw new Error(response.error || 'Failed to load system prompt');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to load system prompt';
+      console.error('❌ Contribution: System prompt load failed:', error);
+
+      set({
+        systemPrompt: '',
+        isLoadingSystemPrompt: false,
+        error: errorMessage,
+      });
+    }
+  },
+
+  updateSystemPrompt: async (templateId: number, systemPrompt: string) => {
+    console.log('📝 Contribution: Updating system prompt for template:', templateId);
+    set({ isLoadingSystemPrompt: true, error: null });
+
+    try {
+      const response = await apiService.updateTemplateSystemPrompt(templateId, systemPrompt);
+
+      if (response.success) {
+        console.log('✅ Contribution: System prompt updated');
+        set({
+          systemPrompt: response.system_prompt || systemPrompt,
+          isLoadingSystemPrompt: false,
+        });
+      } else {
+        throw new Error(response.error || 'Failed to update system prompt');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to update system prompt';
+      console.error('❌ Contribution: System prompt update failed:', error);
+
+      set({
+        isLoadingSystemPrompt: false,
         error: errorMessage,
       });
 
