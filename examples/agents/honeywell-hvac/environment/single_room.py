@@ -166,7 +166,7 @@ class SingleRoomEnvironment:
         earliest_start = current_minutes + gap
 
         # Generate random number of meetings (0-5)
-        num_meetings = random.randint(0, 5)
+        num_meetings = random.randint(1, 5)
 
         meetings = []
         available_start = earliest_start
