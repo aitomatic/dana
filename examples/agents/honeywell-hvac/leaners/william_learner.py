@@ -8,10 +8,8 @@ This component provides functionality for:
 - RETENTIVE learning (long-term learning)
 """
 
-import inspect
 import json
 from datetime import datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -22,7 +20,6 @@ from dana.common.observable import observable
 from dana.common.protocols import DictParams
 from dana.common.protocols.types import LearningPhase
 from dana.core.agent.components.learner import LearnerProtocol
-from dana.config.storage_config import FileStorageConfig
 from dana.common.llm.debug_logger import get_debug_logger
 from dana.core.agent.timeline import TimelineEntry
 from rank_bm25 import BM25Okapi
@@ -33,6 +30,8 @@ logger = get_logger()
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
     from dana.core.agent.timeline import Timeline
+    from dana.repositories.repository_protocol import LearningRepositoryProtocol
+    from dana.repositories.repository_factory import RepositoryFactory
 
 class BM25SearchEngine:
     def __init__(self, corpus: list[str]):
@@ -58,17 +57,29 @@ class BM25SearchEngine:
 class WilliamLearner(LearnerProtocol):
     """Component providing STAR learning phase implementations."""
 
-    def __init__(self, agent: "STARAgent"):
+    def __init__(self, agent: "STARAgent", repository: "LearningRepositoryProtocol | None" = None, repository_factory: "RepositoryFactory | None" = None):
         """
         Initialize the component with a reference to the agent.
 
         Args:
             agent: The agent instance this component belongs to
+            repository: Learning repository (if None and agent provided, creates default via factory)
+            repository_factory: Optional repository factory (uses DEFAULT_REPOSITORY_FACTORY if not provided)
         """
         # NOTE : self._agent will be set by the agent when it is initialized the agent
         self._agent = agent
         self.acquisitive_memory = []
         self.episodic_memory = None
+
+        # Initialize repository if provided, otherwise create default from agent using factory
+        if repository:
+            self._repository = repository
+        elif agent:
+            from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryType
+            factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
+            self._repository = factory.create(RepositoryType.LEARNING, agent=agent)
+        else:
+            self._repository = None
 
     # ============================================================================
     # LEARNING PHASES (STAR REFLECTION IMPLEMENTATIONS)
@@ -123,6 +134,7 @@ class WilliamLearner(LearnerProtocol):
         Returns:
             trace_learning: Learning insights from the acquisitions
         """
+        # return {"trace_learning": {}}
         try:
             # Generate loop ID
             loop_id = str(uuid4())
@@ -474,53 +486,6 @@ learned from this interaction."""
         return {"trace_learning": trace_learning}
 
 
-    def get_relative_path(self) -> str:
-        # Get codec from agent
-        codec = getattr(self._agent, "_codec", None)
-        if codec is None or "magic" in str(codec.__qualname__):
-            # Try to get from prompt_engineer if available
-            prompt_engineer = getattr(self._agent, "_prompt_engineer", None)
-            if prompt_engineer:
-                codec = getattr(prompt_engineer, "_codec", None)
-        codec_name = codec.__qualname__ if codec else "default"
-
-        filepath = inspect.getfile(self._agent.__class__)
-        filename = Path(filepath).stem
-        relative_path = f"{codec_name}/{self._agent.__class__.__qualname__}__{filename}/"
-        return relative_path
-
-    def _get_acquisitive_storage_path(self) -> Path:
-        """
-        Get acquisitive learning storage path following EventLog pattern.
-
-        Path: {codec.__qualname__}/{agent.__class__.__qualname__}__{filename}/learnings/acquisitive
-
-        Returns:
-            Path to acquisitive learning storage directory
-        """
-
-        storage_config = FileStorageConfig()
-        base_path = Path(storage_config.workspace_folder)
-
-        storage_path = base_path / self.get_relative_path() / f"learnings/{self.session_id}/acquisitive"
-        storage_path.mkdir(parents=True, exist_ok=True)
-        return storage_path
-
-    def _get_episodic_storage_path(self) -> Path:
-        """
-        Get episodic learning storage path following EventLog pattern.
-
-        Path: {codec.__qualname__}/{agent.__class__.__qualname__}__{filename}/learnings/episodic
-
-        Returns:
-            Path to episodic learning storage directory
-        """
-        storage_config = FileStorageConfig()
-        base_path = Path(storage_config.workspace_folder)
-
-        storage_path = base_path / self.get_relative_path() / f"learnings/{self.session_id}/episodic"
-        storage_path.mkdir(parents=True, exist_ok=True)
-        return storage_path
 
     def _get_timeline_context_for_loop(self, timeline: "Timeline", max_entries: int = 5) -> list[dict]:
         """
@@ -578,24 +543,15 @@ learned from this interaction."""
             loop_id: Full UUID string
             timestamp: Datetime object for the loop
         """
+        if self._repository is None:
+            raise ValueError("Cannot store acquisitive loop: repository is None. Initialize WilliamLearner with repository or agent.")
+
+        session_id = self.session_id
+        if session_id is None:
+            raise ValueError("Cannot store acquisitive loop: session_id is None. Set session_id on agent first.")
+
         try:
-            storage_path = self._get_acquisitive_storage_path()
-            
-            # Format timestamp: YYYYMMDD_HHMMSS_microseconds
-            timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S_%f")
-            
-            # Extract short loop_id (first 8 chars before first hyphen)
-            loop_id_short = loop_id.split("-")[0] if "-" in loop_id else loop_id[:8]
-            
-            # Create filename
-            filename = f"loop_{timestamp_str}_{loop_id_short}.json"
-            loop_file = storage_path / filename
-            
-            # Write JSON file
-            loop_file.write_text(json.dumps(loop_data, indent=2, ensure_ascii=False))
-            
-            logger.info(f"Stored acquisitive loop JSON: {loop_file}")
-            
+            self._repository.save_acquisitive_loop(session_id, loop_data, loop_id, timestamp)
         except Exception as e:
             logger.error(f"Failed to store acquisitive loop JSON: {e}", exc_info=True)
 
@@ -606,14 +562,17 @@ learned from this interaction."""
         Returns:
             Episodic learning content string if exists, None otherwise
         """
+        if self._repository is None:
+            logger.warning("Cannot load episodic learning: repository is None")
+            return None
+
+        session_id = self.session_id
+        if session_id is None:
+            logger.warning("Cannot load episodic learning: session_id is None")
+            return None
+
         try:
-            storage_path = self._get_episodic_storage_path()
-            learnings_file = storage_path / "learnings.md"
-
-            if not learnings_file.exists():
-                return None
-
-            return learnings_file.read_text()
+            return self._repository.load_episodic_learning(session_id)
         except Exception as e:
             logger.warning(f"Failed to load episodic learning: {e}")
             return None
@@ -625,15 +584,15 @@ learned from this interaction."""
         Args:
             content: Episodic learning content to store
         """
+        if self._repository is None:
+            raise ValueError("Cannot store episodic learning: repository is None. Initialize WilliamLearner with repository or agent.")
+
+        session_id = self.session_id
+        if session_id is None:
+            raise ValueError("Cannot store episodic learning: session_id is None. Set session_id on agent first.")
+
         try:
-            storage_path = self._get_episodic_storage_path()
-            learnings_file = storage_path / "learnings.md"
-
-            # Write markdown file (replaces old file)
-            learnings_file.write_text(content)
-
-            logger.info(f"Stored episodic learning: {learnings_file}")
-
+            self._repository.save_episodic_learning(session_id, content)
         except Exception as e:
             logger.error(f"Failed to store episodic learning: {e}", exc_info=True)
 
@@ -643,40 +602,20 @@ learned from this interaction."""
 
         Loads all learning_note values from all JSON files in the acquisitive folder.
 
-        Args:
-            trace_acquisitive: Acquisitive learning data
-
         Returns:
             list[str]: Acquisitive learning notes
         """
+        if self._repository is None:
+            logger.warning("Cannot load acquisitive learning: repository is None")
+            return []
+
+        session_id = self.session_id
+        if session_id is None:
+            logger.warning("Cannot load acquisitive learning: session_id is None")
+            return []
+
         try:
-            storage_path = self._get_acquisitive_storage_path()
-            
-            # Find all loop JSON files matching pattern loop_*.json
-            loop_files = sorted(storage_path.glob("loop_*.json"))
-            
-            learning_notes = []
-            
-            for loop_file in loop_files:
-                try:
-                    # Load JSON file
-                    loop_data = json.loads(loop_file.read_text())
-                    
-                    # Extract learning_note if available
-                    learning_note = loop_data.get("learning_note", "")
-                    if learning_note:
-                        learning_notes.append({
-                            "loop_id": loop_data.get("loop_id", ""),
-                            "timestamp": loop_data.get("timestamp", ""),
-                            "learning_note": learning_note,
-                        })
-                except json.JSONDecodeError as e:
-                    logger.warning(f"Failed to parse JSON file {loop_file}: {e}")
-                except Exception as e:
-                    logger.warning(f"Failed to load loop file {loop_file}: {e}")
-            
-            return [learning_note["learning_note"] for learning_note in learning_notes]
-            
+            return self._repository.load_acquisitive_loops(session_id)
         except Exception as e:
             logger.warning(f"Failed to load acquisitive learning: {e}")
             return []
@@ -685,42 +624,43 @@ learned from this interaction."""
         """
         Load episodic learning from disk.
 
-        Args:
-            trace_episodic: Episodic learning data
-
         Returns:
-            trace_learning: Episodic learning insights
+            Episodic learning content string if exists, None otherwise
         """
         try:
-            previous_learning = self._load_episodic_learning()
-            if previous_learning:
-                return previous_learning
-            return None
+            return self._load_episodic_learning()
         except Exception as e:
             logger.warning(f"Failed to load episodic learning: {e}")
             return None
 
     def save_feedback(self, feedback: Any) -> None:
+        if self._repository is None:
+            raise ValueError("Cannot store feedback: repository is None. Initialize WilliamLearner with repository or agent.")
+
+        session_id = self.session_id
+        if session_id is None:
+            raise ValueError("Cannot store feedback: session_id is None. Set session_id on agent first.")
+
         try:
-            storage_path = self._get_feedback_storage_path()
-            feedback_file = storage_path / "feedback.md"
-            feedback_file.write_text(feedback)
-            logger.info(f"Stored feedback: {feedback_file}")
+            self._repository.save_feedback(session_id, str(feedback))
         except Exception as e:
             logger.error(f"Failed to store feedback: {e}", exc_info=True)
 
-    def _get_feedback_storage_path(self) -> Path:
-        base_path = Path(FileStorageConfig().workspace_folder)
-        storage_path = base_path / self.get_relative_path() / f"feedback/{self.session_id}"
-        storage_path.mkdir(parents=True, exist_ok=True)
-        return storage_path
-
     def _load_feedback(self) -> Any:
-        storage_path = self._get_feedback_storage_path()
-        feedback_file = storage_path / "feedback.md"
-        if not feedback_file.exists():
+        if self._repository is None:
+            logger.warning("Cannot load feedback: repository is None")
             return None
-        return feedback_file.read_text()
+
+        session_id = self.session_id
+        if session_id is None:
+            logger.warning("Cannot load feedback: session_id is None")
+            return None
+
+        try:
+            return self._repository.load_feedback(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to load feedback: {e}")
+            return None
 
     def _get_timeline_entries(self, checkpoint: int = -100) -> list["TimelineEntry"]:
         timeline = self._agent._timeline

@@ -514,6 +514,8 @@ class PromptEngineer:
 
     def _get_learnings_section(self) -> str:
         """Get the learnings section."""
+        if self._agent._learner is None:
+            return ""
         episodic_learnings = self._agent._learner.query_learnings("ANYTHING", LearningPhase.EPISODIC)
         episodic_content = episodic_learnings if episodic_learnings else None
         return f"""<LEARNINGS>
@@ -808,14 +810,15 @@ class PromptEngineer:
                 # No latest user message, use all timeline messages
                 messages.extend(timeline_messages)
 
-        # Hack: put the user state/locale here for now
         latest_msg = messages[-1].content if messages else None
         if latest_msg:
-            related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
-            if related_acquisitive_learnings:
-                messages.append(LLMMessage(role="system", content=f"Learning from the past : {related_acquisitive_learnings}"))
+            if self._agent._learner is not None:
+                related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
+                if related_acquisitive_learnings:
+                    messages.append(LLMMessage(role="system", content=f"Learning from the past : {related_acquisitive_learnings}"))
 
         
+        # Hack: put the user state/locale here for now
         state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]
         state_info_content = "\n".join(state_info)
         messages.append(LLMMessage(role="user", content=state_info_content))

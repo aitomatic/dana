@@ -10,6 +10,7 @@ class StorageType(StrEnum):
     """
     Use StrEnum to avoid issues with string comparison.
     """
+    NULL = "null"
     FILE = "file"
     # TODO: Implement other storage types
     # S3 = "s3" 
@@ -18,7 +19,7 @@ class StorageType(StrEnum):
     # LOCAL = "local"
 
 class StorageConfig(BaseSettings):
-    type: StorageType
+    type: StorageType = StorageType.NULL
     model_config = ConfigDict(use_enum_values=True)
 
 class FileStorageConfig(StorageConfig):
