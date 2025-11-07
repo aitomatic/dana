@@ -8,6 +8,7 @@ import type {
   EpisodicLearning,
   Session,
   LearningMetrics,
+  ComparisonResults,
 } from '@/types/hvac';
 
 interface HVACState {
@@ -23,7 +24,8 @@ interface HVACState {
   currentExecutionLearning: AcquisitiveLearning | null;
   isLoading: boolean;
   error: string | null;
-  withLearner: boolean;
+  comparisonMode: boolean;
+  comparisonResults: ComparisonResults | null;
 
   setEnvironment: (env: Environment) => void;
   setAgentPlan: (plan: AgentPlan) => void;
@@ -37,7 +39,8 @@ interface HVACState {
   setCurrentExecutionLearning: (learning: AcquisitiveLearning | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setWithLearner: (value: boolean) => void;
+  setComparisonMode: (value: boolean) => void;
+  setComparisonResults: (results: ComparisonResults | null) => void;
   reset: () => void;
 }
 
@@ -53,7 +56,8 @@ export const useHVACStore = create<HVACState>((set) => ({
   currentExecutionLearning: null,
   isLoading: false,
   error: null,
-  withLearner: true,
+  comparisonMode: false,
+  comparisonResults: null,
 
   setEnvironment: (environment) => set({ environment }),
   setAgentPlan: (agentPlan) => set({ agentPlan }),
@@ -79,7 +83,8 @@ export const useHVACStore = create<HVACState>((set) => ({
   setCurrentExecutionLearning: (currentExecutionLearning) => set({ currentExecutionLearning }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
-  setWithLearner: (withLearner) => set({ withLearner }),
+  setComparisonMode: (comparisonMode) => set({ comparisonMode }),
+  setComparisonResults: (comparisonResults) => set({ comparisonResults }),
   reset: () =>
     set({
       environment: null,
@@ -89,5 +94,6 @@ export const useHVACStore = create<HVACState>((set) => ({
       episodicLearning: null,
       currentExecutionLearning: null,
       error: null,
+      comparisonResults: null,
     }),
 }));

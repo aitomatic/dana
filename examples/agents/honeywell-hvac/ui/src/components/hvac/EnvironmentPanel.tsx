@@ -19,7 +19,17 @@ export function EnvironmentPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Environment</CardTitle>
+          <CardTitle className="flex items-center gap-2 py-0">
+            {' '}
+            <Building className="w-5 h-5 text-muted-foreground" />
+            {environment?.room_name || 'Environment'}
+            <div className="flex text-white/60 items-center gap-2">
+              |<Clock className="w-4 h-4 text-white/60" />
+              <span className="text-sm text-white/60">
+                <b>{environment.current_time}</b>
+              </span>
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent className="pb-1">
           {environment ? (
@@ -27,47 +37,32 @@ export function EnvironmentPanel() {
               <div className="flex gap-4 items-start">
                 {/* Column 1: Conference Room */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Building className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-base font-semibold">{environment.room_name}</span>
-                  </div>
-                  <div className="flex pt-2 items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground">Current Time: <b>{environment.current_time}</b></span>
-                  </div>
-                </div>
+                  {/* Column 2: Current Time and Temperature */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex gap-3">
+                      {/* Indoor Temperature Block */}
+                      <div className="flex gap-2 items-center px-3 py-1 justify-center rounded-md border border-purple-500 bg-purple-100 dark:bg-purple-500/10 ">
+                        <span className="text-sm text-purple-700 dark:text-purple-400 ">
+                          Inside
+                        </span>
+                        <span className="text-xl font-bold text-purple-700 dark:text-purple-400">
+                          {environment.indoor_temp.toFixed(1)}°F
+                        </span>
+                      </div>
 
-                {/* Separator */}
-                <Separator orientation="vertical" />
-
-                {/* Column 2: Current Time and Temperature */}
-                <div className="flex-1 space-y-3">
-                 
-
-                  <div className="flex gap-3">
-                    {/* Indoor Temperature Block */}
-                    <div className="flex flex-col p-2 justify-center rounded-md border border-purple-500 bg-purple-100 dark:bg-purple-500/10 ">
-                      <span className="text-xs text-purple-700 dark:text-purple-400 mb-1">Indoor</span>
-                      <span className="text-xl font-bold text-purple-700 dark:text-purple-400">
-                        {environment.indoor_temp.toFixed(1)}°F
-                      </span>
-                    </div>
-
-                    {/* Outdoor Temperature Block */}
-                    <div className="flex flex-col p-2 justify-center rounded-md border border-blue-500 bg-blue-100 dark:bg-blue-500/10 ">
-                      <span className="text-xs text-blue-700 dark:text-blue-400 mb-1">Outdoor</span>
-                      <span className="text-xl font-bold text-blue-700 dark:text-blue-400">
-                        {environment.outdoor_temp.toFixed(1)}°F
-                      </span>
+                      {/* Outdoor Temperature Block */}
+                      <div className="flex gap-2 items-center px-2 justify-center rounded-md border border-blue-500 bg-blue-100 dark:bg-blue-500/10 ">
+                        <span className="text-sm text-blue-700 dark:text-blue-400 ">Outside</span>
+                        <span className="text-xl font-bold text-blue-700 dark:text-blue-400">
+                          {environment.outdoor_temp.toFixed(1)}°F
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Separator */}
-                <Separator orientation="vertical" />
 
                 {/* Column 3: Meetings */}
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 translate-y-[-24px] space-y-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">
@@ -92,7 +87,7 @@ export function EnvironmentPanel() {
             </div>
           ) : (
             <div className="text-sm text-muted-foreground text-center py-8">
-             Run Agent to get environment data
+              Run Agent to get environment data
             </div>
           )}
         </CardContent>

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useHVACStore } from '@/stores/hvac-store';
 import { Clock, Zap } from 'lucide-react';
+import type { Feedback, Environment, AgentPlan, ComparisonMode } from '@/types/hvac';
 import {
   Line,
   XAxis,
@@ -16,12 +17,29 @@ import {
 } from 'recharts';
 import { calculateTemperaturePoints, parseTimeToMinutes, minutesToTime } from '@/lib/temperature-calculator';
 
-export function FeedbackDetail() {
-  const { feedback, environment, agentPlan } = useHVACStore();
+interface FeedbackDetailProps {
+  feedback?: Feedback | null;
+  environment?: Environment | null;
+  agentPlan?: AgentPlan | null;
+  mode?: ComparisonMode;
+}
+
+export function FeedbackDetail({ feedback: propFeedback, environment: propEnvironment, agentPlan: propAgentPlan, mode }: FeedbackDetailProps = {}) {
+  const { feedback: storeFeedback, environment: storeEnvironment, agentPlan: storeAgentPlan } = useHVACStore();
+  const feedback = propFeedback ?? storeFeedback;
+  const environment = propEnvironment ?? storeEnvironment;
+  const agentPlan = propAgentPlan ?? storeAgentPlan;
+
+  // In comparison mode, add white/50 border for WITH learning, white/10 border for WITHOUT learning
+  const cardClassName = mode
+    ? mode === 'withLearning'
+      ? 'border-white/50 border-2'
+      : 'bg-transparent border-white/10 border-2'
+    : '';
 
   if (!feedback) {
     return (
-      <Card>
+      <Card className={cardClassName}>
         <CardHeader>
           <CardTitle>Feedback</CardTitle>
         </CardHeader>
@@ -33,9 +51,19 @@ export function FeedbackDetail() {
   }
 
   return (
-    <Card>
+    <Card className={cardClassName}>
       <CardHeader>
-        <CardTitle>Feedback</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Feedback</CardTitle>
+          {mode && (
+            <Badge
+              variant={mode === 'withLearning' ? 'default' : 'outline'}
+              className={mode === 'withLearning' ? 'bg-blue-600 text-white' : 'border-gray-400 text-gray-700 dark:text-gray-300'}
+            >
+              {mode === 'withLearning' ? 'With Learning' : 'Without Learning'}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Status Summary */}

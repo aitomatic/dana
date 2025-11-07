@@ -4,9 +4,17 @@ import { Button } from '@/components/ui/button';
 import { useHVACStore } from '@/stores/hvac-store';
 import { Sparkles, TrendingUp, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { Feedback, ComparisonMode } from '@/types/hvac';
 
-export function CurrentLearningHighlight({ onShowLearnedInsights }: { onShowLearnedInsights?: () => void }) {
-  const { currentExecutionLearning, feedback } = useHVACStore();
+interface CurrentLearningHighlightProps {
+  onShowLearnedInsights?: () => void;
+  feedback?: Feedback | null;
+  mode?: ComparisonMode;
+}
+
+export function CurrentLearningHighlight({ onShowLearnedInsights, feedback: propFeedback, mode }: CurrentLearningHighlightProps = {}) {
+  const { currentExecutionLearning, feedback: storeFeedback } = useHVACStore();
+  const feedback = propFeedback ?? storeFeedback;
   const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
@@ -17,6 +25,13 @@ export function CurrentLearningHighlight({ onShowLearnedInsights }: { onShowLear
     }
   }, [currentExecutionLearning]);
 
+  // In comparison mode, add white/50 border for WITH learning, white/10 border for WITHOUT learning
+  const cardClassName = mode
+    ? mode === 'withLearning'
+      ? 'border-white/50 border-2'
+      : 'bg-transparent border-white/10 border-2'
+    : '';
+
   // Only show this component when feedback exists (agent has run with results)
   if (!feedback) {
     return null;
@@ -24,7 +39,7 @@ export function CurrentLearningHighlight({ onShowLearnedInsights }: { onShowLear
 
   if (!currentExecutionLearning) {
     return (
-      <Card>
+      <Card className={cardClassName}>
         <CardHeader>
           <CardTitle>New Learning</CardTitle>
         </CardHeader>
@@ -52,14 +67,19 @@ export function CurrentLearningHighlight({ onShowLearnedInsights }: { onShowLear
 
   const timestamp = new Date(currentExecutionLearning.timestamp).toLocaleString();
 
-  return (
-    <Card
-      className={`transition-all duration-500 ${
+  // Combine comparison mode styling with new learning animation
+  const combinedCardClassName = mode
+    ? mode === 'withLearning'
+      ? `border-white/50 border-2 ${isNew ? 'shadow-lg' : ''}`
+      : 'bg-transparent border-white/10 border-2'
+    : `transition-all duration-500 ${
         isNew
           ? 'border-green-500 bg-green-50 dark:bg-green-500/10 shadow-lg'
           : 'border-border'
-      }`}
-    >
+      }`;
+
+  return (
+    <Card className={combinedCardClassName}>
       <CardHeader>
         <div className="flex  items-center justify-between">
           <CardTitle className="flex items-center gap-2">
