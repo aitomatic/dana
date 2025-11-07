@@ -7,16 +7,26 @@ Tests the prompt loading architecture:
 """
 
 import os
+import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 import pytest
 
+# Mock the problematic import before any dana imports
+sys.modules["dana.core.knowledge.prompts.agent_prompt_engineer"] = MagicMock()
+sys.modules["dana.core.knowledge.prompts.resource_prompt_engineer"] = MagicMock()
+sys.modules["dana.core.knowledge.prompts.workflow_prompt_engineer"] = MagicMock()
+
 from dana.common.base_war import BaseWAR
-from dana.core.agent.components.prompt_engineers.base_prompt_engineer import BasePromptEngineer
-from dana.core.agent.components.prompt_engineers.resource_prompt_engineer import ResourcePromptEngineer
+from dana.config.storage_config import FileStorageConfig
+from dana.core.agent import BaseAgent
+from dana.core.knowledge.prompts.prompt_engineer.base_prompt_engineer import BasePromptEngineer
+from dana.core.knowledge.prompts.prompt_engineer.base_prompt_engineer import ResourcePromptEngineer
 from dana.core.resource.base_resource import BaseResource
+from dana.repositories.local_file_repository import LocalPromptRepository
+from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
 
 class MockResource(BaseResource):
@@ -25,15 +35,131 @@ class MockResource(BaseResource):
         super().__init__(resource_type="mock", auto_register=False, **kwargs)
 
 
+class MockAgent(BaseAgent):
+    """Mock agent for testing."""
+    def __init__(self, **kwargs):
+        super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
+        self._codec = Mock()
+        self._codec.__qualname__ = "TestCodec"
+
+
+class ConcretePromptEngineer(BasePromptEngineer):
+    """Concrete implementation for testing BasePromptEngineer."""
+    def construct_prompt(self) -> str:
+        return "Test prompt"
+    
+    def check_conflicts(self) -> bool:
+        return False
+
+
 class TestBasePromptEngineer:
     """Test BasePromptEngineer functionality."""
 
-    def test_initialization(self):
-        """Test BasePromptEngineer initialization with a component."""
-        component = MockResource()
-        engineer = BasePromptEngineer(component)
-        
-        assert engineer._component == component
+    def test_initialization_with_repository(self):
+        """Test BasePromptEngineer initialization with repository parameter."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
+            
+            engineer = ConcretePromptEngineer(
+                component=component,
+                repository=repository,
+                codec=CSXMLCodec
+            )
+            
+            assert engineer._component == component
+            assert engineer._repository == repository
+            assert hasattr(engineer, '_repository')
+            assert not hasattr(engineer, '_store')  # Should not have _store anymore
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_persist_uses_repository_create_snapshot(self):
+        """Test persist() calls repository.create_snapshot()."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
+            
+            engineer = ConcretePromptEngineer(
+                component=component,
+                repository=repository,
+                codec=CSXMLCodec
+            )
+            
+            # Set prompt content
+            engineer._prompt = "Test prompt content"
+            
+            # Call persist
+            engineer.persist()
+            
+            # Verify repository was used
+            assert repository.has_any_versions()
+            snapshot = repository.get_active()
+            assert snapshot.content == "Test prompt content"
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_load_uses_repository_get_active(self):
+        """Test load() calls repository.get_active()."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
+            
+            # Create a version first
+            repository.create_snapshot(
+                content="Test content",
+                provenance={},
+                metrics={}
+            )
+            repository.set_active("v1")
+            
+            engineer = ConcretePromptEngineer(
+                component=component,
+                repository=repository,
+                codec=CSXMLCodec
+            )
+            
+            # Call load
+            result = engineer.load()
+            
+            assert result == "Test content"
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_load_returns_none_when_no_versions(self):
+        """Test load() returns None when no versions exist."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
+            
+            engineer = ConcretePromptEngineer(
+                component=component,
+                repository=repository,
+                codec=CSXMLCodec
+            )
+            
+            # Call load when no versions exist
+            result = engineer.load()
+            
+            assert result is None
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
 
     def test_has_find_library_root_method(self):
         """Test that BasePromptEngineer has _find_library_root method."""
