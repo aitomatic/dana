@@ -6,7 +6,7 @@ import { Thermometer, Zap, Snowflake, Flame, Brain } from 'lucide-react';
 import { UnifiedTimeline } from './UnifiedTimeline';
 
 export function AgentPlanVisualization() {
-  const { agentPlan, acquisitiveLearnings } = useHVACStore();
+  const { agentPlan, acquisitiveLearnings, withLearner } = useHVACStore();
   
   if (!agentPlan) {
     return (
@@ -110,8 +110,8 @@ export function AgentPlanVisualization() {
             </div>
           </div>
           
-          {/* Learning Indicators */}
-          {acquisitiveLearnings.length > 0 && (
+          {/* Learning Indicators - Only show when learning is enabled */}
+          {withLearner && acquisitiveLearnings.length > 0 && (
             <div className="pt-2">
               <Badge
                 variant="outline"
