@@ -125,7 +125,6 @@ class STARAgent(BaseSTARAgent):
             
             self._event_log = EventLogAPI(
                 agent=self,
-                codec=codec,
                 observer=observer,  # REQUIRED - EventLog only works with Observer
                 repository_factory=self._repository_factory,
             )

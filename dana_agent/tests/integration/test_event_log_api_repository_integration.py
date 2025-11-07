@@ -67,7 +67,6 @@ class TestEventLogAPIRepositoryIntegration:
             observer = MockObserverForIntegration({"key": "value"})
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 
@@ -95,7 +94,6 @@ class TestEventLogAPIRepositoryIntegration:
             observer = MockObserverForIntegration({"event": 0})
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 
@@ -127,7 +125,6 @@ class TestEventLogAPIRepositoryIntegration:
             observer = MockObserverForIntegration({"event": 0})
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 
@@ -159,7 +156,6 @@ class TestEventLogAPIRepositoryIntegration:
             # Create event_log with agent only (no repository)
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 

@@ -39,7 +39,6 @@ class EventLogAPI:
     def __init__(
         self,
         agent: "BaseAgent",
-        codec: type["AbstractCodec"] | None,
         observer: ObserverProtocol,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
     ):
@@ -55,13 +54,12 @@ class EventLogAPI:
         Note: Observer is required - EventLog only works with Observer.
         """
         self._agent = agent
-        self._codec = codec
         self._observer = observer
         self._current_session_id: str | None = None
         self._event_buffer: list[Event] = []  # Buffer for observations only
 
         # Create repository via factory
-        self._repository = repository_factory.create(RepositoryType.EVENT, agent=agent, codec=codec)
+        self._repository = repository_factory.create(RepositoryType.EVENT, agent=agent)
     
     def observe_and_record(self) -> Event | None:
         """

@@ -64,7 +64,6 @@ class TestEventLogAPIWithRepository:
         observer = MockObserver()
         event_log = EventLogAPI(
             agent=agent,
-            codec=None,
             observer=observer,
         )
 
@@ -78,7 +77,6 @@ class TestEventLogAPIWithRepository:
         observer = MockObserver()
         event_log = EventLogAPI(
             agent=agent,
-            codec=None,
             observer=observer,
         )
 
@@ -95,7 +93,6 @@ class TestEventLogAPIWithRepository:
             observer = MockObserver({"key": "value"})
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 
@@ -119,7 +116,6 @@ class TestEventLogAPIWithRepository:
         observer = MockObserver()
         event_log = EventLogAPI(
             agent=agent,
-            codec=None,
             observer=observer,
         )
 
@@ -137,7 +133,6 @@ class TestEventLogAPIWithRepository:
             observer = MockObserver({"key": "value"})
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 
@@ -163,7 +158,6 @@ class TestEventLogAPIWithRepository:
             observer = MockObserver({"event": 0})
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 
@@ -193,7 +187,6 @@ class TestEventLogAPIWithRepository:
             observer = MockObserver({"event": 0})
             event_log = EventLogAPI(
                 agent=agent,
-                codec=None,
                 observer=observer,
             )
 
@@ -218,7 +211,6 @@ class TestEventLogAPIWithRepository:
         observer = MockObserver()
         event_log = EventLogAPI(
             agent=agent,
-            codec=None,
             observer=observer,
         )
         # Manually set repository to None to test error case
@@ -248,7 +240,6 @@ class TestEventLogAPIWithRepository:
         observer = MockObserver()
         event_log = EventLogAPI(
             agent=agent,
-            codec=None,
             observer=observer,
         )
         # Manually set repository to None to test error case
