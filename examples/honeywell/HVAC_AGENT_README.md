@@ -2,6 +2,51 @@
 
 AI agent that creates HVAC control plans based ONLY on environment status.
 
+## Quickstart
+
+### Prerequisites
+
+- Python 3.12+ with `uv` installed
+- Node.js and npm installed
+- `.env` file in project root with `OPENAI_API_KEY`
+
+### Setup and Run
+
+1. **Install all dependencies:**
+
+   ```bash
+   cd examples/honeywell
+   ./install_all.sh
+   ```
+
+2. **Start all services:**
+
+   ```bash
+   ./start_all.sh
+   ```
+
+   This starts:
+
+   - LlamaStack server on `http://localhost:8321`
+   - API server on `http://localhost:8081`
+   - Frontend UI on `http://localhost:5173`
+
+3. **Run the agent:**
+
+   ```bash
+   uv run hvac_agent.py
+   ```
+
+   Or use the UI at `http://localhost:5173` to interact with the agent.
+
+### Logs
+
+All services log to `/tmp/`:
+
+- `tail -f /tmp/hvac-llamastack.log` - LlamaStack server
+- `tail -f /tmp/hvac-api.log` - API server
+- `tail -f /tmp/hvac-ui.log` - Frontend UI
+
 ## Flow
 
 ```
@@ -17,6 +62,7 @@ Feedback: Validates the plan
 **Agent receives ONLY environment data - no rules, no instructions, no user request.**
 
 The agent must figure out:
+
 - Should it cool or heat?
 - When to start/stop?
 - Use turbo or base mode?
@@ -89,12 +135,14 @@ FINAL RESULT
 ## What Makes This Different
 
 **Traditional approach:**
+
 - Agent has built-in rules
 - Knows when to use turbo
 - Told what target temp should be
 - Given explicit instructions
 
 **This approach:**
+
 - Agent receives ONLY: time, temps, meetings
 - Figures out everything itself
 - No built-in knowledge
@@ -102,15 +150,16 @@ FINAL RESULT
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `hvac_agent.py` | Main flow (3 steps) |
-| `prompts/HVACAgent.xml` | Minimal identity (no knowledge) |
-| `environments/hvac_api.py` | API functions |
+| File                       | Purpose                         |
+| -------------------------- | ------------------------------- |
+| `hvac_agent.py`            | Main flow (3 steps)             |
+| `prompts/HVACAgent.xml`    | Minimal identity (no knowledge) |
+| `environments/hvac_api.py` | API functions                   |
 
 ## Agent Prompt
 
 **Identity:** Minimal (no decision rules)
+
 ```xml
 <IDENTITY>
 I create HVAC control plans based on current environment conditions.
@@ -119,6 +168,7 @@ I analyze the environment and output a plan in JSON format.
 ```
 
 **Input:** Environment status only
+
 ```
 - Current time: 14:00
 - Indoor temperature: 86.0°F
@@ -127,6 +177,7 @@ I analyze the environment and output a plan in JSON format.
 ```
 
 **Output:** Agent decides everything
+
 ```json
 {
   "plan": [...],
