@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Minimal Honeywell Agent - Uses STAR execution pattern."""
 
-import os
 import sys
+import os
 
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "dana_agent"))
+sys.path.insert(
+    0, os.path.join(os.path.dirname(__file__), "..", "..", "dana_agent")
+)
 
 from dana.core.agent.star_agent import STARAgent  # noqa: E402
 
@@ -14,7 +15,12 @@ class HoneywellAgent(STARAgent):
     """Honeywell Systems Expert Agent."""
 
     def __init__(self, **kwargs):
-        super().__init__(agent_id="honeywell-agent", llm_provider="llamastack", model="openai/gpt-4.1-mini", **kwargs)
+        super().__init__(
+            agent_id="honeywell-agent",
+            llm_provider="openai",
+            model="gpt-4.1-mini",
+            **kwargs
+        )
 
 
 if __name__ == "__main__":
