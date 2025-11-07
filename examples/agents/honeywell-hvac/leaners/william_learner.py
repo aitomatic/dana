@@ -22,6 +22,7 @@ from dana.common.protocols.types import LearningPhase
 from dana.core.agent.components.learner import LearnerProtocol
 from dana.common.llm.debug_logger import get_debug_logger
 from dana.core.agent.timeline import TimelineEntry
+from pathlib import Path
 from rank_bm25 import BM25Okapi
 import numpy as np
 
@@ -116,6 +117,13 @@ class WilliamLearner(LearnerProtocol):
         else:
             session_id = _event_log._current_session_id
         return session_id
+
+    def _get_episodic_storage_path(self) -> Path:
+        return self._repository._base_storage_path / "learnings" / self.session_id / "episodic"
+
+    def _get_acquisitive_storage_path(self) -> Path:
+        return self._repository._base_storage_path / "learnings" / self.session_id / "acquisitive"
+
 
     def _reflect_acquisitive(
         self, trace_acquisitive: DictParams
