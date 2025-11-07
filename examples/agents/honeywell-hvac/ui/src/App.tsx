@@ -7,7 +7,7 @@ import { LearningGrowthTracker } from './components/hvac/LearningGrowthTracker';
 import { AccumulatedKnowledgePanel } from './components/hvac/AccumulatedKnowledgePanel';
 import { CurrentLearningHighlight } from './components/hvac/CurrentLearningHighlight';
 import { SessionSelector } from './components/hvac/SessionSelector';
-import { ComparisonModeToggle } from './components/hvac/LearningModeToggle';
+import { STARFrameworkPresentation } from './components/hvac/STARFrameworkPresentation';
 import { useHVACFlow } from './hooks/use-hvac-flow';
 import { useHVACStore } from './stores/hvac-store';
 
@@ -18,12 +18,21 @@ export default function App() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [showLearning, setShowLearning] = useState(false);
   const [hasRunAgent, setHasRunAgent] = useState(false);
+  const [showSTARPresentation, setShowSTARPresentation] = useState(true);
 
   useEffect(() => {
     if (currentSession) {
       loadLearnings(currentSession.session_id);
     }
   }, [currentSession, loadLearnings]);
+
+  // Check localStorage on mount for STAR presentation dismissal
+  useEffect(() => {
+    const dismissed = localStorage.getItem('hvac-star-presentation-dismissed');
+    if (dismissed) {
+      setShowSTARPresentation(false);
+    }
+  }, []);
 
   // Reset local state when runFlow starts
   useEffect(() => {
@@ -81,30 +90,45 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-border px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold">Smart HVAC Control</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Adaptive Autonomous AI for Comfort & Sustainability -{' '}
-              <span className="italic text-brand-200">Powered by Dana</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ComparisonModeToggle />
-            <SessionSelector />
+      <header className="relative border-border">
+        {/* Background Image Section */}
+        <div
+          className="relative w-full h-[200px] bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url(/images/workshop-ventilation-systems.jpg)',
+          }}
+        >
+          {/* Dark overlay for better text readability */}
+          <div className="absolute inset-0 bg-black/80" />
+
+          {/* Content */}
+          <div className="relative z-10 h-full flex items-center justify-between px-6 py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">Smart HVAC Control</h1>
+              <p className="text-sm text-white/90 mt-1 drop-shadow-md">
+                Adaptive Autonomous AI for Comfort & Sustainability -{' '}
+                <span className="italic text-brand-200">Powered by Dana</span>
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <SessionSelector />
+            </div>
           </div>
         </div>
-        <ExecutionProgress
-          showPlanComplete={!!agentPlan || !!comparisonResults}
-          showValidationComplete={showFeedback || !!comparisonResults}
-          showLearningComplete={showLearning || !!comparisonResults}
-        />
-        {environment && (
-          <div className="mt-4 opacity-0 animate-fade-in-up will-change-[opacity,transform]">
-            <EnvironmentPanel />
-          </div>
-        )}
+
+        {/* Execution Progress Section */}
+        <div className="px-6 py-4">
+          <ExecutionProgress
+            showPlanComplete={!!agentPlan || !!comparisonResults}
+            showValidationComplete={showFeedback || !!comparisonResults}
+            showLearningComplete={showLearning || !!comparisonResults}
+          />
+          {environment && (
+            <div className="mt-4 opacity-0 animate-fade-in-up will-change-[opacity,transform]">
+              <EnvironmentPanel />
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="grid grid-cols-12 gap-4 p-6 ]">
@@ -191,6 +215,14 @@ export default function App() {
             <div className={`space-y-4 overflow-y-auto ${feedback ? 'col-span-3' : 'col-span-12'}`}>
               {showLearning && (
                 <CurrentLearningHighlight onShowLearnedInsights={() => setHasRunAgent(false)} />
+              )}
+              {showSTARPresentation && showLearnedInsights && (
+                <STARFrameworkPresentation
+                  onDismiss={() => {
+                    localStorage.setItem('hvac-star-presentation-dismissed', 'true');
+                    setShowSTARPresentation(false);
+                  }}
+                />
               )}
               {showLearnedInsights && <LearningGrowthTracker />}
             </div>
