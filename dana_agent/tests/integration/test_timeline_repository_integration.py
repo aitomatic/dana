@@ -42,8 +42,7 @@ class TestTimelineRepositoryIntegration:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
-            repository = LocalTimelineRepository(agent)
-            timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+            timeline = Timeline(max_context_tokens=1000, agent=agent)
             
             # Add entries
             entry1 = TimelineEntry(
@@ -78,8 +77,7 @@ class TestTimelineRepositoryIntegration:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
-            repository = LocalTimelineRepository(agent)
-            timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+            timeline = Timeline(max_context_tokens=1000, agent=agent)
             
             # Add multiple entries
             for i in range(5):
@@ -110,8 +108,7 @@ class TestTimelineRepositoryIntegration:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
-            repository = LocalTimelineRepository(agent)
-            timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+            timeline = Timeline(max_context_tokens=1000, agent=agent)
             
             # Add multiple entries
             for i in range(5):

@@ -8,11 +8,9 @@ This component provides functionality for:
 - RETENTIVE learning (long-term learning)
 """
 
-import inspect
-import re
 from datetime import datetime
-from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, Any
+import re
+from typing import TYPE_CHECKING, Any, Protocol
 from uuid import uuid4
 
 from structlog import get_logger
@@ -21,14 +19,20 @@ from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols import DictParams
 from dana.common.protocols.types import LearningPhase
+
+
 logger = get_logger()
 
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
     from dana.core.agent.timeline import Timeline
+    from dana.repositories.repository_factory import RepositoryFactory
 
 class LearnerProtocol(Protocol):
+    def __init__(self, agent: "STARAgent", repository_factory: "RepositoryFactory | None" = None):
+        """Initialize learner with agent and optional repository factory."""
+        ...
     def _reflect_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
         ...
 
@@ -58,14 +62,22 @@ class LearnerProtocol(Protocol):
 class Learner:
     """Component providing STAR learning phase implementations."""
 
-    def __init__(self, agent: "STARAgent"):
+    def __init__(self, agent: "STARAgent", repository_factory: "RepositoryFactory | None" = None):
         """
         Initialize the component with a reference to the agent.
 
         Args:
             agent: The agent instance this component belongs to
+            repository_factory: Optional repository factory (uses DEFAULT_REPOSITORY_FACTORY if not provided)
         """
         self._agent = agent
+        # Create repository using factory if agent is provided
+        if agent:
+            from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryType
+            factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
+            self._repository = factory.create(RepositoryType.LEARNING, agent=agent)
+        else:
+            self._repository = None
 
     # ============================================================================
     # LEARNING PHASES (STAR REFLECTION IMPLEMENTATIONS)
@@ -155,31 +167,101 @@ class Learner:
         return {"trace_learning": trace_learning}
 
     def _load_acquisitive(self) -> list[str]:
-        return []
+        """Load acquisitive learnings using repository if available."""
+        if self._repository is None:
+            return []
+        # Get session_id from agent
+        session_id = self._get_session_id()
+        if session_id is None:
+            return []
+        try:
+            return self._repository.load_acquisitive_loops(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to load acquisitive learnings: {e}")
+            return []
 
     def _load_episodic(self) -> str | None:
-        return None
+        """Load episodic learning using repository if available."""
+        if self._repository is None:
+            return None
+        # Get session_id from agent
+        session_id = self._get_session_id()
+        if session_id is None:
+            return None
+        try:
+            return self._repository.load_episodic_learning(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to load episodic learning: {e}")
+            return None
 
     def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
         return None
 
     def _load_feedback(self) -> Any:
-        return None
+        """Load feedback using repository if available."""
+        if self._repository is None:
+            return None
+        # Get session_id from agent
+        session_id = self._get_session_id()
+        if session_id is None:
+            return None
+        try:
+            return self._repository.load_feedback(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to load feedback: {e}")
+            return None
 
     def save_feedback(self, feedback: Any) -> None:
-        pass
+        """Save feedback using repository if available."""
+        if self._repository is None:
+            return
+        # Get session_id from agent
+        session_id = self._get_session_id()
+        if session_id is None:
+            logger.warning("Cannot save feedback: session_id is None")
+            return
+        try:
+            self._repository.save_feedback(session_id, str(feedback))
+        except Exception as e:
+            logger.error(f"Failed to save feedback: {e}", exc_info=True)
+
+    def _get_session_id(self) -> str | None:
+        """Get session_id from agent."""
+        if hasattr(self._agent, "_session_id") and "magic" not in str(self._agent._session_id):
+            return self._agent._session_id
+        _event_log = getattr(self._agent, "_event_log", None)
+        if _event_log is None or "magic" in str(_event_log):
+            return None
+        return _event_log._current_session_id
 
 class DefaultLearner(LearnerProtocol):
     """Component providing STAR learning phase implementations."""
 
-    def __init__(self, agent: "STARAgent"):
+    def __init__(self, agent: "STARAgent", repository_factory: "RepositoryFactory | None" = None):
         """
         Initialize the component with a reference to the agent.
 
         Args:
             agent: The agent instance this component belongs to
+            repository_factory: Optional repository factory (uses DEFAULT_REPOSITORY_FACTORY if not provided)
         """
         self._agent = agent
+        # Create repository using factory (use DEFAULT_REPOSITORY_FACTORY if not provided)
+        if agent:
+            from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryType
+            factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
+            self._repository = factory.create(RepositoryType.LEARNING, agent=agent)
+        else:
+            self._repository = None
+
+    def _get_session_id(self) -> str | None:
+        """Get session_id from agent."""
+        if hasattr(self._agent, "_session_id") and "magic" not in str(self._agent._session_id):
+            return self._agent._session_id
+        _event_log = getattr(self._agent, "_event_log", None)
+        if _event_log is None or "magic" in str(_event_log):
+            return None
+        return _event_log._current_session_id
 
     # ============================================================================
     # LEARNING PHASES (STAR REFLECTION IMPLEMENTATIONS)
@@ -293,55 +375,32 @@ class DefaultLearner(LearnerProtocol):
 
     def _load_acquisitive_learning_markdown(self) -> str | None:
         """
-        Load existing acquisitive learning markdown from disk.
+        Load existing acquisitive learning markdown from repository.
 
         Returns:
             Learning markdown string if exists, None otherwise
         """
+        if self._repository is None:
+            return None
+        
+        session_id = self._get_session_id()
+        if session_id is None:
+            return None
+        
         try:
-            storage_path = self._get_acquisitive_storage_path()
-            learnings_file = storage_path / "learnings.md"
-
-            if not learnings_file.exists():
+            # Load all acquisitive loops
+            learning_notes = self._repository.load_acquisitive_loops(session_id)
+            
+            # If no learning notes, return None
+            if not learning_notes:
                 return None
-
-            return learnings_file.read_text()
+            
+            # For DefaultLearner, we use the latest learning_note as accumulated markdown
+            # (The markdown is accumulated and updated each loop)
+            return learning_notes[-1] if learning_notes else None
         except Exception as e:
             logger.warning(f"Failed to load acquisitive learning markdown: {e}")
             return None
-
-    def _get_acquisitive_storage_path(self) -> Path:
-        """
-        Get acquisitive learning storage path following EventLog pattern.
-
-        Path: {codec.__qualname__}/{agent.__class__.__qualname__}__{filename}/learnings/acquisitive
-
-        Returns:
-            Path to acquisitive learning storage directory
-        """
-        from dana.config.storage_config import FileStorageConfig
-
-        storage_config = FileStorageConfig()
-        base_path = Path(storage_config.workspace_folder)
-
-        # Follow EventLog pattern
-        filepath = inspect.getfile(self._agent.__class__)
-        filename = Path(filepath).stem
-
-        # Get codec from agent
-        codec = getattr(self._agent, "_codec", None)
-        if codec is None or "magic" in str(codec.__qualname__):
-            # Try to get from prompt_engineer if available
-            prompt_engineer = getattr(self._agent, "_prompt_engineer", None)
-            if prompt_engineer:
-                codec = getattr(prompt_engineer, "_codec", None)
-
-        codec_name = codec.__qualname__ if codec else "default"
-
-        relative_path = f"{codec_name}/{self._agent.__class__.__qualname__}__{filename}/learnings/acquisitive"
-        storage_path = base_path / relative_path
-        storage_path.mkdir(parents=True, exist_ok=True)
-        return storage_path
 
     def _build_analysis_context(self, trace_acquisitive: DictParams, timeline_context: list[dict]) -> str:
         """
@@ -598,20 +657,35 @@ Provide your analysis in the markdown format specified above."""
 
     def _store_acquisitive_learning_markdown(self, markdown_content: str) -> None:
         """
-        Store acquisitive learning markdown to disk.
+        Store acquisitive learning markdown to repository.
 
         Args:
             markdown_content: LLM-generated markdown with accumulated insights
         """
+        if self._repository is None:
+            logger.warning("Cannot store acquisitive learning markdown: repository is None")
+            return
+        
+        session_id = self._get_session_id()
+        if session_id is None:
+            logger.warning("Cannot store acquisitive learning markdown: session_id is None")
+            return
+        
         try:
-            storage_path = self._get_acquisitive_storage_path()
-            learnings_file = storage_path / "learnings.md"
-
-            # Write markdown file (replaces old file)
-            learnings_file.write_text(markdown_content)
-
-            logger.info(f"Stored acquisitive learning markdown: {learnings_file}")
-
+            # Store markdown as a loop with learning_note containing the markdown
+            loop_id = str(uuid4())
+            timestamp = datetime.now()
+            
+            # Create loop data with markdown as learning_note
+            loop_data = {
+                "learning_note": markdown_content,
+                "timestamp": timestamp.isoformat(),
+                "session_id": session_id,
+                "loop_id": loop_id,
+            }
+            
+            self._repository.save_acquisitive_loop(session_id, loop_data, loop_id, timestamp)
+            logger.info("Stored acquisitive learning markdown via repository")
         except Exception as e:
             logger.error(f"Failed to store acquisitive learning markdown: {e}", exc_info=True)
 
@@ -667,16 +741,56 @@ Provide your analysis in the markdown format specified above."""
         return {"trace_learning": trace_learning}
 
     def _load_acquisitive(self) -> list[str]:
-        return []
+        """Load acquisitive learning using repository if available."""
+        if self._repository is None:
+            return []
+        session_id = self._get_session_id()
+        if session_id is None:
+            return []
+        try:
+            return self._repository.load_acquisitive_loops(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to load acquisitive learnings: {e}")
+            return []
 
     def _load_episodic(self) -> str | None:
-        return None
+        """Load episodic learning using repository if available."""
+        if self._repository is None:
+            return None
+        session_id = self._get_session_id()
+        if session_id is None:
+            return None
+        try:
+            return self._repository.load_episodic_learning(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to load episodic learning: {e}")
+            return None
 
     def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
         return None
 
     def _load_feedback(self) -> Any:
-        return None
+        """Load feedback using repository if available."""
+        if self._repository is None:
+            return None
+        session_id = self._get_session_id()
+        if session_id is None:
+            return None
+        try:
+            return self._repository.load_feedback(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to load feedback: {e}")
+            return None
 
     def save_feedback(self, feedback: Any) -> None:
-        pass
+        """Save feedback using repository if available."""
+        if self._repository is None:
+            return
+        session_id = self._get_session_id()
+        if session_id is None:
+            logger.warning("Cannot save feedback: session_id is None")
+            return
+        try:
+            self._repository.save_feedback(session_id, str(feedback))
+        except Exception as e:
+            logger.error(f"Failed to save feedback: {e}", exc_info=True)

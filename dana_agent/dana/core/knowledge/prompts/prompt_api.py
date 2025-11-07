@@ -9,10 +9,9 @@ from structlog import get_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols import Persistable, PrivatePromptsProtocol, PublicPromptsProtocol
-from dana.config.storage_config import FileStorageConfig
 from dana.core.agent.timeline import Timeline
 from dana.core.knowledge.prompts.codecs import AbstractCodec
-from dana.repositories.local_file_repository import LocalPromptRepository
+from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory, RepositoryType
 
 from .prompt_engineer import AgentPromptEngineer, BasePromptEngineer, ResourcePromptEngineer, WorkflowPromptEngineer
 
@@ -55,8 +54,6 @@ class PromptAPIProtocol(PublicPromptsProtocol, PrivatePromptsProtocol, Persistab
     @abstractmethod
     def render(self, template: str) -> str: ...
 
-    @abstractmethod
-    def learn(self, **kwargs) -> None: ...
 
 
 TEMPLATE_SYSTEM_PROMPT = """
@@ -94,7 +91,6 @@ class LocalPromptAPI(PromptAPIProtocol):
     ]
 
     def __init__(self, agent: "BaseAgent", 
-                storage_config: FileStorageConfig, 
                 codec: type[AbstractCodec],
                 agent_prompt_engineer_cls: type[AgentPromptEngineer]=AgentPromptEngineer,
                 resource_prompt_engineer_cls: type[ResourcePromptEngineer]=ResourcePromptEngineer,
@@ -102,9 +98,9 @@ class LocalPromptAPI(PromptAPIProtocol):
                 template_system_prompt: str = TEMPLATE_SYSTEM_PROMPT,
                 force_generate: bool = False,
                 check_conflicts: bool = False,
+                repository_factory: RepositoryFactory | None = None,
                 **kwargs):
         self._agent = agent
-        self._storage_config = storage_config
         self._agent_prompt_engineer_cls = agent_prompt_engineer_cls
         self._resource_prompt_engineer_cls = resource_prompt_engineer_cls
         self._workflow_prompt_engineer_cls = workflow_prompt_engineer_cls
@@ -112,10 +108,12 @@ class LocalPromptAPI(PromptAPIProtocol):
         self._force_generate = force_generate
         self._check_conflicts = check_conflicts
         self._template_system_prompt = template_system_prompt
-        # NOTE: This agent repository (changed from store)
-        self._store = LocalPromptRepository(
-            self._storage_config,
-            self._agent,
+        # Use provided factory or default
+        self._repository_factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
+        # NOTE: This agent repository (changed from store) - created via factory
+        self._store = self._repository_factory.create(
+            RepositoryType.PROMPT,
+            agent=self._agent,
             component=None  # For system prompt template
         )
         # NOTE : Registry management will be added later
@@ -128,10 +126,10 @@ class LocalPromptAPI(PromptAPIProtocol):
     def _instantiate_prompt_engineer(
         self, prompt_engineer_cls: type[BasePromptEngineer], component, relative_path: str, **kwargs
     ) -> BasePromptEngineer:
-        # Create repository instead of store
-        repository = LocalPromptRepository(
-            self._storage_config,
-            self._agent,
+        # Create repository via factory
+        repository = self._repository_factory.create(
+            RepositoryType.PROMPT,
+            agent=self._agent,
             component=component
         )
         return prompt_engineer_cls(
@@ -305,6 +303,3 @@ class LocalPromptAPI(PromptAPIProtocol):
         if snapshot is None:
             return None
         return snapshot.content
-
-    def learn(self, **kwargs) -> None:
-        pass

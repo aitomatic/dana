@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections.abc import Iterator
 from datetime import datetime
 import inspect
@@ -12,10 +13,13 @@ from dana.common.protocols.war import AgentProtocol, ResourceProtocol, WorkflowP
 from dana.common.schemas import Event, PromptVersionSnapshot
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent.base_agent import BaseAgent
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType, _sanitize_for_json
+from typing import TYPE_CHECKING
 
-from .repository_protocol import EventRepositoryProtocol, PromptRepositoryProtocol, TimelineRepositoryProtocol
+from .repository_protocol import EventRepositoryProtocol, LearningRepositoryProtocol, PromptRepositoryProtocol, TimelineRepositoryProtocol
 
+
+if TYPE_CHECKING:
+    from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
 
 logger = get_logger()
 
@@ -227,22 +231,20 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
 
 
 class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
-    def __init__(self, agent: BaseAgent):
+    def __init__(self, storage_config: FileStorageConfig, agent: BaseAgent):
         """
-        Initialize timeline repository with agent.
-
-        Extracts codec and storage_config from agent, following same pattern as LocalPromptRepository.
+        Initialize timeline repository with storage_config and agent.
 
         Args:
-            agent: Agent instance (extracts codec and storage_config from agent)
+            storage_config: FileStorageConfig instance
+            agent: Agent instance (extracts codec from agent)
         """
+        self.storage_config = storage_config
         self._agent = agent
         # Extract codec from agent (same logic as LocalPromptRepository)
         self._codec = self._extract_codec_from_agent(self._agent)
-        # Extract storage_config from agent, or create default
-        self._storage_config = self._extract_storage_config_from_agent(self._agent)
 
-        self._workspace_folder = Path(self._storage_config.workspace_folder)
+        self._workspace_folder = Path(self.storage_config.workspace_folder)
         # Compute codec prefix using mixin method
         self._codec_prefix = self._get_codec_prefix(self._agent)
 
@@ -261,6 +263,7 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
             session_id: Session identifier
             entries: List of TimelineEntry objects to save
         """
+        from dana.core.agent.timeline import _sanitize_for_json
         # Create session folder
         session_folder = self._events_path / session_id
         session_folder.mkdir(parents=True, exist_ok=True)
@@ -296,6 +299,9 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
         Yields:
             TimelineEntry objects from the session
         """
+
+        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+
         session_folder = self._events_path / session_id
         timeline_file = session_folder / "timeline.json"
 
@@ -325,22 +331,20 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
 
 
 class LocalEventRepository(LocalRepositoryMixin, EventRepositoryProtocol):
-    def __init__(self, agent: BaseAgent):
+    def __init__(self, storage_config: FileStorageConfig, agent: BaseAgent):
         """
-        Initialize event repository with agent.
-
-        Extracts codec and storage_config from agent, following same pattern as LocalTimelineRepository.
+        Initialize event repository with storage_config and agent.
 
         Args:
-            agent: Agent instance (extracts codec and storage_config from agent)
+            storage_config: FileStorageConfig instance
+            agent: Agent instance (extracts codec from agent)
         """
+        self.storage_config = storage_config
         self._agent = agent
         # Extract codec from agent (same logic as LocalTimelineRepository)
         self._codec = self._extract_codec_from_agent(self._agent)
-        # Extract storage_config from agent, or create default
-        self._storage_config = self._extract_storage_config_from_agent(self._agent)
 
-        self._workspace_folder = Path(self._storage_config.workspace_folder)
+        self._workspace_folder = Path(self.storage_config.workspace_folder)
         # Compute codec prefix using mixin method
         self._codec_prefix = self._get_codec_prefix(self._agent)
 
@@ -407,3 +411,170 @@ class LocalEventRepository(LocalRepositoryMixin, EventRepositoryProtocol):
                         continue
         except Exception as e:
             logger.warning(f"Failed to read events file {events_file}: {e}")
+
+
+class LocalLearningRepository(LocalRepositoryMixin, LearningRepositoryProtocol):
+    def __init__(self, storage_config: FileStorageConfig, agent: BaseAgent):
+        """
+        Initialize learning repository with storage_config and agent.
+
+        Args:
+            storage_config: FileStorageConfig instance
+            agent: Agent instance (extracts codec from agent)
+        """
+        self.storage_config = storage_config
+        self._agent = agent
+        # Extract codec from agent (same logic as LocalTimelineRepository)
+        self._codec = self._extract_codec_from_agent(self._agent)
+
+        self._workspace_folder = Path(self.storage_config.workspace_folder)
+        # Compute codec prefix using mixin method
+        self._codec_prefix = self._get_codec_prefix(self._agent)
+
+        # Compute base storage path using mixin method
+        self._base_storage_path = self._workspace_folder / self._get_relative_storage_path(self._agent)
+
+    def save_acquisitive_loop(self, session_id: str, loop_data: dict, loop_id: str, timestamp: datetime) -> None:
+        """
+        Save acquisitive learning loop data for a session.
+
+        Args:
+            session_id: Session identifier
+            loop_data: Complete loop data dictionary to store
+            loop_id: Full UUID string
+            timestamp: Datetime object for the loop
+        """
+        # Create session folder
+        acquisitive_path = self._base_storage_path / "learnings" / session_id / "acquisitive"
+        acquisitive_path.mkdir(parents=True, exist_ok=True)
+
+        # Format timestamp: YYYYMMDD_HHMMSS_microseconds
+        timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S_%f")
+
+        # Extract short loop_id (first 8 chars before first hyphen)
+        loop_id_short = loop_id.split("-")[0] if "-" in loop_id else loop_id[:8]
+
+        # Create filename
+        filename = f"loop_{timestamp_str}_{loop_id_short}.json"
+        loop_file = acquisitive_path / filename
+
+        # Write JSON file
+        loop_file.write_text(json.dumps(loop_data, indent=2, ensure_ascii=False))
+
+        logger.info(f"Stored acquisitive loop JSON: {loop_file}")
+
+    def load_acquisitive_loops(self, session_id: str) -> list[str]:
+        """
+        Load acquisitive learning loops for a session, returns list of learning_note strings.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            List of learning_note strings from all loop JSON files
+        """
+        acquisitive_path = self._base_storage_path / "learnings" / session_id / "acquisitive"
+
+        if not acquisitive_path.exists():
+            return []
+
+        # Find all loop JSON files matching pattern loop_*.json
+        loop_files = sorted(acquisitive_path.glob("loop_*.json"))
+
+        learning_notes = []
+
+        for loop_file in loop_files:
+            try:
+                # Load JSON file
+                loop_data = json.loads(loop_file.read_text())
+
+                # Extract learning_note if available
+                learning_note = loop_data.get("learning_note", "")
+                if learning_note:
+                    learning_notes.append(learning_note)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse JSON file {loop_file}: {e}")
+            except Exception as e:
+                logger.warning(f"Failed to load loop file {loop_file}: {e}")
+
+        return learning_notes
+
+    def save_episodic_learning(self, session_id: str, content: str) -> None:
+        """
+        Save episodic learning content for a session.
+
+        Args:
+            session_id: Session identifier
+            content: Episodic learning content to store
+        """
+        # Create session folder
+        episodic_path = self._base_storage_path / "learnings" / session_id / "episodic"
+        episodic_path.mkdir(parents=True, exist_ok=True)
+
+        # Save markdown file
+        learnings_file = episodic_path / "learnings.md"
+        learnings_file.write_text(content)
+
+        logger.info(f"Stored episodic learning: {learnings_file}")
+
+    def load_episodic_learning(self, session_id: str) -> str | None:
+        """
+        Load episodic learning content for a session.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            Episodic learning content string if exists, None otherwise
+        """
+        episodic_path = self._base_storage_path / "learnings" / session_id / "episodic"
+        learnings_file = episodic_path / "learnings.md"
+
+        if not learnings_file.exists():
+            return None
+
+        try:
+            return learnings_file.read_text()
+        except Exception as e:
+            logger.warning(f"Failed to load episodic learning: {e}")
+            return None
+
+    def save_feedback(self, session_id: str, content: str) -> None:
+        """
+        Save feedback content for a session.
+
+        Args:
+            session_id: Session identifier
+            content: Feedback content to store
+        """
+        # Create session folder
+        feedback_path = self._base_storage_path / "feedback" / session_id
+        feedback_path.mkdir(parents=True, exist_ok=True)
+
+        # Save markdown file
+        feedback_file = feedback_path / "feedback.md"
+        feedback_file.write_text(content)
+
+        logger.info(f"Stored feedback: {feedback_file}")
+
+    def load_feedback(self, session_id: str) -> str | None:
+        """
+        Load feedback content for a session.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            Feedback content string if exists, None otherwise
+        """
+        feedback_path = self._base_storage_path / "feedback" / session_id
+        feedback_file = feedback_path / "feedback.md"
+
+        if not feedback_file.exists():
+            return None
+
+        try:
+            return feedback_file.read_text()
+        except Exception as e:
+            logger.warning(f"Failed to load feedback: {e}")
+            return None

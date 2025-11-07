@@ -6,20 +6,18 @@ Events come ONLY from Observer.observe() - no action events, no tool call events
 """
 
 from collections.abc import Iterator
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from structlog import get_logger
 
 from dana.common.schemas import Event
-from dana.config.storage_config import FileStorageConfig
+from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory, RepositoryType
+from dana.repositories.repository_protocol import EventRepositoryProtocol
 
 
 if TYPE_CHECKING:
     from dana.core.agent.base_agent import BaseAgent
     from dana.core.knowledge.prompts.codecs import AbstractCodec
-    from dana.repositories.repository_protocol import EventRepositoryProtocol
-
 from .observer import ObserverProtocol
 
 
@@ -42,9 +40,8 @@ class EventLogAPI:
         self,
         agent: "BaseAgent",
         codec: type["AbstractCodec"] | None,
-        storage_config: FileStorageConfig,
         observer: ObserverProtocol,
-        repository: "EventRepositoryProtocol | None" = None,
+        repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
     ):
         """
         Initialize EventLog API.
@@ -52,27 +49,19 @@ class EventLogAPI:
         Args:
             agent: Agent instance
             codec: Codec class for path structure (for backward compatibility)
-            storage_config: Storage configuration (for backward compatibility)
             observer: Observer for environment data (REQUIRED)
-            repository: Event repository (if None and agent provided, creates default)
+            repository_factory: Repository factory to create the repository
 
         Note: Observer is required - EventLog only works with Observer.
         """
         self._agent = agent
         self._codec = codec
-        self._storage_config = storage_config
         self._observer = observer
         self._current_session_id: str | None = None
         self._event_buffer: list[Event] = []  # Buffer for observations only
 
-        # Initialize repository if provided, otherwise create default from agent
-        if repository:
-            self._repository = repository
-        elif agent:
-            from dana.repositories import LocalEventRepository
-            self._repository = LocalEventRepository(agent)
-        else:
-            self._repository = None
+        # Create repository via factory
+        self._repository = repository_factory.create(RepositoryType.EVENT, agent=agent, codec=codec)
     
     def observe_and_record(self) -> Event | None:
         """
