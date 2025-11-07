@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useHVACStore } from '@/stores/hvac-store';
 import { useHVACFlow } from '@/hooks/use-hvac-flow';
+import { ComparisonModeToggle } from './LearningModeToggle';
 import { Check, Loader2, Play } from 'lucide-react';
 
 interface ExecutionProgressProps {
@@ -134,6 +135,7 @@ export function ExecutionProgress({
             })}
           </div>
           <div className="flex items-center gap-2 ml-4">
+            <ComparisonModeToggle />
             <Button onClick={runFlow} disabled={isLoading} className="bg-blue-600 text-white">
               {isLoading ? (
                 <>
