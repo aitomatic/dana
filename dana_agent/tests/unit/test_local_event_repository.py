@@ -53,7 +53,7 @@ class TestLocalEventRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             assert repository._codec is not None
             assert repository._codec.__qualname__ == "TestCodec"
@@ -66,9 +66,9 @@ class TestLocalEventRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
-            assert repository._storage_config == config
+            assert repository.storage_config == config
             assert repository._workspace_folder == Path(temp_dir)
         finally:
             shutil.rmtree(temp_dir)
@@ -80,10 +80,10 @@ class TestLocalEventRepositoryInitialization:
             agent = MockAgent()
             # Remove storage_config
             delattr(agent, "_storage_config")
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
-            assert repository._storage_config is not None
-            assert isinstance(repository._storage_config, FileStorageConfig)
+            assert repository.storage_config is not None
+            assert isinstance(repository.storage_config, FileStorageConfig)
         finally:
             shutil.rmtree(temp_dir)
 
@@ -93,7 +93,7 @@ class TestLocalEventRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             assert repository._codec_prefix == "TestCodec"
         finally:
@@ -107,7 +107,7 @@ class TestLocalEventRepositoryInitialization:
             agent = MockAgent(storage_config=config, codec=None)
             # Ensure codec is actually None
             agent._codec = None
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             assert repository._codec_prefix == "default"
         finally:
@@ -121,7 +121,7 @@ class TestLocalEventRepositoryInitialization:
             mock_codec = Mock()
             mock_codec.__qualname__ = "magic_codec"
             agent = MockAgent(storage_config=config, codec=mock_codec)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             assert repository._codec_prefix == "default"
         finally:
@@ -133,7 +133,7 @@ class TestLocalEventRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             # Path should be: {codec_prefix}/{agent.__class__.__qualname__}__{filename}/events
             # Check path structure (doesn't need to exist yet)
@@ -155,7 +155,7 @@ class TestLocalEventRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             events = [
                 Event(
@@ -180,7 +180,7 @@ class TestLocalEventRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             timestamp = datetime(2024, 1, 15, 10, 30, 0)
             events = [
@@ -216,7 +216,7 @@ class TestLocalEventRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             events = [
                 Event(
@@ -247,7 +247,7 @@ class TestLocalEventRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             session_id = "test-session-001"
             
@@ -276,7 +276,7 @@ class TestLocalEventRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             timestamp = datetime(2024, 1, 15, 10, 30, 0)
             events = [
@@ -308,7 +308,7 @@ class TestLocalEventRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             # Try to read non-existent session
             read_events = list(repository.read_session_events("non-existent-session"))
@@ -323,7 +323,7 @@ class TestLocalEventRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             # Create session folder but no events.jsonl
             session_folder = repository._events_path / "test-session-001"
@@ -341,7 +341,7 @@ class TestLocalEventRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             # Create session folder with invalid JSON
             session_folder = repository._events_path / "test-session-001"
@@ -363,7 +363,7 @@ class TestLocalEventRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalEventRepository(agent)
+            repository = LocalEventRepository(config, agent)
             
             events = [
                 Event(

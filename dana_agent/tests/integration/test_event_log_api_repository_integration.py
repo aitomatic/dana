@@ -65,13 +65,10 @@ class TestEventLogAPIRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             observer = MockObserverForIntegration({"key": "value"})
-            repository = LocalEventRepository(agent)
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
-                repository=repository,
             )
 
             # Record an event
@@ -96,13 +93,10 @@ class TestEventLogAPIRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             observer = MockObserverForIntegration({"event": 0})
-            repository = LocalEventRepository(agent)
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
-                repository=repository,
             )
 
             # Record multiple events
@@ -131,13 +125,10 @@ class TestEventLogAPIRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             observer = MockObserverForIntegration({"event": 0})
-            repository = LocalEventRepository(agent)
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
-                repository=repository,
             )
 
             # Record multiple events
@@ -169,7 +160,6 @@ class TestEventLogAPIRepositoryIntegration:
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
             )
 

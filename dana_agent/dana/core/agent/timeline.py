@@ -14,13 +14,12 @@ from typing import TYPE_CHECKING, Any, Final
 from structlog import get_logger
 
 from dana.common.llm.types import LLMMessage
+from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory, RepositoryType
 
 
 if TYPE_CHECKING:
-    from dana.config.storage_config import FileStorageConfig
     from dana.core.agent.base_agent import BaseAgent
     from dana.core.knowledge.prompts.codecs import AbstractCodec
-    from dana.repositories.repository_protocol import TimelineRepositoryProtocol
 
 logger = get_logger()
 
@@ -210,9 +209,7 @@ class Timeline:
         self,
         max_context_tokens: int = 4000,
         agent: "BaseAgent | None" = None,
-        codec: type["AbstractCodec"] | None = None,
-        storage_config: "FileStorageConfig | None" = None,
-        repository: "TimelineRepositoryProtocol | None" = None,
+        repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
     ):
         """
         Initialize the Timeline.
@@ -221,26 +218,14 @@ class Timeline:
             max_context_tokens: Maximum number of tokens to include in context
             agent: Agent instance (can be None, for backward compatibility)
             codec: Codec class for path structure (can be None, for backward compatibility)
-            storage_config: Storage configuration (can be None, for backward compatibility)
-            repository: Timeline repository (if None and agent provided, creates default)
+            repository_factory: Repository factory to create the repository
         """
         self.max_context_tokens = max_context_tokens
         self._agent = agent
-        self._codec = codec
-        self._storage_config = storage_config
-        self._codec_prefix = codec.__qualname__ if codec else "default"
         self.timeline: list[TimelineEntry] = []
         
-        # Initialize repository if provided, otherwise create default from agent
-        if repository:
-            self._repository = repository
-        elif agent:
-            from dana.repositories import LocalTimelineRepository
-            self._repository = LocalTimelineRepository(agent)
-        else:
-            self._repository = None
-        # If you want to load back the timeline, you can do it like this:
-        # self.timeline = list(self.read_since(checkpoint=-100, session_id="your-session-id"))
+        # Create repository via factory
+        self._repository = repository_factory.create(RepositoryType.TIMELINE, agent=agent)
 
     def __repr__(self) -> str:
         """

@@ -8,24 +8,24 @@ and conversational agent functionality using composable components.
 
 from collections.abc import Sequence
 from datetime import datetime
+import json
 from typing import Any
-
-import structlog
-
 from uuid import uuid4
 
-import json
+import structlog
 
 from dana.common.llm.llm import LLM
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
 from dana.core.resource.todo import ToDoResource
+from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
+
 from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from .base_star_agent import BaseSTARAgent
-from .components import Communicator, Learner, PromptEngineer, State, ToolCaller, LearnerProtocol
-from .components.tool_caller import CodecToolCaller
+from .components import Communicator, Learner, LearnerProtocol, PromptEngineer, State, ToolCaller
 from .components.observer import ObserverProtocol
+from .components.tool_caller import CodecToolCaller
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
@@ -52,6 +52,7 @@ class STARAgent(BaseSTARAgent):
         auto_register: bool = True,
         registry=None,
         codec=None,
+        repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
         prompt_api : PromptAPIProtocol | None = None,
         observer: ObserverProtocol | None = None,
         learner: LearnerProtocol | None = None,
@@ -90,12 +91,12 @@ class STARAgent(BaseSTARAgent):
 
         self._session_id = str(uuid4())
         # Conditional component initialization based on codec
+        self._repository_factory = repository_factory
         self._codec = codec
         if codec is not None:
             # Use new PromptEngineerManager and CodecToolCaller
             from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
-            from dana.config.storage_config import FileStorageConfig
-            self._prompt_engineer = prompt_api or LocalPromptAPI(self, codec=codec, storage_config=FileStorageConfig())
+            self._prompt_engineer = prompt_api or LocalPromptAPI(self, codec=codec, repository_factory=self._repository_factory)
             self._tool_caller = CodecToolCaller(self, codec=codec)
         else:
             # Use old PromptEngineer and ToolCaller (backward compatibility)
@@ -105,20 +106,16 @@ class STARAgent(BaseSTARAgent):
         # Initialize other components
         self._communicator = Communicator(self)
         self._state = State(self)
-        self._learner = learner or Learner(self)
+        self._learner = learner or Learner(self, repository_factory=self._repository_factory)
         self._learner._agent = self
 
         # Determine storage_config for timeline and event_log
-        from dana.config.storage_config import FileStorageConfig
-        storage_config = FileStorageConfig()  # Use default or passed config
-        self._storage_config = storage_config
 
         # Initialize timeline at agent level with agent, codec, and storage_config
         self._timeline = Timeline(
             max_context_tokens=max_context_tokens,
             agent=self,
-            codec=codec,
-            storage_config=storage_config,
+            repository_factory=self._repository_factory,
         )
 
         # Initialize EventLog API (only if observer AND codec provided)
@@ -129,8 +126,8 @@ class STARAgent(BaseSTARAgent):
             self._event_log = EventLogAPI(
                 agent=self,
                 codec=codec,
-                storage_config=storage_config,
                 observer=observer,  # REQUIRED - EventLog only works with Observer
+                repository_factory=self._repository_factory,
             )
         else:
             # No observer or codec = no EventLog (events only come from Observer)

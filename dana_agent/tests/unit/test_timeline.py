@@ -58,7 +58,8 @@ class TestTimeline:
     @pytest.fixture
     def timeline(self):
         """Create a timeline for testing."""
-        return Timeline(max_context_tokens=1000)
+        agent = MockAgentForTimeline()
+        return Timeline(max_context_tokens=1000, agent=agent)
 
     def test_timeline_initialization(self, timeline):
         """Test timeline initialization."""
@@ -264,12 +265,12 @@ class TestTimelineWithRepository:
     """Test Timeline with repository pattern."""
 
     def test_timeline_initialization_with_repository(self):
-        """Test Timeline accepts repository parameter."""
+        """Test Timeline creates repository from agent."""
         agent = MockAgentForTimeline()
-        repository = LocalTimelineRepository(agent)
-        timeline = Timeline(max_context_tokens=1000, repository=repository)
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         
-        assert timeline._repository == repository
+        assert timeline._repository is not None
+        assert isinstance(timeline._repository, LocalTimelineRepository)
         assert timeline.timeline == []
 
     def test_timeline_initialization_creates_default_repository(self):
@@ -284,8 +285,7 @@ class TestTimelineWithRepository:
     def test_timeline_save_uses_repository(self):
         """Test Timeline.save() uses repository."""
         agent = MockAgentForTimeline()
-        repository = LocalTimelineRepository(agent)
-        timeline = Timeline(max_context_tokens=1000, repository=repository)
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         
         entry = TimelineEntry(
             entry_type=TimelineEntryType.USER_MESSAGE,
@@ -298,7 +298,7 @@ class TestTimelineWithRepository:
         timeline.save(session_id)
         
         # Verify repository was called (check file exists)
-        session_folder = repository._events_path / session_id
+        session_folder = timeline._repository._events_path / session_id
         timeline_file = session_folder / "timeline.json"
         assert timeline_file.exists()
 
@@ -306,8 +306,7 @@ class TestTimelineWithRepository:
         """Test Timeline.read_since() extracts session_id from agent."""
         agent = MockAgentForTimeline()
         agent._session_id = "test-session-001"
-        repository = LocalTimelineRepository(agent)
-        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         
         # Should work without session_id parameter
         read_entries = list(timeline.read_since(checkpoint=0))
@@ -317,8 +316,7 @@ class TestTimelineWithRepository:
         """Test Timeline.read_since() works by extracting session_id from agent."""
         agent = MockAgentForTimeline()
         agent._session_id = "test-session-001"
-        repository = LocalTimelineRepository(agent)
-        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         
         # Save some entries
         entry = TimelineEntry(
@@ -339,8 +337,7 @@ class TestTimelineWithRepository:
         """Test Timeline.read_since() with negative checkpoint."""
         agent = MockAgentForTimeline()
         agent._session_id = "test-session-001"
-        repository = LocalTimelineRepository(agent)
-        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         
         # Save multiple entries
         for i in range(5):
@@ -364,8 +361,7 @@ class TestTimelineWithRepository:
         """Test Timeline.read_since() with positive checkpoint."""
         agent = MockAgentForTimeline()
         agent._session_id = "test-session-001"
-        repository = LocalTimelineRepository(agent)
-        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         
         # Save multiple entries
         for i in range(5):
@@ -404,8 +400,7 @@ class TestTimelineWithRepository:
         """Test Timeline.read_since() raises error when agent has no _session_id."""
         agent = MockAgentForTimeline()
         # Don't set _session_id
-        repository = LocalTimelineRepository(agent)
-        timeline = Timeline(max_context_tokens=1000, repository=repository, agent=agent)
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         
         with pytest.raises(ValueError, match="agent has no _session_id"):
             list(timeline.read_since(checkpoint=0))

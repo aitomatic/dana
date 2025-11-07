@@ -59,19 +59,17 @@ class TestEventLogAPIWithRepository:
     """Test EventLogAPI with repository pattern."""
 
     def test_event_log_api_initialization_with_repository(self):
-        """Test EventLogAPI accepts repository parameter."""
+        """Test EventLogAPI creates repository from agent."""
         agent = MockAgentForEventAPI()
         observer = MockObserver()
-        repository = LocalEventRepository(agent)
         event_log = EventLogAPI(
             agent=agent,
             codec=None,
-            storage_config=agent._storage_config,
             observer=observer,
-            repository=repository,
         )
 
-        assert event_log._repository == repository
+        assert event_log._repository is not None
+        assert isinstance(event_log._repository, LocalEventRepository)
         assert event_log._event_buffer == []
 
     def test_event_log_api_initialization_creates_default_repository(self):
@@ -81,7 +79,6 @@ class TestEventLogAPIWithRepository:
         event_log = EventLogAPI(
             agent=agent,
             codec=None,
-            storage_config=agent._storage_config,
             observer=observer,
         )
 
@@ -96,13 +93,10 @@ class TestEventLogAPIWithRepository:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForEventAPI(storage_config=config)
             observer = MockObserver({"key": "value"})
-            repository = LocalEventRepository(agent)
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
-                repository=repository,
             )
 
             # Record an event
@@ -112,7 +106,7 @@ class TestEventLogAPIWithRepository:
             event_log.save(session_id)
 
             # Verify repository was called (check file exists)
-            session_folder = repository._events_path / session_id
+            session_folder = event_log._repository._events_path / session_id
             events_file = session_folder / "events.jsonl"
             assert events_file.exists()
         finally:
@@ -123,13 +117,10 @@ class TestEventLogAPIWithRepository:
         agent = MockAgentForEventAPI()
         agent._session_id = "test-session-001"
         observer = MockObserver()
-        repository = LocalEventRepository(agent)
         event_log = EventLogAPI(
             agent=agent,
             codec=None,
-            storage_config=agent._storage_config,
             observer=observer,
-            repository=repository,
         )
 
         # Should work without session_id parameter
@@ -144,13 +135,10 @@ class TestEventLogAPIWithRepository:
             agent = MockAgentForEventAPI(storage_config=config)
             agent._session_id = "test-session-001"
             observer = MockObserver({"key": "value"})
-            repository = LocalEventRepository(agent)
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
-                repository=repository,
             )
 
             # Record and save an event
@@ -173,13 +161,10 @@ class TestEventLogAPIWithRepository:
             agent = MockAgentForEventAPI(storage_config=config)
             agent._session_id = "test-session-001"
             observer = MockObserver({"event": 0})
-            repository = LocalEventRepository(agent)
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
-                repository=repository,
             )
 
             # Record multiple events
@@ -206,13 +191,10 @@ class TestEventLogAPIWithRepository:
             agent = MockAgentForEventAPI(storage_config=config)
             agent._session_id = "test-session-001"
             observer = MockObserver({"event": 0})
-            repository = LocalEventRepository(agent)
             event_log = EventLogAPI(
                 agent=agent,
                 codec=None,
-                storage_config=config,
                 observer=observer,
-                repository=repository,
             )
 
             # Record multiple events
@@ -237,9 +219,7 @@ class TestEventLogAPIWithRepository:
         event_log = EventLogAPI(
             agent=agent,
             codec=None,
-            storage_config=agent._storage_config,
             observer=observer,
-            repository=None,
         )
         # Manually set repository to None to test error case
         event_log._repository = None
@@ -253,13 +233,10 @@ class TestEventLogAPIWithRepository:
         # Explicitly remove _session_id to test error case
         delattr(agent, "_session_id")
         observer = MockObserver()
-        repository = LocalEventRepository(agent)
         event_log = EventLogAPI(
             agent=agent,
             codec=None,
-            storage_config=agent._storage_config,
             observer=observer,
-            repository=repository,
         )
         
         with pytest.raises(ValueError, match="agent has no _session_id"):
@@ -272,9 +249,7 @@ class TestEventLogAPIWithRepository:
         event_log = EventLogAPI(
             agent=agent,
             codec=None,
-            storage_config=agent._storage_config,
             observer=observer,
-            repository=None,
         )
         # Manually set repository to None to test error case
         event_log._repository = None

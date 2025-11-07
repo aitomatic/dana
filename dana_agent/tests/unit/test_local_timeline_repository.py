@@ -53,7 +53,7 @@ class TestLocalTimelineRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             assert repository._codec is not None
             assert repository._codec.__qualname__ == "TestCodec"
@@ -66,7 +66,7 @@ class TestLocalTimelineRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             assert repository._storage_config == config
             assert repository._workspace_folder == Path(temp_dir)
@@ -80,7 +80,8 @@ class TestLocalTimelineRepositoryInitialization:
             agent = MockAgent()
             # Remove storage_config
             delattr(agent, "_storage_config")
-            repository = LocalTimelineRepository(agent)
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalTimelineRepository(config, agent)
             
             assert repository._storage_config is not None
             assert isinstance(repository._storage_config, FileStorageConfig)
@@ -93,7 +94,7 @@ class TestLocalTimelineRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             assert repository._codec_prefix == "TestCodec"
         finally:
@@ -107,7 +108,7 @@ class TestLocalTimelineRepositoryInitialization:
             agent = MockAgent(storage_config=config, codec=None)
             # Ensure codec is actually None
             agent._codec = None
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             assert repository._codec_prefix == "default"
         finally:
@@ -121,7 +122,7 @@ class TestLocalTimelineRepositoryInitialization:
             mock_codec = Mock()
             mock_codec.__qualname__ = "magic_codec"
             agent = MockAgent(storage_config=config, codec=mock_codec)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             assert repository._codec_prefix == "default"
         finally:
@@ -133,7 +134,7 @@ class TestLocalTimelineRepositoryInitialization:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             # Path should be: {codec_prefix}/{agent.__class__.__qualname__}__{filename}/events
             # Check path structure (doesn't need to exist yet)
@@ -155,7 +156,7 @@ class TestLocalTimelineRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             entries = [
                 TimelineEntry(
@@ -180,7 +181,7 @@ class TestLocalTimelineRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             timestamp = datetime(2024, 1, 15, 10, 30, 0)
             entries = [
@@ -216,7 +217,7 @@ class TestLocalTimelineRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             # Create a non-serializable object
             class NonSerializable:
@@ -254,7 +255,7 @@ class TestLocalTimelineRepositorySave:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             entries = [
                 TimelineEntry(
@@ -290,7 +291,7 @@ class TestLocalTimelineRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             timestamp = datetime(2024, 1, 15, 10, 30, 0)
             entries = [
@@ -321,7 +322,7 @@ class TestLocalTimelineRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             # Try to read non-existent session
             read_entries = list(repository.read_session_entries("non-existent-session"))
@@ -336,7 +337,7 @@ class TestLocalTimelineRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             # Create session folder but no timeline.json
             session_folder = repository._events_path / "test-session-001"
@@ -354,7 +355,7 @@ class TestLocalTimelineRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             # Create session folder with invalid JSON
             session_folder = repository._events_path / "test-session-001"
@@ -376,7 +377,7 @@ class TestLocalTimelineRepositoryRead:
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
-            repository = LocalTimelineRepository(agent)
+            repository = LocalTimelineRepository(config, agent)
             
             entries = [
                 TimelineEntry(
