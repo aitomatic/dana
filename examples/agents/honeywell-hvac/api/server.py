@@ -102,85 +102,20 @@ app.add_middleware(
 _agent_cache: Dict[str, Any] = {}
 
 def get_agent_with_session(session_id: str = "hvac-agent-session-001", with_learner: bool = True):
-    """Get or create agent instance for a session.
-    
-    Args:
-        session_id: Session identifier
-        with_learner: Whether to create agent with learner enabled
-        
-    Returns:
-        HVACAgent instance with appropriate learner configuration
-    """
-    # Include with_learner in cache key to ensure separate cache entries for each mode
+    """Get or create agent instance for a session."""
     cache_key = f"agent_{session_id}_{with_learner}"
-    
-    print(f"[AGENT CACHE DEBUG] Requesting agent with cache_key={cache_key}, with_learner={with_learner}")
-    print(f"[AGENT CACHE DEBUG] Current cache keys: {list(_agent_cache.keys())}")
-    
-    # Check if cached agent exists and matches requested configuration
-    if cache_key in _agent_cache:
-        cached_agent = _agent_cache[cache_key]
-        # Validate that cached agent matches requested with_learner setting
-        has_learner = cached_agent._learner is not None
-        print(f"[AGENT CACHE DEBUG] Found cached agent: has_learner={has_learner}, requested={with_learner}")
-        if has_learner == with_learner:
-            print(f"[AGENT CACHE DEBUG] Returning cached agent (ID: {id(cached_agent)})")
-            return cached_agent
-        else:
-            # Mismatch detected - remove from cache and create new agent
-            print(f"[AGENT CACHE DEBUG] Warning: Cached agent learner mismatch for {session_id}. Recreating agent.")
-            del _agent_cache[cache_key]
-    
-    # Create new agent instance
-    print(f"[AGENT CACHE DEBUG] Creating new agent instance with with_learner={with_learner}")
-    agent = HVACAgent(
-        agent_id="hvac-agent-001",
-        model="gpt-4.1",
-    )
-    agent.enable_notifications(verbose=False)
-    agent.set_session_id(session_id)
-    if with_learner:
-        agent._learner = WilliamLearner(agent=agent)
-        print(f"[AGENT CACHE DEBUG] Created agent WITH learner (ID: {id(agent)})")
-        # Verify learner is properly initialized
-        assert agent._learner is not None, "Agent with_learner=True must have a learner"
-        assert hasattr(agent._learner, 'query_learnings'), "Learner must have query_learnings method"
-    else:
-        # Explicitly ensure no learner
-        agent._learner = None
-        print(f"[AGENT CACHE DEBUG] Created agent WITHOUT learner (ID: {id(agent)})")
-        # Verify no learner exists
-        assert agent._learner is None, "Agent with_learner=False must NOT have a learner"
-        # Double-check that no learner methods are accessible
-        if hasattr(agent, '_learner') and agent._learner is not None:
-            raise RuntimeError(f"Agent created with with_learner=False but has learner: {agent._learner}")
-    
-    _agent_cache[cache_key] = agent
-    print(f"[AGENT CACHE DEBUG] Cached agent with key={cache_key}, agent_id={id(agent)}")
-    print(f"[AGENT CACHE DEBUG] Verification: agent._learner is {'NOT None' if agent._learner else 'None'} (expected: {'NOT None' if with_learner else 'None'})")
-    return agent
-
-def clear_agent_cache(session_id: Optional[str] = None):
-    """Clear agent cache for a specific session or all sessions.
-    
-    Args:
-        session_id: If provided, clears cache only for this session (both with/without learner).
-                   If None, clears entire cache.
-    """
-    if session_id:
-        # Clear both with_learner=True and with_learner=False entries for this session
-        keys_to_remove = [
-            key for key in _agent_cache.keys()
-            if key.startswith(f"agent_{session_id}_")
-        ]
-        for key in keys_to_remove:
-            del _agent_cache[key]
-        print(f"Cleared agent cache for session: {session_id} ({len(keys_to_remove)} entries)")
-    else:
-        # Clear entire cache
-        count = len(_agent_cache)
-        _agent_cache.clear()
-        print(f"Cleared entire agent cache ({count} entries)")
+    # if True:
+    if cache_key not in _agent_cache:
+        agent = HVACAgent(
+            agent_id="hvac-agent-001",
+            model="gpt-4.1",
+        )
+        agent.enable_notifications(verbose=False)
+        agent.set_session_id(session_id)
+        if with_learner:
+            agent._learner = WilliamLearner(agent=agent)
+        _agent_cache[cache_key] = agent
+    return _agent_cache[cache_key]
 
 def get_learner_storage_path(agent, session_id: str) -> Path:
     """Get the storage path for learnings."""
@@ -201,7 +136,13 @@ async def health():
 async def generate_environment():
     """Generate random environment"""
     try:
-        return get_env_status()
+        while True:
+            env_status = get_env_status()
+            if env_status.get("meeting_plan"):
+                break
+            await asyncio.sleep(0.01)
+
+        return env_status
     except Exception as e:
         print(f"Error in generate_environment: {e}")
         traceback.print_exc()
@@ -224,31 +165,9 @@ CURRENT ENVIRONMENT:
             for meeting in env['meeting_plan']:
                 agent_prompt += f"  - {meeting['start_time']} to {meeting['end_time']}\n"
         
-        print(f"[COMPARISON MODE DEBUG] Creating HVAC agent for session {session_id} with_learner={request.with_learner}")
+        print(f"Creating HVAC agent for session {session_id}...")
         agent = get_agent_with_session(session_id, with_learner=request.with_learner)
-        
-        # Verify agent configuration
-        has_learner = hasattr(agent, '_learner') and agent._learner is not None
-        cache_key = f"agent_{session_id}_{request.with_learner}"
-        print(f"[COMPARISON MODE DEBUG] Agent configuration:")
-        print(f"  - Cache key: {cache_key}")
-        print(f"  - Has learner: {has_learner}")
-        print(f"  - Requested with_learner: {request.with_learner}")
-        print(f"  - Agent ID: {id(agent)}")
-        if has_learner:
-            print(f"  - Learner type: {type(agent._learner).__name__}")
-            # Check if learner has learnings
-            try:
-                if hasattr(agent._learner, 'acquisitive_memory'):
-                    print(f"  - Acquisitive memory loaded: {len(agent._learner.acquisitive_memory) if agent._learner.acquisitive_memory else 0} items")
-                if hasattr(agent._learner, 'episodic_memory'):
-                    print(f"  - Episodic memory loaded: {agent._learner.episodic_memory is not None}")
-            except Exception as e:
-                print(f"  - Error checking learner memory: {e}")
-        else:
-            print(f"  - Agent has NO learner (as expected for with_learner=False)")
-        
-        print(f"[COMPARISON MODE DEBUG] Querying agent with prompt...")
+        print(f"Querying agent with prompt...")
         
         # Run synchronous query in thread pool to avoid event loop conflict
         result = await asyncio.to_thread(agent.query, caller_message=agent_prompt, session_id=session_id)
@@ -280,16 +199,12 @@ CURRENT ENVIRONMENT:
         
         # Trigger acquisitive learning manually (as shown in hvac_agent.py)
         if agent._learner:
-            print(f"[COMPARISON MODE DEBUG] Triggering acquisitive learning (agent has learner)")
             acquisitive_input = result.copy()
             acquisitive_input.setdefault("caller_message", agent_prompt)
             acquisitive_input.setdefault("tool_calls", [])
             acquisitive_input.setdefault("tool_results", [])
             await asyncio.to_thread(agent._learner._reflect_acquisitive, acquisitive_input)
-        else:
-            print(f"[COMPARISON MODE DEBUG] Skipping acquisitive learning (agent has NO learner)")
         
-        print(f"[COMPARISON MODE DEBUG] Plan created successfully for with_learner={request.with_learner}")
         return plan
     except json.JSONDecodeError as e:
         print(f"JSON decode error: {e}")
@@ -354,8 +269,8 @@ async def create_session(request: SessionRequest):
     try:
         session_id = request.session_id or f"hvac-agent-session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
-        # Initialize agent for this session (with learner to access learnings)
-        agent = get_agent_with_session(session_id, with_learner=True)
+        # Initialize agent for this session
+        agent = get_agent_with_session(session_id)
         
         # Count learnings
         learnings_count = 0
@@ -376,71 +291,12 @@ async def create_session(request: SessionRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
 
-@app.get("/api/hvac/debug/agent-state")
-async def get_agent_state(session_id: str = "hvac-agent-session-001", with_learner: bool = None):
-    """Debug endpoint to inspect agent configuration and state.
-    
-    Args:
-        session_id: Session identifier
-        with_learner: If provided, checks specific agent. If None, returns all agents for session.
-    
-    Returns:
-        Dictionary with agent state information
-    """
-    try:
-        if with_learner is not None:
-            # Check specific agent
-            cache_key = f"agent_{session_id}_{with_learner}"
-            if cache_key in _agent_cache:
-                agent = _agent_cache[cache_key]
-                has_learner = agent._learner is not None
-                return {
-                    "cache_key": cache_key,
-                    "exists": True,
-                    "has_learner": has_learner,
-                    "agent_id": str(id(agent)),
-                    "session_id": session_id,
-                    "with_learner": with_learner,
-                    "learner_type": type(agent._learner).__name__ if agent._learner else None,
-                    "learner_has_memory": {
-                        "acquisitive": hasattr(agent._learner, 'acquisitive_memory') and agent._learner.acquisitive_memory is not None if agent._learner else False,
-                        "episodic": hasattr(agent._learner, 'episodic_memory') and agent._learner.episodic_memory is not None if agent._learner else False,
-                    } if agent._learner else None,
-                }
-            else:
-                return {
-                    "cache_key": cache_key,
-                    "exists": False,
-                    "session_id": session_id,
-                    "with_learner": with_learner,
-                }
-        else:
-            # Return all agents for session
-            session_agents = {}
-            for key, agent in _agent_cache.items():
-                if key.startswith(f"agent_{session_id}_"):
-                    has_learner = agent._learner is not None
-                    session_agents[key] = {
-                        "has_learner": has_learner,
-                        "agent_id": str(id(agent)),
-                        "learner_type": type(agent._learner).__name__ if agent._learner else None,
-                    }
-            return {
-                "session_id": session_id,
-                "cached_agents": session_agents,
-                "total_cached": len(session_agents),
-            }
-    except Exception as e:
-        print(f"Error in get_agent_state: {e}")
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to get agent state: {str(e)}")
-
 @app.get("/api/hvac/sessions")
 async def list_sessions():
     """List available sessions (simplified - returns default session)"""
     try:
         default_session = "hvac-agent-session-001"
-        agent = get_agent_with_session(default_session, with_learner=True)
+        agent = get_agent_with_session(default_session)
         
         learnings_count = 0
         try:
@@ -512,7 +368,7 @@ async def get_acquisitive_learnings(session_id: str = "hvac-agent-session-001"):
 async def delete_acquisitive_learning(loop_id: str, session_id: str = "hvac-agent-session-001"):
     """Delete a specific acquisitive learning by loop_id"""
     try:
-        agent = get_agent_with_session(session_id, with_learner=True)
+        agent = get_agent_with_session(session_id)
         
         # Get storage path
         storage_path = agent._learner._get_acquisitive_storage_path()
@@ -549,7 +405,7 @@ async def delete_acquisitive_learning(loop_id: str, session_id: str = "hvac-agen
 async def get_episodic_learning(session_id: str = "hvac-agent-session-001"):
     """Get episodic learning for a session"""
     try:
-        agent = get_agent_with_session(session_id, with_learner=True)
+        agent = get_agent_with_session(session_id)
         
         # Load episodic learning
         episodic_content = await asyncio.to_thread(agent._learner._load_episodic)
@@ -578,11 +434,12 @@ async def get_episodic_learning(session_id: str = "hvac-agent-session-001"):
 async def trigger_episodic_learning(session_id: str = "hvac-agent-session-001"):
     """Trigger episodic learning for a session"""
     try:
-        agent = get_agent_with_session(session_id, with_learner=True)
+        agent = get_agent_with_session(session_id)
         
         # Run episodic learning
         trace_learning = await asyncio.to_thread(agent._learner._reflect_episodic, {})
         learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
+        await asyncio.to_thread(agent._learner._store_episodic_learning, learning_content)
         
         return {
             "success": True,
@@ -599,7 +456,7 @@ async def trigger_episodic_learning(session_id: str = "hvac-agent-session-001"):
 async def get_stored_feedback(session_id: str = "hvac-agent-session-001"):
     """Get stored feedback for a session"""
     try:
-        agent = get_agent_with_session(session_id, with_learner=True)
+        agent = get_agent_with_session(session_id)
         
         # Load feedback
         feedback_content = await asyncio.to_thread(agent._learner._load_feedback)
@@ -631,7 +488,7 @@ async def save_feedback(request: FeedbackRequest):
         session_id = request.session_id or "hvac-agent-session-001"
         feedback_content = request.feedback
         
-        agent = get_agent_with_session(session_id, with_learner=True)
+        agent = get_agent_with_session(session_id)
         
         # Save feedback
         await asyncio.to_thread(agent._learner.save_feedback, feedback_content)
@@ -650,7 +507,7 @@ async def save_feedback(request: FeedbackRequest):
 async def get_learning_metrics(session_id: str = "hvac-agent-session-001"):
     """Get learning metrics for a session"""
     try:
-        agent = get_agent_with_session(session_id, with_learner=True)
+        agent = get_agent_with_session(session_id)
         
         # Load learnings
         acquisitive_learnings = await asyncio.to_thread(agent._learner._load_acquisitive)
