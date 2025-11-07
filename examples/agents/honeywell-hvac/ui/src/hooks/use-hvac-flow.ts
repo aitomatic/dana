@@ -62,6 +62,64 @@ export function useHVACFlow() {
     [setAcquisitiveLearnings, setEpisodicLearning, setLearningMetrics],
   );
 
+  // Extract WITHOUT learning path
+  const runWithoutLearningPath = useCallback(
+    async (env: any, sessionId: string): Promise<{ plan: AgentPlan | null; feedback: Feedback | null }> => {
+      try {
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Starting path');
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Calling createPlan with with_learner=false');
+        const plan = await hvacApi.createPlan(env, sessionId, false);
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Received plan:', plan);
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Validating plan');
+        const feedback = await hvacApi.validatePlan(env, plan);
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Received feedback:', feedback);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Path completed');
+        return { plan, feedback };
+      } catch (error) {
+        console.error('[COMPARISON MODE] [WITHOUT LEARNING] Path failed:', error);
+        return { plan: null, feedback: null };
+      }
+    },
+    [],
+  );
+
+  // Extract WITH learning path (excluding learning steps)
+  const runWithLearningPath = useCallback(
+    async (env: any, sessionId: string): Promise<{ plan: AgentPlan | null; feedback: Feedback | null }> => {
+      try {
+        console.log('[COMPARISON MODE] [WITH LEARNING] Starting path');
+        console.log('[COMPARISON MODE] [WITH LEARNING] Calling createPlan with with_learner=true');
+        const plan = await hvacApi.createPlan(env, sessionId, true);
+        console.log('[COMPARISON MODE] [WITH LEARNING] Received plan:', plan);
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        console.log('[COMPARISON MODE] [WITH LEARNING] Validating plan');
+        const feedback = await hvacApi.validatePlan(env, plan);
+        console.log('[COMPARISON MODE] [WITH LEARNING] Received feedback:', feedback);
+
+        // Save feedback for the WITH learning run
+        try {
+          await hvacApi.saveFeedback(JSON.stringify(feedback, null, 2), sessionId);
+          console.log('[COMPARISON MODE] [WITH LEARNING] Saved feedback');
+        } catch (error) {
+          console.error('[COMPARISON MODE] [WITH LEARNING] Failed to save feedback:', error);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        console.log('[COMPARISON MODE] [WITH LEARNING] Path completed');
+        return { plan, feedback };
+      } catch (error) {
+        console.error('[COMPARISON MODE] [WITH LEARNING] Path failed:', error);
+        return { plan: null, feedback: null };
+      }
+    },
+    [],
+  );
+
   const runFlow = useCallback(async () => {
     try {
       // Clear previous run's data to hide cards immediately
@@ -82,8 +140,8 @@ export function useHVACFlow() {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       if (store.comparisonMode) {
-        // Comparison Mode: Run twice sequentially
-        console.log('[COMPARISON MODE] Starting comparison mode execution');
+        // Comparison Mode: Run both paths in parallel
+        console.log('[COMPARISON MODE] Starting parallel comparison mode execution');
         console.log('[COMPARISON MODE] Environment:', env);
         const previousLearningsCount = store.acquisitiveLearnings.length;
         console.log('[COMPARISON MODE] Previous learnings count:', previousLearningsCount);
@@ -96,55 +154,38 @@ export function useHVACFlow() {
           withLearning: { plan: null, feedback: null },
         };
 
-        // First run: WITHOUT learning
-        console.log('[COMPARISON MODE] ===== FIRST RUN: WITHOUT LEARNING =====');
-        console.log('[COMPARISON MODE] Calling createPlan with with_learner=false');
-        console.log('[COMPARISON MODE] Ensuring clean state for WITHOUT learning run');
+        // Execute both paths in parallel
         setExecutionStep('planning');
-        const planWithoutLearning = await hvacApi.createPlan(env, sessionId, false);
-        console.log('[COMPARISON MODE] Received plan WITHOUT learning:', planWithoutLearning);
-        comparisonResults.withoutLearning.plan = planWithoutLearning;
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        setExecutionStep('validation');
-        console.log('[COMPARISON MODE] Validating plan WITHOUT learning');
-        const feedbackWithoutLearning = await hvacApi.validatePlan(env, planWithoutLearning);
-        console.log('[COMPARISON MODE] Received feedback WITHOUT learning:', feedbackWithoutLearning);
-        comparisonResults.withoutLearning.feedback = feedbackWithoutLearning;
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Second run: WITH learning (using same environment)
-        console.log('[COMPARISON MODE] ===== SECOND RUN: WITH LEARNING =====');
-        console.log('[COMPARISON MODE] Calling createPlan with with_learner=true');
-        setExecutionStep('planning');
-        const planWithLearning = await hvacApi.createPlan(env, sessionId, true);
-        console.log('[COMPARISON MODE] Received plan WITH learning:', planWithLearning);
-        console.log('[COMPARISON MODE] Plans are identical?', JSON.stringify(planWithoutLearning) === JSON.stringify(planWithLearning));
-        comparisonResults.withLearning.plan = planWithLearning;
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        setExecutionStep('validation');
-        console.log('[COMPARISON MODE] Validating plan WITH learning');
-        const feedbackWithLearning = await hvacApi.validatePlan(env, planWithLearning);
-        console.log('[COMPARISON MODE] Received feedback WITH learning:', feedbackWithLearning);
-        console.log('[COMPARISON MODE] Feedbacks are identical?', JSON.stringify(feedbackWithoutLearning) === JSON.stringify(feedbackWithLearning));
+        console.log('[COMPARISON MODE] Executing both paths in parallel...');
         
-        // Store feedback in comparison results
-        comparisonResults.withLearning.feedback = feedbackWithLearning;
-        console.log('[COMPARISON MODE] Stored feedback in comparisonResults.withLearning.feedback');
+        const [resultWithoutLearning, resultWithLearning] = await Promise.all([
+          runWithoutLearningPath(env, sessionId),
+          runWithLearningPath(env, sessionId),
+        ]);
 
-        // Save feedback for the WITH learning run
-        try {
-          await hvacApi.saveFeedback(JSON.stringify(feedbackWithLearning, null, 2), sessionId);
-        } catch (error) {
-          console.error('Failed to save feedback:', error);
-        }
+        // Update comparison results with parallel execution results
+        comparisonResults.withoutLearning = resultWithoutLearning;
+        comparisonResults.withLearning = resultWithLearning;
 
+        console.log('[COMPARISON MODE] Both paths completed');
+        console.log('[COMPARISON MODE] Plans are identical?', JSON.stringify(resultWithoutLearning.plan) === JSON.stringify(resultWithLearning.plan));
+        console.log('[COMPARISON MODE] Feedbacks are identical?', JSON.stringify(resultWithoutLearning.feedback) === JSON.stringify(resultWithLearning.feedback));
+
+        // Both paths have completed validation
+        setExecutionStep('validation');
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        // Step 4: Load acquisitive learning (highlight new learning)
+        // Step 4: Trigger episodic learning and load all learnings (after both paths complete)
         setExecutionStep('learning');
         try {
+          // Trigger episodic learning
+          try {
+            await hvacApi.triggerEpisodicLearning(sessionId);
+            console.log('[COMPARISON MODE] Triggered episodic learning');
+          } catch (error) {
+            console.error('Failed to trigger episodic learning:', error);
+          }
+
           // Reload learnings to get the latest one
           const { learnings } = await hvacApi.getAcquisitiveLearnings(sessionId);
           setAcquisitiveLearnings(learnings);
@@ -153,6 +194,16 @@ export function useHVACFlow() {
           if (learnings.length > previousLearningsCount && learnings.length > 0) {
             const newestLearning = learnings[0]; // Sorted newest first
             setCurrentExecutionLearning(newestLearning);
+          }
+
+          // Reload episodic learning after triggering
+          try {
+            const episodicLearning = await hvacApi.getEpisodicLearning(sessionId);
+            if (episodicLearning.content) {
+              setEpisodicLearning(episodicLearning);
+            }
+          } catch (error) {
+            console.error('Failed to load episodic learning:', error);
           }
 
           // Update learning metrics
@@ -168,7 +219,7 @@ export function useHVACFlow() {
         console.log('[COMPARISON MODE] Final comparison results:', comparisonResults);
         setComparisonResults(comparisonResults);
         setExecutionStep('complete');
-        console.log('[COMPARISON MODE] Comparison mode execution complete');
+        console.log('[COMPARISON MODE] Parallel comparison mode execution complete');
       } else {
         // Normal Mode: Single run with learning enabled
         console.log('[NORMAL MODE] Starting normal mode execution with learning enabled');
@@ -195,9 +246,17 @@ export function useHVACFlow() {
 
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        // Step 4: Load acquisitive learning (highlight new learning)
+        // Step 4: Trigger episodic learning and load all learnings
         setExecutionStep('learning');
         try {
+          // Trigger episodic learning
+          try {
+            await hvacApi.triggerEpisodicLearning(sessionId);
+            console.log('[NORMAL MODE] Triggered episodic learning');
+          } catch (error) {
+            console.error('Failed to trigger episodic learning:', error);
+          }
+
           // Reload learnings to get the latest one
           const { learnings } = await hvacApi.getAcquisitiveLearnings(sessionId);
           setAcquisitiveLearnings(learnings);
@@ -206,6 +265,16 @@ export function useHVACFlow() {
           if (learnings.length > previousLearningsCount && learnings.length > 0) {
             const newestLearning = learnings[0]; // Sorted newest first
             setCurrentExecutionLearning(newestLearning);
+          }
+
+          // Reload episodic learning after triggering
+          try {
+            const episodicLearning = await hvacApi.getEpisodicLearning(sessionId);
+            if (episodicLearning.content) {
+              setEpisodicLearning(episodicLearning);
+            }
+          } catch (error) {
+            console.error('Failed to load episodic learning:', error);
           }
 
           // Update learning metrics
@@ -235,9 +304,12 @@ export function useHVACFlow() {
     setCurrentExecutionLearning,
     setLearningMetrics,
     setComparisonResults,
+    setEpisodicLearning,
     currentSession,
     store.acquisitiveLearnings.length,
     store.comparisonMode,
+    runWithoutLearningPath,
+    runWithLearningPath,
   ]);
 
   const loadLearningsForSession = useCallback(
