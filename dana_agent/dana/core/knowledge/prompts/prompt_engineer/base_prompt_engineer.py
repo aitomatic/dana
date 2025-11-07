@@ -10,7 +10,7 @@ from dana.common.schemas.tool_call import ParameterInfo
 from dana.common.utils.misc import Misc
 
 from ..codecs import AbstractCodec, CSXMLCodec
-from ..stores import PromptStoreProtocol
+from dana.repositories.repository_protocol import PromptRepositoryProtocol
 
 
 if TYPE_CHECKING:
@@ -26,13 +26,13 @@ class BasePromptEngineer(ABC, Persistable):
     def __init__(
         self,
         component: BaseWAR,
-        store: PromptStoreProtocol,
+        repository: PromptRepositoryProtocol,
         codec: type[AbstractCodec],
         force_generate: bool = False,
         check_conflicts: bool = False,
         **kwargs,
     ):
-        self._store = store
+        self._repository = repository
         self._component = component
         self._codec = codec or CSXMLCodec
         self._force_generate = force_generate
@@ -77,7 +77,7 @@ class BasePromptEngineer(ABC, Persistable):
         """
         if self._prompt is None:
             raise ValueError(f"[{self.__class__.__qualname__}] Prompt for {self._component.__class__.__qualname__} is not generated yet")
-        prompt_version = self._store.create_snapshot(
+        prompt_version = self._repository.create_snapshot(
                             content=self._prompt, 
                             provenance={
                                 "source" : "auto-generated",
@@ -87,13 +87,13 @@ class BasePromptEngineer(ABC, Persistable):
                             metrics={}
                             )
         logger.info(f"Prompt template persisted for {self._component.__class__.__qualname__} and codec {self._codec.__qualname__} with version {prompt_version.version}")
-        self._store.set_active(prompt_version.version)
+        self._repository.set_active(prompt_version.version)
 
     def load(self) -> str | None:
         """
         Load the prompt for the component.
         """
-        snapshot = self._store.get_active(error_if_not_found=False)
+        snapshot = self._repository.get_active(error_if_not_found=False)
         if snapshot is None:
             return None
         return snapshot.content
@@ -103,13 +103,13 @@ class ResourcePromptEngineer(BasePromptEngineer):
     def __init__(
         self,
         component: "BaseResource",
-        store: PromptStoreProtocol,
+        repository: PromptRepositoryProtocol,
         codec: type[AbstractCodec],
         force_generate: bool = False,
         check_conflicts: bool = False,
         **kwargs,
     ):
-        super().__init__(component, store, codec, force_generate, check_conflicts, **kwargs)
+        super().__init__(component, repository, codec, force_generate, check_conflicts, **kwargs)
 
     @override
     def construct_prompt(self) -> str:
@@ -199,13 +199,13 @@ class WorkflowPromptEngineer(BasePromptEngineer):
     def __init__(
         self,
         component: "BaseWorkflow",
-        store: PromptStoreProtocol,
+        repository: PromptRepositoryProtocol,
         codec: type[AbstractCodec],
         force_generate: bool = False,
         check_conflicts: bool = False,
         **kwargs,
     ):
-        super().__init__(component, store, codec, force_generate, check_conflicts, **kwargs)
+        super().__init__(component, repository, codec, force_generate, check_conflicts, **kwargs)
 
     @override
     def construct_prompt(self) -> str:
@@ -291,13 +291,13 @@ class AgentPromptEngineer(BasePromptEngineer):
     def __init__(
         self,
         component: "BaseAgent",
-        store: PromptStoreProtocol,
+        repository: PromptRepositoryProtocol,
         codec: type[AbstractCodec],
         force_generate: bool = False,
         check_conflicts: bool = False,
         **kwargs,
     ):
-        super().__init__(component, store, codec, force_generate, check_conflicts, **kwargs)
+        super().__init__(component, repository, codec, force_generate, check_conflicts, **kwargs)
 
     @override
     def construct_prompt(self) -> str:
