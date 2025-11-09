@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """HVAC Control Agent - Simple flow without tools."""
 
-import sys
-import os
 import json
+import os
 import re
+import sys
+
 
 # Try to import colorama for better cross-platform color support
 try:
@@ -367,7 +368,7 @@ def update_hvac_agent_prompt_with_policies(policies):
     )
     
     # Read the current prompt file
-    with open(prompt_path, 'r') as f:
+    with open(prompt_path) as f:
         content = f.read()
     
     # Find the IDENTITY section
@@ -448,7 +449,7 @@ def delete_policies_from_hvac_agent(policies_to_delete):
     )
     
     # Read the current prompt file
-    with open(prompt_path, 'r') as f:
+    with open(prompt_path) as f:
         content = f.read()
     
     # Find the IDENTITY section
@@ -816,7 +817,7 @@ def test_policy_extraction():
         
         print("\nUpdated HVACAgent.xml content:")
         print("-" * 50)
-        with open(prompt_path, 'r') as f:
+        with open(prompt_path) as f:
             content = f.read()
             print(content)
         print("-" * 50)
