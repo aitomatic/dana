@@ -81,6 +81,10 @@ def create_provider(provider_name: str, model: str | None = None, **kwargs) -> L
         from .openrouter import OpenRouterProvider
 
         return OpenRouterProvider(model=model, **kwargs)
+    elif provider_name == "llamastack":
+        from .llamastack import LlamaStackProvider
+
+        return LlamaStackProvider(model=model, **kwargs)
     else:
         # For other providers, try to use OpenAI-compatible client
         base_url = config.get("base_url")
