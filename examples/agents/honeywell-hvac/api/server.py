@@ -25,7 +25,7 @@ from pathlib import Path
 import re
 import sys
 import traceback
-from typing import Any
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -116,7 +116,9 @@ def get_agent_with_session(session_id: str = "hvac-agent-session-001", with_lear
     if cache_key not in _agent_cache:
         agent = HVACAgent(
             agent_id="hvac-agent-001",
-            model="openai/gpt-4.1",
+            # model="openai/gpt-4.1",
+            llm_provider="openai",
+            model="gpt-4.1",
         )
         agent.enable_notifications(verbose=False)
         agent.set_session_id(session_id)
