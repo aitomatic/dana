@@ -66,9 +66,12 @@ export function useHVACFlow() {
   const runWithoutLearningPath = useCallback(
     async (env: any, sessionId: string): Promise<{ plan: AgentPlan | null; feedback: Feedback | null }> => {
       try {
+        const suffixedSessionId = `${sessionId}-False`;
         console.log('[COMPARISON MODE] [WITHOUT LEARNING] Starting path');
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Original sessionId:', sessionId);
+        console.log('[COMPARISON MODE] [WITHOUT LEARNING] Using suffixed sessionId:', suffixedSessionId);
         console.log('[COMPARISON MODE] [WITHOUT LEARNING] Calling createPlan with with_learner=false');
-        const plan = await hvacApi.createPlan(env, sessionId, false);
+        const plan = await hvacApi.createPlan(env, suffixedSessionId, false);
         console.log('[COMPARISON MODE] [WITHOUT LEARNING] Received plan:', plan);
         await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -91,9 +94,12 @@ export function useHVACFlow() {
   const runWithLearningPath = useCallback(
     async (env: any, sessionId: string): Promise<{ plan: AgentPlan | null; feedback: Feedback | null }> => {
       try {
+        const suffixedSessionId = `${sessionId}-True`;
         console.log('[COMPARISON MODE] [WITH LEARNING] Starting path');
+        console.log('[COMPARISON MODE] [WITH LEARNING] Original sessionId:', sessionId);
+        console.log('[COMPARISON MODE] [WITH LEARNING] Using suffixed sessionId:', suffixedSessionId);
         console.log('[COMPARISON MODE] [WITH LEARNING] Calling createPlan with with_learner=true');
-        const plan = await hvacApi.createPlan(env, sessionId, true);
+        const plan = await hvacApi.createPlan(env, suffixedSessionId, true);
         console.log('[COMPARISON MODE] [WITH LEARNING] Received plan:', plan);
         await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -101,10 +107,10 @@ export function useHVACFlow() {
         const feedback = await hvacApi.validatePlan(env, plan);
         console.log('[COMPARISON MODE] [WITH LEARNING] Received feedback:', feedback);
 
-        // Save feedback for the WITH learning run
+        // Save feedback for the WITH learning run (using suffixed sessionId to match the path)
         try {
-          await hvacApi.saveFeedback(JSON.stringify(feedback, null, 2), sessionId);
-          console.log('[COMPARISON MODE] [WITH LEARNING] Saved feedback');
+          await hvacApi.saveFeedback(JSON.stringify(feedback, null, 2), suffixedSessionId);
+          console.log('[COMPARISON MODE] [WITH LEARNING] Saved feedback with suffixed sessionId:', suffixedSessionId);
         } catch (error) {
           console.error('[COMPARISON MODE] [WITH LEARNING] Failed to save feedback:', error);
         }
@@ -176,18 +182,20 @@ export function useHVACFlow() {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Step 4: Trigger episodic learning and load all learnings (after both paths complete)
+        // Use suffixed sessionId for WITH learning path
+        const withLearningSessionId = `${sessionId}-True`;
         setExecutionStep('learning');
         try {
           // Trigger episodic learning
           try {
-            await hvacApi.triggerEpisodicLearning(sessionId);
-            console.log('[COMPARISON MODE] Triggered episodic learning');
+            await hvacApi.triggerEpisodicLearning(withLearningSessionId);
+            console.log('[COMPARISON MODE] Triggered episodic learning with suffixed sessionId:', withLearningSessionId);
           } catch (error) {
             console.error('Failed to trigger episodic learning:', error);
           }
 
           // Reload learnings to get the latest one
-          const { learnings } = await hvacApi.getAcquisitiveLearnings(sessionId);
+          const { learnings } = await hvacApi.getAcquisitiveLearnings(withLearningSessionId);
           setAcquisitiveLearnings(learnings);
 
           // Highlight the newest learning if a new one was created
@@ -198,7 +206,7 @@ export function useHVACFlow() {
 
           // Reload episodic learning after triggering
           try {
-            const episodicLearning = await hvacApi.getEpisodicLearning(sessionId);
+            const episodicLearning = await hvacApi.getEpisodicLearning(withLearningSessionId);
             if (episodicLearning.content) {
               setEpisodicLearning(episodicLearning);
             }
@@ -207,7 +215,7 @@ export function useHVACFlow() {
           }
 
           // Update learning metrics
-          const metrics = await hvacApi.getLearningMetrics(sessionId);
+          const metrics = await hvacApi.getLearningMetrics(withLearningSessionId);
           setLearningMetrics(metrics);
         } catch (error) {
           console.error('Failed to load learnings:', error);

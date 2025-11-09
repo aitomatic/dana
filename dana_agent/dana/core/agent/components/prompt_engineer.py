@@ -815,7 +815,7 @@ class PromptEngineer:
             if self._agent._learner is not None:
                 related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
                 if related_acquisitive_learnings:
-                    messages.append(LLMMessage(role="system", content=f"Learning from the past : {related_acquisitive_learnings}"))
+                    messages.append(LLMMessage(role="user", content=f"Learning from the past : {related_acquisitive_learnings}"))
 
         
         # Hack: put the user state/locale here for now
