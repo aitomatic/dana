@@ -109,3 +109,16 @@ export interface StoredFeedback {
   timestamp: string | null;
   session_id: string;
 }
+
+export type ComparisonMode = 'withoutLearning' | 'withLearning';
+
+export interface ComparisonResults {
+  withoutLearning: {
+    plan: AgentPlan | null;
+    feedback: Feedback | null;
+  };
+  withLearning: {
+    plan: AgentPlan | null;
+    feedback: Feedback | null;
+  };
+}

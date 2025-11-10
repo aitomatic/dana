@@ -1,11 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useHVACStore } from '@/stores/hvac-store';
-import { Sparkles, TrendingUp } from 'lucide-react';
+import { Sparkles, TrendingUp, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { Feedback, ComparisonMode } from '@/types/hvac';
 
-export function CurrentLearningHighlight() {
-  const { currentExecutionLearning } = useHVACStore();
+interface CurrentLearningHighlightProps {
+  onShowLearnedInsights?: () => void;
+  feedback?: Feedback | null;
+  mode?: ComparisonMode;
+}
+
+export function CurrentLearningHighlight({ onShowLearnedInsights, feedback: propFeedback, mode }: CurrentLearningHighlightProps = {}) {
+  const { currentExecutionLearning, feedback: storeFeedback } = useHVACStore();
+  const feedback = propFeedback ?? storeFeedback;
   const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
@@ -16,16 +25,41 @@ export function CurrentLearningHighlight() {
     }
   }, [currentExecutionLearning]);
 
+  // In comparison mode, add white/50 border for WITH learning, white/10 border for WITHOUT learning
+  const cardClassName = mode
+    ? mode === 'withLearning'
+      ? 'border-white/50 border-2'
+      : 'bg-transparent border-white/10 border-2'
+    : '';
+
+  // Only show this component when feedback exists (agent has run with results)
+  if (!feedback) {
+    return null;
+  }
+
   if (!currentExecutionLearning) {
     return (
-      <Card>
+      <Card className={cardClassName}>
         <CardHeader>
-          <CardTitle>Learning from This Execution</CardTitle>
+          <CardTitle>New Learning</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground text-center py-8">
             No learning yet. Run the agent to see what it learns.
           </div>
+          {/* View All Learned Insights Button */}
+          {onShowLearnedInsights && (
+            <div className="pt-2 border-t border-border">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onShowLearnedInsights}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View all learned insights
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -33,19 +67,24 @@ export function CurrentLearningHighlight() {
 
   const timestamp = new Date(currentExecutionLearning.timestamp).toLocaleString();
 
-  return (
-    <Card
-      className={`transition-all duration-500 ${
+  // Combine comparison mode styling with new learning animation
+  const combinedCardClassName = mode
+    ? mode === 'withLearning'
+      ? `border-white/50 border-2 ${isNew ? 'shadow-lg' : ''}`
+      : 'bg-transparent border-white/10 border-2'
+    : `transition-all duration-500 ${
         isNew
           ? 'border-green-500 bg-green-50 dark:bg-green-500/10 shadow-lg'
           : 'border-border'
-      }`}
-    >
+      }`;
+
+  return (
+    <Card className={combinedCardClassName}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex  items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-green-500" />
-            New Learning from This Run
+            New Learning
           </CardTitle>
           {isNew && (
             <Badge className="bg-green-500 text-white animate-pulse">
@@ -57,35 +96,25 @@ export function CurrentLearningHighlight() {
       <CardContent className="space-y-4">
         {/* Learning Note - Prominently Displayed */}
         <div className="bg-background border border-border rounded-lg p-4">
-          <div className="text-base font-medium leading-relaxed text-foreground">
+          <div className="text-sm leading-relaxed text-foreground">
             {currentExecutionLearning.learning_note || 'No learning note available'}
           </div>
         </div>
 
-        {/* Context */}
-        <div className="text-sm text-muted-foreground">
-          <div className="mb-1">
-            <span className="font-medium">Learned at:</span> {timestamp}
-          </div>
-          <div className="mb-1">
-            <span className="font-medium">Session:</span> {currentExecutionLearning.session_id}
-          </div>
-        </div>
 
-        {/* Impact Preview */}
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
-              This learning will help:
-            </span>
+        {/* View All Learned Insights Button */}
+        {onShowLearnedInsights && (
+          <div className="pt-0 border-border">
+            <Button
+              
+              className="w-full bg-white/10"
+              onClick={onShowLearnedInsights}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View all insights
+            </Button>
           </div>
-          <ul className="text-sm text-blue-600 dark:text-blue-300 space-y-1 ml-6 list-disc">
-            <li>Improve future plan timing</li>
-            <li>Reduce energy waste</li>
-            <li>Better efficiency in similar scenarios</li>
-          </ul>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

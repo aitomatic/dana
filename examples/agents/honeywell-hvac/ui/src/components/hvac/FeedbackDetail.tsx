@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useHVACStore } from '@/stores/hvac-store';
-import { CheckCircle, XCircle, Clock, Zap } from 'lucide-react';
+import { Clock, Zap } from 'lucide-react';
+import type { Feedback, Environment, AgentPlan, ComparisonMode } from '@/types/hvac';
 import {
   Line,
   XAxis,
@@ -13,16 +14,32 @@ import {
   ReferenceLine,
   ResponsiveContainer,
   ComposedChart,
-  LabelList,
 } from 'recharts';
-import { calculateTemperaturePoints } from '@/lib/temperature-calculator';
+import { calculateTemperaturePoints, parseTimeToMinutes, minutesToTime } from '@/lib/temperature-calculator';
 
-export function FeedbackDetail() {
-  const { feedback, environment, agentPlan } = useHVACStore();
+interface FeedbackDetailProps {
+  feedback?: Feedback | null;
+  environment?: Environment | null;
+  agentPlan?: AgentPlan | null;
+  mode?: ComparisonMode;
+}
+
+export function FeedbackDetail({ feedback: propFeedback, environment: propEnvironment, agentPlan: propAgentPlan, mode }: FeedbackDetailProps = {}) {
+  const { feedback: storeFeedback, environment: storeEnvironment, agentPlan: storeAgentPlan } = useHVACStore();
+  const feedback = propFeedback ?? storeFeedback;
+  const environment = propEnvironment ?? storeEnvironment;
+  const agentPlan = propAgentPlan ?? storeAgentPlan;
+
+  // In comparison mode, add white/50 border for WITH learning, white/10 border for WITHOUT learning
+  const cardClassName = mode
+    ? mode === 'withLearning'
+      ? 'border-white/50 border-2'
+      : 'bg-transparent border-white/10 border-2'
+    : '';
 
   if (!feedback) {
     return (
-      <Card>
+      <Card className={cardClassName}>
         <CardHeader>
           <CardTitle>Feedback</CardTitle>
         </CardHeader>
@@ -34,42 +51,25 @@ export function FeedbackDetail() {
   }
 
   return (
-    <Card>
+    <Card className={cardClassName}>
       <CardHeader>
-        <CardTitle>Feedback</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Feedback</CardTitle>
+          {mode && (
+            <Badge
+              variant={mode === 'withLearning' ? 'default' : 'outline'}
+              className={mode === 'withLearning' ? 'bg-blue-600 text-white' : 'border-gray-400 text-gray-700 dark:text-gray-300'}
+            >
+              {mode === 'withLearning' ? 'With Learning' : 'Without Learning'}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Status Summary */}
-        <div className="flex items-center gap-2">
-          {feedback.plan_success === 'success' ? (
-            <>
-              <CheckCircle className="w-5 h-5 text-success-500" />
-              <Badge variant="default" className="bg-success-500 text-white">
-                Success
-              </Badge>
-            </>
-          ) : (
-            <>
-              <XCircle className="w-5 h-5 text-error-500" />
-              <Badge variant="destructive" className="bg-error-500 text-white">
-                Failed
-              </Badge>
-            </>
-          )}
-        </div>
 
-        {/* Summary Metrics */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 rounded-lg bg-muted">
-            <div className="text-xs text-muted-foreground mb-1">Total Cost</div>
-            <div className="text-lg font-semibold">{feedback.total_cost_kwh.toFixed(3)} kWh</div>
-          </div>
-          <div className="p-3 rounded-lg bg-muted">
-            <div className="text-xs text-muted-foreground mb-1">Final Temperature</div>
-            <div className="text-lg font-semibold">{feedback.final_temp_f.toFixed(1)}°F</div>
-          </div>
-        </div>
 
+       
         {/* Temperature Timeline */}
         {environment && agentPlan && feedback && (
           <>
@@ -86,36 +86,101 @@ export function FeedbackDetail() {
                   time: point.time,
                   minutes: point.minutes,
                   indoor: point.indoorTemp,
-                  outdoor: point.outdoorTemp,
                   target: point.targetTemp || null,
                 }));
 
+                // Calculate Y-axis domain and ticks based on actual data range
+                const allTemps = chartData.flatMap((p) => [p.indoor, p.target].filter(Boolean)) as number[];
+                const minTemp = Math.min(...allTemps);
+                const maxTemp = Math.max(...allTemps);
+                const yAxisMin = Math.floor(minTemp / 10) * 10;
+                const yAxisMax = Math.ceil(maxTemp / 10) * 10;
+                const domainRange = yAxisMax - yAxisMin;
+                
+                // Use 5°F intervals if range < 30°F to ensure at least 4 ticks, otherwise use 10°F intervals
+                const tickInterval = domainRange < 30 ? 5 : 10;
+                const yAxisTicks: number[] = [];
+                for (let i = yAxisMin; i <= yAxisMax; i += tickInterval) {
+                  yAxisTicks.push(i);
+                }
+                
+                // Ensure at least 4 ticks
+                if (yAxisTicks.length < 4) {
+                  // Expand domain if needed to get at least 4 ticks
+                  const neededRange = (4 - 1) * tickInterval;
+                  const center = (yAxisMin + yAxisMax) / 2;
+                  const expandedMin = Math.floor((center - neededRange / 2) / tickInterval) * tickInterval;
+                  const expandedMax = Math.ceil((center + neededRange / 2) / tickInterval) * tickInterval;
+                  yAxisTicks.length = 0;
+                  for (let i = expandedMin; i <= expandedMax; i += tickInterval) {
+                    yAxisTicks.push(i);
+                  }
+                }
+
+                // Calculate X-axis ticks at 30-minute intervals
+                const minMinutes = Math.min(...chartData.map(p => p.minutes));
+                const maxMinutes = Math.max(...chartData.map(p => p.minutes));
+                const xAxisTicks: string[] = [];
+                // Round down to nearest 30-minute interval
+                const startMinutes = Math.floor(minMinutes / 30) * 30;
+                // Round up to nearest 30-minute interval
+                const endMinutes = Math.ceil(maxMinutes / 30) * 30;
+                for (let minutes = startMinutes; minutes <= endMinutes; minutes += 30) {
+                  xAxisTicks.push(minutesToTime(minutes));
+                }
+
+                // Prepare reached target data for custom rendering
+                const reachedTargets = feedback.action_results
+                  .map((action, i) => {
+                    if (!action.reached_time) return null;
+                    const reachedMinutes = parseTimeToMinutes(action.reached_time);
+                    const closestPointWithIndex = chartData.reduce((closest, point, index) => {
+                      const currentDiff = Math.abs(point.minutes - reachedMinutes);
+                      const closestDiff = closest ? Math.abs(chartData[closest.index].minutes - reachedMinutes) : Infinity;
+                      return currentDiff < closestDiff ? { point, index } : closest;
+                    }, null as { point: typeof chartData[0]; index: number } | null);
+                    
+                    if (!closestPointWithIndex || Math.abs(closestPointWithIndex.point.minutes - reachedMinutes) >= 30) {
+                      return null;
+                    }
+                    const closestPointIndex = closestPointWithIndex.index;
+                    return { action, index: i, closestPointIndex, targetTemp: action.target_temp_f, reachedMinutes };
+                  })
+                  .filter((item): item is NonNullable<typeof item> => item !== null);
+
                 return (
-                  <div className="h-64">
+                  <div className="h-64 relative">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={chartData}
-                        margin={{ top: 5, right: 20, bottom: 5, left: 40 }}
+                        margin={{ top: 40, right: 20, bottom: 5, left: 40 }}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
-                          stroke="hsl(var(--muted-foreground))"
+                          stroke="rgba(255, 255, 255, 0.8)"
                           opacity={0.2}
                         />
                         <XAxis
                           dataKey="time"
-                          stroke="hsl(var(--muted-foreground))"
-                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                          stroke="rgba(255, 255, 255, 0.8)"
+                          tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
+                          label={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
+                          ticks={xAxisTicks}
+                          interval={0}
                         />
                         <YAxis
-                          stroke="hsl(var(--muted-foreground))"
-                          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                          stroke="rgba(255, 255, 255, 0.8)"
+                          tick={{ fill: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}
                           label={{
                             value: 'Temperature (°F)',
                             angle: -90,
                             position: 'left',
                             offset: 10,
+                            fontSize: 12,
+                            fill: 'rgba(255, 255, 255, 0.8)',
                           }}
+                          domain={[yAxisTicks[0], yAxisTicks[yAxisTicks.length - 1]]}
+                          ticks={yAxisTicks}
                         />
                         <Tooltip
                           contentStyle={{
@@ -127,9 +192,7 @@ export function FeedbackDetail() {
                             `${value.toFixed(1)}°F`,
                             name === 'indoor'
                               ? 'Indoor'
-                              : name === 'outdoor'
-                                ? 'Outdoor'
-                                : 'Target',
+                              : 'Target',
                           ]}
                         />
                         <Legend />
@@ -144,16 +207,74 @@ export function FeedbackDetail() {
                           />
                         ))}
 
-                        {/* Outdoor temperature line (dashed) */}
-                        <Line
-                          type="monotone"
-                          dataKey="outdoor"
-                          stroke="hsl(210, 100%, 50%)"
-                          strokeDasharray="5 5"
-                          strokeWidth={2}
-                          dot={false}
-                          name="Outdoor"
-                        />
+                        {/* Reference lines for meeting start times */}
+                        {environment.meeting_plan.map((meeting, i) => {
+                          // Find the data point closest to meeting start time
+                          const meetingStartMinutes = parseTimeToMinutes(meeting.start_time);
+                          const closestPoint = chartData.reduce((closest, point) => {
+                            const currentDiff = Math.abs(point.minutes - meetingStartMinutes);
+                            const closestDiff = closest ? Math.abs(closest.minutes - meetingStartMinutes) : Infinity;
+                            return currentDiff < closestDiff ? point : closest;
+                          }, null as typeof chartData[0] | null);
+                          
+                          // Only render if within reasonable distance (e.g., 30 minutes)
+                          if (!closestPoint || Math.abs(closestPoint.minutes - meetingStartMinutes) >= 30) {
+                            return null;
+                          }
+                          
+                          return (
+                            <ReferenceLine
+                              key={`meeting-${i}`}
+                              x={closestPoint.time}
+                              stroke="hsl(270, 70%, 50%)"
+                              strokeDasharray="3 3"
+                              strokeWidth={2}
+                              label={{
+                                value: `Meeting ${meeting.start_time}`,
+                                position: 'top',
+                                fill: 'hsl(270, 70%, 50%)',
+                                fontSize: 11,
+                                fontWeight: 'bold',
+                                offset: 5,
+                              }}
+                            />
+                          );
+                        })}
+
+                        {/* Reference lines for target reached times with triangular indicators */}
+                        {reachedTargets.map(({ index: i, closestPointIndex, targetTemp }) => {
+                          const closestPoint = chartData[closestPointIndex];
+                          if (!closestPoint) return null;
+                          
+                          // Custom label renderer for triangle - receives Recharts label props
+                          const TriangleLabel = (props: any) => {
+                            // Recharts passes x, y, and viewBox to label functions
+                            const x = props.x ?? props.viewBox?.x ?? 0;
+                            const y = props.y ?? props.viewBox?.y ?? 0;
+                            
+                            return (
+                              <g>
+                                {/* Triangle pointing down at intersection */}
+                                <polygon
+                                  points={`${x},${y} ${x - 6},${y + 8} ${x + 6},${y + 8}`}
+                                  fill="hsl(25, 95%, 53%)"
+                                />
+                              </g>
+                            );
+                          };
+                          
+                          return (
+                            <ReferenceLine
+                              key={`reached-${i}`}
+                              x={closestPoint.time}
+                              y={targetTemp}
+                              stroke="hsl(25, 95%, 53%)"
+                              strokeWidth={2}
+                              strokeDasharray="0"
+                              label={TriangleLabel}
+                            />
+                          );
+                        })}
 
                         {/* Indoor temperature line */}
                         <Line
@@ -163,71 +284,24 @@ export function FeedbackDetail() {
                           strokeWidth={2}
                           dot={{ r: 4 }}
                           name="Indoor"
-                        >
-                          <LabelList
-                            dataKey="target"
-                            content={({ x, y, value, index }: any) => {
-                              if (
-                                value === null ||
-                                value === undefined ||
-                                x === undefined ||
-                                y === undefined
-                              )
-                                return null;
-
-                              // Only show badge for the first occurrence of each target temperature
-                              const currentTarget = value;
-                              const isFirstOccurrence =
-                                index ===
-                                chartData.findIndex(
-                                  (point) =>
-                                    point.target !== null &&
-                                    Math.abs(point.target - currentTarget) < 0.1,
-                                );
-
-                              if (!isFirstOccurrence) return null;
-
-                              // Calculate y position for target temperature line
-                              // Recharts uses SVG coordinates where y increases downward
-                              // We need to find the y position corresponding to the target temperature
-                              // Since we don't have direct access to the scale, we'll approximate
-                              // based on the temperature range and chart dimensions
-                              const chartAreaHeight = 256 - 10; // h-64 = 256px, minus margins (top: 5, bottom: 5)
-                              const allTemps = chartData.flatMap((p) =>
-                                [p.indoor, p.outdoor, p.target].filter(Boolean),
-                              );
-                              const minTemp = Math.min(...(allTemps as number[]));
-                              const maxTemp = Math.max(...(allTemps as number[]));
-                              const tempRange = maxTemp - minTemp || 1; // Avoid division by zero
-
-                              // Calculate y position: top margin (5) + normalized position
-                              // SVG y increases downward, so we invert: chartHeight - normalizedY
-                              const normalizedY =
-                                ((currentTarget - minTemp) / tempRange) * chartAreaHeight;
-                              const targetY = 5 + chartAreaHeight - normalizedY;
-
-                              return (
-                                <foreignObject
-                                  x={x - 35}
-                                  y={targetY + 15}
-                                  width={70}
-                                  height={24}
-                                  className="pointer-events-none"
-                                >
-                                  <div className="inline-flex items-center rounded-md bg-success-500/90 text-white text-xs font-medium px-2 py-1 shadow-sm">
-                                    Target {currentTarget}°F
-                                  </div>
-                                </foreignObject>
-                              );
-                            }}
-                          />
-                        </Line>
+                        />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                 );
               })()}
             </div>
+  {/* Summary Metrics */}
+  <div className="grid grid-cols-2 gap-4">
+           <div className="p-3 rounded-lg bg-muted">
+             <div className="text-xs text-muted-foreground mb-1">Total Cost</div>
+             <div className="text-lg font-semibold">{feedback.total_cost_kwh.toFixed(3)} kWh</div>
+           </div>
+           <div className="p-3 rounded-lg bg-muted">
+             <div className="text-xs text-muted-foreground mb-1">Final Temperature</div>
+             <div className="text-lg font-semibold">{feedback.final_temp_f.toFixed(1)}°F</div>
+           </div>
+         </div>
           </>
         )}
 
@@ -264,11 +338,11 @@ export function FeedbackDetail() {
                   </div>
                   {action.schedule_success === 'success' ? (
                     <Badge variant="default" className="bg-success-500 text-white text-xs">
-                      Success
+                      Satisfied
                     </Badge>
                   ) : (
                     <Badge variant="destructive" className="bg-error-500 text-white">
-                      Failed
+                      Dissatisfied
                     </Badge>
                   )}
                 </div>
@@ -284,8 +358,11 @@ export function FeedbackDetail() {
                     </div>
                   )}
                   {action.reached_time && (
-                    <div className="text-muted-foreground">
-                      <span className="font-medium">Reached target:</span> {action.reached_time}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-muted-foreground">Reached target:</span>
+                      <Badge variant="outline" className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30">
+                        {action.reached_time}
+                      </Badge>
                     </div>
                   )}
                   {action.cost_kwh && (
@@ -299,7 +376,7 @@ export function FeedbackDetail() {
                 </div>
 
                 {action.error && (
-                  <div className="mt-2 text-sm font-medium dark:bg-error-500/20 rounded">
+                  <div className="mt-2 text-sm font-medium  rounded">
                     {action.error}
                   </div>
                 )}
@@ -311,8 +388,8 @@ export function FeedbackDetail() {
         {/* Failed Actions Summary */}
         {feedback.failed_actions && feedback.failed_actions.length > 0 && (
           <>
-            <Separator />
-            <div>
+
+            <div className='hidden'>
               <h4 className="text-sm font-medium mb-2 text-error-500">
                 Failed Actions ({feedback.failed_actions.length})
               </h4>

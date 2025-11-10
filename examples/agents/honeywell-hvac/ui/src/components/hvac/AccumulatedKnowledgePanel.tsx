@@ -26,9 +26,9 @@ export function AccumulatedKnowledgePanel() {
   };
 
   return (
-    <Card>
+    <Card className='hidden'>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between ">
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-blue-500" />
             Accumulated Knowledge
@@ -52,7 +52,7 @@ export function AccumulatedKnowledgePanel() {
             <div className="text-sm text-muted-foreground">
               Last updated: {episodicLearning.timestamp ? new Date(episodicLearning.timestamp).toLocaleString() : 'Unknown'}
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none bg-muted rounded-lg max-h-[400px] overflow-y-auto">
+            <div className="prose prose-sm dark:prose-invert max-w-none bg-muted rounded-lg  max-h-[400px] overflow-y-auto">
               <pre className="whitespace-pre-wrap font-sans text-sm">
                 {episodicLearning.content}
               </pre>
