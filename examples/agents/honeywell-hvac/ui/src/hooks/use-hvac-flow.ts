@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useHVACStore } from '@/stores/hvac-store';
-import { hvacApi } from '@/lib/hvac-api';
+import { hvacApi, DEFAULT_SESSION_ID } from '@/lib/hvac-api';
 import type { AgentPlan, Feedback } from '@/types/hvac';
 
 export function useHVACFlow() {
@@ -28,7 +28,7 @@ export function useHVACFlow() {
     const initializeSession = async () => {
       if (!currentSession) {
         try {
-          const session = await hvacApi.createSession('hvac-agent-session-001');
+          const session = await hvacApi.createSession(DEFAULT_SESSION_ID);
           setCurrentSession(session);
           await loadLearnings(session.session_id);
         } catch (error) {
@@ -77,7 +77,7 @@ export function useHVACFlow() {
         await new Promise((resolve) => setTimeout(resolve, 800));
 
         console.log('[COMPARISON MODE] [WITHOUT LEARNING] Validating plan');
-        const feedback = await hvacApi.validatePlan(env, plan);
+        const feedback = await hvacApi.validatePlan(env, plan, suffixedSessionId, false);
         console.log('[COMPARISON MODE] [WITHOUT LEARNING] Received feedback:', feedback);
         await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -105,7 +105,7 @@ export function useHVACFlow() {
         await new Promise((resolve) => setTimeout(resolve, 800));
 
         console.log('[COMPARISON MODE] [WITH LEARNING] Validating plan');
-        const feedback = await hvacApi.validatePlan(env, plan);
+        const feedback = await hvacApi.validatePlan(env, plan, suffixedSessionId, true);
         console.log('[COMPARISON MODE] [WITH LEARNING] Received feedback:', feedback);
 
         // Save feedback for the WITH learning run (using suffixed sessionId to match the path)
@@ -138,7 +138,7 @@ export function useHVACFlow() {
       setLoading(true);
       setError(null);
 
-      const sessionId = currentSession?.session_id || 'hvac-agent-session-001';
+      const sessionId = currentSession?.session_id || DEFAULT_SESSION_ID;
 
       // Step 1: Use existing environment from store (or fallback to default)
       setExecutionStep('environment');
@@ -155,8 +155,20 @@ export function useHVACFlow() {
         // Comparison Mode: Run both paths in parallel
         console.log('[COMPARISON MODE] Starting parallel comparison mode execution');
         console.log('[COMPARISON MODE] Environment:', env);
-        const previousLearningsCount = store.acquisitiveLearnings.length;
-        console.log('[COMPARISON MODE] Previous learnings count:', previousLearningsCount);
+        
+        // Track learnings count for the "with learning" session BEFORE the run starts
+        // This will be used to detect if a new learning was created during this run
+        const withLearningSessionId = `${sessionId}-True`;
+        let previousLearningsCountForWithLearning = 0;
+        try {
+          const { learnings: existingLearnings } = await hvacApi.getAcquisitiveLearnings(withLearningSessionId);
+          previousLearningsCountForWithLearning = existingLearnings ? existingLearnings.length : 0;
+          console.log('[COMPARISON MODE] Previous learnings count for withLearning session:', previousLearningsCountForWithLearning);
+        } catch (error) {
+          console.error('[COMPARISON MODE] Failed to load previous learnings count:', error);
+          // If we can't load, assume 0 (no previous learnings)
+          previousLearningsCountForWithLearning = 0;
+        }
         
         const comparisonResults: {
           withoutLearning: { plan: AgentPlan | null; feedback: Feedback | null };
@@ -183,13 +195,16 @@ export function useHVACFlow() {
         console.log('[COMPARISON MODE] Plans are identical?', JSON.stringify(resultWithoutLearning.plan) === JSON.stringify(resultWithLearning.plan));
         console.log('[COMPARISON MODE] Feedbacks are identical?', JSON.stringify(resultWithoutLearning.feedback) === JSON.stringify(resultWithLearning.feedback));
 
+        // Store comparison results immediately so components render as soon as they're ready
+        // This enables incremental rendering - plans and feedbacks appear immediately when available
+        setComparisonResults(comparisonResults);
+
         // Both paths have completed validation
         setExecutionStep('validation');
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Step 4: Trigger episodic learning and load all learnings (after both paths complete)
-        // Use suffixed sessionId for WITH learning path
-        const withLearningSessionId = `${sessionId}-True`;
+        // Use suffixed sessionId for WITH learning path (already defined above)
         setExecutionStep('learning');
         try {
           // Trigger episodic learning
@@ -204,10 +219,16 @@ export function useHVACFlow() {
           const { learnings } = await hvacApi.getAcquisitiveLearnings(withLearningSessionId);
           setAcquisitiveLearnings(learnings);
 
-          // Highlight the newest learning if a new one was created
-          if (learnings.length > previousLearningsCount && learnings.length > 0) {
+          // Only set currentExecutionLearning if a new learning was created during this run
+          // This ensures the "New learning" card only shows when there's actually a new learning
+          if (learnings.length > previousLearningsCountForWithLearning && learnings.length > 0) {
             const newestLearning = learnings[0]; // Sorted newest first
             setCurrentExecutionLearning(newestLearning);
+            console.log('[COMPARISON MODE] New learning detected, setting currentExecutionLearning');
+          } else {
+            // Clear currentExecutionLearning if no new learning was created
+            setCurrentExecutionLearning(null);
+            console.log('[COMPARISON MODE] No new learning created (previous:', previousLearningsCountForWithLearning, ', current:', learnings.length, ')');
           }
 
           // Reload episodic learning after triggering
@@ -248,7 +269,7 @@ export function useHVACFlow() {
 
         // Step 3: Validate plan
         setExecutionStep('validation');
-        const feedback = await hvacApi.validatePlan(env, plan);
+        const feedback = await hvacApi.validatePlan(env, plan, sessionId, true);
         setFeedback(feedback);
 
         // Save feedback
