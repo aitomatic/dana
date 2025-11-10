@@ -28,7 +28,7 @@ export function ComparisonModeToggle() {
           )}
         />
       </button>
-      <span className="text-sm text-muted-foreground min-w-[120px]">
+      <span className="text-sm text-muted-foreground">
         {comparisonMode ? 'On' : 'Off'}
       </span>
     </div>

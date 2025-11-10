@@ -79,8 +79,8 @@ export function ExecutionProgress({
   return (
     <Card>
       <CardContent className="py-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 w-[70%]">
             {steps.map((step, index) => {
               const status = getStepStatus(step.id);
               const stepNumber = index + 1;
@@ -89,7 +89,7 @@ export function ExecutionProgress({
                 <div key={step.id} className="flex items-center gap-4 flex-1">
                   <div className="flex items-center gap-2">
                     <div
-                      className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-colors ${
+                      className={`flex items-center justify-center w-6 h-6 rounded-full border-1 transition-colors ${
                         status === 'active'
                           ? 'border-blue-500 bg-blue-500/10'
                           : status === 'complete'
@@ -126,7 +126,7 @@ export function ExecutionProgress({
                   {index < steps.length - 1 && (
                     <div
                       className={`flex-1 h-px ${
-                        status === 'complete' ? 'bg-success-500' : 'bg-border'
+                        status === 'complete' ? 'bg-success-500' : 'min-w-10 bg-white'
                       }`}
                     />
                   )}
@@ -134,7 +134,7 @@ export function ExecutionProgress({
               );
             })}
           </div>
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-2 w-[30%] justify-end">
             <ComparisonModeToggle />
             <Button onClick={runFlow} disabled={isLoading} className="bg-blue-600 text-white">
               {isLoading ? (

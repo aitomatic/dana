@@ -26,6 +26,7 @@ interface HVACState {
   error: string | null;
   comparisonMode: boolean;
   comparisonResults: ComparisonResults | null;
+  isFadingOut: boolean;
 
   setEnvironment: (env: Environment) => void;
   setAgentPlan: (plan: AgentPlan) => void;
@@ -41,6 +42,7 @@ interface HVACState {
   setError: (error: string | null) => void;
   setComparisonMode: (value: boolean) => void;
   setComparisonResults: (results: ComparisonResults | null) => void;
+  setIsFadingOut: (value: boolean) => void;
   reset: () => void;
 }
 
@@ -58,6 +60,7 @@ export const useHVACStore = create<HVACState>((set) => ({
   error: null,
   comparisonMode: false,
   comparisonResults: null,
+  isFadingOut: false,
 
   setEnvironment: (environment) => set({ environment }),
   setAgentPlan: (agentPlan) => set({ agentPlan }),
@@ -85,6 +88,7 @@ export const useHVACStore = create<HVACState>((set) => ({
   setError: (error) => set({ error }),
   setComparisonMode: (comparisonMode) => set({ comparisonMode }),
   setComparisonResults: (comparisonResults) => set({ comparisonResults }),
+  setIsFadingOut: (isFadingOut) => set({ isFadingOut }),
   reset: () =>
     set({
       environment: null,

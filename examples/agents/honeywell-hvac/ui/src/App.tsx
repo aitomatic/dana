@@ -7,32 +7,43 @@ import { LearningGrowthTracker } from './components/hvac/LearningGrowthTracker';
 import { AccumulatedKnowledgePanel } from './components/hvac/AccumulatedKnowledgePanel';
 import { CurrentLearningHighlight } from './components/hvac/CurrentLearningHighlight';
 import { SessionSelector } from './components/hvac/SessionSelector';
-import { STARFrameworkPresentation } from './components/hvac/STARFrameworkPresentation';
 import { useHVACFlow } from './hooks/use-hvac-flow';
 import { useHVACStore } from './stores/hvac-store';
+import type { Environment } from './types/hvac';
+
+// Default environment data
+const DEFAULT_ENVIRONMENT: Environment = {
+  room_name: 'Conference Room A',
+  current_time: '13:26',
+  indoor_temp: 93.3,
+  outdoor_temp: 92.4,
+  meeting_plan: [
+    { start_time: '09:30', end_time: '10:30' },
+    { start_time: '13:00', end_time: '14:00' },
+    { start_time: '16:00', end_time: '17:00' },
+  ],
+};
 
 export default function App() {
   const { loadLearnings } = useHVACFlow();
-  const { currentSession, agentPlan, feedback, environment, isLoading, comparisonResults } =
+  const { currentSession, agentPlan, feedback, environment, isLoading, comparisonResults, isFadingOut, setEnvironment } =
     useHVACStore();
   const [showFeedback, setShowFeedback] = useState(false);
   const [showLearning, setShowLearning] = useState(false);
   const [hasRunAgent, setHasRunAgent] = useState(false);
-  const [showSTARPresentation, setShowSTARPresentation] = useState(true);
+
+  // Initialize default environment data on mount
+  useEffect(() => {
+    if (!environment) {
+      setEnvironment(DEFAULT_ENVIRONMENT);
+    }
+  }, [environment, setEnvironment]);
 
   useEffect(() => {
     if (currentSession) {
       loadLearnings(currentSession.session_id);
     }
   }, [currentSession, loadLearnings]);
-
-  // Check localStorage on mount for STAR presentation dismissal
-  useEffect(() => {
-    const dismissed = localStorage.getItem('hvac-star-presentation-dismissed');
-    if (dismissed) {
-      setShowSTARPresentation(false);
-    }
-  }, []);
 
   // Reset local state when runFlow starts
   useEffect(() => {
@@ -118,16 +129,14 @@ export default function App() {
 
         {/* Execution Progress Section */}
         <div className="px-6 py-4">
+          <div className="mb-4 opacity-0 animate-fade-in-up will-change-[opacity,transform]">
+            <EnvironmentPanel />
+          </div>
           <ExecutionProgress
             showPlanComplete={!!agentPlan || !!comparisonResults}
             showValidationComplete={showFeedback || !!comparisonResults}
             showLearningComplete={showLearning || !!comparisonResults}
           />
-          {environment && (
-            <div className="mt-4 opacity-0 animate-fade-in-up will-change-[opacity,transform]">
-              <EnvironmentPanel />
-            </div>
-          )}
         </div>
       </header>
 
@@ -137,7 +146,7 @@ export default function App() {
           <>
             {/* Left Column: Without Learning */}
             <div className="col-span-6 space-y-4 overflow-y-hidden">
-              <div className="opacity-0 animate-fade-in-up animation-delay-100 will-change-[opacity,transform]">
+              <div className={`will-change-[opacity,transform] ${isFadingOut ? 'animate-fade-out' : 'opacity-0 animate-fade-in-up animation-delay-100'}`}>
                 {comparisonResults.withoutLearning.plan && (
                   <AgentPlanVisualization
                     agentPlan={comparisonResults.withoutLearning.plan}
@@ -146,7 +155,7 @@ export default function App() {
                 )}
               </div>
               {comparisonResults.withoutLearning.feedback && (
-                <div className="opacity-0 animate-fade-in-up animation-delay-200 will-change-[opacity,transform]">
+                <div className={`will-change-[opacity,transform] ${isFadingOut ? 'animate-fade-out' : 'opacity-0 animate-fade-in-up animation-delay-200'}`}>
                   <FeedbackDetail
                     feedback={comparisonResults.withoutLearning.feedback}
                     environment={environment}
@@ -159,7 +168,7 @@ export default function App() {
 
             {/* Right Column: With Learning */}
             <div className="col-span-6 space-y-4 overflow-y-hidden">
-              <div className="opacity-0 animate-fade-in-up animation-delay-100 will-change-[opacity,transform]">
+              <div className={`will-change-[opacity,transform] ${isFadingOut ? 'animate-fade-out' : 'opacity-0 animate-fade-in-up animation-delay-100'}`}>
                 {comparisonResults.withLearning.plan && (
                   <AgentPlanVisualization
                     agentPlan={comparisonResults.withLearning.plan}
@@ -168,7 +177,7 @@ export default function App() {
                 )}
               </div>
               {comparisonResults.withLearning.feedback && (
-                <div className="opacity-0 animate-fade-in-up animation-delay-200 will-change-[opacity,transform]">
+                <div className={`will-change-[opacity,transform] ${isFadingOut ? 'animate-fade-out' : 'opacity-0 animate-fade-in-up animation-delay-200'}`}>
                   <FeedbackDetail
                     feedback={comparisonResults.withLearning.feedback}
                     environment={environment}
@@ -179,11 +188,13 @@ export default function App() {
               )}
               <AccumulatedKnowledgePanel />
               {showLearning && (
-                <CurrentLearningHighlight
-                  onShowLearnedInsights={() => setHasRunAgent(false)}
-                  feedback={comparisonResults.withLearning.feedback}
-                  mode="withLearning"
-                />
+                <div className={isFadingOut ? 'animate-fade-out' : ''}>
+                  <CurrentLearningHighlight
+                    onShowLearnedInsights={() => setHasRunAgent(false)}
+                    feedback={comparisonResults.withLearning.feedback}
+                    mode="withLearning"
+                  />
+                </div>
               )}
             </div>
           </>
@@ -193,7 +204,7 @@ export default function App() {
             {/* Left Panel: Agent Plan */}
             <div className="col-span-4 space-y-4 overflow-y-hidden">
               {agentPlan && (
-                <div className="opacity-0 animate-fade-in-up animation-delay-100 will-change-[opacity,transform]">
+                <div className={`will-change-[opacity,transform] ${isFadingOut ? 'animate-fade-out' : 'opacity-0 animate-fade-in-up animation-delay-100'}`}>
                   <AgentPlanVisualization />
                 </div>
               )}
@@ -201,9 +212,9 @@ export default function App() {
 
             {/* Center Panel: Feedback + Accumulated Knowledge */}
             {feedback && (
-              <div className="col-span-5 space-y-4 overflow-y-auto opacity-0 animate-fade-in-up will-change-[opacity,transform]">
+              <div className={`col-span-5 space-y-4 overflow-y-auto will-change-[opacity,transform] ${isFadingOut ? 'animate-fade-out' : 'opacity-0 animate-fade-in-up'}`}>
                 {showFeedback && (
-                  <div className="opacity-0 animate-fade-in-up animation-delay-200 will-change-[opacity,transform]">
+                  <div className={`will-change-[opacity,transform] ${isFadingOut ? 'animate-fade-out' : 'opacity-0 animate-fade-in-up animation-delay-200'}`}>
                     <FeedbackDetail />
                   </div>
                 )}
@@ -214,15 +225,9 @@ export default function App() {
             {/* Right Panel: New Learning + Learned Insights */}
             <div className={`space-y-4 overflow-y-auto ${feedback ? 'col-span-3' : 'col-span-12'}`}>
               {showLearning && (
-                <CurrentLearningHighlight onShowLearnedInsights={() => setHasRunAgent(false)} />
-              )}
-              {showSTARPresentation && showLearnedInsights && (
-                <STARFrameworkPresentation
-                  onDismiss={() => {
-                    localStorage.setItem('hvac-star-presentation-dismissed', 'true');
-                    setShowSTARPresentation(false);
-                  }}
-                />
+                <div className={isFadingOut ? 'animate-fade-out' : ''}>
+                  <CurrentLearningHighlight onShowLearnedInsights={() => setHasRunAgent(false)} />
+                </div>
               )}
               {showLearnedInsights && <LearningGrowthTracker />}
             </div>
