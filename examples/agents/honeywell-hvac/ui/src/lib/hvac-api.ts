@@ -21,10 +21,12 @@ export const hvacApi = {
   async createPlan(
     environment: Environment,
     sessionId?: string,
+    withLearner?: boolean,
   ): Promise<AgentPlan> {
     const { data } = await axios.post(`${API_BASE}/plan`, {
       environment,
       session_id: sessionId,
+      with_learner: withLearner,
     });
     return data;
   },
@@ -52,6 +54,16 @@ export const hvacApi = {
     sessionId: string = 'hvac-agent-session-001',
   ): Promise<{ learnings: AcquisitiveLearning[]; count: number }> {
     const { data } = await axios.get(`${API_BASE}/learnings/acquisitive`, {
+      params: { session_id: sessionId },
+    });
+    return data;
+  },
+
+  async deleteAcquisitiveLearning(
+    loopId: string,
+    sessionId: string = 'hvac-agent-session-001',
+  ): Promise<{ success: boolean; message: string }> {
+    const { data } = await axios.delete(`${API_BASE}/learnings/acquisitive/${loopId}`, {
       params: { session_id: sessionId },
     });
     return data;

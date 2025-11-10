@@ -303,7 +303,7 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(0.3 0 0);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
@@ -486,6 +486,14 @@
 
 .animate-blob {
   animation: blob 7s infinite;
+}
+
+.animation-delay-100 {
+  animation-delay: 150ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 300ms;
 }
 
 .animation-delay-2000 {

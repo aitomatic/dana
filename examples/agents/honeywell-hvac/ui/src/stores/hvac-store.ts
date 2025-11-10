@@ -8,6 +8,7 @@ import type {
   EpisodicLearning,
   Session,
   LearningMetrics,
+  ComparisonResults,
 } from '@/types/hvac';
 
 interface HVACState {
@@ -23,6 +24,8 @@ interface HVACState {
   currentExecutionLearning: AcquisitiveLearning | null;
   isLoading: boolean;
   error: string | null;
+  comparisonMode: boolean;
+  comparisonResults: ComparisonResults | null;
 
   setEnvironment: (env: Environment) => void;
   setAgentPlan: (plan: AgentPlan) => void;
@@ -30,11 +33,14 @@ interface HVACState {
   setExecutionStep: (step: ExecutionStep) => void;
   setCurrentSession: (session: Session | null) => void;
   setAcquisitiveLearnings: (learnings: AcquisitiveLearning[]) => void;
+  removeAcquisitiveLearning: (loopId: string) => void;
   setEpisodicLearning: (learning: EpisodicLearning | null) => void;
   setLearningMetrics: (metrics: LearningMetrics | null) => void;
   setCurrentExecutionLearning: (learning: AcquisitiveLearning | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setComparisonMode: (value: boolean) => void;
+  setComparisonResults: (results: ComparisonResults | null) => void;
   reset: () => void;
 }
 
@@ -50,6 +56,8 @@ export const useHVACStore = create<HVACState>((set) => ({
   currentExecutionLearning: null,
   isLoading: false,
   error: null,
+  comparisonMode: false,
+  comparisonResults: null,
 
   setEnvironment: (environment) => set({ environment }),
   setAgentPlan: (agentPlan) => set({ agentPlan }),
@@ -57,11 +65,26 @@ export const useHVACStore = create<HVACState>((set) => ({
   setExecutionStep: (executionStep) => set({ executionStep }),
   setCurrentSession: (currentSession) => set({ currentSession }),
   setAcquisitiveLearnings: (acquisitiveLearnings) => set({ acquisitiveLearnings }),
+  removeAcquisitiveLearning: (loopId) =>
+    set((state) => {
+      const filtered = state.acquisitiveLearnings.filter((l) => l.loop_id !== loopId);
+      // Also clear currentExecutionLearning if it matches the deleted one
+      const clearedCurrent =
+        state.currentExecutionLearning?.loop_id === loopId
+          ? null
+          : state.currentExecutionLearning;
+      return {
+        acquisitiveLearnings: filtered,
+        currentExecutionLearning: clearedCurrent,
+      };
+    }),
   setEpisodicLearning: (episodicLearning) => set({ episodicLearning }),
   setLearningMetrics: (learningMetrics) => set({ learningMetrics }),
   setCurrentExecutionLearning: (currentExecutionLearning) => set({ currentExecutionLearning }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  setComparisonMode: (comparisonMode) => set({ comparisonMode }),
+  setComparisonResults: (comparisonResults) => set({ comparisonResults }),
   reset: () =>
     set({
       environment: null,
@@ -71,5 +94,6 @@ export const useHVACStore = create<HVACState>((set) => ({
       episodicLearning: null,
       currentExecutionLearning: null,
       error: null,
+      comparisonResults: null,
     }),
 }));

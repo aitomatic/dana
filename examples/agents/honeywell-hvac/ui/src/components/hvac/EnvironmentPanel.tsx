@@ -1,15 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useHVACFlow } from '@/hooks/use-hvac-flow';
-import { useHVACStore } from '@/stores/hvac-store';
-import { Thermometer, Clock, Calendar, AlertCircle, Building, Brain } from 'lucide-react';
+import { Clock, Calendar, AlertCircle, Building } from 'lucide-react';
 
 export function EnvironmentPanel() {
-  const { environment, runFlow, reset, isLoading, error } = useHVACFlow();
-  const { acquisitiveLearnings } = useHVACStore();
+  const { environment, error } = useHVACFlow();
 
   return (
     <div className="space-y-4">
@@ -22,91 +19,79 @@ export function EnvironmentPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Environment</CardTitle>
+          <CardTitle className="flex items-center gap-2 py-0">
+            {' '}
+            <Building className="w-5 h-5 text-muted-foreground" />
+            {environment?.room_name || 'Environment'}
+            <div className="flex text-white/60 items-center gap-2">
+              |<Clock className="w-4 h-4 text-white/60" />
+              <span className="text-sm text-white/60">
+                <b>{environment.current_time}</b>
+              </span>
+            </div>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-1">
           {environment ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b">
-                <Building className="w-5 h-5 text-muted-foreground" />
-                <span className="text-base font-semibold">{environment.room_name}</span>
-              </div>
+              <div className="flex gap-4 items-start">
+                {/* Column 1: Conference Room */}
+                <div className="flex-1">
+                  {/* Column 2: Current Time and Temperature */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex gap-3">
+                      {/* Indoor Temperature Block */}
+                      <div className="flex gap-2 items-center px-3 py-1 justify-center rounded-md border border-purple-500 bg-purple-100 dark:bg-purple-500/10 ">
+                        <span className="text-sm text-purple-700 dark:text-purple-400 ">
+                          Inside
+                        </span>
+                        <span className="text-xl font-bold text-purple-700 dark:text-purple-400">
+                          {environment.indoor_temp.toFixed(1)}°F
+                        </span>
+                      </div>
 
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{environment.current_time}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="border-purple-500 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10"
-                >
-                  <Thermometer className="w-4 h-4 mr-1" />
-                  Indoor: {environment.indoor_temp.toFixed(1)}°F
-                </Badge>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10"
-                >
-                  <Thermometer className="w-4 h-4 mr-1" />
-                  Outdoor: {environment.outdoor_temp.toFixed(1)}°F
-                </Badge>
-              </div>
-
-              <Separator />
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
-                    {environment.meeting_plan.length} Meeting(s)
-                  </span>
-                </div>
-                {environment.meeting_plan.map(
-                  (meeting: { start_time: string; end_time: string }, i: number) => (
-                    <div key={i} className="text-sm font-semibold ml-6">
-                      {meeting.start_time} - {meeting.end_time}
+                      {/* Outdoor Temperature Block */}
+                      <div className="flex gap-2 items-center px-2 justify-center rounded-md border border-blue-500 bg-blue-100 dark:bg-blue-500/10 ">
+                        <span className="text-sm text-blue-700 dark:text-blue-400 ">Outside</span>
+                        <span className="text-xl font-bold text-blue-700 dark:text-blue-400">
+                          {environment.outdoor_temp.toFixed(1)}°F
+                        </span>
+                      </div>
                     </div>
-                  ),
-                )}
-              </div>
-
-              {/* Learning Indicators */}
-              {acquisitiveLearnings.length > 0 && (
-                <>
-                  <Separator />
-                  <div className="pt-2">
-                    <Badge
-                      variant="outline"
-                      className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 w-full justify-start"
-                    >
-                      <Brain className="w-4 h-4 mr-1" />
-                      {acquisitiveLearnings.length} previous learning{acquisitiveLearnings.length !== 1 ? 's' : ''} inform this plan
-                    </Badge>
                   </div>
-                </>
-              )}
+                </div>
+
+                {/* Column 3: Meetings */}
+                <div className="flex-1 translate-y-[-24px] space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {environment.meeting_plan.length} Meeting(s):
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {environment.meeting_plan.map(
+                      (meeting: { start_time: string; end_time: string }, i: number) => (
+                        <Badge
+                          key={i}
+                          variant="outline"
+                          className="border-white-500 text-md text-white-700 dark:text-white-400 bg-white/50 dark:bg-white/10"
+                        >
+                          {meeting.start_time} - {meeting.end_time}
+                        </Badge>
+                      ),
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-sm text-muted-foreground text-center py-8">
-              No environment loaded
+              Run Agent to get environment data
             </div>
           )}
         </CardContent>
       </Card>
-
-      <div className="flex gap-2">
-        <Button onClick={runFlow} disabled={isLoading} className="flex-1">
-          {isLoading ? 'Running...' : 'Run Agent'}
-        </Button>
-        <Button onClick={reset} variant="outline">
-          Reset
-        </Button>
-      </div>
     </div>
   );
 }

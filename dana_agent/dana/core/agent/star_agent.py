@@ -106,8 +106,10 @@ class STARAgent(BaseSTARAgent):
         # Initialize other components
         self._communicator = Communicator(self)
         self._state = State(self)
-        self._learner = learner or Learner(self, repository_factory=self._repository_factory)
-        self._learner._agent = self
+        # self._learner = learner or Learner(self, repository_factory=self._repository_factory)
+        self._learner = learner
+        if self._learner is not None:
+            self._learner._agent = self
 
         # Determine storage_config for timeline and event_log
 
@@ -557,38 +559,39 @@ class STARAgent(BaseSTARAgent):
         phase: LearningPhase = trace_outputs.get("phase") or LearningPhase.ACQUISITIVE
 
         trace_learning = {}
-        match phase:
-            case LearningPhase.ACQUISITIVE:
-                trace_learning |= self._learner._reflect_acquisitive(trace_outputs)
-                trace_learning["learning_note"] = "Initial learning and trial-level plasticity"
+        if self._learner is not None:
+            match phase:
+                case LearningPhase.ACQUISITIVE:
+                    trace_learning |= self._learner._reflect_acquisitive(trace_outputs)
+                    trace_learning["learning_note"] = "Initial learning and trial-level plasticity"
 
-            case LearningPhase.EPISODIC:
-                trace_learning |= self._learner._reflect_episodic(trace_outputs)
-                trace_learning["learning_note"] = "Episodic binding of information"
+                case LearningPhase.EPISODIC:
+                    trace_learning |= self._learner._reflect_episodic(trace_outputs)
+                    trace_learning["learning_note"] = "Episodic binding of information"
 
-            case LearningPhase.INTEGRATIVE:
-                trace_learning |= self._learner._reflect_integrative(trace_outputs)
-                trace_learning["learning_note"] = "Offline replay and integration"
+                case LearningPhase.INTEGRATIVE:
+                    trace_learning |= self._learner._reflect_integrative(trace_outputs)
+                    trace_learning["learning_note"] = "Offline replay and integration"
 
-            case LearningPhase.RETENTIVE:
-                trace_learning |= self._learner._reflect_retentive(trace_outputs)
-                trace_learning["learning_note"] = "Long-term maintenance and habit formation"
+                case LearningPhase.RETENTIVE:
+                    trace_learning |= self._learner._reflect_retentive(trace_outputs)
+                    trace_learning["learning_note"] = "Long-term maintenance and habit formation"
 
-            case _:
-                raise ValueError(f"Unknown learning phase {phase}")
+                case _:
+                    raise ValueError(f"Unknown learning phase {phase}")
 
-        trace_learning |= {
-            "timestamp": datetime.now().isoformat(),
-            "phase": phase.value,
-        }
+            trace_learning |= {
+                "timestamp": datetime.now().isoformat(),
+                "phase": phase.value,
+            }
 
-        # Add to timeline for persistence
-        self._timeline.add_entry(
-            TimelineEntry(
-                entry_type=TimelineEntryType.AGENT_LEARNING,
-                content=f"Learning ({phase.value}): {trace_learning.get('learning_note', 'No learning note')}",
+            # Add to timeline for persistence
+            self._timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.AGENT_LEARNING,
+                    content=f"Learning ({phase.value}): {trace_learning.get('learning_note', 'No learning note')}",
+                )
             )
-        )
 
         return super()._reflect(trace_learning)
 

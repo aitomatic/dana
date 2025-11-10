@@ -59,3 +59,4 @@ If you still get import errors:
 1. Make sure dependencies are installed: `uv sync`
 2. Check that you're using `uv run` or have activated the venv
 3. Verify the venv exists: `ls -la .venv/bin/python3`
+

@@ -39,7 +39,8 @@ class SingleRoomEnvironment:
         Randomly varies throughout extended hours (08:00-21:59).
         """
         hour = random.randint(8, 21)
-        minute = random.randint(0, 59)
+        minute = random.randint(0, 1)
+        minute = minute * 30
         return f"{hour:02d}:{minute:02d}"
 
     def get_outdoor_temperature(self) -> float:
@@ -166,7 +167,7 @@ class SingleRoomEnvironment:
         earliest_start = current_minutes + gap
 
         # Generate random number of meetings (0-5)
-        num_meetings = random.randint(0, 5)
+        num_meetings = random.randint(1, 5)
 
         meetings = []
         available_start = earliest_start
@@ -214,7 +215,9 @@ class SingleRoomEnvironment:
 
             # Convert to HH:MM format
             start_h, start_m = divmod(start_minutes, 60)
+            start_m = start_m // 30 * 30
             end_h, end_m = divmod(end_minutes, 60)
+            end_m = end_m // 30 * 30
 
             meetings.append({
                 "start_time": f"{start_h:02d}:{start_m:02d}",

@@ -3,7 +3,7 @@ import { tv, type VariantProps } from 'tailwind-variants';
 import { cn } from '@/lib/utils';
 
 const cardVariants = tv({
-  base: 'rounded-lg border bg-card text-card-foreground shadow-sm',
+  base: 'rounded-lg border border-white/20 bg-card text-card-foreground shadow-sm',
 });
 
 const Card = React.forwardRef<
@@ -25,7 +25,7 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.ComponentProps<'h
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-2xl font-semibold leading-none tracking-tight', className)}
+      className={cn('text-md font-semibold leading-none tracking-tight', className)}
       {...props}
     />
   ),

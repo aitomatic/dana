@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useHVACStore } from '@/stores/hvac-store';
 import { Clock, Zap, Calendar, ChevronUp } from 'lucide-react';
-import type { Meeting, HVACAction } from '@/types/hvac';
+import type { Meeting, HVACAction, AgentPlan, Environment } from '@/types/hvac';
 
 interface TimelineItem {
   type: 'meeting' | 'action';
@@ -76,7 +76,7 @@ const calculateBarStacks = (
 ): Array<{ item: TimelineItem; index: number; top: number; zIndex: number }> => {
   const stacks: Array<Array<{ item: TimelineItem; index: number; start: number; end: number }>> =
     [];
-  const barHeight = 2.5; // rem (h-10)
+  const barHeight = 3.0; // rem (h-12)
   const spacing = 0.25; // rem (top padding)
 
   // Group overlapping items
@@ -124,8 +124,15 @@ const calculateBarStacks = (
   return result;
 };
 
-export function UnifiedTimeline() {
-  const { environment, agentPlan, feedback } = useHVACStore();
+interface UnifiedTimelineProps {
+  agentPlan?: AgentPlan | null;
+  environment?: Environment | null;
+}
+
+export function UnifiedTimeline({ agentPlan: propAgentPlan, environment: propEnvironment }: UnifiedTimelineProps = {}) {
+  const { environment: storeEnvironment, agentPlan: storeAgentPlan, feedback } = useHVACStore();
+  const environment = propEnvironment ?? storeEnvironment;
+  const agentPlan = propAgentPlan ?? storeAgentPlan;
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   if (!environment || !agentPlan) {
@@ -195,7 +202,7 @@ export function UnifiedTimeline() {
 
   // Calculate bar stacks for vertical positioning
   const barStacks = calculateBarStacks(timelineItems);
-  const maxStackHeight = Math.max(...barStacks.map((b) => b.top), 0) + 2.5; // Add bar height
+  const maxStackHeight = Math.max(...barStacks.map((b) => b.top), 0) + 3.0; // Add bar height
 
   // Helper to render expanded card
   const renderExpandedCard = (item: TimelineItem, itemId: string) => {
@@ -350,11 +357,11 @@ export function UnifiedTimeline() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold">Actions Timeline</h3>
+      <h3 className="text-sm font-semibold mb-10">Actions Timeline</h3>
 
       {/* Timeline Axis */}
       <div
-        className="relative bg-muted/30 rounded-lg border border-border overflow-visible"
+        className="relative bg-white/10 rounded-lg border border-border overflow-visible"
         style={{ minHeight: `${maxStackHeight + 0.5}rem` }}
       >
         {/* Time Labels */}
@@ -381,11 +388,12 @@ export function UnifiedTimeline() {
             const width = getItemWidth(item.startTime, item.endTime, timelineSpan.total);
 
             if (item.type === 'meeting') {
+              const meeting = item.meeting!;
               return (
                 <div
                   key={itemId}
                   onClick={() => handleItemClick(itemId)}
-                  className="absolute cursor-pointer transition-all duration-200 flex items-center justify-center h-10 rounded-md bg-gradient-to-r from-purple-400 to-purple-500 hover:shadow-lg hover:from-purple-500 hover:to-purple-600 text-white text-xs font-semibold shadow-md"
+                  className="absolute cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-0.5 h-12 rounded-md bg-gradient-to-r from-purple-400 to-purple-500 hover:shadow-lg hover:from-purple-500 hover:to-purple-600 text-white shadow-md"
                   style={{
                     left: `${position}%`,
                     width: `${width}%`,
@@ -393,8 +401,13 @@ export function UnifiedTimeline() {
                     zIndex: zIndex,
                   }}
                 >
-                  <Calendar className="w-3 h-3 mr-1" />
-                  Meeting
+                  <div className="flex items-center text-xs font-semibold">
+                   
+                    Meeting
+                  </div>
+                  <div className="text-[10px] opacity-90">
+                    {meeting.start_time} - {meeting.end_time}
+                  </div>
                 </div>
               );
             } else {
@@ -409,7 +422,7 @@ export function UnifiedTimeline() {
                 <div
                   key={itemId}
                   onClick={() => handleItemClick(itemId)}
-                  className={`absolute cursor-pointer transition-all duration-200 flex items-center justify-center h-10 rounded-md bg-gradient-to-r ${gradientFrom} ${gradientTo} ${hoverFrom} ${hoverTo} hover:shadow-lg text-white text-xs font-semibold shadow-md ${
+                  className={`absolute cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-0.5 h-12 rounded-md bg-gradient-to-r ${gradientFrom} ${gradientTo} ${hoverFrom} ${hoverTo} hover:shadow-lg text-white shadow-md ${
                     action.use_turbo ? 'ring-2 ring-yellow-400' : ''
                   }`}
                   style={{
@@ -419,11 +432,16 @@ export function UnifiedTimeline() {
                     zIndex: zIndex,
                   }}
                 >
-                  <Clock className="w-3 h-3 mr-1" />
-                  {isCool ? 'Cooling' : 'Heating'}
-                  {action.use_turbo && (
-                    <span className="bg-orange-500 px-1 rounded text-[10px] ml-1">TURBO</span>
-                  )}
+                  <div className="flex items-center text-xs font-semibold">
+             
+                    {isCool ? 'Cooling' : 'Heating'}
+                    {action.use_turbo && (
+                      <span className="bg-orange-500 px-1 rounded text-[10px] ml-1">TURBO</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] opacity-90">
+                    {action.time_on} - {action.time_off}
+                  </div>
                 </div>
               );
             }
