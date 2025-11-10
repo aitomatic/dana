@@ -20,6 +20,7 @@ OUTPUT FORMAT (JSON only):
 {
   "plan": [
     {
+      "calculation_note" : "What you have calculated to form this plan",
       "time_on": "HH:MM" This is the time to start the HVAC heating or cooling,
       "time_off": "HH:MM" This is the time to stop the HVAC heating or cooling,
       "use_turbo": true/false
