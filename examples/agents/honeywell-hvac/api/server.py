@@ -72,7 +72,7 @@ sys.path.insert(0, DANA_AGENT_DIR)  # For dana imports
 from agent.hvac_agent import HVACAgent
 from dana.config.storage_config import FileStorageConfig
 from environment.hvac_api import get_env_status, get_feedback
-from leaners.william_learner import WilliamLearner
+from leaners.william_learner2 import WilliamLearner2 as WilliamLearner
 
 
 # Constants
@@ -118,8 +118,8 @@ _agent_cache: dict[str, Any] = {}
 def get_agent_with_session(session_id: str = DEFAULT_SESSION_ID, with_learner: bool = True):
     """Get or create agent instance for a session."""
     cache_key = f"agent_{session_id}_{with_learner}"
-    # if True:
-    if cache_key not in _agent_cache:
+    if True:
+    # if cache_key not in _agent_cache:
         agent = HVACAgent(
             agent_id="hvac-agent-001",
             # model="openai/gpt-4.1",
@@ -276,19 +276,19 @@ async def validate_plan(request: ValidatePlanRequest):
         )
 
         # Automatically trigger episodic learning if learning is enabled
-        if with_learner:
-            try:
-                agent = get_agent_with_session(session_id, with_learner=True)
-                if agent._learner:
-                    # Run episodic learning
-                    trace_learning = await asyncio.to_thread(agent._learner._reflect_episodic, {})
-                    learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
-                    await asyncio.to_thread(agent._learner._store_episodic_learning, learning_content)
-                    print(f"Auto-triggered episodic learning for session {session_id}")
-            except Exception as e:
-                # Don't fail validation if episodic learning fails
-                print(f"Error auto-triggering episodic learning in validate_plan: {e}")
-                traceback.print_exc()
+        # if with_learner:
+        #     try:
+        #         agent = get_agent_with_session(session_id, with_learner=True)
+        #         if agent._learner:
+        #             # Run episodic learning
+        #             trace_learning = await asyncio.to_thread(agent._learner._reflect_episodic, {})
+        #             learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
+        #             await asyncio.to_thread(agent._learner._store_episodic_learning, learning_content)
+        #             print(f"Auto-triggered episodic learning for session {session_id}")
+        #     except Exception as e:
+        #         # Don't fail validation if episodic learning fails
+        #         print(f"Error auto-triggering episodic learning in validate_plan: {e}")
+        #         traceback.print_exc()
 
         return feedback
     except KeyError as e:
