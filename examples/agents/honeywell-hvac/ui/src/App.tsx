@@ -19,7 +19,7 @@ const DEFAULT_ENVIRONMENT: Environment = {
   outdoor_temp: 92.4,
   meeting_plan: [
     { start_time: '09:30', end_time: '10:30' },
-    { start_time: '11:00', end_time: '12:00' },
+    { start_time: '11:30', end_time: '12:30' },
     { start_time: '14:00', end_time: '14:30' },
   ],
 };

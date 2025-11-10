@@ -72,7 +72,7 @@ sys.path.insert(0, DANA_AGENT_DIR)  # For dana imports
 from agent.hvac_agent import HVACAgent
 from dana.config.storage_config import FileStorageConfig
 from environment.hvac_api import get_env_status, get_feedback
-from leaners.william_learner2 import WilliamLearner2 as WilliamLearner
+from leaners.william_learner3 import WilliamLearner3 as WilliamLearner
 
 
 # Constants
