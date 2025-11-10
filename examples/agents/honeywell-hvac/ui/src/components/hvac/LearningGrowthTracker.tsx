@@ -6,7 +6,7 @@ import { Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmDialog } from '@/components/library/confirm-dialog';
-import { hvacApi } from '@/lib/hvac-api';
+import { hvacApi, DEFAULT_SESSION_ID } from '@/lib/hvac-api';
 
 export function ExecutionLearningCard({
   learning,
@@ -121,7 +121,7 @@ export function LearningGrowthTracker() {
 
   const handleDeleteLearning = async (loopId: string) => {
     try {
-      const sessionId = currentSession?.session_id || 'hvac-agent-session-001';
+      const sessionId = currentSession?.session_id || DEFAULT_SESSION_ID;
       await hvacApi.deleteAcquisitiveLearning(loopId, sessionId);
       removeAcquisitiveLearning(loopId);
     } catch (error) {

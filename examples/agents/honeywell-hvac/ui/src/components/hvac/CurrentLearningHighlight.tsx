@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useHVACStore } from '@/stores/hvac-store';
-import { Sparkles, TrendingUp, Eye } from 'lucide-react';
+import { Sparkles, Eye, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Feedback, ComparisonMode } from '@/types/hvac';
 
@@ -13,7 +13,7 @@ interface CurrentLearningHighlightProps {
 }
 
 export function CurrentLearningHighlight({ onShowLearnedInsights, feedback: propFeedback, mode }: CurrentLearningHighlightProps = {}) {
-  const { currentExecutionLearning, feedback: storeFeedback } = useHVACStore();
+  const { currentExecutionLearning, feedback: storeFeedback, executionStep, isLoading } = useHVACStore();
   const feedback = propFeedback ?? storeFeedback;
   const [isNew, setIsNew] = useState(false);
 
@@ -37,6 +37,9 @@ export function CurrentLearningHighlight({ onShowLearnedInsights, feedback: prop
     return null;
   }
 
+  // Check if agent is currently processing learnings
+  const isProcessingLearnings = executionStep === 'learning' || isLoading;
+
   if (!currentExecutionLearning) {
     return (
       <Card className={cardClassName}>
@@ -44,11 +47,18 @@ export function CurrentLearningHighlight({ onShowLearnedInsights, feedback: prop
           <CardTitle>New Learning</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm text-muted-foreground text-center py-8">
-            No learning yet. Run the agent to see what it learns.
-          </div>
+          {isProcessingLearnings ? (
+            <div className="text-sm text-muted-foreground text-center py-8 flex flex-col items-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+              <span>Waiting for new insights...</span>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground text-center py-8">
+              No learning yet. Run the agent to see what it learns.
+            </div>
+          )}
           {/* View All Learned Insights Button */}
-          {onShowLearnedInsights && (
+          {onShowLearnedInsights && !isProcessingLearnings && (
             <div className="pt-2 border-t border-border">
               <Button
                 variant="outline"
@@ -64,8 +74,6 @@ export function CurrentLearningHighlight({ onShowLearnedInsights, feedback: prop
       </Card>
     );
   }
-
-  const timestamp = new Date(currentExecutionLearning.timestamp).toLocaleString();
 
   // Combine comparison mode styling with new learning animation
   const combinedCardClassName = mode
