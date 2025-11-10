@@ -17,6 +17,7 @@ export function useHVACFlow() {
     setLearningMetrics,
     setCurrentExecutionLearning,
     setComparisonResults,
+    setIsFadingOut,
     currentSession,
     reset: storeReset,
     ...store
@@ -139,11 +140,16 @@ export function useHVACFlow() {
 
       const sessionId = currentSession?.session_id || 'hvac-agent-session-001';
 
-      // Step 1: Generate environment (once, used for both runs in comparison mode)
+      // Step 1: Use existing environment from store (or fallback to default)
       setExecutionStep('environment');
-      const env = await hvacApi.generateEnvironment();
-      setEnvironment(env);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const env = store.environment;
+      if (!env) {
+        setError('No environment data available. Please fetch environment data first.');
+        setLoading(false);
+        setExecutionStep('idle');
+        return;
+      }
+      // Skip delay since we're using existing environment
 
       if (store.comparisonMode) {
         // Comparison Mode: Run both paths in parallel
@@ -316,9 +322,36 @@ export function useHVACFlow() {
     currentSession,
     store.acquisitiveLearnings.length,
     store.comparisonMode,
+    store.environment,
     runWithoutLearningPath,
     runWithLearningPath,
   ]);
+
+  const fetchEnvironment = useCallback(async () => {
+    try {
+      setError(null);
+      // Start fade-out animation
+      setIsFadingOut(true);
+      
+      // Wait for fade-out animation to complete (500ms)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      // Clear agent plan, feedback, and learning data after animation
+      setAgentPlan(null);
+      setFeedback(null);
+      setCurrentExecutionLearning(null);
+      setComparisonResults(null);
+      setIsFadingOut(false);
+      
+      const env = await hvacApi.generateEnvironment();
+      setEnvironment(env);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch environment';
+      setError(errorMessage);
+      setIsFadingOut(false);
+      console.error('Failed to fetch environment:', error);
+    }
+  }, [setEnvironment, setError, setAgentPlan, setFeedback, setCurrentExecutionLearning, setComparisonResults, setIsFadingOut]);
 
   const loadLearningsForSession = useCallback(
     async (sessionId: string) => {
@@ -334,6 +367,7 @@ export function useHVACFlow() {
 
   return {
     runFlow,
+    fetchEnvironment,
     loadLearnings: loadLearningsForSession,
     reset,
     ...store,

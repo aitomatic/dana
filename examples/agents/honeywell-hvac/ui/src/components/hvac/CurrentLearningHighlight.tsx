@@ -52,7 +52,7 @@ export function CurrentLearningHighlight({ onShowLearnedInsights, feedback: prop
             <div className="pt-2 border-t border-border">
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full bg-transparent border border-white/50"
                 onClick={onShowLearnedInsights}
               >
                 <Eye className="w-4 h-4 mr-2" />
