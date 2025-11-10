@@ -179,9 +179,7 @@ scenarios (different inputs, times, conditions) within this context.
 Include specific value ranges when they're informative and help distinguish
 THIS system's characteristics, but express them as adaptable parameters."""
 
-            messages.append(
-                LLMMessage(role="user", content=feedback_section)
-            )
+
 
             timeline = self._agent._timeline
             timeline.timeline = list(timeline.read_since(checkpoint=-100))
@@ -229,6 +227,10 @@ THIS system's characteristics, but express them as adaptable parameters."""
                     timeline_content = "\n".join(timeline_lines)
                     messages.append(
                         LLMMessage(role="user", content=timeline_content)
+                    )
+
+                    messages.append(
+                      LLMMessage(role="user", content=feedback_section)
                     )
 
                     # Learning prompt: system-specific characteristics
@@ -307,6 +309,9 @@ Format: [Condition] [Advice of what should do]"""
                     )
                 else:
                     # No timeline content, but still use feedback
+                    messages.append(
+                        LLMMessage(role="user", content=feedback_section)
+                    )
                     messages.append(
                         LLMMessage(
                             role="user",
