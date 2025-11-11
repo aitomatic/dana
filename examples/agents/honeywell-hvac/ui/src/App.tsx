@@ -14,13 +14,13 @@ import type { Environment } from './types/hvac';
 // Default environment data
 const DEFAULT_ENVIRONMENT: Environment = {
   room_name: 'Conference Room A',
-  current_time: '9:00',
+  current_time: '13:26',
   indoor_temp: 93.3,
   outdoor_temp: 92.4,
   meeting_plan: [
-    { start_time: '09:30', end_time: '10:30' },
-    { start_time: '11:30', end_time: '12:30' },
-    { start_time: '14:00', end_time: '14:30' },
+    { start_time: '15:40', end_time: '17:30' },
+    { start_time: '18:20', end_time: '18:50' },
+    { start_time: '21:45', end_time: '22:00' },
   ],
 };
 
