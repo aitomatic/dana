@@ -24,7 +24,7 @@ class RepositoryFactory:
             RepositoryType.LEARNING: (LocalLearningRepository, FileStorageConfig()),
         }
 
-    def register(self, type: RepositoryType, creator: RepositoryProtocol, storage_config: StorageConfig) -> None:
+    def register(self, type: RepositoryType, creator: type[RepositoryProtocol], storage_config: StorageConfig) -> None:
         self._creators[type] = (creator, storage_config)
 
     def create(self, type: RepositoryType, **kwargs) -> RepositoryProtocol:

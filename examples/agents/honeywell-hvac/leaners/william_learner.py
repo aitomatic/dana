@@ -673,3 +673,6 @@ learned from this interaction."""
     def _get_timeline_entries(self, checkpoint: int = -100) -> list["TimelineEntry"]:
         timeline = self._agent._timeline
         return list(timeline.read_since(checkpoint=checkpoint))
+
+    def _get_feedback_storage_path(self) -> Path:
+        return self._repository._base_storage_path / "feedback" / self.session_id

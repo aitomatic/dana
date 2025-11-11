@@ -276,6 +276,16 @@ export default {
             transform: 'translateY(0)',
           },
         },
+        fadeOut: {
+          '0%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+          '100%': {
+            opacity: '0',
+            transform: 'translateY(-16px)',
+          },
+        },
         'accordion-down': {
           from: {
             height: '0',
@@ -297,6 +307,7 @@ export default {
         flash: 'flash 2s infinite',
         'slide-from-right-to-left': 'slideFromRightToLeft 0.3s ease-out',
         'fade-in-up': 'fadeInUp 1s ease-out both',
+        'fade-out': 'fadeOut 0.5s ease-in forwards',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'glow-pulse': 'glow-pulse 3s ease-in-out infinite',

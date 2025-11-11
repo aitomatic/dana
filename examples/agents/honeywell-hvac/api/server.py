@@ -72,18 +72,24 @@ sys.path.insert(0, DANA_AGENT_DIR)  # For dana imports
 from agent.hvac_agent import HVACAgent
 from dana.config.storage_config import FileStorageConfig
 from environment.hvac_api import get_env_status, get_feedback
-from leaners.william_learner import WilliamLearner
+from leaners.william_learner2 import WilliamLearner2 as WilliamLearner
+
+
+# Constants
+DEFAULT_SESSION_ID = "hvac-agent-session-001"
 
 
 # Request models
 class PlanRequest(BaseModel):
     environment: Dict[str, Any]
-    session_id: Optional[str] = "hvac-agent-session-001"
+    session_id: Optional[str] = DEFAULT_SESSION_ID
     with_learner: bool = True
 
 class ValidatePlanRequest(BaseModel):
     environment: dict[str, Any]
     plan: dict[str, Any]
+    session_id: Optional[str] = DEFAULT_SESSION_ID
+    with_learner: bool = True
 
 
 class SessionRequest(BaseModel):
@@ -92,7 +98,7 @@ class SessionRequest(BaseModel):
 
 class FeedbackRequest(BaseModel):
     feedback: str
-    session_id: str | None = "hvac-agent-session-001"
+    session_id: str | None = DEFAULT_SESSION_ID
 
 
 app = FastAPI(title="HVAC Agent API with Learning")
@@ -109,11 +115,11 @@ app.add_middleware(
 _agent_cache: dict[str, Any] = {}
 
 
-def get_agent_with_session(session_id: str = "hvac-agent-session-001", with_learner: bool = True):
+def get_agent_with_session(session_id: str = DEFAULT_SESSION_ID, with_learner: bool = True):
     """Get or create agent instance for a session."""
     cache_key = f"agent_{session_id}_{with_learner}"
-    # if True:
-    if cache_key not in _agent_cache:
+    if True:
+    # if cache_key not in _agent_cache:
         agent = HVACAgent(
             agent_id="hvac-agent-001",
             # model="openai/gpt-4.1",
@@ -168,7 +174,7 @@ async def create_plan(request: PlanRequest):
     result = None
     try:
         env = request.environment
-        session_id = request.session_id or "hvac-agent-session-001"
+        session_id = request.session_id or DEFAULT_SESSION_ID
 
         agent_prompt = f"""
 CURRENT ENVIRONMENT:
@@ -251,6 +257,8 @@ async def validate_plan(request: ValidatePlanRequest):
     try:
         env = request.environment
         plan = request.plan
+        session_id = request.session_id or DEFAULT_SESSION_ID
+        with_learner = request.with_learner
 
         # Normalize target_temps
         target_temps = plan["target_temps"]
@@ -266,6 +274,21 @@ async def validate_plan(request: ValidatePlanRequest):
             mode=plan["mode"],
             meeting_plan=env.get("meeting_plan"),
         )
+
+        # Automatically trigger episodic learning if learning is enabled
+        # if with_learner:
+        #     try:
+        #         agent = get_agent_with_session(session_id, with_learner=True)
+        #         if agent._learner:
+        #             # Run episodic learning
+        #             trace_learning = await asyncio.to_thread(agent._learner._reflect_episodic, {})
+        #             learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
+        #             await asyncio.to_thread(agent._learner._store_episodic_learning, learning_content)
+        #             print(f"Auto-triggered episodic learning for session {session_id}")
+        #     except Exception as e:
+        #         # Don't fail validation if episodic learning fails
+        #         print(f"Error auto-triggering episodic learning in validate_plan: {e}")
+        #         traceback.print_exc()
 
         return feedback
     except KeyError as e:
@@ -312,7 +335,7 @@ async def create_session(request: SessionRequest):
 async def list_sessions():
     """List available sessions (simplified - returns default session)"""
     try:
-        default_session = "hvac-agent-session-001"
+        default_session = DEFAULT_SESSION_ID
         agent = get_agent_with_session(default_session)
 
         learnings_count = 0
@@ -339,7 +362,7 @@ async def list_sessions():
 
 
 @app.get("/api/hvac/learnings/acquisitive")
-async def get_acquisitive_learnings(session_id: str = "hvac-agent-session-001"):
+async def get_acquisitive_learnings(session_id: str = DEFAULT_SESSION_ID):
     """Get all acquisitive learnings for a session"""
     try:
         agent = get_agent_with_session(session_id, with_learner=True)
@@ -387,7 +410,7 @@ async def get_acquisitive_learnings(session_id: str = "hvac-agent-session-001"):
         raise HTTPException(status_code=500, detail=f"Failed to get acquisitive learnings: {str(e)}")
 
 @app.delete("/api/hvac/learnings/acquisitive/{loop_id}")
-async def delete_acquisitive_learning(loop_id: str, session_id: str = "hvac-agent-session-001"):
+async def delete_acquisitive_learning(loop_id: str, session_id: str = DEFAULT_SESSION_ID):
     """Delete a specific acquisitive learning by loop_id"""
     try:
         agent = get_agent_with_session(session_id)
@@ -424,7 +447,7 @@ async def delete_acquisitive_learning(loop_id: str, session_id: str = "hvac-agen
         raise HTTPException(status_code=500, detail=f"Failed to delete acquisitive learning: {str(e)}")
 
 @app.get("/api/hvac/learnings/episodic")
-async def get_episodic_learning(session_id: str = "hvac-agent-session-001"):
+async def get_episodic_learning(session_id: str = DEFAULT_SESSION_ID):
     """Get episodic learning for a session"""
     try:
         agent = get_agent_with_session(session_id)
@@ -450,7 +473,7 @@ async def get_episodic_learning(session_id: str = "hvac-agent-session-001"):
 
 
 @app.post("/api/hvac/learnings/episodic")
-async def trigger_episodic_learning(session_id: str = "hvac-agent-session-001"):
+async def trigger_episodic_learning(session_id: str = DEFAULT_SESSION_ID):
     """Trigger episodic learning for a session"""
     try:
         agent = get_agent_with_session(session_id)
@@ -473,7 +496,7 @@ async def trigger_episodic_learning(session_id: str = "hvac-agent-session-001"):
 
 
 @app.get("/api/hvac/feedback")
-async def get_stored_feedback(session_id: str = "hvac-agent-session-001"):
+async def get_stored_feedback(session_id: str = DEFAULT_SESSION_ID):
     """Get stored feedback for a session"""
     try:
         agent = get_agent_with_session(session_id)
@@ -502,7 +525,7 @@ async def get_stored_feedback(session_id: str = "hvac-agent-session-001"):
 async def save_feedback(request: FeedbackRequest):
     """Save feedback for a session"""
     try:
-        session_id = request.session_id or "hvac-agent-session-001"
+        session_id = request.session_id or DEFAULT_SESSION_ID
         feedback_content = request.feedback
 
         agent = get_agent_with_session(session_id)
@@ -518,7 +541,7 @@ async def save_feedback(request: FeedbackRequest):
 
 
 @app.get("/api/hvac/learnings/metrics")
-async def get_learning_metrics(session_id: str = "hvac-agent-session-001"):
+async def get_learning_metrics(session_id: str = DEFAULT_SESSION_ID):
     """Get learning metrics for a session"""
     try:
         agent = get_agent_with_session(session_id)
