@@ -179,9 +179,7 @@ scenarios (different inputs, times, conditions) within this context.
 Include specific value ranges when they're informative and help distinguish
 THIS system's characteristics, but express them as adaptable parameters."""
 
-            messages.append(
-                LLMMessage(role="user", content=feedback_section)
-            )
+
 
             timeline = self._agent._timeline
             timeline.timeline = list(timeline.read_since(checkpoint=-100))
@@ -231,9 +229,13 @@ THIS system's characteristics, but express them as adaptable parameters."""
                         LLMMessage(role="user", content=timeline_content)
                     )
 
+                    messages.append(
+                      LLMMessage(role="user", content=feedback_section)
+                    )
+
                     # Learning prompt: system-specific characteristics
                     if previous_learning:
-                        learning_prompt = """Based on the feedback data above,
+                        learning_prompt = """Based on the agent action and feedback data above,
 previous accumulated learning, and the current session timeline above,
 You need to consider the following:
 1. THIS system/device/context's specific performance characteristics
@@ -269,7 +271,7 @@ Format: [Condition] [Advice of what should do]
 Update your accumulated learning by consolidating insights from
 previous learning, this new session, and THIS system's observed feedback."""
                     else:
-                        learning_prompt = """Based on the feedback data above
+                        learning_prompt = """Based on the assistant action, feedback data above
 and the session timeline above,
 You need to consider the following:
 1. THIS system/device/context's specific performance characteristics
@@ -307,6 +309,9 @@ Format: [Condition] [Advice of what should do]"""
                     )
                 else:
                     # No timeline content, but still use feedback
+                    messages.append(
+                        LLMMessage(role="user", content=feedback_section)
+                    )
                     messages.append(
                         LLMMessage(
                             role="user",
@@ -349,6 +354,7 @@ Format: [Condition] [Advice of what should do]"""
                 messages,
                 agent_id=self._agent.object_id,
                 agent_type=self._agent.agent_type,
+                temperature=0.7,
             )
 
             episodic_content = (

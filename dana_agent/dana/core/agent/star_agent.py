@@ -380,7 +380,7 @@ class STARAgent(BaseSTARAgent):
         response, reasoning, tool_calls = None, None, None
         failed_tool_calls = []
         for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
-            llm_response = self.llm_client.chat_response_sync(llm_messages, agent_id=self.object_id, agent_type=self.agent_type)
+            llm_response = self.llm_client.chat_response_sync(llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0)
             response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 
             # Retry if both response and tool_calls are empty

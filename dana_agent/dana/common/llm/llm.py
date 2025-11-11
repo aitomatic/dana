@@ -181,6 +181,7 @@ class LLM:
 
             raise ProviderError(f"Chat failed with {self.provider_name}: {e}") from e
 
+    @observable
     def chat_response_sync(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
         """
         Synchronous version of chat_response - runs the async version in a new event loop.

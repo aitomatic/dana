@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useHVACStore } from '@/stores/hvac-store';
-import { hvacApi } from '@/lib/hvac-api';
+import { hvacApi, DEFAULT_SESSION_ID } from '@/lib/hvac-api';
 import type { AgentPlan, Feedback } from '@/types/hvac';
 
 export function useHVACFlow() {
@@ -15,8 +15,8 @@ export function useHVACFlow() {
     setAcquisitiveLearnings,
     setEpisodicLearning,
     setLearningMetrics,
-    setCurrentExecutionLearning,
     setComparisonResults,
+    setIsFadingOut,
     currentSession,
     reset: storeReset,
     ...store
@@ -27,7 +27,7 @@ export function useHVACFlow() {
     const initializeSession = async () => {
       if (!currentSession) {
         try {
-          const session = await hvacApi.createSession('hvac-agent-session-001');
+          const session = await hvacApi.createSession(DEFAULT_SESSION_ID);
           setCurrentSession(session);
           await loadLearnings(session.session_id);
         } catch (error) {
@@ -76,7 +76,7 @@ export function useHVACFlow() {
         await new Promise((resolve) => setTimeout(resolve, 800));
 
         console.log('[COMPARISON MODE] [WITHOUT LEARNING] Validating plan');
-        const feedback = await hvacApi.validatePlan(env, plan);
+        const feedback = await hvacApi.validatePlan(env, plan, suffixedSessionId, false);
         console.log('[COMPARISON MODE] [WITHOUT LEARNING] Received feedback:', feedback);
         await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -104,7 +104,7 @@ export function useHVACFlow() {
         await new Promise((resolve) => setTimeout(resolve, 800));
 
         console.log('[COMPARISON MODE] [WITH LEARNING] Validating plan');
-        const feedback = await hvacApi.validatePlan(env, plan);
+        const feedback = await hvacApi.validatePlan(env, plan, suffixedSessionId, true);
         console.log('[COMPARISON MODE] [WITH LEARNING] Received feedback:', feedback);
 
         // Save feedback for the WITH learning run (using suffixed sessionId to match the path)
@@ -131,26 +131,43 @@ export function useHVACFlow() {
       // Clear previous run's data to hide cards immediately
       setAgentPlan(null);
       setFeedback(null);
-      setCurrentExecutionLearning(null);
+      setEpisodicLearning(null);
       setComparisonResults(null);
       
       setLoading(true);
       setError(null);
 
-      const sessionId = currentSession?.session_id || 'hvac-agent-session-001';
+      const sessionId = currentSession?.session_id || DEFAULT_SESSION_ID;
 
-      // Step 1: Generate environment (once, used for both runs in comparison mode)
+      // Step 1: Use existing environment from store (or fallback to default)
       setExecutionStep('environment');
-      const env = await hvacApi.generateEnvironment();
-      setEnvironment(env);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const env = store.environment;
+      if (!env) {
+        setError('No environment data available. Please fetch environment data first.');
+        setLoading(false);
+        setExecutionStep('idle');
+        return;
+      }
+      // Skip delay since we're using existing environment
 
       if (store.comparisonMode) {
         // Comparison Mode: Run both paths in parallel
         console.log('[COMPARISON MODE] Starting parallel comparison mode execution');
         console.log('[COMPARISON MODE] Environment:', env);
-        const previousLearningsCount = store.acquisitiveLearnings.length;
-        console.log('[COMPARISON MODE] Previous learnings count:', previousLearningsCount);
+        
+        // Track episodic learning content for the "with learning" session BEFORE the run starts
+        // This will be used to detect if episodic learning was updated during this run
+        const withLearningSessionId = `${sessionId}-True`;
+        let previousEpisodicContent = '';
+        try {
+          const previousEpisodic = await hvacApi.getEpisodicLearning(withLearningSessionId);
+          previousEpisodicContent = previousEpisodic?.content || '';
+          console.log('[COMPARISON MODE] Previous episodic learning content length:', previousEpisodicContent.length);
+        } catch (error) {
+          console.error('[COMPARISON MODE] Failed to load previous episodic learning:', error);
+          // If we can't load, assume empty (no previous learning)
+          previousEpisodicContent = '';
+        }
         
         const comparisonResults: {
           withoutLearning: { plan: AgentPlan | null; feedback: Feedback | null };
@@ -177,13 +194,16 @@ export function useHVACFlow() {
         console.log('[COMPARISON MODE] Plans are identical?', JSON.stringify(resultWithoutLearning.plan) === JSON.stringify(resultWithLearning.plan));
         console.log('[COMPARISON MODE] Feedbacks are identical?', JSON.stringify(resultWithoutLearning.feedback) === JSON.stringify(resultWithLearning.feedback));
 
+        // Store comparison results immediately so components render as soon as they're ready
+        // This enables incremental rendering - plans and feedbacks appear immediately when available
+        setComparisonResults(comparisonResults);
+
         // Both paths have completed validation
         setExecutionStep('validation');
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Step 4: Trigger episodic learning and load all learnings (after both paths complete)
-        // Use suffixed sessionId for WITH learning path
-        const withLearningSessionId = `${sessionId}-True`;
+        // Use suffixed sessionId for WITH learning path (already defined above)
         setExecutionStep('learning');
         try {
           // Trigger episodic learning
@@ -194,21 +214,21 @@ export function useHVACFlow() {
             console.error('Failed to trigger episodic learning:', error);
           }
 
-          // Reload learnings to get the latest one
+          // Reload acquisitive learnings (still needed for other parts of UI)
           const { learnings } = await hvacApi.getAcquisitiveLearnings(withLearningSessionId);
           setAcquisitiveLearnings(learnings);
-
-          // Highlight the newest learning if a new one was created
-          if (learnings.length > previousLearningsCount && learnings.length > 0) {
-            const newestLearning = learnings[0]; // Sorted newest first
-            setCurrentExecutionLearning(newestLearning);
-          }
 
           // Reload episodic learning after triggering
           try {
             const episodicLearning = await hvacApi.getEpisodicLearning(withLearningSessionId);
             if (episodicLearning.content) {
-              setEpisodicLearning(episodicLearning);
+              // Only update if content has changed (new learning detected)
+              if (episodicLearning.content !== previousEpisodicContent) {
+                setEpisodicLearning(episodicLearning);
+                console.log('[COMPARISON MODE] New episodic learning detected, content changed');
+              } else {
+                console.log('[COMPARISON MODE] Episodic learning unchanged');
+              }
             }
           } catch (error) {
             console.error('Failed to load episodic learning:', error);
@@ -232,8 +252,18 @@ export function useHVACFlow() {
         // Normal Mode: Single run with learning enabled
         console.log('[NORMAL MODE] Starting normal mode execution with learning enabled');
         setExecutionStep('planning');
-        const previousLearningsCount = store.acquisitiveLearnings.length;
-        console.log('[NORMAL MODE] Previous learnings count:', previousLearningsCount);
+        
+        // Track episodic learning content BEFORE the run starts
+        // This will be used to detect if episodic learning was updated during this run
+        let previousEpisodicContent = '';
+        try {
+          const previousEpisodic = await hvacApi.getEpisodicLearning(sessionId);
+          previousEpisodicContent = previousEpisodic?.content || '';
+          console.log('[NORMAL MODE] Previous episodic learning content length:', previousEpisodicContent.length);
+        } catch (error) {
+          console.error('[NORMAL MODE] Failed to load previous episodic learning:', error);
+          previousEpisodicContent = '';
+        }
         console.log('[NORMAL MODE] Calling createPlan with with_learner=true');
         const plan = await hvacApi.createPlan(env, sessionId, true);
         console.log('[NORMAL MODE] Received plan:', plan);
@@ -242,7 +272,7 @@ export function useHVACFlow() {
 
         // Step 3: Validate plan
         setExecutionStep('validation');
-        const feedback = await hvacApi.validatePlan(env, plan);
+        const feedback = await hvacApi.validatePlan(env, plan, sessionId, true);
         setFeedback(feedback);
 
         // Save feedback
@@ -265,21 +295,21 @@ export function useHVACFlow() {
             console.error('Failed to trigger episodic learning:', error);
           }
 
-          // Reload learnings to get the latest one
+          // Reload acquisitive learnings (still needed for other parts of UI)
           const { learnings } = await hvacApi.getAcquisitiveLearnings(sessionId);
           setAcquisitiveLearnings(learnings);
-
-          // Highlight the newest learning if a new one was created
-          if (learnings.length > previousLearningsCount && learnings.length > 0) {
-            const newestLearning = learnings[0]; // Sorted newest first
-            setCurrentExecutionLearning(newestLearning);
-          }
 
           // Reload episodic learning after triggering
           try {
             const episodicLearning = await hvacApi.getEpisodicLearning(sessionId);
             if (episodicLearning.content) {
-              setEpisodicLearning(episodicLearning);
+              // Only update if content has changed (new learning detected)
+              if (episodicLearning.content !== previousEpisodicContent) {
+                setEpisodicLearning(episodicLearning);
+                console.log('[NORMAL MODE] New episodic learning detected, content changed');
+              } else {
+                console.log('[NORMAL MODE] Episodic learning unchanged');
+              }
             }
           } catch (error) {
             console.error('Failed to load episodic learning:', error);
@@ -309,16 +339,41 @@ export function useHVACFlow() {
     setAgentPlan,
     setFeedback,
     setAcquisitiveLearnings,
-    setCurrentExecutionLearning,
     setLearningMetrics,
     setComparisonResults,
     setEpisodicLearning,
     currentSession,
-    store.acquisitiveLearnings.length,
     store.comparisonMode,
+    store.environment,
     runWithoutLearningPath,
     runWithLearningPath,
   ]);
+
+  const fetchEnvironment = useCallback(async () => {
+    try {
+      setError(null);
+      // Start fade-out animation
+      setIsFadingOut(true);
+      
+      // Wait for fade-out animation to complete (500ms)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      // Clear agent plan, feedback, and learning data after animation
+      setAgentPlan(null);
+      setFeedback(null);
+      setEpisodicLearning(null);
+      setComparisonResults(null);
+      setIsFadingOut(false);
+      
+      const env = await hvacApi.generateEnvironment();
+      setEnvironment(env);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch environment';
+      setError(errorMessage);
+      setIsFadingOut(false);
+      console.error('Failed to fetch environment:', error);
+    }
+  }, [setEnvironment, setError, setAgentPlan, setFeedback, setEpisodicLearning, setComparisonResults, setIsFadingOut]);
 
   const loadLearningsForSession = useCallback(
     async (sessionId: string) => {
@@ -329,11 +384,12 @@ export function useHVACFlow() {
 
   const reset = useCallback(() => {
     storeReset();
-    setCurrentExecutionLearning(null);
-  }, [storeReset, setCurrentExecutionLearning]);
+    setEpisodicLearning(null);
+  }, [storeReset, setEpisodicLearning]);
 
   return {
     runFlow,
+    fetchEnvironment,
     loadLearnings: loadLearningsForSession,
     reset,
     ...store,
