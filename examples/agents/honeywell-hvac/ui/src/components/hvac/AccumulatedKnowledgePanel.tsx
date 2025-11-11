@@ -5,6 +5,8 @@ import { useHVACStore } from '@/stores/hvac-store';
 import { hvacApi } from '@/lib/hvac-api';
 import { BookOpen, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export function AccumulatedKnowledgePanel() {
   const { episodicLearning, currentSession, setEpisodicLearning } = useHVACStore();
@@ -52,10 +54,10 @@ export function AccumulatedKnowledgePanel() {
             <div className="text-sm text-muted-foreground">
               Last updated: {episodicLearning.timestamp ? new Date(episodicLearning.timestamp).toLocaleString() : 'Unknown'}
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none bg-muted rounded-lg  max-h-[400px] overflow-y-auto">
-              <pre className="whitespace-pre-wrap font-sans text-sm">
+            <div className="prose prose-sm dark:prose-invert max-w-none bg-muted rounded-lg p-4 max-h-[400px] overflow-y-auto">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {episodicLearning.content}
-              </pre>
+              </ReactMarkdown>
             </div>
           </div>
         ) : (
