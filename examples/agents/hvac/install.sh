@@ -44,13 +44,13 @@ echo -e "${GREEN}✅ uv environment ready${NC}"
 # Step 2: Install llamastack starter dependencies
 echo -e "\n${GREEN}📦 Step 2: Installing LlamaStack starter dependencies...${NC}"
 
-# First ensure llama-stack and dana are installed
+# First ensure llama-stack is installed
 echo -e "${YELLOW}   Installing llama-stack and dana...${NC}"
 uv pip install llama-stack dana
 
 # Install llamastack starter dependencies
 echo -e "${YELLOW}   Installing LlamaStack starter distribution...${NC}"
-if uv run --with llama-stack llama stack list-deps starter 2>/dev/null | xargs -L1 uv pip install; then
+if llama stack list-deps starter 2>/dev/null | xargs -L1 uv pip install; then
     echo -e "${GREEN}✅ LlamaStack starter dependencies installed${NC}"
 else
     echo -e "${YELLOW}⚠️  Some LlamaStack dependencies may not be available${NC}"
