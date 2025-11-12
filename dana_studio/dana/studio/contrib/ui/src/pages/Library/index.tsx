@@ -123,45 +123,9 @@ export default function LibraryPage() {
       const response = await apiService.listKnowledgePacks(100, 0);
       console.log('📦 Fetched knowledge packs:', response.data);
       if (response.data) {
-        // Fetch sessions for each template in each knowledge pack
-        const kpsWithSessions = await Promise.all(
-          response.data.map(async (kp: any) => {
-            if (kp.interview_templates && Array.isArray(kp.interview_templates)) {
-              const templatesWithSessions = await Promise.all(
-                kp.interview_templates.map(async (template: any) => {
-                  try {
-                    const sessionsResponse = await apiService.listInterviewSessions(
-                      template.id,
-                      0,
-                      100,
-                    );
-                    console.log(
-                      `🎓 Fetched sessions for template ${template.id}:`,
-                      sessionsResponse,
-                    );
-                    return {
-                      ...template,
-                      interview_sessions: sessionsResponse.data || [],
-                    };
-                  } catch (error) {
-                    console.error(`Failed to fetch sessions for template ${template.id}:`, error);
-                    return {
-                      ...template,
-                      interview_sessions: [],
-                    };
-                  }
-                }),
-              );
-              return {
-                ...kp,
-                interview_templates: templatesWithSessions,
-              };
-            }
-            return kp;
-          }),
-        );
-        console.log('📦 Knowledge packs with sessions:', kpsWithSessions);
-        setKnowledgePacks(kpsWithSessions);
+        // The API already includes interview_sessions nested in interview_templates
+        // No need to make additional API calls - use the data directly
+        setKnowledgePacks(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch knowledge packs:', error);
