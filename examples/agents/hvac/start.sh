@@ -14,15 +14,16 @@ echo -e "${GREEN}🚀 Starting HVAC Agent Application${NC}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
-# Change to project root
+# Load .env file from project root
 cd "$PROJECT_ROOT"
+source .env
 
 # Check for OpenAI API key
 if [ -z "$OPENAI_API_KEY" ]; then
     echo -e "${YELLOW}⚠️  Warning: OPENAI_API_KEY not set${NC}"
     echo -e "${YELLOW}   The application requires an OpenAI API key to function.${NC}"
     echo -e "${YELLOW}   Set it via: export OPENAI_API_KEY=your-key${NC}"
-    echo -e "${YELLOW}   Or create a .env file in the project root with OPENAI_API_KEY${NC}"
+    echo -e "${YELLOW}   Or create a .env file in hvac directory or project root with OPENAI_API_KEY${NC}"
 fi
 
 # Check if .venv exists
