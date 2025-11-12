@@ -35,7 +35,6 @@ Workflow Guidelines:
 Context:
 - Domain: {domain}
 - Role: {role}
-- Knowledge Pack ID: {kp_id}
 
 Response Format:
 Always respond with TWO XML blocks in this order:

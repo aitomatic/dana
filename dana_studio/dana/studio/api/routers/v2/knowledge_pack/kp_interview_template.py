@@ -24,7 +24,6 @@ from dana.studio.api.repositories.domain_knowledge_repo import AbstractDomainKno
 from dana.studio.api.services.knowledge_pack.template_handler.template_finetune_handler import TemplateFinetuneHandler
 from dana.studio.api.services.knowledge_pack.document_handler.document_exploration_handler import DocumentExplorationHandler
 from dana.studio.api.repositories import get_document_repo
-from dana.studio.api.services.extraction_service import get_extraction_service
 from .common import KPConversationType
 from pathlib import Path
 
@@ -583,7 +582,6 @@ async def template_finetune_chat(
 
             # Get document paths from knowledge pack metadata
             doc_repo = get_document_repo()
-            extraction_service = get_extraction_service()
             kp_metadata = kb.kp_metadata or {}
             associated_documents = kp_metadata.get("associated_documents", [])
             doc_paths = []
@@ -591,7 +589,7 @@ async def template_finetune_chat(
                 documents = await doc_repo.get_document_by_ids(document_ids=associated_documents, db=db)
                 for document in documents:
                     # Get document file path
-                    doc_path = Path(extraction_service.base_upload_directory) / str(document.file_path)
+                    doc_path = Path(str(document.file_path))
                     if doc_path.exists():
                         doc_paths.append(str(doc_path))
 

@@ -11,51 +11,26 @@ class AttemptCompletionTool(BaseTool):
     def __init__(self):
         tool_info = BaseToolInformation(
             name="attempt_completion",
-            description="Present template refinement results to the user. Use when: 1) Template refinement is complete, 2) User asks about template status ('What questions are in topic X?'), 3) User asks about template structure. Summarize what template changes were made. NEVER suggest knowledge generation - this tool is only for template refinement.",
+            description="Present document exploration results, findings, or answers to the user. Use this tool when: 1) Document exploration workflow is complete and you have findings to share, 2) User's questions about documents have been answered, 3) User asks about document status, structure, or content ('What documents are available?', 'What's in document X?'), 4) You've discovered insights from documents that should be summarized, 5) Workflow has reached a natural conclusion. This tool presents information in a user-friendly format and can optionally provide interactive next-step options. DO NOT use this tool for asking questions - use ask_question instead.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
-                        name="summary",
+                        name="answer",
                         type="string",
-                        description="MUST BE IN markdown format. Summary of what was accomplished, highlight the key points using bold markdown (e.g. **key points**). OR direct answer/explanation to user's question in ",
-                        example="**Key points**: I've reviewed the current questions and they focus on traditional procedures. I can help enhance them to include modern digital safety systems.",
-                    )
+                        description="MUST BE IN markdown format. The response content to present to the user. This can be: 1) A summary of document exploration findings with key insights highlighted using bold markdown (e.g. **key points**), 2) A direct answer to the user's question about documents, 3) A status update about available documents or their content, 4) Insights discovered from document analysis. Format the content clearly with proper markdown formatting for readability.",
+                        example="**Document Exploration Complete**\n\nI've reviewed the safety procedures documents in this knowledge pack. Here are the key findings:\n\n• **LOTO Procedures**: Found 3 documents covering lockout/tagout procedures with detailed step-by-step instructions\n• **PPE Requirements**: 2 documents specify personal protective equipment requirements for different work areas\n• **Emergency Response**: 1 document outlines emergency evacuation procedures\n\nWould you like me to read any specific document in detail, or help you refine interview questions based on these findings?",
+                    ),
                 ],
-                required=["summary"],
+                required=["answer"],
             ),
         )
         super().__init__(tool_info)
 
-    def _build_interactive_response(self, summary: str, options: list[str]) -> str:
+    async def _execute(self, answer: str, **kwargs) -> ToolResult:
         """
-        Build an interactive response with HTML button-style options.
+        Execute completion.
         """
-        response_parts = []
-
-        # Add the summary content
-        response_parts.append(f"<p>{summary}</p>")
-        response_parts.append("")  # Empty line for spacing
-
-        # Add clickable options
-        response_parts.append("<div class='options-container'>")
-        for i, option in enumerate(options, 1):
-            # Create clickable button-style options (onclick handled by React)
-            response_parts.append(f"<button class='option-button' data-option='{i}'>{option}</button>")
-        response_parts.append("</div>")
-        response_parts.append("<p><em>Or, just type your own request in the chat</em></p>")
-        response_parts.append("")  # Empty line for spacing
-
-        # Join all parts with proper spacing
-        return "\n".join(response_parts)
-
-    async def _execute(self, summary: str, options: list[str] = None) -> ToolResult:
-        """
-        Execute completion with optional interactive options.
-        """
-        if options and len(options) > 0:
-            content = self._build_interactive_response(summary, options)
-        else:
-            content = summary
+        content = answer
 
         return ToolResult(name="attempt_completion", result=content, require_user=True)

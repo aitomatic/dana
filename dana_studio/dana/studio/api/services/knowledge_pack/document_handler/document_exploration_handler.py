@@ -13,7 +13,7 @@ from dana.lang.common.utils.misc import Misc
 from dana.studio.api.core.schemas import IntentDetectionRequest, MessageData
 from dana.studio.api.core.schemas import SenderRole
 from typing import Any, Literal, Awaitable, Callable
-from dana.studio.api.services.knowledge_pack.template_handler.tools import (
+from .tools import (
     AttemptCompletionTool,
     AskQuestionTool,
     ReadDocumentsTool,
@@ -104,8 +104,8 @@ class DocumentExplorationHandler(AbstractHandler):
         # Initialize conversation with user request
         conversation = request.chat_history
 
-        if len(conversation) >= 10:  # FOR NOW, ONLY USE LAST 10 MESSAGES
-            conversation = [conversation[0]] + conversation[-10:]
+        if len(conversation) >= 4:  # FOR NOW, ONLY USE LAST 4 MESSAGES
+            conversation = conversation[-4:]
 
         # Tool loop - max 15 iterations
         for _ in range(15):
@@ -194,7 +194,7 @@ class DocumentExplorationHandler(AbstractHandler):
 
         # Prepend custom system prompt if it exists
         if custom_system_prompt:
-            system_prompt = f"{custom_system_prompt}\n\n{base_system_prompt}"
+            system_prompt = f"User defined instructions: \n{custom_system_prompt}\n\n{base_system_prompt}"
         else:
             system_prompt = base_system_prompt
 
@@ -206,8 +206,8 @@ class DocumentExplorationHandler(AbstractHandler):
             try:
                 with open(self.template_path, encoding="utf-8") as f:
                     template_content = f.read()
-                template_message = f"Here is the current interview template:\n\n{template_content}"
-                messages.append({"role": "system", "content": template_message})
+                template_message = f"Here is the current interview template, read and understand it :\n\n{template_content}"
+                messages.append({"role": "user", "content": template_message})
             except Exception as e:
                 logger.debug(f"Could not read template file {self.template_path}: {e}")
 
@@ -218,7 +218,7 @@ class DocumentExplorationHandler(AbstractHandler):
             arguments={
                 "messages": messages,
                 "temperature": 0.1,
-                "max_tokens": 8000,
+                "max_tokens": None,
             }
         )
 
