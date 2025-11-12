@@ -89,6 +89,8 @@ class WilliamLearner(LearnerProtocol):
     @observable
     def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
         if phase == LearningPhase.ACQUISITIVE:
+            # NOTE: Not include acquisitive learning
+            return None
             if not self.acquisitive_memory:
                 self.acquisitive_memory = self._load_acquisitive()
             if not self.acquisitive_memory:

@@ -25,7 +25,7 @@ from pathlib import Path
 import re
 import sys
 import traceback
-from typing import Any
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -72,7 +72,7 @@ sys.path.insert(0, DANA_AGENT_DIR)  # For dana imports
 from agent.hvac_agent import HVACAgent
 from dana.config.storage_config import FileStorageConfig
 from environment.hvac_api import get_env_status, get_feedback
-from leaners.william_learner2 import WilliamLearner2 as WilliamLearner
+from leaners.william_learner_demo import WilliamLearner_demo as WilliamLearner
 
 
 # Constants
@@ -81,15 +81,14 @@ DEFAULT_SESSION_ID = "hvac-agent-session-001"
 
 # Request models
 class PlanRequest(BaseModel):
-    environment: dict[str, Any]
-    session_id: str | None = DEFAULT_SESSION_ID
+    environment: Dict[str, Any]
+    session_id: Optional[str] = DEFAULT_SESSION_ID
     with_learner: bool = True
-
 
 class ValidatePlanRequest(BaseModel):
     environment: dict[str, Any]
     plan: dict[str, Any]
-    session_id: str | None = DEFAULT_SESSION_ID
+    session_id: Optional[str] = DEFAULT_SESSION_ID
     with_learner: bool = True
 
 
@@ -120,7 +119,7 @@ def get_agent_with_session(session_id: str = DEFAULT_SESSION_ID, with_learner: b
     """Get or create agent instance for a session."""
     cache_key = f"agent_{session_id}_{with_learner}"
     if True:
-        # if cache_key not in _agent_cache:
+    # if cache_key not in _agent_cache:
         agent = HVACAgent(
             agent_id="hvac-agent-001",
             # model="openai/gpt-4.1",
@@ -188,8 +187,8 @@ CURRENT ENVIRONMENT:
 
         print(f"Creating HVAC agent for session {session_id}...")
         agent = get_agent_with_session(session_id, with_learner=request.with_learner)
-        print("Querying agent with prompt...")
-
+        print(f"Querying agent with prompt...")
+        
         # Run synchronous query in thread pool to avoid event loop conflict
         result = await asyncio.to_thread(agent.query, caller_message=agent_prompt, session_id=session_id)
 
@@ -367,7 +366,7 @@ async def get_acquisitive_learnings(session_id: str = DEFAULT_SESSION_ID):
     """Get all acquisitive learnings for a session"""
     try:
         agent = get_agent_with_session(session_id, with_learner=True)
-
+        
         # Load acquisitive learnings
         acquisitive_learnings = await asyncio.to_thread(agent._learner._load_acquisitive)
 
@@ -410,20 +409,19 @@ async def get_acquisitive_learnings(session_id: str = DEFAULT_SESSION_ID):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get acquisitive learnings: {str(e)}")
 
-
 @app.delete("/api/hvac/learnings/acquisitive/{loop_id}")
 async def delete_acquisitive_learning(loop_id: str, session_id: str = DEFAULT_SESSION_ID):
     """Delete a specific acquisitive learning by loop_id"""
     try:
         agent = get_agent_with_session(session_id)
-
+        
         # Get storage path
         storage_path = agent._learner._get_acquisitive_storage_path()
-
+        
         # Find the file matching the loop_id
         loop_files = list(storage_path.glob("loop_*.json"))
         target_file = None
-
+        
         for loop_file in loop_files:
             try:
                 loop_data = json.loads(loop_file.read_text())
@@ -433,13 +431,13 @@ async def delete_acquisitive_learning(loop_id: str, session_id: str = DEFAULT_SE
             except Exception as e:
                 print(f"Error reading loop file {loop_file}: {e}")
                 continue
-
+        
         if not target_file:
             raise HTTPException(status_code=404, detail=f"Learning with loop_id {loop_id} not found")
-
+        
         # Delete the file
         target_file.unlink()
-
+        
         return {"success": True, "message": f"Learning {loop_id} deleted successfully"}
     except HTTPException:
         raise
@@ -447,7 +445,6 @@ async def delete_acquisitive_learning(loop_id: str, session_id: str = DEFAULT_SE
         print(f"Error in delete_acquisitive_learning: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to delete acquisitive learning: {str(e)}")
-
 
 @app.get("/api/hvac/learnings/episodic")
 async def get_episodic_learning(session_id: str = DEFAULT_SESSION_ID):
@@ -485,8 +482,13 @@ async def trigger_episodic_learning(session_id: str = DEFAULT_SESSION_ID):
         trace_learning = await asyncio.to_thread(agent._learner._reflect_episodic, {})
         learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
         await asyncio.to_thread(agent._learner._store_episodic_learning, learning_content)
-
-        return {"success": True, "content": learning_content, "timestamp": datetime.now().isoformat(), "session_id": session_id}
+        
+        return {
+            "success": True,
+            "content": learning_content,
+            "timestamp": datetime.now().isoformat(),
+            "session_id": session_id
+        }
     except Exception as e:
         print(f"Error in trigger_episodic_learning: {e}")
         traceback.print_exc()
