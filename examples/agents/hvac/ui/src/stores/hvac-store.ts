@@ -58,7 +58,7 @@ export const useHVACStore = create<HVACState>((set) => ({
   currentExecutionLearning: null,
   isLoading: false,
   error: null,
-  comparisonMode: false,
+  comparisonMode: true,
   comparisonResults: null,
   isFadingOut: false,
 
