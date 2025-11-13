@@ -285,6 +285,13 @@ export default function LibraryPage() {
       matchesQuickFilter = item.type === 'file' && fileItem.extension === 'kp';
     }
 
+    // When file selection banner is shown, only show documents (exclude kp, template, ek)
+    let matchesFileSelectionBanner = true;
+    if (showFileSelectionBanner && item.type === 'file') {
+      const fileItem = item as FileItem;
+      matchesFileSelectionBanner = !['kp', 'template', 'ek'].includes(fileItem.extension);
+    }
+
     // When inside a folder, only show files (folders are hidden)
     let matchesType = true;
     if (folderState.isInFolder && !showKPSelectionBanner && !showCTSelectionBanner) {
@@ -296,7 +303,7 @@ export default function LibraryPage() {
         (typeFilter === 'files' && item.type === 'file');
     }
 
-    return matchesSearch && matchesQuickFilter && matchesType;
+    return matchesSearch && matchesQuickFilter && matchesFileSelectionBanner && matchesType;
   });
 
   const handleViewItem = async (item: LibraryItem) => {
@@ -657,12 +664,17 @@ export default function LibraryPage() {
       setShowKPSelectionBanner(false);
 
       // Create template via store (will open dialog automatically)
-      await createTemplate(kpId, {
+      const createdTemplate = await createTemplate(kpId, {
         domain: kpDomain,
         role: kpRole,
       });
 
       toast.success('Capture Template created successfully!');
+
+      // Navigate to the newly created template
+      if (createdTemplate?.id) {
+        navigate(`/capture-template/${createdTemplate.id}`);
+      }
 
       // Reset selection
       setSelectedKPForContribution(null);
