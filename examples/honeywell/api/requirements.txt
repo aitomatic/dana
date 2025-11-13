@@ -1,8 +1,0 @@
-# FastAPI server dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-pydantic>=2.0.0
-
-# Note: This server also requires the dana_agent package to be installed
-# The dana_agent package includes its own dependencies (openai, python-dotenv, etc.)
-# Install it separately if needed
