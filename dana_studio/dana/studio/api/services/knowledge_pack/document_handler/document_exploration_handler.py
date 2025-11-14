@@ -13,13 +13,15 @@ from dana.lang.common.utils.misc import Misc
 from dana.studio.api.core.schemas import IntentDetectionRequest, MessageData
 from dana.studio.api.core.schemas import SenderRole
 from typing import Any, Literal, Awaitable, Callable
-from .tools import (
+from dana.studio.api.services.knowledge_pack.document_handler.tools import (
     AttemptCompletionTool,
     AskQuestionTool,
     ReadDocumentsTool,
 )
 from dana.studio.api.services.knowledge_pack.document_handler.prompts import DOCUMENT_EXPLORATION_PROMPT
 from dana.lang.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
+from dana.studio.api.repositories.domain_knowledge_repo import SQLDomainKnowledgeRepo
+from dana.studio.api.repositories.document_repo import SQLDocumentRepo
 import logging
 
 logger = logging.getLogger(__name__)
@@ -160,6 +162,63 @@ class DocumentExplorationHandler(AbstractHandler):
 
         return result
 
+    @property
+    def tool_str(self) -> str:
+        return "\n\n".join([f"{tool}" for tool in self.tools.values()])
+
+    async def _get_document_list(self) -> list:
+        """Fetch all documents associated with this knowledge pack."""
+        if not self.db:
+            return []
+
+        try:
+            # Get associated document IDs
+            doc_ids = await SQLDomainKnowledgeRepo.get_kp_associated_documents(kp_id=self.kp_id, db=self.db)
+
+            if not doc_ids:
+                return []
+
+            # Fetch document details
+            documents = await SQLDocumentRepo.get_document_by_ids(document_ids=doc_ids, db=self.db)
+
+            return documents if documents else []
+        except Exception as e:
+            logger.error(f"Error fetching document list: {e}")
+            return []
+
+    def _build_document_context(self, documents: list) -> str:
+        """
+        Build document context string for prompt.
+        If <=10 documents: Include IDs and names.
+        If >10 documents: Include instruction to refuse list requests.
+        """
+        doc_count = len(documents)
+
+        if doc_count == 0:
+            return "**Available Documents**: No documents are currently associated with this knowledge pack."
+
+        if doc_count <= 10:
+            # Include document IDs and names
+            doc_list = []
+            for doc in documents:
+                doc_list.append(f"- Document ID {doc.id}: {doc.original_filename}")
+
+            doc_list_str = "\n".join(doc_list)
+            return f"""**Available Documents** ({doc_count} document{'s' if doc_count > 1 else ''}):
+{doc_list_str}
+
+You can reference these documents by their IDs when users ask about specific documents."""
+        else:
+            # Too many documents - instruct to refuse list requests
+            return f"""**Available Documents**: This knowledge pack contains {doc_count} documents.
+
+**IMPORTANT**: If the user asks to "list all documents" or "show all documents", politely explain that there are too many documents ({doc_count}) to list individually. Instead, suggest they:
+- Query for specific information using read_documents with a query
+- Ask about a specific topic or document type
+- Provide a document ID if they know which document they want to explore
+
+Do NOT attempt to list all documents - use read_documents with a query to help them find what they need."""
+
     async def _determine_next_tool(self, conversation: list[MessageData]) -> MessageData:
         """
         LLM decides next tool based purely on conversation history.
@@ -173,7 +232,11 @@ class DocumentExplorationHandler(AbstractHandler):
                 message.role = "assistant"
             llm_conversation.append({"role": message.role, "content": message.content})
 
-        tool_str = "\n\n".join([f"{tool}" for tool in self.tools.values()])
+        tool_str = self.tool_str
+
+        # Fetch document list and build context
+        documents = await self._get_document_list()
+        document_context = self._build_document_context(documents)
 
         # Read custom system prompt if it exists
         custom_system_prompt = ""
@@ -189,12 +252,14 @@ class DocumentExplorationHandler(AbstractHandler):
             except Exception as e:
                 logger.debug(f"Could not read system prompt file: {e}")
 
-        # Build base system prompt
-        base_system_prompt = DOCUMENT_EXPLORATION_PROMPT.format(tools_str=tool_str, domain=self.domain, role=self.role, kp_id=self.kp_id)
+        # Build base system prompt with document context
+        base_system_prompt = DOCUMENT_EXPLORATION_PROMPT.format(
+            tools_str=tool_str, domain=self.domain, role=self.role, kp_id=self.kp_id, document_context=document_context
+        )
 
         # Prepend custom system prompt if it exists
         if custom_system_prompt:
-            system_prompt = f"User defined instructions: \n{custom_system_prompt}\n\n{base_system_prompt}"
+            system_prompt = f"<user_instructions>\n{custom_system_prompt}\n</user_instructions>\n\n{base_system_prompt}"
         else:
             system_prompt = base_system_prompt
 
@@ -206,7 +271,9 @@ class DocumentExplorationHandler(AbstractHandler):
             try:
                 with open(self.template_path, encoding="utf-8") as f:
                     template_content = f.read()
-                template_message = f"Here is the current interview template, read and understand it :\n\n{template_content}"
+                template_message = (
+                    f"Here is the current interview template, read and understand it : <template>\n{template_content}\n</template>"
+                )
                 messages.append({"role": "user", "content": template_message})
             except Exception as e:
                 logger.debug(f"Could not read template file {self.template_path}: {e}")
@@ -298,6 +365,8 @@ if __name__ == "__main__":
     print("=" * 70)
 
     chat_history = []
+
+    print(handler.tool_str)
 
     while True:
         try:

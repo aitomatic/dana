@@ -6,7 +6,7 @@ import type { BackgroundTaskResponse } from '@/lib/api';
 import { useDocumentStore } from './document-store';
 
 // Constants
-const POLLING_INTERVAL = 10000; // 10 seconds
+const POLLING_INTERVAL = 30000; // 30 seconds
 const AGGREGATED_TOAST_ID = 'deep-extraction-active';
 
 // Types

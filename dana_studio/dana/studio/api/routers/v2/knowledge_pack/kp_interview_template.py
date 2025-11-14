@@ -21,9 +21,21 @@ from dana.studio.api.repositories import (
 )
 from dana.studio.api.repositories.interview_template_repo import AbstractInterviewTemplateRepo
 from dana.studio.api.repositories.domain_knowledge_repo import AbstractDomainKnowledgeRepo
-from dana.studio.api.services.knowledge_pack.template_handler.template_finetune_handler import TemplateFinetuneHandler
+from dana.studio.api.services.knowledge_pack.template_handler.template_modification_handler import TemplateModificationHandler
 from dana.studio.api.services.knowledge_pack.document_handler.document_exploration_handler import DocumentExplorationHandler
+from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
+from dana.lang.common.types import BaseRequest
+from dana.lang.common.utils.misc import Misc
 from dana.studio.api.repositories import get_document_repo
+from enum import StrEnum
+
+
+class ChatMode(StrEnum):
+    EDITOR = "editor"
+    CHAT = "chat"
+    AUTO = "auto"
+
+
 from .common import KPConversationType
 from pathlib import Path
 
@@ -427,6 +439,182 @@ async def legacy_chat(chat_history: list[MessageData]):
     return result
 
 
+# Mode detection prompt with conversational continuity
+MODE_DETECTION_PROMPT = """
+You are part of a system that helps users create and modify interview templates.
+
+CONTEXT:
+- Chat box on the left for discussion
+- Template on the right for viewing/editing
+
+MODES:
+1. CHAT mode: Collaborative drafting, brainstorming, refining ideas
+   - User is exploring, asking questions, working on drafts
+   - Content is NOT yet applied to template
+   - LLM provides suggestions, refinements, alternatives
+   
+2. EDITOR mode: Direct template modification
+   - User explicitly wants to apply/commit changes
+   - Changes are immediately written to template
+
+CRITICAL DECISION LOGIC:
+
+Current workflow context matters:
+- If previous messages show collaborative drafting → Default to CHAT
+- If user says "yes/proceed" in response to a refinement offer → Stay in CHAT (continue refining)
+- If user says "yes/proceed" in response to "apply to template" → Switch to EDITOR
+- If previous mode was CHAT and message is ambiguous → Stay in CHAT for continuity
+
+Explicit EDITOR signals (must be clear and direct):
+- "add this to the template"
+- "apply these changes"
+- "update the template with this"
+- "commit these questions"
+- "save to template"
+- "replace the template content"
+- "write this to the template"
+- "modify the template"
+
+Explicit CHAT signals:
+- "let's refine these"
+- "give me a better version"
+- "reassess these questions"
+- "what do you think about..."
+- "help me improve..."
+- "show me alternatives"
+- "give me the refined version"
+
+AMBIGUOUS cases (default to CHAT to preserve continuity):
+- Simple affirmations: "yes", "ok", "proceed", "continue", "sure"
+- Follow-up questions: "what about...", "how can we..."
+- Requests for more: "give me more", "show me alternatives"
+- Vague references: "use that", "do it", "go ahead"
+
+IMPORTANT: 
+- If the conversation shows ongoing collaborative work, prefer CHAT mode
+- Only switch to EDITOR when user EXPLICITLY asks to modify the template
+- When in doubt about "yes/proceed" responses, stay in current mode (prefer CHAT)
+- Conversational continuity is key - abrupt mode switches break workflow
+
+<examples>
+Conversation:
+User: "Help me create better safety questions"
+Assistant: [provides draft questions in chat]
+User: "Reassess those questions"
+Assistant: [provides assessment, asks "Would you like me to proceed with rewriting?"]
+User: "Yes"
+→ Mode: CHAT
+Reasoning: "Yes" is a continuation of drafting workflow, not an explicit template modification request. User is still collaborating.
+
+Conversation:
+User: "Give me the refined version"
+Assistant: [provides refined questions in chat]
+User: "Add these to the template"
+→ Mode: EDITOR
+Reasoning: "Add these to the template" is a clear signal to apply changes to the actual template.
+
+Conversation:
+User: "Change question 3 in the Safety topic to ask about PPE"
+→ Mode: EDITOR
+Reasoning: User wants immediate template edit, not collaborative drafting.
+
+Conversation:
+Previous mode: CHAT
+User: "Proceed"
+→ Mode: CHAT
+Reasoning: Ambiguous affirmation with no explicit template modification signal. Maintain continuity with previous CHAT mode.
+
+Conversation:
+User: "What documents are available?"
+→ Mode: CHAT
+Reasoning: User wants to explore documents, not modify template.
+</examples>
+
+Respond with JSON:
+{
+    "reasoning": "Brief explanation considering workflow context, continuity, and signal strength",
+    "mode": "editor" | "chat"
+}
+"""
+
+
+async def detect_chat_mode(
+    user_message: str,
+    chat_history: list[MessageData] | None = None,
+    llm: LLMResource | None = None,
+    previous_mode: ChatMode | None = None,
+) -> str:
+    """
+    Detect if user wants editor mode (template modification) or chat mode (document exploration).
+    Uses conversational context and previous mode to maintain workflow continuity.
+
+    Args:
+        user_message: The current user message
+        chat_history: Optional chat history for context
+        llm: Optional LLM resource (creates new one if not provided)
+
+    Returns:
+        "editor" or "chat"
+    """
+    try:
+        if llm is None:
+            llm = LLMResource()
+
+        # Build messages for mode detection
+        messages = [{"role": "system", "content": MODE_DETECTION_PROMPT}]
+
+        conversation_texts = []
+
+        # Add recent chat history for context (last 6 messages for better workflow understanding)
+        if chat_history:
+            recent_history = chat_history[-6:] if len(chat_history) > 6 else chat_history
+            for msg in recent_history:
+                conversation_texts.append(f"{msg.role}: {msg.content}")
+
+        # Add current user message
+        conversation_texts.append(f"user: {user_message}")
+
+        # Build prompt with previous mode context
+        mode_context = f"Previous mode: {previous_mode}\n\n" if previous_mode else ""
+        prompt_content = f"{mode_context}Choose the mode based on the following conversation:\n\n" + "\n---\n".join(conversation_texts)
+
+        messages.append({"role": "user", "content": prompt_content})
+
+        llm_request = BaseRequest(
+            arguments={
+                "messages": messages,
+                "temperature": 0.1,
+                "max_tokens": 1000,  # Only need one word response
+            }
+        )
+
+        response = await llm.query(llm_request)
+        mode_response = Misc.get_response_content(response).strip().lower()
+        print(f"🔍 Mode detection response: {mode_response}")
+
+        try:
+            mode = Misc.text_to_dict(mode_response).get("mode", ChatMode.CHAT)
+        except Exception as _:
+            mode = mode_response
+
+        # Validate and normalize response
+        if "editor" in mode:
+            detected_mode = ChatMode.EDITOR
+        elif "chat" in mode:
+            detected_mode = ChatMode.CHAT
+        else:
+            # Default to CHAT if unclear (safer for continuity - prevents accidental template modifications)
+            logger.warning(f"Unclear mode detection result: '{mode}', defaulting to 'chat'")
+            detected_mode = ChatMode.CHAT
+
+        logger.info(f"Mode detection: '{user_message[:50]}...' -> {detected_mode} (previous: {previous_mode})")
+        return detected_mode
+
+    except Exception as e:
+        logger.error(f"Error detecting chat mode: {e}, defaulting to 'chat'")
+        return ChatMode.CHAT  # Default to chat mode on error
+
+
 @router.post("/{template_id}/chat", response_model=TemplateFinetuneChannelResponse)
 async def template_finetune_chat(
     template_id: int,
@@ -525,22 +713,35 @@ async def template_finetune_chat(
         logger.debug(f"Specialization: domain={spec.domain}, role={spec.role}")
 
         # Build chat history for handler (convert from conversation messages to MessageData)
-        chat_history = [
-            MessageData(
-                role=message.sender,
-                content=message.content,
-                require_user=message.require_user,
-                treat_as_tool=message.treat_as_tool,
-            )
-            for message in conversation.messages
-            if message.require_user or not message.treat_as_tool
-        ]
+        previous_mode = None
+        chat_history = []
+        for message in conversation.messages:
+            if message.require_user or not message.treat_as_tool:
+                chat_history.append(
+                    MessageData(
+                        role=message.sender,
+                        content=message.content,
+                        require_user=message.require_user,
+                        treat_as_tool=message.treat_as_tool,
+                    )
+                )
+            previous_mode = message.metadata.get("mode", ChatMode.CHAT)
+
         logger.debug(f"Built chat history with {len(chat_history)} messages")
+
+        # Auto-detect mode from user message
+        mode = request.metadata.get("mode", ChatMode.AUTO)
+        if mode == ChatMode.AUTO:
+            detected_mode = await detect_chat_mode(request.content, chat_history, previous_mode=previous_mode)
+            print(f"🔍 Detected mode: {detected_mode} for template {template_id}")
+        else:
+            detected_mode = mode
+            print(f"🔍 Using mode: {detected_mode} for template {template_id}")
 
         # Initialize old_content for template diff computation (only used in editor mode)
         old_content = None
 
-        if request.metadata.get("mode", "editor") == "editor":
+        if detected_mode == ChatMode.EDITOR:
             # Create IntentDetectionRequest for handler
             intent_request = IntentDetectionRequest(
                 user_message=request.content, chat_history=chat_history, current_domain_tree=None, agent_id=template.kp_id
@@ -554,24 +755,21 @@ async def template_finetune_chat(
                 logger.warning(f"⚠️ Could not read old template content: {e}")
                 old_content = ""
 
-            # Initialize TemplateFinetuneHandler
-            logger.debug(f"Initializing TemplateFinetuneHandler for template {template_id}")
-            handler = TemplateFinetuneHandler(
+            # Initialize TemplateModificationHandler
+            logger.debug(f"Initializing TemplateModificationHandler for template {template_id}")
+            handler = TemplateModificationHandler(
                 template_path=str(template_file_path),
-                knowledge_pack_path=knowledge_pack_path,
                 kp_id=template.kp_id,
-                doc_paths=None,  # TODO: Get document paths if available
-                domain=spec.domain,
-                role=spec.role,
+                llm=None,  # Will use default LLMResource
                 notifier=None,  # TODO: Add WebSocket notifier if available
             )
 
             # Store db session for tools that need it
             handler.db = db
 
-            logger.info(f"🚀 Starting TemplateFinetuneHandler for template {template_id}")
+            logger.info(f"🚀 Starting TemplateModificationHandler for template {template_id}")
             result = await handler.handle(intent_request)
-            logger.info(f"✅ TemplateFinetuneHandler completed for template {template_id}: status={result.get('status')}")
+            logger.info(f"✅ TemplateModificationHandler completed for template {template_id}: status={result.get('status')}")
 
             # Extract new messages from result and add to conversation
             internal_conversation = result.get("conversation", [])
@@ -637,6 +835,7 @@ async def template_finetune_chat(
                     content=message.content,
                     require_user=message.require_user,
                     treat_as_tool=message.treat_as_tool,
+                    metadata={"mode": detected_mode},
                 )
             )
         new_messages = new_messages[::-1]  # Reverse to get correct order

@@ -47,3 +47,4 @@ domain_knowledge_ws_notifier = DomainKnowledgeWSManager(type=KPConversationType.
 kp_structuring_ws_notifier = DomainKnowledgeWSManager(type=KPConversationType.STRUCTURING.value)
 kp_question_generation_ws_notifier = DomainKnowledgeWSManager(type=KPConversationType.QUESTION_GENERATION.value)
 kp_generation_ws_notifier = DomainKnowledgeWSManager(type=KPConversationType.KNOWLEDGE_GENERATION.value)
+kp_interview_session_ws_notifier = DomainKnowledgeWSManager(type=KPConversationType.INTERVIEW_SESSION.value)

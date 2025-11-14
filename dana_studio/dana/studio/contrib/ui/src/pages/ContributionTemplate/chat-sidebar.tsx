@@ -229,7 +229,7 @@ const ContributionTemplateChat: React.FC<{
   const [isFocused, setIsFocused] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
-  const [chatMode, setChatMode] = useState<'chat' | 'editor'>('chat');
+  const [chatMode, setChatMode] = useState<'chat' | 'editor' | 'auto'>('auto');
 
   // Create template-specific chat store
   const useTemplateChatStore = useMemo(() => {
@@ -612,11 +612,14 @@ const ContributionTemplateChat: React.FC<{
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
-                    Mode: {chatMode === 'chat' ? 'Chat' : 'Editor'}
+                    Mode: {chatMode === 'chat' ? 'Chat' : chatMode === 'editor' ? 'Editor' : 'Auto'}
                     <IconChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setChatMode('auto')}>
+                    Auto
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setChatMode('chat')}>
                     Chat
                   </DropdownMenuItem>

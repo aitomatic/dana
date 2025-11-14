@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, WebSocket
 from sqlalchemy.orm import Session
 import logging
 from pathlib import Path
-
+from datetime import datetime
+import time
 from dana.studio.api.core.database import get_db
 from dana.studio.api.core.schemas_v2 import (
     InterviewSessionCreate,
@@ -33,6 +34,8 @@ from dana.studio.api.repositories.config import KNOW_FOLDER_NAME
 from dana.studio.api.core.schemas import ConversationWithMessages
 
 from .common import KPConversationType
+import asyncio
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +117,6 @@ async def _initialize_interview_session(session_id: int, template_path: str, ses
         from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
         from dana.lang.common.types import BaseRequest
         from dana.lang.common.utils.misc import Misc
-        from datetime import datetime
 
         llm = LLMResource()
 
@@ -448,6 +450,160 @@ async def get_session_conversation(
         return {"success": False, "message": "Failed to retrieve conversation", "error": str(e)}
 
 
+@router.websocket("/ws/{session_id}")
+async def interview_session_websocket(session_id: int, websocket: WebSocket):
+    """WebSocket for real-time interview session updates"""
+    from dana.studio.api.routers.v2.ws.domain_knowledge_ws import kp_interview_session_ws_notifier
+
+    await kp_interview_session_ws_notifier.run_ws_loop_forever(websocket, str(session_id))
+
+
+def _read_note_file(session_dir: str) -> str:
+    """Read current interview note content"""
+    note_path = Path(session_dir) / "interview_notes.md"
+    if note_path.exists():
+        try:
+            with open(note_path, encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            logger.warning(f"Failed to read note file: {e}")
+            return ""
+    return ""
+
+
+async def _classify_user_intent(
+    user_message: str,
+    conversation_history: list,
+    llm,
+) -> dict:
+    """
+    Use LLM to classify user message intent.
+    Returns: {
+        "is_meta_question": bool,
+        "is_information_sharing": bool,
+        "intent": str,  # "meta_question" | "information_sharing" | "clarification"
+        "confidence": float
+    }
+    """
+    from dana.lang.common.types import BaseRequest
+    from dana.lang.common.utils.misc import Misc
+
+    # Build conversation context (last 5 messages)
+    recent_history = conversation_history[-5:] if len(conversation_history) > 5 else conversation_history
+    history_text = "\n".join([f"{msg.role}: {msg.content}" for msg in recent_history])
+
+    prompt = f"""Classify the user's message intent in an interview context.
+
+CONVERSATION HISTORY:
+{history_text}
+
+USER MESSAGE: {user_message}
+
+Classify the user's intent into one of these categories:
+1. **information_sharing**: User is sharing expertise, knowledge, experience, or answering questions about their domain
+2. **meta_question**: User is asking about the interview process, progress, or how things work (e.g., "where are we?", "what's our progress?", "how does this work?")
+3. **clarification**: User is asking for clarification about something previously discussed (e.g., "what do you mean by X?", "can you explain Y?")
+
+Respond in JSON format:
+{{
+    "intent": "information_sharing" | "meta_question" | "clarification",
+    "is_meta_question": boolean,
+    "is_information_sharing": boolean,
+    "confidence": float (0.0-1.0),
+    "reasoning": "brief explanation"
+}}"""
+
+    llm_request = BaseRequest(
+        arguments={
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an expert at classifying user intent in interview conversations. Respond only with valid JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.1,
+            "max_tokens": 200,
+        }
+    )
+
+    try:
+        response = await llm.query(llm_request)
+        content = Misc.get_response_content(response).strip()
+
+        # Parse JSON response (remove markdown code blocks if present)
+        if content.startswith("```"):
+            parts = content.split("```")
+            if len(parts) > 1:
+                content = parts[1]
+                if content.startswith("json"):
+                    content = content[4:]
+        content = content.strip()
+
+        result = json.loads(content)
+        return {
+            "is_meta_question": result.get("is_meta_question", False),
+            "is_information_sharing": result.get("is_information_sharing", False),
+            "intent": result.get("intent", "information_sharing"),
+            "confidence": result.get("confidence", 0.5),
+            "reasoning": result.get("reasoning", ""),
+        }
+    except Exception as e:
+        logger.warning(f"LLM intent classification failed: {e}, defaulting to information_sharing")
+        # Default to information_sharing if classification fails
+        return {
+            "is_meta_question": False,
+            "is_information_sharing": True,
+            "intent": "information_sharing",
+            "confidence": 0.5,
+            "reasoning": "Classification failed, defaulting to information_sharing",
+        }
+
+
+async def _capture_notes_background(
+    note_handler,
+    request,
+    current_note_content: str,
+    session_id: int,
+    session_dir: str,
+):
+    """Background task for note capture with WebSocket notification"""
+    from dana.studio.api.routers.v2.ws.domain_knowledge_ws import kp_interview_session_ws_notifier
+
+    try:
+        result = await note_handler.handle(request, current_note_content=current_note_content)
+
+        # Notify FE via WebSocket
+        await kp_interview_session_ws_notifier.send_update_msg(
+            websocket_id=str(session_id),
+            message=json.dumps(
+                {
+                    "type": KPConversationType.INTERVIEW_SESSION.value,
+                    "message": {
+                        "tool_name": "note_capture",
+                        "status": "finish",
+                        "note_updated": result.get("note_updated", False),
+                        "content": "Interview notes updated successfully",
+                    },
+                    "timestamp": datetime.now().timestamp(),
+                }
+            ),
+        )
+    except Exception as e:
+        logger.error(f"Background note capture failed: {e}")
+        # Notify FE of error
+        await kp_interview_session_ws_notifier.send_update_msg(
+            websocket_id=str(session_id),
+            message=json.dumps(
+                {
+                    "type": KPConversationType.INTERVIEW_SESSION.value,
+                    "message": {"tool_name": "note_capture", "status": "error", "error": str(e)},
+                    "timestamp": datetime.now().timestamp(),
+                }
+            ),
+        )
+
+
 @router.post("/{session_id}/chat", response_model=InterviewChatResponse)
 async def session_chat(
     session_id: int,
@@ -461,11 +617,19 @@ async def session_chat(
     Chat endpoint for interview sessions using InterviewHandler.
     Matches template_finetune_chat pattern for consistent conversation management.
     """
+    # Benchmark: Start total API response time
+    api_start_time = time.perf_counter()
     logger.info(f"🚀 Starting interview session chat for session {session_id}")
+
+    # Benchmark: Track individual operation times
+    benchmark_times = {}
+
     try:
         # Get session
+        op_start = time.perf_counter()
         logger.debug(f"Fetching session {session_id}")
         session = await session_repo.get_session(session_id, db=db)
+        benchmark_times["db_fetch_session"] = time.perf_counter() - op_start
         if not session:
             logger.error(f"❌ Session {session_id} not found")
             return InterviewChatResponse(
@@ -477,8 +641,10 @@ async def session_chat(
             )
 
         # Get template
+        op_start = time.perf_counter()
         logger.debug(f"Fetching template {session.interview_template_id} for session {session_id}")
         template = await template_repo.get_template(session.interview_template_id, db=db)
+        benchmark_times["db_fetch_template"] = time.perf_counter() - op_start
         if not template:
             logger.error(f"❌ Template {session.interview_template_id} not found for session {session_id}")
             return InterviewChatResponse(
@@ -492,6 +658,7 @@ async def session_chat(
         logger.info(f"✅ Found session {session_id} (template_id: {session.interview_template_id})")
 
         # Get or create conversation with KPConversationType.INTERVIEW_SESSION
+        op_start = time.perf_counter()
         logger.debug(f"Looking for existing conversation for session {session_id}")
         conversation = await conv_repo.get_conversation_by_session(session_id, db=db)
         if not conversation:
@@ -515,6 +682,7 @@ async def session_chat(
             logger.info(f"📝 Continuing existing conversation {conversation.id} for session {session_id}")
             conversation = await conv_repo.add_messages_to_conversation(conversation_id=conversation.id, messages=[request], db=db)
             logger.info(f"✅ Added message to conversation {conversation.id}")
+        benchmark_times["db_conversation_ops"] = time.perf_counter() - op_start
 
         # Get template path (README.md)
         template_path = Path(template.folder_path) / "README.md"
@@ -531,8 +699,10 @@ async def session_chat(
             )
 
         # Initialize RAG from knowledge pack
+        op_start = time.perf_counter()
         logger.debug(f"Initializing RAG for knowledge pack {template.kp_id}")
         rag_resource = await _initialize_rag_from_kp(template.kp_id, db)
+        benchmark_times["rag_initialization"] = time.perf_counter() - op_start
         if not rag_resource:
             logger.error(f"❌ No knowledge documents found for KP {template.kp_id}")
             return InterviewChatResponse(
@@ -563,7 +733,28 @@ async def session_chat(
         ]
         logger.debug(f"Built chat history with {len(chat_history)} messages")
 
-        # Create IntentDetectionRequest for handler
+        # Read current note
+        op_start = time.perf_counter()
+        current_note = _read_note_file(session_dir)
+        benchmark_times["read_note_file"] = time.perf_counter() - op_start
+
+        # Initialize LLM for intent classification
+        from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
+
+        llm = LLMResource()
+
+        # Classify user intent using LLM
+        op_start = time.perf_counter()
+        intent_result = await _classify_user_intent(user_message=request.content, conversation_history=chat_history, llm=llm)
+        benchmark_times["intent_classification"] = time.perf_counter() - op_start
+
+        is_information_sharing = intent_result["is_information_sharing"]
+
+        logger.debug(
+            f"User intent: {intent_result['intent']} (confidence: {intent_result['confidence']}, reasoning: {intent_result.get('reasoning', '')})"
+        )
+
+        # Create IntentDetectionRequest for handlers
         from dana.studio.api.core.schemas import IntentDetectionRequest
 
         intent_request = IntentDetectionRequest(
@@ -573,22 +764,51 @@ async def session_chat(
             agent_id=template.kp_id,  # Use kp_id, not session_id
         )
 
-        # Initialize InterviewHandler
-        logger.debug(f"Initializing InterviewHandler for session {session_id}")
-        from dana.studio.api.services.knowledge_pack.interview_handler.interview_handler import InterviewHandler
+        # Initialize handlers
+        op_start = time.perf_counter()
+        logger.debug(f"Initializing handlers for session {session_id}")
+        from dana.studio.api.services.knowledge_pack.interview_handler.interview_note_handler import InterviewNoteHandler
+        from dana.studio.api.services.knowledge_pack.interview_handler.interview_question_handler import InterviewQuestionHandler
 
-        handler = InterviewHandler(
+        domain = template.template_metadata.get("domain", "General")
+        role = template.template_metadata.get("role", "Expert")
+
+        note_handler = InterviewNoteHandler(
             session_dir=session_dir,
             template_path=str(template_path),
-            response_generator=None,  # Not used in current implementation
-            rag_resource=rag_resource,
-            domain=template.template_metadata.get("domain", "General"),
-            role=template.template_metadata.get("role", "Expert"),
+            llm=llm,
+            domain=domain,
+            role=role,
         )
 
-        logger.info(f"🚀 Starting InterviewHandler for session {session_id}")
-        result = await handler.handle(intent_request)
-        logger.info(f"✅ InterviewHandler completed for session {session_id}: status={result.get('status')}")
+        question_handler = InterviewQuestionHandler(
+            session_dir=session_dir,
+            template_path=str(template_path),
+            rag_resource=rag_resource,
+            llm=llm,
+            domain=domain,
+            role=role,
+        )
+        benchmark_times["handler_initialization"] = time.perf_counter() - op_start
+
+        # IMMEDIATE: Generate question
+        op_start = time.perf_counter()
+        logger.info(f"🚀 Starting QuestionHandler for session {session_id}")
+        question_result = await question_handler.handle(intent_request, current_note_content=current_note)
+        benchmark_times["question_handler_execution"] = time.perf_counter() - op_start
+        logger.info(f"✅ QuestionHandler completed for session {session_id}: status={question_result.get('status')}")
+
+        # BACKGROUND: Capture notes (if user is sharing information)
+        op_start = time.perf_counter()
+        if is_information_sharing:
+            logger.info(f"🚀 Starting background NoteHandler for session {session_id}")
+            asyncio.create_task(_capture_notes_background(note_handler, intent_request, current_note, session_id, session_dir))
+        else:
+            logger.debug(f"Skipping note capture for intent: {intent_result['intent']}")
+        benchmark_times["note_handler_setup"] = time.perf_counter() - op_start
+
+        # Use question result for response
+        result = question_result
 
         # Extract new messages from result and add to conversation
         internal_conversation = result.get("conversation", [])
@@ -616,18 +836,22 @@ async def session_chat(
             )
         new_messages = new_messages[::-1]  # Reverse to get correct order
 
+        op_start = time.perf_counter()
         if new_messages:
             logger.info(f"📝 Adding {len(new_messages)} new messages to conversation {conversation.id}")
             await conv_repo.add_messages_to_conversation(conversation_id=conversation.id, messages=new_messages, db=db)
             logger.info(f"✅ Successfully added messages to conversation {conversation.id}")
         else:
             logger.debug("No new messages to add to conversation")
+        benchmark_times["db_add_messages"] = time.perf_counter() - op_start
 
         # Update session status if workflow completed
+        op_start = time.perf_counter()
         interview_modified = result.get("workflow_completed", False)
         if interview_modified:
             logger.info(f"🎯 Interview workflow completed for session {session_id}")
             await session_repo.update_session(session_id, InterviewSessionUpdate(status="completed"), db=db)
+        benchmark_times["db_update_session"] = time.perf_counter() - op_start
 
         # Convert MessageData to HandlerMessage for response
         # Use the deduplicated messages for the response
@@ -639,9 +863,28 @@ async def session_chat(
             if new_messages
         ]
 
-        # Log response details
+        # Benchmark: Calculate total API response time
+        total_api_time = time.perf_counter() - api_start_time
+        benchmark_times["total_api_time"] = total_api_time
+
+        # Log response details with benchmark summary
         agent_response = result.get("message", "Interview processed successfully")
         logger.info(f"🎯 Interview session chat completed: interview_modified={interview_modified}, response_length={len(agent_response)}")
+
+        # Log benchmark summary
+        logger.info(
+            f"⏱️  BENCHMARK [session={session_id}]: Total={total_api_time:.3f}s | "
+            f"DB_ops={benchmark_times.get('db_fetch_session', 0) + benchmark_times.get('db_fetch_template', 0) + benchmark_times.get('db_conversation_ops', 0) + benchmark_times.get('db_add_messages', 0) + benchmark_times.get('db_update_session', 0):.3f}s | "
+            f"RAG_init={benchmark_times.get('rag_initialization', 0):.3f}s | "
+            f"Intent={benchmark_times.get('intent_classification', 0):.3f}s | "
+            f"QuestionHandler={benchmark_times.get('question_handler_execution', 0):.3f}s | "
+            f"NoteHandler_setup={benchmark_times.get('note_handler_setup', 0):.3f}s"
+        )
+
+        # Detailed benchmark breakdown (debug level)
+        logger.warning(
+            f"📊 Detailed Benchmark [session={session_id}]: {json.dumps({k: f'{v:.3f}s' for k, v in benchmark_times.items()}, indent=2)}"
+        )
 
         return InterviewChatResponse(
             success=True,
@@ -652,10 +895,18 @@ async def session_chat(
         )
 
     except Exception as e:
-        logger.error(f"❌ Error in interview session chat for session {session_id}: {e}")
+        # Log benchmark even on error
+        total_api_time = time.perf_counter() - api_start_time
+        logger.error(f"❌ Error in interview session chat for session {session_id} after {total_api_time:.3f}s: {e}")
         import traceback
 
         logger.error(f"📋 Full traceback: {traceback.format_exc()}")
+
+        # Log partial benchmark if available
+        if benchmark_times:
+            logger.error(
+                f"⏱️  Partial Benchmark [session={session_id}]: {json.dumps({k: f'{v:.3f}s' for k, v in benchmark_times.items()}, indent=2)}"
+            )
 
         return InterviewChatResponse(
             success=False,

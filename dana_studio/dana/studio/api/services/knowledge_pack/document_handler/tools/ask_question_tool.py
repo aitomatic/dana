@@ -9,72 +9,51 @@ from dana.studio.api.services.intent_detection.intent_handlers.handler_tools.bas
 
 class AskQuestionTool(BaseTool):
     """
-    Enhanced unified tool for user interactions with sophisticated context integration.
-    Provides current state, decision logic, and clear options to users.
+    Tool for asking questions to users with optional context and button-style options.
+    Provides a streamlined interface for interactive problem-solving.
     """
 
     def __init__(self):
         tool_info = BaseToolInformation(
             name="ask_question",
-            description="Provide current state to the user and decision logic. Then ask the user a question to gather additional information needed to complete the task. This tool should be used when you encounter ambiguities, need clarification, or require more details to proceed effectively. It allows for interactive problem-solving by enabling direct communication with the user. Use this tool judiciously to maintain a balance between gathering necessary information and avoiding excessive back-and-forth.",
+            description="Ask the user a question to gather additional information needed to complete the task. This tool should be used when you encounter ambiguities, need clarification, or require more details to proceed effectively. It allows for interactive problem-solving by enabling direct communication with the user. Use this tool judiciously to maintain a balance between gathering necessary information and avoiding excessive back-and-forth.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
-                        name="user_message",
+                        name="ack",
                         type="string",
-                        description="A comprehensive message that acknowledges the user's original request, explains your findings in the context of their goals, and addresses their specific concerns or needs. This should make the user feel heard and informed about how your discoveries relate to what they're trying to accomplish. Avoid referring to outputs that are not available, e.g. 'Here is the current structure' but the structure is not available.",
-                        example="I can see you want to refine questions for the LOTO topic. I've reviewed the current questions and they focus on traditional procedures. I can help enhance them to include modern digital safety systems.",
+                        description="Optional: A message that acknowledges the user's request and provides context before asking the question. This can include factual information about the current state, decision logic explaining why you're asking, or any other context that helps the user understand the situation. This should make the user feel heard and informed about how your discoveries relate to what they're trying to accomplish. Avoid referring to outputs that are not available, e.g. 'Here is the current structure' but the structure is not available.",
+                        example="I've found 5 documents in this knowledge pack. To help you better, I need to know which document you'd like to explore first.",
                     ),
                     BaseArgument(
                         name="question",
                         type="string",
                         description="The main question to ask the user, directly related to their goals. For approvals, phrase as 'Would you like me to...?' or 'Should I proceed with...?'. For information gathering, ask specifically what you need to know to help them achieve their objective. Make it clear and actionable.",
-                        example="Would you like me to add questions about digital LOTO systems and their integration with traditional procedures?",
-                    ),
-                    BaseArgument(
-                        name="context",
-                        type="string",
-                        description="Factual information about the current state - what was discovered during exploration, current tree structure, existing knowledge status, or relevant technical details. This provides the objective foundation for the user's decision-making.",
-                        example="The LOTO topic currently has 4 questions focused on traditional lockout/tagout procedures. The template doesn't include questions about electronic safety systems or modern tracking methods.",
-                    ),
-                    BaseArgument(
-                        name="decision_logic",
-                        type="string",
-                        description="Clear explanation of why you're asking this specific question and why the provided options make sense. Help the user understand how each choice would advance their goals and what the implications are.",
-                        example="Adding digital LOTO questions would help capture expertise about modern safety systems while complementing the existing traditional procedure questions.",
+                        example="Would you like me to read a specific document, or explore all documents in this knowledge pack?",
                     ),
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="1 actionable choice (exactly 1 choice) that directly answer the question. Each option must be a complete user response that makes sense when sent as the next message. Use descriptive phrases, not generic yes/no responses. Omit if the question requires open-ended user input.",
-                        example='["Add digital LOTO questions while keeping existing ones", "Add questions about electronic tracking systems"]',
-                    ),
-                    BaseArgument(
-                        name="workflow_phase",
-                        type="string",
-                        description="Current phase in the template refinement workflow to help user understand the process stage. Use clear, user-friendly terms like 'Template Refinement', 'Question Enhancement', 'Topic Review', 'Intent Clarification', etc.",
-                        example="Template Refinement",
+                        description="Optional: List of actionable choices (typically 1-3 options) that directly answer the question. Each option must be a complete user response that makes sense when sent as the next message. Use descriptive phrases, not generic yes/no responses. Omit if the question requires open-ended user input.",
+                        example='["Read document 1: Safety Manual", "List all documents first", "Search for specific content"]',
                     ),
                 ],
-                required=["question"],
+                required=["ack", "question"],
             ),
         )
         super().__init__(tool_info)
 
     async def _execute(
         self,
+        ack: str,
         question: str,
-        user_message: str = "",
-        context: str = "",
-        decision_logic: str = "",
         options: list[str] = None,
-        workflow_phase: str = "",
     ) -> ToolResult:
         """
-        Execute sophisticated question with context, decision logic, and formatted options.
+        Execute question with optional context message and button-style options.
         """
-        content = self._build_sophisticated_response(user_message, question, context, decision_logic, options, workflow_phase)
+        content = self._build_sophisticated_response(ack, question, options)
 
         return ToolResult(name="ask_question", result=content, require_user=True)
 
@@ -82,13 +61,10 @@ class AskQuestionTool(BaseTool):
         self,
         user_message: str,
         question: str,
-        context: str = "",
-        decision_logic: str = "",
         options: list[str] = None,
-        workflow_phase: str = "",
     ) -> str:
         """
-        Build a sophisticated, context-rich response with HTML button-style options.
+        Build a response with optional context message, question, and HTML button-style options.
         """
         response_parts = []
 
