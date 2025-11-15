@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import logging
 from pathlib import Path
 from datetime import datetime
+from collections import deque
 import time
 from dana.studio.api.core.database import get_db
 from dana.studio.api.core.schemas_v2 import (
@@ -14,8 +15,6 @@ from dana.studio.api.core.schemas_v2 import (
     BaseMessage,
     InterviewProgressResponse,
     InterviewProgressData,
-    TopicProgress,
-    QuestionProgress,
 )
 from dana.studio.api.repositories import (
     get_interview_session_repo,
@@ -34,7 +33,7 @@ from dana.studio.api.repositories.config import KNOW_FOLDER_NAME
 from dana.studio.api.core.schemas import ConversationWithMessages
 
 from .common import KPConversationType
-import asyncio
+from dana.studio.api.services.knowledge_pack.interview_handler.converter import InterviewNoteProcessor, QuestionStatus
 import json
 
 logger = logging.getLogger(__name__)
@@ -604,6 +603,325 @@ async def _capture_notes_background(
         )
 
 
+def _extract_question_info(message_content: str) -> dict[str, str] | None:
+    """
+    Extract question text and category from ask_question tool result.
+
+    Returns:
+        dict with 'question' and 'category' keys, or None if not an ask_question
+    """
+    import re
+
+    # Check if this is an ask_question result
+    if "<question>" not in message_content.lower() and "category:" not in message_content.lower():
+        return None
+
+    result = {}
+
+    # Extract question (between <strong> tags or after "question" text)
+    question_match = re.search(r"<strong>(.*?)</strong>", message_content, re.DOTALL)
+    if not question_match:
+        # Try alternative format
+        question_match = re.search(r"<question>(.*?)</question>", message_content, re.DOTALL)
+    if question_match:
+        result["question"] = question_match.group(1).strip()
+
+    # Extract category
+    category_match = re.search(r"category:\s*(\w+)", message_content, re.IGNORECASE)
+    if category_match:
+        result["category"] = category_match.group(1).strip().lower()
+
+    return result if result else None
+
+
+def _find_last_interview_note_question_index(conversation_messages: list) -> int | None:
+    """
+    Find the index of the last interview_note question in conversation.
+
+    Args:
+        conversation_messages: List of conversation message objects
+
+    Returns:
+        Index of the last interview_note question message, or None if not found
+    """
+    for i in range(len(conversation_messages) - 1, -1, -1):
+        msg = conversation_messages[i]
+        if msg.sender == "assistant" and msg.require_user:
+            question_info = _extract_question_info(msg.content)
+            if question_info and question_info.get("category") == "interview_note":
+                return i
+    return None
+
+
+def _find_relevant_messages(conversation_messages: list):
+    index = _find_last_interview_note_question_index(conversation_messages)
+    if index is not None:
+        return conversation_messages[index:]
+    return conversation_messages
+
+
+def _find_last_interview_note_question_message(conversation_messages: list):
+    """
+    Find the last interview_note question message in conversation.
+
+    Args:
+        conversation_messages: List of conversation message objects
+
+    Returns:
+        The last interview_note question message object, or None if not found
+    """
+    for msg in reversed(conversation_messages):
+        if msg.sender == "assistant" and msg.require_user:
+            question_info = _extract_question_info(msg.content)
+            if question_info and question_info.get("category") == "interview_note":
+                return msg
+    return None
+
+
+def _has_more_questions(note_path: str) -> bool:
+    """
+    Check if there are more questions with not_asked status remaining.
+
+    Args:
+        note_path: Path to the interview_notes.md file
+
+    Returns:
+        True if there are more questions with not_asked status, False otherwise
+    """
+    try:
+        processor = InterviewNoteProcessor()
+        json_data = processor.from_file(note_path)
+
+        # Check all topics for questions with not_asked status
+        for topic in json_data.get("topics", []):
+            questions = topic.get("key_questions", [])
+            for question in questions:
+                if isinstance(question, dict):
+                    status = question.get("status", QuestionStatus.NOT_ASKED.value)
+                    if status == QuestionStatus.NOT_ASKED.value:
+                        return True
+                else:
+                    # String format question (backward compatibility) - treat as not_asked
+                    if question.strip():
+                        return True
+
+        return False
+    except Exception as e:
+        logger.warning(f"Failed to check remaining questions: {e}")
+        # On error, assume there might be more questions to be safe
+        return True
+
+
+def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgressData, note_path: str) -> InterviewProgressData:
+    """
+    Enhance InterviewProgressData with question statuses from InterviewNoteProcessor.
+
+    Priority logic:
+    - Prefer new status EXCEPT when it's 'not_asked' and old status is different
+    - Convert new statuses to old format: asking/clarifying → being_asked, completed → answered
+
+    Args:
+        progress_data: InterviewProgressData from get_interview_progress (old approach)
+        note_path: Path to the interview_notes.md file
+
+    Returns:
+        Enhanced InterviewProgressData with updated question statuses
+    """
+    try:
+        processor = InterviewNoteProcessor()
+        new_json_data = processor.from_file(note_path)
+
+        # Build question corpus for fuzzy matching
+        from dana.studio.api.services.search.bm25 import BM25SearchEngine
+        from dana.studio.api.services.knowledge_pack.interview_handler.utils import similarity_ratio
+
+        # Process each topic in progress_data
+        for topic_progress in progress_data.topics:
+            topic_name = topic_progress.topic_name
+
+            # Find matching topic in new structure
+            matching_topic = None
+            for new_topic in new_json_data.get("topics", []):
+                if new_topic.get("topic_name") == topic_name:
+                    matching_topic = new_topic
+                    break
+
+            if not matching_topic:
+                continue
+
+            new_questions = matching_topic.get("key_questions", [])
+            if not new_questions:
+                continue
+
+            # Build corpus of new question texts for matching
+            new_question_texts = []
+            new_question_map = {}  # text -> status
+
+            for new_q in new_questions:
+                if isinstance(new_q, dict):
+                    q_text = new_q.get("text", new_q.get("question_text", ""))
+                    q_status = new_q.get("status", QuestionStatus.NOT_ASKED.value)
+                else:
+                    q_text = str(new_q)
+                    q_status = QuestionStatus.NOT_ASKED.value
+
+                if q_text.strip():
+                    new_question_texts.append(q_text)
+                    new_question_map[q_text] = q_status
+
+            if not new_question_texts:
+                continue
+
+            # Use BM25 for efficient matching
+            search_engine = BM25SearchEngine(new_question_texts)
+
+            # Match and update question statuses in progress_data
+            for question_progress in topic_progress.questions:
+                old_q_text = question_progress.question_text
+                old_status = question_progress.status
+
+                if not old_q_text or not old_q_text.strip():
+                    continue
+
+                # Try exact match first
+                matched_new_status = None
+
+                if old_q_text in new_question_map:
+                    matched_new_status = new_question_map[old_q_text]
+                else:
+                    # Use BM25 + similarity for fuzzy matching
+                    top_candidates = search_engine.get_top_n_indices(old_q_text, n=3)
+                    best_similarity = 0.0
+
+                    for idx in top_candidates:
+                        candidate_text = new_question_texts[idx]
+                        similarity = similarity_ratio(old_q_text, candidate_text)
+                        if similarity > best_similarity and similarity > 0.7:  # Threshold for matching
+                            best_similarity = similarity
+                            matched_new_status = new_question_map[candidate_text]
+
+                if matched_new_status:
+                    # Apply priority logic
+                    # Prefer new status EXCEPT when it's 'not_asked' and old status is different
+                    if matched_new_status == QuestionStatus.NOT_ASKED.value and old_status != QuestionStatus.NOT_ASKED.value:
+                        # Keep old status (trust conversation analysis over default)
+                        continue
+
+                    # Convert new statuses to old format
+                    if matched_new_status in [QuestionStatus.ASKING.value, QuestionStatus.CLARIFYING.value]:
+                        question_progress.status = QuestionStatus.BEING_ASKED.value
+                    elif matched_new_status == QuestionStatus.COMPLETED.value:
+                        question_progress.status = QuestionStatus.ANSWERED.value
+                    else:
+                        # For not_asked or other statuses, use as-is (already in old format)
+                        question_progress.status = matched_new_status
+
+                    logger.debug(f"✅ Updated question status: '{old_q_text[:50]}...' from '{old_status}' to '{question_progress.status}'")
+
+        logger.debug("✅ Enhanced progress data with converter statuses")
+        return progress_data
+
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to enhance progress data with converter statuses: {e}")
+        # Return original progress_data on error
+        return progress_data
+
+
+async def _precompute_document_answer_background(
+    question_text: str,
+    kp_id: int,
+    rag_docs: RAGResourceV2,
+    conversation_id: int,
+    message_id: int,
+):
+    """
+    Background task to precompute answer from documents.
+
+    Steps:
+    1. Query documents using ReadDocumentsTool
+    2. Use LLM to generate answer from document results
+    3. Store answer in message metadata
+
+    Note: Creates its own database session since this runs in background.
+    """
+    from dana.studio.api.services.knowledge_pack.interview_question_handler.tools.read_documents_tool import ReadDocumentsTool
+    from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
+    from dana.lang.common.types import BaseRequest
+    from dana.lang.common.utils.misc import Misc
+    from dana.studio.api.core.database import get_db
+    from dana.studio.api.core.models import Message
+
+    try:
+        logger.info(f"🔄 Starting document answer precomputation for question: {question_text[:100]}...")
+
+        # Create new database session for background task
+        db_gen = get_db()
+        db = next(db_gen)
+
+        try:
+            # Create ReadDocumentsTool instance
+            read_tool = ReadDocumentsTool(kp_id=kp_id, rag_docs=rag_docs)
+
+            # Query documents
+            tool_result = await read_tool.execute(query=question_text, db=db)
+            document_results = tool_result.result
+
+            if not document_results or "❌" in str(document_results):
+                logger.warning(f"⚠️ No document results found for question: {question_text[:100]}")
+                return
+
+            # Use LLM to synthesize answer from document results
+            llm = LLMResource()
+            synthesis_prompt = f"""Based on the following document search results, provide a clear and concise answer to this question:
+
+Question: {question_text}
+
+Document Results:
+{document_results}
+
+Provide a synthesized answer based solely on the document content. Be concise and factual."""
+
+            llm_request = BaseRequest(
+                arguments={
+                    "messages": [
+                        {"role": "system", "content": "You are a helpful assistant that synthesizes information from documents."},
+                        {"role": "user", "content": synthesis_prompt},
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 2000,
+                }
+            )
+
+            response = await llm.query(llm_request)
+            document_answer = Misc.get_response_content(response).strip()
+
+            logger.info(f"✅ Document answer precomputed: {document_answer[:100]}...")
+
+            # Store answer in message metadata
+            message_obj = db.query(Message).filter_by(id=message_id).first()
+            if message_obj:
+                # Get current metadata or initialize empty dict
+                current_metadata = message_obj.msg_metadata or {}
+                # Create new dict with document answer (SQLAlchemy JSON columns need new dict assignment)
+                updated_metadata = {
+                    **current_metadata,
+                    "document_answer": document_answer,
+                    "document_answer_computed_at": datetime.now().isoformat(),
+                }
+                # Assign back to msg_metadata
+                message_obj.msg_metadata = updated_metadata
+                db.commit()
+                logger.info(f"✅ Stored document answer in message {message_id} metadata")
+            else:
+                logger.warning(f"⚠️ Message {message_id} not found for storing document answer")
+
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"❌ Error precomputing document answer: {e}", exc_info=True)
+
+
 @router.post("/{session_id}/chat", response_model=InterviewChatResponse)
 async def session_chat(
     session_id: int,
@@ -719,7 +1037,11 @@ async def session_chat(
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
         # Build chat history for handler (convert from conversation messages to MessageData)
+        # Start from the last interview_note question onwards to keep context relevant
         from dana.studio.api.core.schemas import MessageData
+
+        # Find the last interview_note question index
+        relevant_messages = _find_relevant_messages(conversation.messages)
 
         chat_history = [
             MessageData(
@@ -728,10 +1050,10 @@ async def session_chat(
                 require_user=message.require_user,
                 treat_as_tool=message.treat_as_tool,
             )
-            for message in conversation.messages
+            for message in relevant_messages
             if message.require_user or not message.treat_as_tool
         ]
-        logger.debug(f"Built chat history with {len(chat_history)} messages")
+        logger.debug(f"Built chat history with {len(chat_history)} messages (from {len(relevant_messages)} relevant messages)")
 
         # Read current note
         op_start = time.perf_counter()
@@ -743,16 +1065,8 @@ async def session_chat(
 
         llm = LLMResource()
 
-        # Classify user intent using LLM
+        # Classify user intent using LLM (kept for future use/debugging)
         op_start = time.perf_counter()
-        intent_result = await _classify_user_intent(user_message=request.content, conversation_history=chat_history, llm=llm)
-        benchmark_times["intent_classification"] = time.perf_counter() - op_start
-
-        is_information_sharing = intent_result["is_information_sharing"]
-
-        logger.debug(
-            f"User intent: {intent_result['intent']} (confidence: {intent_result['confidence']}, reasoning: {intent_result.get('reasoning', '')})"
-        )
 
         # Create IntentDetectionRequest for handlers
         from dana.studio.api.core.schemas import IntentDetectionRequest
@@ -764,48 +1078,48 @@ async def session_chat(
             agent_id=template.kp_id,  # Use kp_id, not session_id
         )
 
-        # Initialize handlers
+        # Initialize handler
         op_start = time.perf_counter()
-        logger.debug(f"Initializing handlers for session {session_id}")
-        from dana.studio.api.services.knowledge_pack.interview_handler.interview_note_handler import InterviewNoteHandler
-        from dana.studio.api.services.knowledge_pack.interview_handler.interview_question_handler import InterviewQuestionHandler
+        logger.debug(f"Initializing question handler for session {session_id}")
+        from dana.studio.api.services.knowledge_pack.interview_question_handler import InterviewQuestionHandler
 
         domain = template.template_metadata.get("domain", "General")
         role = template.template_metadata.get("role", "Expert")
 
-        note_handler = InterviewNoteHandler(
-            session_dir=session_dir,
-            template_path=str(template_path),
-            llm=llm,
-            domain=domain,
-            role=role,
-        )
-
         question_handler = InterviewQuestionHandler(
-            session_dir=session_dir,
+            kp_id=template.kp_id,
             template_path=str(template_path),
-            rag_resource=rag_resource,
+            rag_docs=rag_resource,
             llm=llm,
             domain=domain,
             role=role,
         )
+        # Set database session for ReadDocumentsTool
+        question_handler.db = db
         benchmark_times["handler_initialization"] = time.perf_counter() - op_start
 
-        # IMMEDIATE: Generate question
+        # Check for precomputed document answer from last interview_note question
+        # This ensures followup questions have access to the document_answer from the original interview_note question
+        document_answer = None
+        if relevant_messages:
+            # Find the last interview_note question (not just the last assistant message, which could be a followup)
+            last_interview_note_msg = relevant_messages[0]
+
+            if last_interview_note_msg and last_interview_note_msg.metadata:
+                document_answer = last_interview_note_msg.metadata.get("document_answer")
+                if document_answer:
+                    logger.info("📚 Found precomputed document answer from last interview_note question")
+                else:
+                    logger.debug("Last interview_note question found but no document_answer in metadata yet (may still be computing)")
+            else:
+                logger.debug("No interview_note question found in conversation, proceeding without document_answer")
+
+        # Generate question
         op_start = time.perf_counter()
         logger.info(f"🚀 Starting QuestionHandler for session {session_id}")
-        question_result = await question_handler.handle(intent_request, current_note_content=current_note)
+        question_result = await question_handler.handle(intent_request, current_note_content=current_note, document_answer=document_answer)
         benchmark_times["question_handler_execution"] = time.perf_counter() - op_start
         logger.info(f"✅ QuestionHandler completed for session {session_id}: status={question_result.get('status')}")
-
-        # BACKGROUND: Capture notes (if user is sharing information)
-        op_start = time.perf_counter()
-        if is_information_sharing:
-            logger.info(f"🚀 Starting background NoteHandler for session {session_id}")
-            asyncio.create_task(_capture_notes_background(note_handler, intent_request, current_note, session_id, session_dir))
-        else:
-            logger.debug(f"Skipping note capture for intent: {intent_result['intent']}")
-        benchmark_times["note_handler_setup"] = time.perf_counter() - op_start
 
         # Use question result for response
         result = question_result
@@ -837,13 +1151,84 @@ async def session_chat(
         new_messages = new_messages[::-1]  # Reverse to get correct order
 
         op_start = time.perf_counter()
+        ask_question_message_id = None
+        ask_question_content = None
         if new_messages:
             logger.info(f"📝 Adding {len(new_messages)} new messages to conversation {conversation.id}")
-            await conv_repo.add_messages_to_conversation(conversation_id=conversation.id, messages=new_messages, db=db)
+            updated_conversation = await conv_repo.add_messages_to_conversation(
+                conversation_id=conversation.id, messages=new_messages, db=db
+            )
             logger.info(f"✅ Successfully added messages to conversation {conversation.id}")
+
+            # Update question statuses in interview notes
+            note_path = Path(session_dir) / "interview_notes.md"
+            if note_path.exists():
+                processor = InterviewNoteProcessor()
+                current_stack = []
+                conversation_stack = []
+                dq = deque(maxlen=10)
+
+                for i, message in enumerate(updated_conversation.messages[::-1]):
+                    if i > len(new_messages) and not len(dq):
+                        break
+                    if message.sender == "assistant":
+                        if message.require_user:
+                            conversation_stack.append(message)
+                            question_info = _extract_question_info(message.content)
+                            if question_info and question_info.get("category") == "interview_note":
+                                dq.appendleft((message, current_stack, conversation_stack))
+                                current_stack = []
+                                conversation_stack = []
+                            elif question_info and question_info.get("category") == "followup":
+                                current_stack.append(QuestionStatus.CLARIFYING)
+
+                        elif "<attempt_completion>" in message.content:
+                            current_stack.append(QuestionStatus.COMPLETED)
+                    else:
+                        conversation_stack.append(message)
+                    if len(dq) == 2:
+                        break
+                if len(dq):
+                    msg, stack, conversation_stack = dq[-1]
+                    question_info = _extract_question_info(msg.content)
+                    ask_question_message_id = msg.id
+                    ask_question_content = msg.content
+                    if question_info:
+                        if any(status == QuestionStatus.COMPLETED for status in stack):
+                            processor.mark_question_as_completed(question_info["question"], str(note_path))
+                        elif any(status == QuestionStatus.CLARIFYING for status in stack):
+                            processor.mark_question_as_clarifying(question_info["question"], str(note_path))
+                        else:
+                            processor.mark_question_as_asking(question_info["question"], str(note_path))
+                        if len(dq) == 2:
+                            msg, stack, conversation_stack = dq[0]
+                            question_info = _extract_question_info(msg.content)
+                            # When we ask other questions, we mark the last question as completed
+                            if question_info:
+                                processor.mark_question_as_completed(question_info["question"], str(note_path))
+
         else:
             logger.debug("No new messages to add to conversation")
         benchmark_times["db_add_messages"] = time.perf_counter() - op_start
+
+        # Trigger background task for document answer precomputation if interview_note question
+        if ask_question_message_id and rag_resource and ask_question_content:
+            question_info = _extract_question_info(ask_question_content)
+            if question_info and question_info.get("question"):
+                import asyncio
+
+                logger.info(
+                    f"🔄 Triggering background task to precompute document answer for question: {question_info['question'][:100]}..."
+                )
+                asyncio.create_task(
+                    _precompute_document_answer_background(
+                        question_text=question_info["question"],
+                        kp_id=template.kp_id,
+                        rag_docs=rag_resource,
+                        conversation_id=conversation.id,
+                        message_id=ask_question_message_id,
+                    )
+                )
 
         # Update session status if workflow completed
         op_start = time.perf_counter()
@@ -851,6 +1236,41 @@ async def session_chat(
         if interview_modified:
             logger.info(f"🎯 Interview workflow completed for session {session_id}")
             await session_repo.update_session(session_id, InterviewSessionUpdate(status="completed"), db=db)
+
+        # Mark last question as completed if workflow completed or no more questions remain
+        note_path = Path(session_dir) / "interview_notes.md"
+        if note_path.exists():
+            try:
+                processor = InterviewNoteProcessor()
+
+                # Check if workflow completed or no more questions remain
+                should_mark_completed = interview_modified or not _has_more_questions(str(note_path))
+
+                if should_mark_completed:
+                    # Find the last interview_note question with asking or clarifying status
+                    json_data = processor.from_file(str(note_path))
+                    last_question_text = None
+
+                    # Search for the last question with asking or clarifying status
+                    for topic in reversed(json_data.get("topics", [])):
+                        questions = topic.get("key_questions", [])
+                        for question in reversed(questions):
+                            if isinstance(question, dict):
+                                status = question.get("status", QuestionStatus.NOT_ASKED.value)
+                                if status in [QuestionStatus.ASKING.value, QuestionStatus.CLARIFYING.value]:
+                                    last_question_text = question.get("text", "")
+                                    break
+                            if last_question_text:
+                                break
+                        if last_question_text:
+                            break
+
+                    if last_question_text:
+                        processor.mark_question_as_completed(last_question_text, str(note_path))
+                        logger.info(f"✅ Marked last question as completed: {last_question_text[:60]}...")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to mark last question as completed: {e}")
+
         benchmark_times["db_update_session"] = time.perf_counter() - op_start
 
         # Convert MessageData to HandlerMessage for response
@@ -950,8 +1370,6 @@ async def get_session_progress(
         # Parse interview notes
         from dana.studio.api.services.knowledge_pack.interview_handler.utils import (
             parse_interview_note,
-            analyze_question_status,
-            infer_current_topic_from_conversation,
             get_interview_progress,
         )
 
@@ -981,62 +1399,16 @@ async def get_session_progress(
         logger.debug(f"📝 Parsing interview notes from: {note_path}")
         progress_dict = parse_interview_note(str(note_path))
 
-        # Get current topic from notes (might be stale)
-        note_current_topic = progress_dict.get("current_topic")
-
+        # Get progress data using old approach first
         progress_data = get_interview_progress(progress_dict.get("topics", []), conversation_messages)
-        return InterviewProgressResponse(success=True, data=progress_data, error=None)
 
-        # ALWAYS infer from conversation to get the most accurate current topic
-        if conversation_messages:
-            inferred_topic = infer_current_topic_from_conversation(progress_dict.get("topics", []), conversation_messages)
-
-            # Prefer conversation inference over note status
-            if inferred_topic:
-                progress_dict["current_topic"] = inferred_topic
-                logger.info(f"📍 Current topic from conversation: {inferred_topic}")
-            elif note_current_topic:
-                # Validate note's current topic is not completed
-                topic_data = next((t for t in progress_dict.get("topics", []) if t["topic_name"] == note_current_topic), None)
-                if topic_data and topic_data["status"] == "completed":
-                    # Clear current topic if it's completed
-                    progress_dict["current_topic"] = None
-                    logger.info(f"⚠️ Cleared completed topic as current: {note_current_topic}")
-
-        # Convert to Pydantic models with question status analysis
-        topics = []
-        for topic in progress_dict.get("topics", []):
-            # Analyze question status
-            if topic["topic_name"] == note_current_topic:
-                print(topic)
-            question_statuses = analyze_question_status(
-                template_questions=topic.get("questions", []),
-                conversation_messages=conversation_messages,
-                current_topic_name=progress_dict.get("current_topic"),
-            )
-
-            # Convert to QuestionProgress objects
-            questions = [
-                QuestionProgress(question_text=q["question_text"], status=q["status"], asked_at=q["asked_at"]) for q in question_statuses
-            ]
-
-            topics.append(
-                TopicProgress(
-                    topic_name=topic["topic_name"],
-                    status=topic["status"],
-                    completeness=topic["completeness"],
-                    insights_count=topic["insights_count"],
-                    questions=questions,
-                )
-            )
-
-        progress_data = InterviewProgressData(
-            topics=topics,
-            overall_completeness=progress_dict.get("overall_completeness", 0),
-            current_topic=progress_dict.get("current_topic"),
-        )
-
-        logger.info(f"✅ Progress retrieved for session {session_id}: {len(topics)} topics, {progress_data.overall_completeness}% complete")
+        # Enhance with question statuses from new converter
+        try:
+            progress_data = _enhance_progress_data_with_converter_statuses(progress_data, str(note_path))
+            logger.debug("✅ Enhanced progress data with converter statuses")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to enhance progress data with converter, using old approach only: {e}")
+            # Continue with progress_data from old approach
 
         return InterviewProgressResponse(success=True, data=progress_data, error=None)
 
