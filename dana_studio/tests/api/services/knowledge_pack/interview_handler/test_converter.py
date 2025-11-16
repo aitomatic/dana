@@ -859,3 +859,413 @@ class TestQuestionStatus:
             result = converter.from_file(str(file_path))
             questions = result["topics"][0]["key_questions"]
             assert questions[0]["status"] == "completed"
+
+    def test_update_topic_status_not_started_to_in_progress(self):
+        """Test: Update topic status from not_started to in_progress."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: Not started
+**Key Questions**:
+1. Question one?
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.update_topic_status("Test Topic", "in_progress", str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "**Status**: In Progress" in content
+            assert "**Status**: Not started" not in content
+
+    def test_update_topic_status_in_progress_to_completed(self):
+        """Test: Update topic status from in_progress to completed."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: In Progress
+**Key Questions**:
+1. Question one?
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.update_topic_status("Test Topic", "completed", str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "**Status**: Completed" in content
+            assert "**Status**: In Progress" not in content
+
+    def test_update_topic_status_preserves_other_fields(self):
+        """Test: Update topic status preserves other markdown fields."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Important background info
+**Status**: Not started
+**Key Questions**:
+1. Question one?
+**Listen for connections to**: Related topics
+
+**Expert Insights**
+Some insights here
+
+**Current Understanding Level**
+- **Completeness**: 0 %
+- **Confidence**: Low
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.update_topic_status("Test Topic", "in_progress", str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "**Status**: In Progress" in content
+            assert "**Background**: Important background info" in content
+            assert "Question one?" in content
+            assert "**Listen for connections to**: Related topics" in content
+            assert "Some insights here" in content
+            assert "**Completeness**: 0 %" in content
+
+    def test_error_topic_not_found(self):
+        """Test: Error handling when topic not found."""
+        converter = InterviewNoteProcessor()
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False, encoding="utf-8") as f:
+            f.write("""# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Status**: Not started
+---
+""")
+            temp_path = f.name
+
+        try:
+            with pytest.raises(ValueError, match="Topic 'Non-existent Topic' not found"):
+                converter.update_topic_status("Non-existent Topic", "in_progress", temp_path)
+        finally:
+            Path(temp_path).unlink()
+
+    def test_error_file_not_found_topic_status(self):
+        """Test: Error handling when file not found for update_topic_status."""
+        converter = InterviewNoteProcessor()
+
+        with pytest.raises(FileNotFoundError):
+            converter.update_topic_status("Test Topic", "in_progress", "/nonexistent/path/file.md")
+
+    def test_update_topic_completeness_zero_to_fifty(self):
+        """Test: Update topic completeness from 0 to 50."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: Not started
+**Key Questions**:
+1. Question one?
+
+**Expert Insights**
+*No insights captured yet*
+
+**Current Understanding Level**
+- **Completeness**: 0 %
+- **Confidence**: Low
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.update_topic_completeness("Test Topic", 50, str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "- **Completeness**: 50 %" in content
+            assert "- **Completeness**: 0 %" not in content
+
+    def test_update_topic_completeness_fifty_to_hundred(self):
+        """Test: Update topic completeness from 50 to 100."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: In Progress
+**Key Questions**:
+1. Question one?
+
+**Expert Insights**
+Some insights
+
+**Current Understanding Level**
+- **Completeness**: 50 %
+- **Confidence**: Medium
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.update_topic_completeness("Test Topic", 100, str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "- **Completeness**: 100 %" in content
+            assert "- **Completeness**: 50 %" not in content
+
+    def test_update_topic_completeness_preserves_other_fields(self):
+        """Test: Update topic completeness preserves other markdown fields."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Important background info
+**Status**: In Progress
+**Key Questions**:
+1. Question one?
+**Listen for connections to**: Related topics
+
+**Expert Insights**
+Some insights here
+
+**Current Understanding Level**
+- **Completeness**: 25 %
+- **Confidence**: Medium
+- **Next Steps**: Continue exploring
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.update_topic_completeness("Test Topic", 75, str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "- **Completeness**: 75 %" in content
+            assert "**Background**: Important background info" in content
+            assert "Question one?" in content
+            assert "**Listen for connections to**: Related topics" in content
+            assert "Some insights here" in content
+            assert "- **Confidence**: Medium" in content
+            assert "- **Next Steps**: Continue exploring" in content
+
+    def test_error_topic_not_found_completeness(self):
+        """Test: Error handling when topic not found for update_topic_completeness."""
+        converter = InterviewNoteProcessor()
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False, encoding="utf-8") as f:
+            f.write("""# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Status**: Not started
+---
+""")
+            temp_path = f.name
+
+        try:
+            with pytest.raises(ValueError, match="Topic 'Non-existent Topic' not found"):
+                converter.update_topic_completeness("Non-existent Topic", 50, temp_path)
+        finally:
+            Path(temp_path).unlink()
+
+    def test_error_file_not_found_topic_completeness(self):
+        """Test: Error handling when file not found for update_topic_completeness."""
+        converter = InterviewNoteProcessor()
+
+        with pytest.raises(FileNotFoundError):
+            converter.update_topic_completeness("Test Topic", 50, "/nonexistent/path/file.md")
+
+    def test_recalculate_topic_progress_all_completed(self):
+        """Test: Recalculate topic progress when all questions are completed."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: Not started
+**Key Questions**:
+1. [completed] Question one?
+2. [completed] Question two?
+3. [completed] Question three?
+
+**Expert Insights**
+*No insights captured yet*
+
+**Current Understanding Level**
+- **Completeness**: 0 %
+- **Confidence**: Low
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.recalculate_topic_progress("Test Topic", str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "**Status**: Completed" in content
+            assert "- **Completeness**: 100 %" in content
+
+    def test_recalculate_topic_progress_some_completed(self):
+        """Test: Recalculate topic progress when some questions are completed."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: Not started
+**Key Questions**:
+1. [completed] Question one?
+2. [completed] Question two?
+3. Question three?
+
+**Expert Insights**
+*No insights captured yet*
+
+**Current Understanding Level**
+- **Completeness**: 0 %
+- **Confidence**: Low
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.recalculate_topic_progress("Test Topic", str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "**Status**: In Progress" in content
+            assert "- **Completeness**: 66 %" in content or "- **Completeness**: 67 %" in content
+
+    def test_recalculate_topic_progress_none_completed(self):
+        """Test: Recalculate topic progress when no questions are completed."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: In Progress
+**Key Questions**:
+1. [asking] Question one?
+2. Question two?
+3. Question three?
+
+**Expert Insights**
+*No insights captured yet*
+
+**Current Understanding Level**
+- **Completeness**: 50 %
+- **Confidence**: Medium
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.recalculate_topic_progress("Test Topic", str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "**Status**: Not started" in content
+            assert "- **Completeness**: 0 %" in content
+
+    def test_recalculate_topic_progress_empty_topic(self):
+        """Test: Recalculate topic progress for topic with no questions."""
+        converter = InterviewNoteProcessor()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test_notes.md"
+            file_path.write_text(
+                """# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Background**: Test background
+**Status**: Not started
+**Key Questions**:
+
+**Expert Insights**
+*No insights captured yet*
+
+**Current Understanding Level**
+- **Completeness**: 0 %
+- **Confidence**: Low
+---
+""",
+                encoding="utf-8",
+            )
+
+            converter.recalculate_topic_progress("Test Topic", str(file_path))
+            content = file_path.read_text(encoding="utf-8")
+            assert "**Status**: Not started" in content
+            assert "- **Completeness**: 0 %" in content
+
+    def test_error_topic_not_found_recalculate(self):
+        """Test: Error handling when topic not found for recalculate_topic_progress."""
+        converter = InterviewNoteProcessor()
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False, encoding="utf-8") as f:
+            f.write("""# Interview Notes
+**Date**: 2025-11-15
+
+## Topics to Cover
+
+### Test Topic
+**Status**: Not started
+---
+""")
+            temp_path = f.name
+
+        try:
+            with pytest.raises(ValueError, match="Topic 'Non-existent Topic' not found"):
+                converter.recalculate_topic_progress("Non-existent Topic", temp_path)
+        finally:
+            Path(temp_path).unlink()

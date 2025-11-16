@@ -729,6 +729,18 @@ def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgr
     """
     try:
         processor = InterviewNoteProcessor()
+
+        # Safeguard: Recalculate topic progress for all topics before reading progress data
+        # This ensures topic status and completeness are up-to-date based on current question statuses
+        for topic_progress in progress_data.topics:
+            topic_name = topic_progress.topic_name
+            try:
+                processor.recalculate_topic_progress(topic_name, note_path)
+                logger.debug(f"✅ Recalculated topic progress for '{topic_name}' as safeguard")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to recalculate topic progress for '{topic_name}' as safeguard: {e}")
+                # Continue with other topics even if one fails
+
         new_json_data = processor.from_file(note_path)
 
         # Build question corpus for fuzzy matching
@@ -1194,18 +1206,40 @@ async def session_chat(
                     ask_question_message_id = msg.id
                     ask_question_content = msg.content
                     if question_info:
-                        if any(status == QuestionStatus.COMPLETED for status in stack):
-                            processor.mark_question_as_completed(question_info["question"], str(note_path))
-                        elif any(status == QuestionStatus.CLARIFYING for status in stack):
-                            processor.mark_question_as_clarifying(question_info["question"], str(note_path))
-                        else:
-                            processor.mark_question_as_asking(question_info["question"], str(note_path))
+                        try:
+                            if any(status == QuestionStatus.COMPLETED for status in stack):
+                                processor.mark_question_as_completed(question_info["question"], str(note_path))
+                            elif any(status == QuestionStatus.CLARIFYING for status in stack):
+                                processor.mark_question_as_clarifying(question_info["question"], str(note_path))
+                            else:
+                                processor.mark_question_as_asking(question_info["question"], str(note_path))
+
+                            # Recalculate topic progress after question status update
+                            topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
+                            if topic_name:
+                                try:
+                                    processor.recalculate_topic_progress(topic_name, str(note_path))
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Failed to recalculate topic progress for '{topic_name}': {e}")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Failed to update question status: {e}")
+
                         if len(dq) == 2:
                             msg, stack, conversation_stack = dq[0]
                             question_info = _extract_question_info(msg.content)
                             # When we ask other questions, we mark the last question as completed
                             if question_info:
-                                processor.mark_question_as_completed(question_info["question"], str(note_path))
+                                try:
+                                    processor.mark_question_as_completed(question_info["question"], str(note_path))
+                                    # Recalculate topic progress for the previous question
+                                    topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
+                                    if topic_name:
+                                        try:
+                                            processor.recalculate_topic_progress(topic_name, str(note_path))
+                                        except Exception as e:
+                                            logger.warning(f"⚠️ Failed to recalculate topic progress for '{topic_name}': {e}")
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Failed to mark previous question as completed: {e}")
 
         else:
             logger.debug("No new messages to add to conversation")

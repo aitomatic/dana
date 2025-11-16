@@ -655,6 +655,203 @@ class InterviewNoteProcessor:
         """
         self.update_question_status(question_text, QuestionStatus.COMPLETED, note_path)
 
+    def update_topic_status(self, topic_name: str, status: str, note_path: str) -> None:
+        """
+        Update topic status in markdown file.
+
+        Args:
+            topic_name: The topic name to update
+            status: The new status ("not_started", "in_progress", "completed")
+            note_path: Path to the interview_notes.md file
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If topic not found
+        """
+        path = Path(note_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Interview notes file not found: {note_path}")
+
+        # Load markdown content
+        with open(path, encoding="utf-8") as f:
+            markdown_content = f.read()
+
+        # Find the topic section in markdown
+        topic_pattern = rf"### {re.escape(topic_name)}\s*\n(.*?)(?=\n### |\n## |\Z)"
+        topic_match = re.search(topic_pattern, markdown_content, re.DOTALL)
+        if not topic_match:
+            raise ValueError(f"Topic '{topic_name}' not found in markdown")
+
+        topic_section = topic_match.group(0)
+
+        # Find the status line
+        status_match = re.search(r"\*\*Status\*\*:\s*(.+?)(?:\n|$)", topic_section)
+        if not status_match:
+            raise ValueError(f"Status field not found in topic '{topic_name}'")
+
+        # Map status values to display format
+        status_display_map = {
+            "not_started": "Not started",
+            "in_progress": "In Progress",
+            "completed": "Completed",
+        }
+        status_display = status_display_map.get(status, status.replace("_", " ").title())
+
+        # Replace the status line
+        updated_topic_section = topic_section.replace(status_match.group(0), f"**Status**: {status_display}\n")
+        updated_markdown = markdown_content.replace(topic_section, updated_topic_section)
+
+        # Write back to file
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(updated_markdown)
+
+    def update_topic_completeness(self, topic_name: str, completeness: int, note_path: str) -> None:
+        """
+        Update topic completeness percentage in markdown file.
+
+        Args:
+            topic_name: The topic name to update
+            completeness: The new completeness percentage (0-100)
+            note_path: Path to the interview_notes.md file
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If topic not found
+        """
+        path = Path(note_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Interview notes file not found: {note_path}")
+
+        # Load markdown content
+        with open(path, encoding="utf-8") as f:
+            markdown_content = f.read()
+
+        # Find the topic section in markdown
+        topic_pattern = rf"### {re.escape(topic_name)}\s*\n(.*?)(?=\n### |\n## |\Z)"
+        topic_match = re.search(topic_pattern, markdown_content, re.DOTALL)
+        if not topic_match:
+            raise ValueError(f"Topic '{topic_name}' not found in markdown")
+
+        topic_section = topic_match.group(0)
+        topic_start = topic_match.start()
+        topic_end = topic_match.end()
+
+        # Find the "Current Understanding Level" section
+        understanding_match = re.search(r"\*\*Current Understanding Level\*\*[:\s]*\n(.*?)(?=\n---|\n###|\Z)", topic_section, re.DOTALL)
+        if not understanding_match:
+            raise ValueError(f"Current Understanding Level section not found in topic '{topic_name}'")
+
+        understanding_text = understanding_match.group(1)
+
+        # Find the completeness line
+        completeness_match = re.search(r"-\s*\*\*Completeness\*\*:\s*(\d+)\s*%", understanding_text)
+        if not completeness_match:
+            raise ValueError(f"Completeness field not found in topic '{topic_name}'")
+
+        # Replace the completeness value
+        completeness_start = completeness_match.start()
+        completeness_end = completeness_match.end()
+        new_completeness_line = f"- **Completeness**: {completeness} %"
+        updated_understanding_text = understanding_text[:completeness_start] + new_completeness_line + understanding_text[completeness_end:]
+
+        # Replace understanding section in topic
+        updated_topic_section = (
+            topic_section[: understanding_match.start(1)] + updated_understanding_text + topic_section[understanding_match.end(1) :]
+        )
+
+        # Replace topic section in full markdown
+        updated_markdown = markdown_content[:topic_start] + updated_topic_section + markdown_content[topic_end:]
+
+        # Write back to file
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(updated_markdown)
+
+    def _get_topic_name_for_question(self, question_text: str, note_path: str) -> str | None:
+        """
+        Get topic name for a given question text.
+
+        Args:
+            question_text: The question text to find
+            note_path: Path to the interview_notes.md file
+
+        Returns:
+            Topic name if found, None otherwise
+        """
+        path = Path(note_path)
+        if not path.exists():
+            return None
+
+        with open(path, encoding="utf-8") as f:
+            markdown_content = f.read()
+
+        result = self._find_question_in_content(markdown_content, question_text)
+        if result:
+            return result[0]
+        return None
+
+    def recalculate_topic_progress(self, topic_name: str, note_path: str) -> None:
+        """
+        Recalculate and update topic status and completeness based on question statuses.
+
+        Args:
+            topic_name: The topic name to recalculate
+            note_path: Path to the interview_notes.md file
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If topic not found
+        """
+        path = Path(note_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Interview notes file not found: {note_path}")
+
+        # Parse markdown to get topic data
+        json_data = self.from_file(str(note_path))
+
+        # Find the topic
+        topic_data = None
+        for topic in json_data.get("topics", []):
+            if topic.get("topic_name") == topic_name:
+                topic_data = topic
+                break
+
+        if not topic_data:
+            raise ValueError(f"Topic '{topic_name}' not found in markdown")
+
+        # Get all questions for the topic
+        questions = topic_data.get("key_questions", [])
+
+        # Count completed questions
+        total_questions = len(questions)
+        completed_count = 0
+
+        for question in questions:
+            if isinstance(question, dict):
+                status = question.get("status", QuestionStatus.NOT_ASKED.value)
+                if status == QuestionStatus.COMPLETED.value:
+                    completed_count += 1
+            # String format questions are treated as not_asked
+
+        # Calculate completeness percentage
+        if total_questions > 0:
+            completeness = int((completed_count / total_questions) * 100)
+        else:
+            completeness = 0
+
+        # Determine status
+        if total_questions == 0:
+            status = "not_started"
+        elif completed_count == total_questions:
+            status = "completed"
+        elif completed_count > 0:
+            status = "in_progress"
+        else:
+            status = "not_started"
+
+        # Update status and completeness
+        self.update_topic_status(topic_name, status, str(note_path))
+        self.update_topic_completeness(topic_name, completeness, str(note_path))
+
 
 if __name__ == "__main__":
     converter = InterviewNoteProcessor()
