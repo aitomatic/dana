@@ -766,6 +766,31 @@ class InterviewNoteProcessor:
         with open(path, "w", encoding="utf-8") as f:
             f.write(updated_markdown)
 
+    def update_topic_expert_insights(self, topic_name: str, insights: str, note_path: str) -> None:
+        """
+        Update expert insights for a topic in markdown file.
+
+        Args:
+            topic_name: The topic name to update
+            insights: The new expert insights content (can be markdown formatted)
+            note_path: Path to the interview_notes.md file
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If topic not found
+        """
+        path = Path(note_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Interview notes file not found: {note_path}")
+
+        json_data = self.from_file(str(note_path))
+        for topic in json_data.get("topics", []):
+            if topic.get("topic_name") == topic_name:
+                topic["expert_insights"] = insights
+                break
+
+        self.to_file(json_data, str(note_path))
+
     def _get_topic_name_for_question(self, question_text: str, note_path: str) -> str | None:
         """
         Get topic name for a given question text.

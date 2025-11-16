@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 from collections import deque
 import time
+import asyncio
 from dana.studio.api.core.database import get_db
 from dana.studio.api.core.schemas_v2 import (
     InterviewSessionCreate,
@@ -934,6 +935,109 @@ Provide a synthesized answer based solely on the document content. Be concise an
         logger.error(f"❌ Error precomputing document answer: {e}", exc_info=True)
 
 
+async def _update_expert_insights_background(
+    topic_name: str,
+    note_path: str,
+    existing_insights: str,
+    conversation_messages: list,
+    domain: str,
+    role: str,
+) -> None:
+    """
+    Background task to update expert insights for a completed question.
+
+    Steps:
+    1. Read current markdown content
+    2. Extract existing expert insights for the topic
+    3. Use LLM to analyze conversation_messages and extract new insights
+    4. Merge existing insights with new insights (preserve existing, add new)
+    5. Update markdown file with updated insights
+
+    Args:
+        topic_name: Name of the topic to update
+        note_path: Path to interview_notes.md
+        existing_insights: Current expert insights text from markdown
+        conversation_messages: List of Message objects from conversation
+        domain: Domain name for context
+        role: Role name for context
+    """
+    from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
+    from dana.lang.common.types import BaseRequest
+    from dana.lang.common.utils.misc import Misc
+
+    try:
+        logger.info(f"🔄 Starting expert insights update for topic: {topic_name}")
+
+        # Format conversation messages for LLM
+        conversation_text = ""
+        for msg in conversation_messages:
+            sender = "Assistant" if msg.sender in ["assistant", "agent"] else "User"
+            content = msg.content if hasattr(msg, "content") else str(msg)
+            conversation_text += f"{sender}: {content}\n\n"
+
+        # Prepare existing insights text
+        if existing_insights.strip() == "*No insights captured yet*" or not existing_insights.strip():
+            existing_insights_text = "No existing insights."
+        else:
+            existing_insights_text = f"Existing insights:\n{existing_insights}"
+
+        # Create LLM prompt for insight extraction
+        prompt = f"""You are analyzing an expert interview conversation to extract and consolidate expert insights.
+
+Domain: {domain}
+Role: {role}
+Topic: {topic_name}
+
+{existing_insights_text}
+
+Conversation:
+{conversation_text}
+
+Your task:
+1. Analyze the conversation to extract key insights shared by the expert
+2. Identify technical details, practices, process-specific information, and lessons learned
+3. Merge with existing insights, avoiding duplicates
+4. Preserve all existing insights unless they are contradicted by new information
+5. Format as bullet points (use - for each insight)
+6. Keep insights concise and actionable
+
+Return ONLY the consolidated expert insights in bullet point format. Do not include any explanation or additional text."""
+
+        # Use LLM to extract and merge insights
+        llm = LLMResource()
+        llm_request = BaseRequest(
+            arguments={
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are an expert at extracting and consolidating knowledge from interview conversations.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.1,
+                "max_tokens": 2000,
+            }
+        )
+
+        response = await llm.query(llm_request)
+        merged_insights = Misc.get_response_content(response).strip()
+
+        if not merged_insights:
+            logger.warning(f"⚠️ LLM returned empty insights for topic '{topic_name}'")
+            return
+
+        logger.info(f"✅ Extracted insights for topic '{topic_name}': {merged_insights[:100]}...")
+
+        # Update markdown with merged insights
+        processor = InterviewNoteProcessor()
+        processor.update_topic_expert_insights(topic_name, merged_insights, note_path)
+
+        logger.info(f"✅ Successfully updated expert insights for topic '{topic_name}'")
+
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to update expert insights for topic '{topic_name}': {e}", exc_info=True)
+
+
 @router.post("/{session_id}/chat", response_model=InterviewChatResponse)
 async def session_chat(
     session_id: int,
@@ -1175,6 +1279,10 @@ async def session_chat(
             # Update question statuses in interview notes
             note_path = Path(session_dir) / "interview_notes.md"
             if note_path.exists():
+                # Extract domain and role from template metadata
+                domain = template.template_metadata.get("domain", "General")
+                role = template.template_metadata.get("role", "Expert")
+
                 processor = InterviewNoteProcessor()
                 current_stack = []
                 conversation_stack = []
@@ -1207,15 +1315,44 @@ async def session_chat(
                     ask_question_content = msg.content
                     if question_info:
                         try:
+                            # Get topic name once for all operations
+                            topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
+
                             if any(status == QuestionStatus.COMPLETED for status in stack):
                                 processor.mark_question_as_completed(question_info["question"], str(note_path))
+
+                                # Trigger background task to update expert insights
+                                if topic_name:
+                                    try:
+                                        # Get existing insights from markdown
+                                        json_data = processor.from_file(str(note_path))
+                                        existing_insights = "*No insights captured yet*"
+                                        for topic in json_data.get("topics", []):
+                                            if topic.get("topic_name") == topic_name:
+                                                existing_insights = topic.get("expert_insights", "*No insights captured yet*")
+                                                break
+
+                                        # Create background task
+                                        asyncio.create_task(
+                                            _update_expert_insights_background(
+                                                topic_name,
+                                                str(note_path),
+                                                existing_insights,
+                                                list(reversed(conversation_stack)),
+                                                domain,
+                                                role,
+                                            )
+                                        )
+                                        logger.debug(f"🔄 Created background task to update expert insights for topic '{topic_name}'")
+                                    except Exception as e:
+                                        logger.warning(f"⚠️ Failed to trigger expert insights update for '{topic_name}': {e}")
+
                             elif any(status == QuestionStatus.CLARIFYING for status in stack):
                                 processor.mark_question_as_clarifying(question_info["question"], str(note_path))
                             else:
                                 processor.mark_question_as_asking(question_info["question"], str(note_path))
 
                             # Recalculate topic progress after question status update
-                            topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
                             if topic_name:
                                 try:
                                     processor.recalculate_topic_progress(topic_name, str(note_path))
@@ -1231,8 +1368,35 @@ async def session_chat(
                             if question_info:
                                 try:
                                     processor.mark_question_as_completed(question_info["question"], str(note_path))
-                                    # Recalculate topic progress for the previous question
+
+                                    # Trigger background task to update expert insights
                                     topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
+                                    if topic_name:
+                                        try:
+                                            # Get existing insights from markdown
+                                            json_data = processor.from_file(str(note_path))
+                                            existing_insights = "*No insights captured yet*"
+                                            for topic in json_data.get("topics", []):
+                                                if topic.get("topic_name") == topic_name:
+                                                    existing_insights = topic.get("expert_insights", "*No insights captured yet*")
+                                                    break
+
+                                            # Create background task
+                                            asyncio.create_task(
+                                                _update_expert_insights_background(
+                                                    topic_name,
+                                                    str(note_path),
+                                                    existing_insights,
+                                                    list(reversed(conversation_stack)),
+                                                    domain,
+                                                    role,
+                                                )
+                                            )
+                                            logger.debug(f"🔄 Created background task to update expert insights for topic '{topic_name}'")
+                                        except Exception as e:
+                                            logger.warning(f"⚠️ Failed to trigger expert insights update for '{topic_name}': {e}")
+
+                                    # Recalculate topic progress for the previous question
                                     if topic_name:
                                         try:
                                             processor.recalculate_topic_progress(topic_name, str(note_path))
@@ -1249,8 +1413,6 @@ async def session_chat(
         if ask_question_message_id and rag_resource and ask_question_content:
             question_info = _extract_question_info(ask_question_content)
             if question_info and question_info.get("question"):
-                import asyncio
-
                 logger.info(
                     f"🔄 Triggering background task to precompute document answer for question: {question_info['question'][:100]}..."
                 )
