@@ -171,7 +171,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className={isCaptureKnowledgePage ? 'h-screen overflow-hidden' : ''}>
         <header className="flex gap-2 items-center px-4 h-16 border-b shrink-0">
           <SidebarTrigger className="-ml-1 text-gray-500 size-6" />
           <div className="flex gap-2 justify-between items-center w-full">
@@ -246,7 +246,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
             )}
           </div>
         </header>
-        <main>
+        <main className={isCaptureKnowledgePage ? 'flex-1 min-h-0 overflow-hidden' : ''}>
           <VersionNotification />
           {children}
         </main>

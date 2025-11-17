@@ -246,6 +246,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
   }, [contributionTemplate, messages.length]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const [processingStatusHistory, setProcessingStatusHistory] = useState<ProcessingStatusMessage[]>(
     [],
   );
@@ -412,15 +413,23 @@ const CaptureKnowledgeSessionChat: React.FC<{
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      // Scroll the messages container directly, not the page
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
     }
   }, [messages]);
 
   // Auto-scroll when new thinking messages are added
   useEffect(() => {
-    if (bottomRef.current && processingStatusHistory.length > 0) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current && processingStatusHistory.length > 0) {
+      // Scroll the messages container directly, not the page
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
     }
   }, [processingStatusHistory]);
 
@@ -624,8 +633,8 @@ const CaptureKnowledgeSessionChat: React.FC<{
   };
 
   return (
-    <div className="flex overflow-y-auto overflow-x-hidden flex-col h-full group">
-      <div className="flex overflow-y-auto overflow-x-hidden flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar">
+    <div className="flex overflow-hidden flex-col h-full group">
+      <div ref={messagesContainerRef} className="flex overflow-y-auto overflow-x-hidden flex-col flex-1 min-h-0 max-h-full gap-2 px-2 py-2 custom-scrollbar">
         {messages.length === 0 && !isTyping ? (
           <div className="flex flex-col justify-center items-center h-full">
             <div className="max-w-lg text-center">
@@ -690,7 +699,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
       </div>
 
       {/* Input Area */}
-      <div className="p-3">
+      <div className="flex-shrink-0 p-3">
         <div className="relative">
           {/* Animated placeholder overlay */}
           {!input && !isSending && (

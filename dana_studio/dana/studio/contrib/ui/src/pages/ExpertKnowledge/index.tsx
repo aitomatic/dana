@@ -82,9 +82,9 @@ export default function CaptureKnowledgePage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-950">
+    <div className="flex overflow-hidden h-full bg-gray-50 dark:bg-gray-950">
       {/* Left Panel: Chat Sidebar (50%) */}
-      <div className="w-1/2 border-r border-gray-200 dark:border-gray-800">
+      <div className="flex flex-col w-1/2 h-full overflow-hidden border-r border-gray-200 dark:border-gray-800">
         <ChatSidebar
           sessionId={currentSession.id}
         />
