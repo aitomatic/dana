@@ -748,6 +748,8 @@ def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgr
         from dana.studio.api.services.search.bm25 import BM25SearchEngine
         from dana.studio.api.services.knowledge_pack.interview_handler.utils import similarity_ratio
 
+        topics_progresses = []
+
         # Process each topic in progress_data
         for topic_progress in progress_data.topics:
             topic_name = topic_progress.topic_name
@@ -761,6 +763,12 @@ def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgr
 
             if not matching_topic:
                 continue
+
+            topic_progress.completeness = matching_topic.get("current_understanding_level", {}).get(
+                "completeness", topic_progress.completeness
+            )
+
+            topics_progresses.append(topic_progress.completeness)
 
             new_questions = matching_topic.get("key_questions", [])
             if not new_questions:
@@ -831,6 +839,7 @@ def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgr
 
                     logger.debug(f"✅ Updated question status: '{old_q_text[:50]}...' from '{old_status}' to '{question_progress.status}'")
 
+        progress_data.overall_completeness = int(sum(topics_progresses) / len(topics_progresses))
         logger.debug("✅ Enhanced progress data with converter statuses")
         return progress_data
 
@@ -1046,6 +1055,7 @@ async def session_chat(
     template_repo: type[AbstractInterviewTemplateRepo] = Depends(get_interview_template_repo),
     conv_repo: type[AbstractConversationRepo] = Depends(get_conversation_repo),
     db: Session = Depends(get_db),
+    processor: InterviewNoteProcessor = Depends(InterviewNoteProcessor),
 ):
     """
     Chat endpoint for interview sessions using InterviewHandler.
@@ -1173,7 +1183,12 @@ async def session_chat(
 
         # Read current note
         op_start = time.perf_counter()
-        current_note = _read_note_file(session_dir)
+        # Update question statuses in interview notes
+        note_path = Path(session_dir) / "interview_notes.md"
+        if note_path.exists():
+            current_note = note_path.read_text(encoding="utf-8")
+        else:
+            current_note = ""
         benchmark_times["read_note_file"] = time.perf_counter() - op_start
 
         # Initialize LLM for intent classification
@@ -1233,6 +1248,14 @@ async def session_chat(
         # Generate question
         op_start = time.perf_counter()
         logger.info(f"🚀 Starting QuestionHandler for session {session_id}")
+        if current_note:
+            note_data = processor.markdown_to_json(current_note)
+            # NOTE: The below logic is to prevent expert insights from being included to the question handler
+            for topic in note_data.get("topics", []):
+                if "expert_insights" in topic:
+                    topic["expert_insights"] = "[Insight captured and shown on the right side of the screen]"
+            current_note = processor.json_to_markdown(note_data)
+
         question_result = await question_handler.handle(intent_request, current_note_content=current_note, document_answer=document_answer)
         benchmark_times["question_handler_execution"] = time.perf_counter() - op_start
         logger.info(f"✅ QuestionHandler completed for session {session_id}: status={question_result.get('status')}")
@@ -1276,14 +1299,11 @@ async def session_chat(
             )
             logger.info(f"✅ Successfully added messages to conversation {conversation.id}")
 
-            # Update question statuses in interview notes
-            note_path = Path(session_dir) / "interview_notes.md"
             if note_path.exists():
                 # Extract domain and role from template metadata
                 domain = template.template_metadata.get("domain", "General")
                 role = template.template_metadata.get("role", "Expert")
 
-                processor = InterviewNoteProcessor()
                 current_stack = []
                 conversation_stack = []
                 dq = deque(maxlen=10)
@@ -1308,20 +1328,19 @@ async def session_chat(
                         conversation_stack.append(message)
                     if len(dq) == 2:
                         break
-                if len(dq):
-                    msg, stack, conversation_stack = dq[-1]
+
+                if len(dq) == 2:  # Process previous question status
+                    msg, stack, conversation_stack = dq[0]
                     question_info = _extract_question_info(msg.content)
-                    ask_question_message_id = msg.id
-                    ask_question_content = msg.content
+                    # When we ask other questions, we mark the last question as completed
                     if question_info:
                         try:
-                            # Get topic name once for all operations
-                            topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
-
-                            if any(status == QuestionStatus.COMPLETED for status in stack):
+                            existing_status = processor.get_question_status(question_info["question"], str(note_path))
+                            if existing_status != QuestionStatus.COMPLETED:
                                 processor.mark_question_as_completed(question_info["question"], str(note_path))
 
                                 # Trigger background task to update expert insights
+                                topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
                                 if topic_name:
                                     try:
                                         # Get existing insights from markdown
@@ -1347,30 +1366,31 @@ async def session_chat(
                                     except Exception as e:
                                         logger.warning(f"⚠️ Failed to trigger expert insights update for '{topic_name}': {e}")
 
-                            elif any(status == QuestionStatus.CLARIFYING for status in stack):
-                                processor.mark_question_as_clarifying(question_info["question"], str(note_path))
-                            else:
-                                processor.mark_question_as_asking(question_info["question"], str(note_path))
-
-                            # Recalculate topic progress after question status update
-                            if topic_name:
-                                try:
-                                    processor.recalculate_topic_progress(topic_name, str(note_path))
-                                except Exception as e:
-                                    logger.warning(f"⚠️ Failed to recalculate topic progress for '{topic_name}': {e}")
+                                # Recalculate topic progress for the previous question
+                                if topic_name:
+                                    try:
+                                        processor.recalculate_topic_progress(topic_name, str(note_path))
+                                    except Exception as e:
+                                        logger.warning(f"⚠️ Failed to recalculate topic progress for '{topic_name}': {e}")
                         except Exception as e:
-                            logger.warning(f"⚠️ Failed to update question status: {e}")
+                            logger.warning(f"⚠️ Failed to mark previous question as completed: {e}")
 
-                        if len(dq) == 2:
-                            msg, stack, conversation_stack = dq[0]
-                            question_info = _extract_question_info(msg.content)
-                            # When we ask other questions, we mark the last question as completed
-                            if question_info:
-                                try:
+                if len(dq):  # Process current question status
+                    msg, stack, conversation_stack = dq[-1]
+                    ask_question_message_id = msg.id
+                    ask_question_content = msg.content
+                    question_info = _extract_question_info(msg.content)
+                    if question_info:
+                        try:
+                            existing_status = processor.get_question_status(question_info["question"], str(note_path))
+                            if existing_status != QuestionStatus.COMPLETED:
+                                # Get topic name once for all operations
+                                topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
+
+                                if any(status == QuestionStatus.COMPLETED for status in stack):
                                     processor.mark_question_as_completed(question_info["question"], str(note_path))
 
                                     # Trigger background task to update expert insights
-                                    topic_name = processor._get_topic_name_for_question(question_info["question"], str(note_path))
                                     if topic_name:
                                         try:
                                             # Get existing insights from markdown
@@ -1382,28 +1402,32 @@ async def session_chat(
                                                     break
 
                                             # Create background task
-                                            asyncio.create_task(
-                                                _update_expert_insights_background(
-                                                    topic_name,
-                                                    str(note_path),
-                                                    existing_insights,
-                                                    list(reversed(conversation_stack)),
-                                                    domain,
-                                                    role,
-                                                )
+                                            # If this question is completed, do not process it in the background. User need to see the updated result immediately.
+                                            await _update_expert_insights_background(
+                                                topic_name,
+                                                str(note_path),
+                                                existing_insights,
+                                                list(reversed(conversation_stack)),
+                                                domain,
+                                                role,
                                             )
                                             logger.debug(f"🔄 Created background task to update expert insights for topic '{topic_name}'")
                                         except Exception as e:
                                             logger.warning(f"⚠️ Failed to trigger expert insights update for '{topic_name}': {e}")
 
-                                    # Recalculate topic progress for the previous question
-                                    if topic_name:
-                                        try:
-                                            processor.recalculate_topic_progress(topic_name, str(note_path))
-                                        except Exception as e:
-                                            logger.warning(f"⚠️ Failed to recalculate topic progress for '{topic_name}': {e}")
-                                except Exception as e:
-                                    logger.warning(f"⚠️ Failed to mark previous question as completed: {e}")
+                                elif any(status == QuestionStatus.CLARIFYING for status in stack):
+                                    processor.mark_question_as_clarifying(question_info["question"], str(note_path))
+                                else:
+                                    processor.mark_question_as_asking(question_info["question"], str(note_path))
+
+                                # Recalculate topic progress after question status update
+                                if topic_name:
+                                    try:
+                                        processor.recalculate_topic_progress(topic_name, str(note_path))
+                                    except Exception as e:
+                                        logger.warning(f"⚠️ Failed to recalculate topic progress for '{topic_name}': {e}")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Failed to update question status: {e}")
 
         else:
             logger.debug("No new messages to add to conversation")
@@ -1434,38 +1458,38 @@ async def session_chat(
             await session_repo.update_session(session_id, InterviewSessionUpdate(status="completed"), db=db)
 
         # Mark last question as completed if workflow completed or no more questions remain
-        note_path = Path(session_dir) / "interview_notes.md"
-        if note_path.exists():
-            try:
-                processor = InterviewNoteProcessor()
+        # note_path = Path(session_dir) / "interview_notes.md"
+        # if note_path.exists():
+        #     try:
+        #         processor = InterviewNoteProcessor()
 
-                # Check if workflow completed or no more questions remain
-                should_mark_completed = interview_modified or not _has_more_questions(str(note_path))
+        #         # Check if workflow completed or no more questions remain
+        #         should_mark_completed = interview_modified or not _has_more_questions(str(note_path))
 
-                if should_mark_completed:
-                    # Find the last interview_note question with asking or clarifying status
-                    json_data = processor.from_file(str(note_path))
-                    last_question_text = None
+        #         if should_mark_completed:
+        #             # Find the last interview_note question with asking or clarifying status
+        #             json_data = processor.from_file(str(note_path))
+        #             last_question_text = None
 
-                    # Search for the last question with asking or clarifying status
-                    for topic in reversed(json_data.get("topics", [])):
-                        questions = topic.get("key_questions", [])
-                        for question in reversed(questions):
-                            if isinstance(question, dict):
-                                status = question.get("status", QuestionStatus.NOT_ASKED.value)
-                                if status in [QuestionStatus.ASKING.value, QuestionStatus.CLARIFYING.value]:
-                                    last_question_text = question.get("text", "")
-                                    break
-                            if last_question_text:
-                                break
-                        if last_question_text:
-                            break
+        #             # Search for the last question with asking or clarifying status
+        #             for topic in reversed(json_data.get("topics", [])):
+        #                 questions = topic.get("key_questions", [])
+        #                 for question in reversed(questions):
+        #                     if isinstance(question, dict):
+        #                         status = question.get("status", QuestionStatus.NOT_ASKED.value)
+        #                         if status in [QuestionStatus.ASKING.value, QuestionStatus.CLARIFYING.value]:
+        #                             last_question_text = question.get("text", "")
+        #                             break
+        #                     if last_question_text:
+        #                         break
+        #                 if last_question_text:
+        #                     break
 
-                    if last_question_text:
-                        processor.mark_question_as_completed(last_question_text, str(note_path))
-                        logger.info(f"✅ Marked last question as completed: {last_question_text[:60]}...")
-            except Exception as e:
-                logger.warning(f"⚠️ Failed to mark last question as completed: {e}")
+        #             if last_question_text:
+        #                 processor.mark_question_as_completed(last_question_text, str(note_path))
+        #                 logger.info(f"✅ Marked last question as completed: {last_question_text[:60]}...")
+        #     except Exception as e:
+        #         logger.warning(f"⚠️ Failed to mark last question as completed: {e}")
 
         benchmark_times["db_update_session"] = time.perf_counter() - op_start
 

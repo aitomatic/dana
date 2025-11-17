@@ -51,6 +51,9 @@ def parse_interview_note(note_path: str) -> dict:
         for i, match in enumerate(topic_matches):
             topic_name = match.group(1).strip()
 
+            if "expert insight" in topic_name.lower() or "understanding level" in topic_name.lower():
+                continue
+
             # Find the full section content (from this ### to the next ### or end)
             start_pos = match.start()
             # Find next topic header or end of file

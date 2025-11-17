@@ -227,6 +227,9 @@ class InterviewNoteProcessor:
         for i, match in enumerate(topic_matches):
             topic_name = match.group(1).strip()
 
+            if "expert insight" in topic_name.lower() or "understanding level" in topic_name.lower():
+                continue
+
             # Find the full section content
             start_pos = match.start()
             if i + 1 < len(topic_matches):
@@ -587,6 +590,28 @@ class InterviewNoteProcessor:
         # Write back to file
         with open(path, "w", encoding="utf-8") as f:
             f.write(updated_markdown)
+
+    def get_question_status(self, question_text: str, note_path: str) -> QuestionStatus | None:
+        path = Path(note_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Interview notes file not found: {note_path}")
+
+        # Load markdown content
+        with open(path, encoding="utf-8") as f:
+            markdown_content = f.read()
+
+        actual_question = self._find_question_in_content(markdown_content, question_text)
+        if not actual_question:
+            return None
+
+        topic_name, question_index = actual_question
+
+        # Find the question in the markdown content
+        note_data = self.markdown_to_json(markdown_content)
+        for topic in note_data.get("topics", []):
+            if topic.get("topic_name") == topic_name:
+                return topic.get("key_questions", [])[question_index].get("status", None)
+        return None
 
     def mark_question_as_asking(self, question_text: str, note_path: str) -> None:
         """

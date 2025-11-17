@@ -19,7 +19,7 @@ from dana.studio.api.services.knowledge_pack.interview_question_handler.tools im
     AskQuestionTool,
     AttemptCompletionTool,
 )
-from dana.studio.api.services.knowledge_pack.interview_question_handler.prompts import INTERVIEW_QUESTION_GENERATION_PROMPT
+from dana.studio.api.services.knowledge_pack.interview_question_handler.prompts import INTERVIEW_QUESTION_GENERATION_PROMPT_V2
 import re
 
 logger = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ class InterviewQuestionHandler(AbstractHandler):
             logger.warning(f"Could not read template content: {e}")
 
         # Build base system prompt
-        system_prompt = INTERVIEW_QUESTION_GENERATION_PROMPT.format(tools_str=tool_str, domain=self.domain, role=self.role)
+        system_prompt = INTERVIEW_QUESTION_GENERATION_PROMPT_V2.format(tools_str=tool_str, domain=self.domain, role=self.role)
 
         # Build messages array starting with system prompt
         messages = [{"role": "system", "content": system_prompt}]

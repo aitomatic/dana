@@ -110,8 +110,8 @@ export default function CaptureKnowledgePage() {
                 </TabsTrigger>
               </TabsList>
               
-              {/* Mark as Completed button - only show on Capture Template tab */}
-              {activeTab === 'template' && currentSession?.status !== SESSION_STATUS.COMPLETED && (
+              {/* Mark as Completed button - visible on all tabs */}
+              {currentSession?.status !== SESSION_STATUS.COMPLETED && (
                 <div className="px-6">
                   <Button
                     onClick={handleCompleteSession}
