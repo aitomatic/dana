@@ -1288,9 +1288,9 @@ async def session_chat(
                 conversation_stack = []
                 dq = deque(maxlen=10)
 
-                for i, message in enumerate(updated_conversation.messages[::-1]):
-                    if i > len(new_messages) and not len(dq):
-                        break
+                for _, message in enumerate(updated_conversation.messages[::-1]):
+                    # if i > len(new_messages) and not len(dq):
+                    #     break
                     if message.sender == "assistant":
                         if message.require_user:
                             conversation_stack.append(message)
