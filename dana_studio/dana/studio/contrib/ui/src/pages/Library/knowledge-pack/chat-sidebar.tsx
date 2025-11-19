@@ -661,15 +661,6 @@ const SmartAgentChat: React.FC<{
 
   return (
     <div className="flex overflow-y-auto flex-col h-full group">
-      {/* Knowledge Generation Banner */}
-      {isGeneratingKnowledge && (
-        <div className="flex gap-2 items-center px-3 py-2 bg-cyan-50 border-b border-cyan-200">
-          <span className="text-sm text-cyan-700">
-            Knowledge generation in progress... Chat is temporarily disabled.
-          </span>
-        </div>
-      )}
-
       {/* Generate Knowledge Button Section */}
       {!hasClickedGenerate && shouldShowGenerateButton && (
         <div className="px-3 py-4 bg-blue-50 border-b border-blue-200">
@@ -690,8 +681,8 @@ const SmartAgentChat: React.FC<{
         </div>
       )}
 
-      {/* Knowledge Generation Status - Only show when content is being generated */}
-      {isKnowledgeGenerating && (
+      {/* Knowledge Generation Status - Show when generation is in progress */}
+      {(isGeneratingKnowledge || isKnowledgeGenerating) && !isGenerationComplete && (
         <div className="px-3 py-4 bg-blue-50 border-b border-blue-200">
           <div className="flex flex-col gap-3">
             <div className="flex gap-2 items-center text-blue-700">
