@@ -254,28 +254,124 @@ const CaptureKnowledgeSessionChat: React.FC<{
   const [conversationLoaded, setConversationLoaded] = useState(false);
   const hasAnyMessagesRef = useRef(false); // Track if conversation has any messages at all
 
-  // Function to parse template topics from README content
-  const parseTemplateTopics = useCallback((readmeContent: string): string[] => {
-    if (!readmeContent) return [];
-    
-    // Extract topic names from markdown headers (### Topic Name format)
-    const topicRegex = /^### (.+)$/gm;
-    const topics: string[] = [];
-    let match;
-    
-    while ((match = topicRegex.exec(readmeContent)) !== null) {
-      const topicName = match[1].trim();
-      // Skip non-topic headers like "Interview Approach", "Topic Opening Questions", etc.
-      if (!topicName.toLowerCase().includes('approach') && 
-          !topicName.toLowerCase().includes('opening questions') &&
-          !topicName.toLowerCase().includes('relationship') &&
-          !topicName.toLowerCase().includes('framework')) {
-        topics.push(topicName);
+  // Progress API state management
+  const [progressData, setProgressData] = useState<{
+    topics: Array<{ topic_name: string }>;
+    overall_completeness: number;
+    current_topic: string | null;
+  } | null>(null);
+  const [progressLoading, setProgressLoading] = useState(false);
+  const [progressError, setProgressError] = useState<string | null>(null);
+
+  // Ref to store latest progress data for use in setTimeout callbacks (avoids stale closures)
+  const progressDataRef = useRef<{
+    topics: Array<{ topic_name: string }>;
+    overall_completeness: number;
+    current_topic: string | null;
+  } | null>(null);
+
+  // Update ref whenever progressData changes
+  useEffect(() => {
+    progressDataRef.current = progressData;
+  }, [progressData]);
+
+  // Function to fetch progress with retry logic
+  const fetchProgressWithRetry = useCallback(
+    async (
+      sessionId: number,
+      maxAttempts: number = 3,
+      initialDelay: number = 1000,
+    ): Promise<{
+      topics: Array<{ topic_name: string }>;
+      overall_completeness: number;
+      current_topic: string | null;
+    } | null> => {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          console.log(`🔄 Fetching progress (attempt ${attempt}/${maxAttempts}) for session ${sessionId}`);
+          const response = await apiService.getSessionProgress(sessionId);
+
+          if (response && response.success && response.data) {
+            const topics = response.data.topics || [];
+            
+            // If first attempt returns empty topics and session is new, wait longer before retry
+            if (attempt === 1 && topics.length === 0 && !hasAnyMessagesRef.current) {
+              console.log('⚠️ Empty topics on first attempt for new session, waiting longer...');
+              if (attempt < maxAttempts) {
+                const delay = initialDelay * Math.pow(2, attempt); // Exponential backoff: 2s, 4s
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                continue;
+              }
+            }
+
+            console.log(`✅ Progress fetched successfully: ${topics.length} topics found`);
+            return {
+              topics: topics,
+              overall_completeness: response.data.overall_completeness || 0,
+              current_topic: response.data.current_topic || null,
+            };
+          } else {
+            console.warn(`⚠️ Progress API returned unsuccessful response:`, response);
+            if (attempt < maxAttempts) {
+              const delay = initialDelay * Math.pow(1.5, attempt - 1); // Exponential backoff
+              console.log(`⏳ Retrying in ${delay}ms...`);
+              await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+          }
+        } catch (error: any) {
+          console.error(`❌ Progress fetch attempt ${attempt} failed:`, error);
+          if (attempt < maxAttempts) {
+            const delay = initialDelay * Math.pow(1.5, attempt - 1); // Exponential backoff
+            console.log(`⏳ Retrying in ${delay}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          } else {
+            console.error('❌ Progress fetch failed after all attempts');
+            throw error;
+          }
+        }
       }
-    }
+
+      // Maximum wait time exceeded, return null (welcome message will show message about topics on right side)
+      console.warn('⚠️ Progress fetch failed after all retries');
+      return null;
+    },
+    [],
+  );
+
+  // Function to extract topics from progress data
+  const extractTopicsFromProgress = useCallback(
+    (
+      progressData: {
+        topics: Array<{ topic_name: string }>;
+        overall_completeness: number;
+        current_topic: string | null;
+      } | null,
+    ): string[] => {
+      if (!progressData || !progressData.topics || !Array.isArray(progressData.topics)) {
+        return [];
+      }
+
+      return progressData.topics.map((topic) => topic.topic_name).filter((name) => name && name.trim());
+    },
+    [],
+  );
+
+  // Function to get topics for welcome message (only from progress API, no README fallback)
+  const getTopicsForWelcomeMessage = useCallback((): string[] => {
+    // Use ref to get latest progress data (avoids stale closure issues in setTimeout callbacks)
+    const currentProgressData = progressDataRef.current;
     
-    return topics;
-  }, []);
+    // Only use topics from progress data
+    const progressTopics = extractTopicsFromProgress(currentProgressData);
+    if (progressTopics.length > 0) {
+      console.log(`✅ Using ${progressTopics.length} topics from progress API`);
+      return progressTopics;
+    }
+
+    // No fallback - return empty array (will show message about topics on right side)
+    console.log('⚠️ No topics found from progress API');
+    return [];
+  }, [extractTopicsFromProgress]);
 
   // Function to show welcome message with typing effect
   const showWelcomeMessageWithTypingEffect = useCallback(() => {
@@ -298,9 +394,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
       // Get template information
       const templateName = contributionTemplate?.name || 'this template';
       const domain = contributionTemplate?.template_metadata?.domain || 'your expertise';
-      const topics = contributionTemplate?.readme_content 
-        ? parseTemplateTopics(contributionTemplate.readme_content)
-        : [];
+      const topics = getTopicsForWelcomeMessage();
 
       console.log('📝 Generating welcome message:', {
         templateName,
@@ -320,7 +414,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
         });
         welcomeText += `\nWhich topic area would you like to start with? `;
       } else {
-        welcomeText += `\n`;
+        welcomeText += `\nYou can see the topics we'll cover on the right side of the screen. `;
       }
       
       welcomeText += `Or feel free to share any knowledge that comes to mind — I'll guide the conversation from there.\n\n`;
@@ -345,7 +439,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
     // Store the timeout ID for cleanup purposes
     welcomeMessageTimeoutRef.current = timeoutId;
     return timeoutId;
-  }, [addMessage, contributionTemplate, parseTemplateTopics, setMessageButtonsActive, useSessionChatStore]);
+  }, [addMessage, contributionTemplate, getTopicsForWelcomeMessage, setMessageButtonsActive, useSessionChatStore]);
 
   // Load conversation when session opens
   useEffect(() => {
@@ -386,13 +480,75 @@ const CaptureKnowledgeSessionChat: React.FC<{
     loadConversationHistory();
   }, [sessionId, conversationLoaded, setMessages]);
 
+  // Fetch progress when session loads
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (!sessionId) return;
+
+      try {
+        setProgressLoading(true);
+        setProgressError(null);
+        const result = await fetchProgressWithRetry(sessionId);
+        if (result) {
+          setProgressData(result);
+          console.log(`✅ Progress loaded: ${result.topics.length} topics`);
+        } else {
+          setProgressData(null);
+          console.log('⚠️ Progress fetch returned null, will use README fallback');
+        }
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Failed to load progress';
+        console.error('❌ Failed to load progress:', errorMessage);
+        setProgressError(errorMessage);
+        setProgressData(null);
+        // Log error for debugging (using progressError state)
+        if (errorMessage) {
+          console.debug('Progress error state set:', errorMessage);
+        }
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+
+    loadProgress();
+  }, [sessionId, fetchProgressWithRetry]);
+
+  // Debug log progress errors
+  useEffect(() => {
+    if (progressError) {
+      console.debug('Progress error state:', progressError);
+    }
+  }, [progressError]);
+
   // Show welcome message when template becomes available and conversation has no messages at all
   useEffect(() => {
-    if (contributionTemplate && conversationLoaded && !hasAnyMessagesRef.current && !hasShownWelcomeMessageRef.current) {
+    // Don't show welcome message if conditions aren't met
+    if (!contributionTemplate || !conversationLoaded || hasAnyMessagesRef.current || hasShownWelcomeMessageRef.current) {
+      return;
+    }
+
+    // Set up timeout mechanism: if progress takes too long (>3 seconds), proceed with README fallback
+    const progressTimeout = setTimeout(() => {
+      if (!hasShownWelcomeMessageRef.current) {
+        console.log('⏰ Progress loading timeout, proceeding with welcome message (will use README fallback if needed)');
+        showWelcomeMessageWithTypingEffect();
+      }
+    }, 3000);
+
+    // If progress is not loading, we can show welcome message immediately
+    // (either progress loaded successfully, failed, or was never needed)
+    if (!progressLoading) {
+      clearTimeout(progressTimeout);
       console.log('🎉 Showing welcome message for truly new conversation:', contributionTemplate.name);
       showWelcomeMessageWithTypingEffect();
+      return;
     }
-  }, [contributionTemplate, conversationLoaded, showWelcomeMessageWithTypingEffect]);
+
+    // Cleanup timeout if component unmounts or dependencies change
+    return () => {
+      clearTimeout(progressTimeout);
+    };
+  }, [contributionTemplate, conversationLoaded, progressLoading, showWelcomeMessageWithTypingEffect]);
 
   // Cleanup welcome message timeout on unmount or session change
   useEffect(() => {
@@ -404,11 +560,15 @@ const CaptureKnowledgeSessionChat: React.FC<{
     };
   }, [sessionId]);
 
-  // Reset refs when session changes
+  // Reset refs and progress state when session changes
   useEffect(() => {
     hasShownWelcomeMessageRef.current = false;
     setConversationLoaded(false); // This will trigger reload
     hasAnyMessagesRef.current = false;
+    // Reset progress state
+    setProgressData(null);
+    setProgressLoading(false);
+    setProgressError(null);
   }, [sessionId]);
 
   // Auto-scroll to bottom when messages change

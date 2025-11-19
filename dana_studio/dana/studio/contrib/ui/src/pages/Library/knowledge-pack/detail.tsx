@@ -229,7 +229,6 @@ export default function KnowledgePackDetailPage() {
               className="gap-2"
             >
               <IconDownload className="w-4 h-4" />
-              Download Knows
             </Button>
             <Button
               variant="outline"

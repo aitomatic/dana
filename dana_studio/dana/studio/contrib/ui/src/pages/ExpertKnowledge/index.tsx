@@ -142,7 +142,6 @@ export default function CaptureKnowledgePage() {
                   size="sm"
                 >
                   <IconDownload className="w-4 h-4" />
-                  Download Notes
                 </Button>
                 {currentSession?.status !== SESSION_STATUS.COMPLETED && (
                   <Button
