@@ -5,8 +5,12 @@ Domain Knowledge routers - API endpoints for managing agent domain knowledge tre
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from pathlib import Path
+import tarfile
+import tempfile
 
 from dana.studio.api.core.database import get_db
 from dana.studio.api.core.schemas_v2 import (
@@ -29,6 +33,7 @@ from dana.studio.api.repositories import (
     get_domain_knowledge_repo,
     AbstractDomainKnowledgeRepo,
 )
+from dana.studio.api.repositories.config import KNOW_FOLDER_NAME
 from dana.studio.api.services.knowledge_pack.postprocess_interview_session.postprocessor import (
     generate_kp_analysis,
 )
@@ -300,3 +305,57 @@ async def get_interview_analysis(
     except Exception as e:
         logger.error(f"Error getting interview analysis: {e}", exc_info=True)
         return InterviewAnalysisGetResponse(success=False, message="Failed to retrieve interview analysis", error=str(e))
+
+
+@router.get("/{knowledge_id}/download-knows")
+async def download_knowledge_pack_knows(
+    knowledge_id: int,
+    repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+    db: Session = Depends(get_db),
+):
+    """
+    Download knowledge pack knows folder as tar.gz archive.
+    """
+    try:
+        # Get knowledge pack to verify it exists
+        kp = await repo.get_kp(kp_id=knowledge_id, db=db)
+        if not kp:
+            raise HTTPException(status_code=404, detail=f"Knowledge pack {knowledge_id} not found")
+
+        # Get knowledge pack folder path
+        kp_folder = repo.get_knowledge_pack_folder(knowledge_id)
+        if not kp_folder or not kp_folder.exists():
+            raise HTTPException(status_code=404, detail=f"Knowledge pack folder not found for KP {knowledge_id}")
+
+        # Locate knows folder
+        knows_dir = kp_folder / KNOW_FOLDER_NAME
+        if not knows_dir.exists():
+            raise HTTPException(status_code=404, detail=f"Knows folder not found for knowledge pack {knowledge_id}")
+
+        # Create temporary tar.gz file
+        temp_tar = tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False)
+        temp_tar.close()
+
+        # Create tar.gz archive
+        with tarfile.open(temp_tar.name, "w:gz") as tar:
+            # Add the knows directory to the archive
+            tar.add(knows_dir, arcname=KNOW_FOLDER_NAME)
+
+        # Read the tar.gz file into memory
+        with open(temp_tar.name, "rb") as f:
+            tar_content = f.read()
+
+        # Clean up temporary file
+        Path(temp_tar.name).unlink(missing_ok=True)
+
+        # Return streaming response
+        filename = f"kp_{knowledge_id}_knows.tar.gz"
+        return StreamingResponse(
+            iter([tar_content]), media_type="application/gzip", headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading knows folder for knowledge pack {knowledge_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to download knows folder: {str(e)}")

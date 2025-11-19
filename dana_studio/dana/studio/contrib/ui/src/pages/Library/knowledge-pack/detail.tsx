@@ -6,6 +6,7 @@ import DomainKnowledgeTree from './domain-tree';
 import { KnowledgePackChatSidebar } from './chat-sidebar';
 import { toast } from 'sonner';
 import { Eye, EyeClosed, GridPlus, Xmark } from 'iconoir-react';
+import { IconDownload } from '@tabler/icons-react';
 import { BookOpen, List, Files, FileText } from 'lucide-react';
 import { ContributionTemplatesTab } from './contribution-templates-tab';
 import { CaptureSummaryTab } from './capture-summary-tab';
@@ -129,6 +130,28 @@ export default function KnowledgePackDetailPage() {
     navigate(-1); // Go back to previous page
   };
 
+  const handleDownloadKnows = async () => {
+    if (!createdKnowledgePack?.id) return;
+    
+    try {
+      const blob = await apiService.downloadKnowledgePackKnows(createdKnowledgePack.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `kp_${createdKnowledgePack.id}_knows.tar.gz`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Knows folder downloaded successfully!');
+    } catch (error: any) {
+      console.error('Failed to download knows folder:', error);
+      toast.error('Failed to download knows folder', {
+        description: error?.message || 'Please try again.',
+      });
+    }
+  };
+
   if (isLoadingPack) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -198,8 +221,16 @@ export default function KnowledgePackDetailPage() {
             ))}
           </div>
           
-          {/* Assign to Agent Button */}
-          <div className="pr-4">
+          {/* Action Buttons */}
+          <div className="pr-4 flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleDownloadKnows}
+              className="gap-2"
+            >
+              <IconDownload className="w-4 h-4" />
+              Download Knows
+            </Button>
             <Button
               variant="outline"
               onClick={() => setShowAssignDialog(true)}

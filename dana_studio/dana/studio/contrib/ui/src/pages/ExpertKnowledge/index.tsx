@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCaptureKnowledgeStore } from '@/stores';
-import { IconLoader2, IconCheck } from '@tabler/icons-react';
+import { IconLoader2, IconCheck, IconDownload } from '@tabler/icons-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { SESSION_STATUS } from '@/lib/constants';
 import { ChatSidebar } from './chat-sidebar';
 import { SummaryPanel } from './summary-panel';
+import { apiService } from '@/lib/api';
 
 export default function CaptureKnowledgePage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -44,6 +45,28 @@ export default function CaptureKnowledgePage() {
       toast.success('Session marked as completed!');
     } catch (error) {
       console.error('Failed to complete session:', error);
+    }
+  };
+
+  const handleDownloadInterviewNote = async () => {
+    if (!currentSession) return;
+    
+    try {
+      const blob = await apiService.downloadInterviewNote(currentSession.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `interview_notes_session_${currentSession.id}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Interview notes downloaded successfully!');
+    } catch (error: any) {
+      console.error('Failed to download interview notes:', error);
+      toast.error('Failed to download interview notes', {
+        description: error?.message || 'Please try again.',
+      });
     }
   };
 
@@ -110,9 +133,18 @@ export default function CaptureKnowledgePage() {
                 </TabsTrigger>
               </TabsList>
               
-              {/* Mark as Completed button - visible on all tabs */}
-              {currentSession?.status !== SESSION_STATUS.COMPLETED && (
-                <div className="px-6">
+              {/* Action buttons - visible on all tabs */}
+              <div className="px-6 flex gap-2">
+                <Button
+                  onClick={handleDownloadInterviewNote}
+                  variant="outline"
+                  className="gap-2"
+                  size="sm"
+                >
+                  <IconDownload className="w-4 h-4" />
+                  Download Notes
+                </Button>
+                {currentSession?.status !== SESSION_STATUS.COMPLETED && (
                   <Button
                     onClick={handleCompleteSession}
                     variant="default"
@@ -122,8 +154,8 @@ export default function CaptureKnowledgePage() {
                     <IconCheck className="w-4 h-4" />
                     Mark as Completed
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
           <div className="flex-1 overflow-hidden">

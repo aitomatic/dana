@@ -65,7 +65,7 @@ def parse_interview_note(note_path: str) -> dict:
             topic_section = content[start_pos:end_pos]
 
             # Extract status
-            status_match = re.search(r"\*\*Status\*\*:\s*(.+?)(?:\n|$)", topic_section)
+            status_match = re.search(r"\*\*Status[\s*:]*(.+?)(?:\n|$)", topic_section)
             status = "not_started"
             if status_match:
                 status_text = status_match.group(1).strip().lower()
@@ -84,7 +84,7 @@ def parse_interview_note(note_path: str) -> dict:
 
             # Capture the entire Expert Insights section until the next ** header
             # This handles multi-line bullets, nested sub-bullets, and blank lines
-            insights_section_match = re.search(r"\*\*Expert Insights\*\*[:\s]*\n(.*?)(?=\n\*\*[A-Z]|\Z)", topic_section, re.DOTALL)
+            insights_section_match = re.search(r"\*\*Expert Insights[\s*:]*\n(.*?)(?=\n\*\*[A-Z]|\Z)", topic_section, re.DOTALL)
 
             if insights_section_match:
                 insights_text = insights_section_match.group(1).strip()
@@ -112,7 +112,7 @@ def parse_interview_note(note_path: str) -> dict:
 
             # Extract questions
             questions = []
-            questions_match = re.search(r"\*\*Key Questions\*\*:\s*(.+?)(?=\n\*\*|\Z)", topic_section, re.DOTALL)
+            questions_match = re.search(r"\*\*Key Questions[\s*:]*(.+?)(?=\n\*\*|\Z)", topic_section, re.DOTALL)
             if questions_match:
                 questions_text = questions_match.group(1).strip()
 

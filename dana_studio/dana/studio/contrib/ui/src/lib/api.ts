@@ -1328,6 +1328,17 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Download knowledge pack knows folder as tar.gz archive
+   * @param knowledgeId - Knowledge Pack ID
+   */
+  async downloadKnowledgePackKnows(knowledgeId: number): Promise<Blob> {
+    const response = await this.client.get(`/v2/knowledge/${knowledgeId}/download-knows`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
   async getInterviewAnalysis(knowledgeId: number): Promise<any> {
     const response = await this.client.get(`/v2/knowledge/${knowledgeId}/interview-analysis`);
     return response.data;
@@ -1679,6 +1690,17 @@ class ApiService {
     const response = await this.client.post(`/v2/knowledge/session/${sessionId}/chat`, {
       sender: 'user',
       content: message,
+    });
+    return response.data;
+  }
+
+  /**
+   * Download interview session notes as markdown file
+   * @param sessionId - Session ID
+   */
+  async downloadInterviewNote(sessionId: number): Promise<Blob> {
+    const response = await this.client.get(`/v2/knowledge/session/${sessionId}/download-interview-note`, {
+      responseType: 'blob',
     });
     return response.data;
   }
