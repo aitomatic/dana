@@ -439,41 +439,58 @@ async def legacy_chat(chat_history: list[MessageData]):
     return result
 
 
-# Mode detection prompt with conversational continuity
+# Mode detection prompt with conversational continuity and content state awareness
 MODE_DETECTION_PROMPT = """
 You are part of a system that helps users create and modify interview templates.
 
 CONTEXT:
-- Chat box on the left for discussion
-- Template on the right for viewing/editing
+- Chat box on the left for discussion and collaborative drafting
+- Template on the right for viewing/editing (the actual file)
+- Content in CHAT is DRAFT/WORK-IN-PROGRESS
+- Content in TEMPLATE is COMMITTED/SAVED
 
 MODES:
 1. CHAT mode: Collaborative drafting, brainstorming, refining ideas
    - User is exploring, asking questions, working on drafts
-   - Content is NOT yet applied to template
+   - Content is NOT yet applied to template (still in chat)
    - LLM provides suggestions, refinements, alternatives
+   - Modifications to recent chat content stay in CHAT
    
-2. EDITOR mode: Direct template modification
-   - User explicitly wants to apply/commit changes
-   - Changes are immediately written to template
+2. EDITOR mode: Direct template file modification
+   - User explicitly wants to apply/commit changes to the template FILE
+   - Changes are immediately written to the actual template
+   - Should only trigger when user clearly references the template itself
 
 CRITICAL DECISION LOGIC:
 
-Current workflow context matters:
-- If previous messages show collaborative drafting → Default to CHAT
-- If user says "yes/proceed" in response to a refinement offer → Stay in CHAT (continue refining)
-- If user says "yes/proceed" in response to "apply to template" → Switch to EDITOR
-- If previous mode was CHAT and message is ambiguous → Stay in CHAT for continuity
+**Content State Awareness (NEW - MOST IMPORTANT):**
+- If assistant just provided content in chat AND user wants to modify it → CHAT mode (refining draft)
+- If content is already in template AND user wants to modify it → EDITOR mode (editing file)
+- If unclear whether content is committed → Default to CHAT (safer)
 
-Explicit EDITOR signals (must be clear and direct):
+**Workflow Context:**
+- If previous messages show collaborative drafting → Default to CHAT
+- If user says "yes/proceed" in response to a refinement offer → Stay in CHAT
+- If user says "yes/proceed" in response to "should I apply to template?" → EDITOR
+- If previous mode was CHAT and message is ambiguous → Stay in CHAT
+
+**Modification Commands Context-Dependent:**
+- "Remove section 5" AFTER assistant provided content in chat → CHAT (refining draft)
+- "Remove section 5 from the template" → EDITOR (explicit template reference)
+- "Change question 3" without template reference AND still drafting → CHAT
+- "Change question 3 in the template" → EDITOR (explicit template reference)
+
+Explicit EDITOR signals (must reference template OR show intent to commit):
 - "add this to the template"
-- "apply these changes"
+- "apply these changes to the template"
 - "update the template with this"
 - "commit these questions"
 - "save to template"
 - "replace the template content"
 - "write this to the template"
 - "modify the template"
+- "update the actual template"
+- Direct modification commands AFTER user confirmed "apply to template"
 
 Explicit CHAT signals:
 - "let's refine these"
@@ -483,18 +500,24 @@ Explicit CHAT signals:
 - "help me improve..."
 - "show me alternatives"
 - "give me the refined version"
+- "review the template" (exploring, not modifying)
+- Modification requests on content just provided in chat
 
-AMBIGUOUS cases (default to CHAT to preserve continuity):
+AMBIGUOUS cases (default to CHAT to preserve continuity and prevent accidental template changes):
 - Simple affirmations: "yes", "ok", "proceed", "continue", "sure"
 - Follow-up questions: "what about...", "how can we..."
 - Requests for more: "give me more", "show me alternatives"
 - Vague references: "use that", "do it", "go ahead"
+- Modification commands without explicit template reference: "remove section 5", "change this", "add more detail"
+- First-time requests: "apply the steps and give me..." (likely wants to see it first, not commit)
 
 IMPORTANT: 
+- **CHAT is the safe default** - prevents accidental template overwrites
 - If the conversation shows ongoing collaborative work, prefer CHAT mode
-- Only switch to EDITOR when user EXPLICITLY asks to modify the template
+- Only switch to EDITOR when user EXPLICITLY asks to modify the template FILE
 - When in doubt about "yes/proceed" responses, stay in current mode (prefer CHAT)
 - Conversational continuity is key - abrupt mode switches break workflow
+- **If assistant just provided content, assume modifications are refining that content (CHAT)**
 
 <examples>
 Conversation:
@@ -514,9 +537,30 @@ User: "Add these to the template"
 Reasoning: "Add these to the template" is a clear signal to apply changes to the actual template.
 
 Conversation:
-User: "Change question 3 in the Safety topic to ask about PPE"
+User: "Review the template and apply the steps and give me the enhanced set of questions"
+Assistant: [provides enhanced questions in chat]
+User: "Remove section 5"
+→ Mode: CHAT
+Reasoning: Assistant just provided content in chat. User wants to refine the draft by removing section 5. No explicit "apply to template" signal. Still in collaborative drafting phase.
+
+Conversation:
+User: "Review the template and apply the steps and give me the enhanced set of questions"
+Assistant: [provides enhanced questions in chat]
+User: "Perfect! Remove section 5 and add this to the template"
 → Mode: EDITOR
-Reasoning: User wants immediate template edit, not collaborative drafting.
+Reasoning: User explicitly says "add this to the template", indicating they want to commit the changes.
+
+Conversation:
+User: "Change question 3 in the Safety topic to ask about PPE"
+Previous mode: No previous chat context (first message)
+→ Mode: EDITOR
+Reasoning: User wants immediate template edit with specific location reference, not collaborative drafting.
+
+Conversation:
+User: "Change question 3 to ask about PPE"
+Previous mode: CHAT (just provided draft questions)
+→ Mode: CHAT
+Reasoning: Still refining the draft that was just provided. No explicit template reference.
 
 Conversation:
 Previous mode: CHAT
@@ -528,11 +572,24 @@ Conversation:
 User: "What documents are available?"
 → Mode: CHAT
 Reasoning: User wants to explore documents, not modify template.
+
+Conversation:
+User: "Update section 2 with the refined questions"
+Assistant: [provides refined section 2 in chat]
+User: "Good, now save it"
+→ Mode: EDITOR
+Reasoning: "Save it" after refinement indicates user wants to commit to template.
+
+Conversation:
+Assistant: "Here are the revised questions. Would you like me to apply these to the template?"
+User: "Yes"
+→ Mode: EDITOR
+Reasoning: User affirming explicit question about applying to template.
 </examples>
 
 Respond with JSON:
 {
-    "reasoning": "Brief explanation considering workflow context, continuity, and signal strength",
+    "reasoning": "Brief explanation considering: 1) Was content just provided in chat? 2) Is this refining a draft or modifying the template file? 3) Are there explicit template references? 4) Workflow continuity",
     "mode": "editor" | "chat"
 }
 """
