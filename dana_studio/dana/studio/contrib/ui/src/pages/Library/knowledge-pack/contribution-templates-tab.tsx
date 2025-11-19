@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useKnowledgePackStore } from '@/stores';
 import { useContributionStore } from '@/stores/contribution-store';
@@ -9,7 +9,10 @@ import { getContributionTemplateColumns } from '@/components/library/contributio
 import { DeleteTemplateDialog } from '@/components/library/delete-template-dialog';
 import { PasteClipboard, Plus } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
-import { KNOWLEDGE_GENERATION_STATUS } from '@/lib/constants';
+import { KNOWLEDGE_GENERATION_STATUS, TEMPLATE_GENERATION_STATUS } from '@/lib/constants';
+
+// Polling interval constant (10 seconds)
+const POLLING_INTERVAL = 10000;
 
 interface ContributionTemplatesTabProps {
   knowledgePackId: number;
@@ -34,7 +37,7 @@ interface ExtendedLibraryItem {
 
 export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
   const navigate = useNavigate();
-  const { createdKnowledgePack } = useKnowledgePackStore();
+  const { createdKnowledgePack, setCreatedKnowledgePack } = useKnowledgePackStore();
   const { createTemplate } = useContributionStore();
   const [capturingKnowledge, setCapturingKnowledge] = useState<Set<number>>(new Set());
   
@@ -53,6 +56,78 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
   
   // Track deleted items to filter them out from display
   const [deletedItemIds, setDeletedItemIds] = useState<Set<number>>(new Set());
+  
+  // Polling state for knowledge pack status
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Find master template from templates array
+  const masterTemplate = templates.find((t: any) => t.is_master === true);
+  const masterTemplateStatus = masterTemplate?.template_metadata?.status;
+
+  // Function to refresh knowledge pack status from API
+  const refreshKnowledgePackStatus = useCallback(async (): Promise<{ kpStatus: string | null; masterTemplateStatus: string | null }> => {
+    if (!createdKnowledgePack?.id) {
+      return { kpStatus: null, masterTemplateStatus: null };
+    }
+
+    let masterTemplateStatus: string | null = null;
+
+    try {
+      const response = await apiService.getKnowledgePack(createdKnowledgePack.id);
+      if (response.success && response.data) {
+        // Update the knowledge pack in store with fresh status
+        const updatedPack = {
+          ...createdKnowledgePack,
+          status: response.data.status,
+          generation_task_id: response.data.generation_task_id,
+          kp_metadata: response.data.kp_metadata,
+          folder_path: response.data.folder_path,
+          interview_templates: response.data.interview_templates || [],
+        };
+        setCreatedKnowledgePack(updatedPack);
+        console.log('✅ Knowledge pack status refreshed:', response.data.status);
+        
+        // Also refresh templates to get latest master template status
+        try {
+          const templatesResponse = await apiService.listInterviewTemplates(createdKnowledgePack.id);
+          if (templatesResponse.success && templatesResponse.data) {
+            const templatesWithSessions = await Promise.all(
+              templatesResponse.data.map(async (template: any) => {
+                try {
+                  const sessionsResponse = await apiService.listInterviewSessions(
+                    template.id,
+                    0,
+                    100,
+                  );
+                  return {
+                    ...template,
+                    interview_sessions: sessionsResponse.data || [],
+                  };
+                } catch (error) {
+                  console.error(`Failed to fetch sessions for template ${template.id}:`, error);
+                  return {
+                    ...template,
+                    interview_sessions: [],
+                  };
+                }
+              }),
+            );
+            setTemplates(templatesWithSessions);
+            const refreshedMasterTemplate = templatesWithSessions.find((t: any) => t.is_master);
+            masterTemplateStatus = refreshedMasterTemplate?.template_metadata?.status || null;
+            console.log('✅ Templates refreshed, master template status:', masterTemplateStatus);
+          }
+        } catch (error) {
+          console.error('Failed to refresh templates:', error);
+        }
+        
+        return { kpStatus: response.data.status, masterTemplateStatus };
+      }
+    } catch (error) {
+      console.error('Failed to refresh knowledge pack status:', error);
+    }
+    return { kpStatus: null, masterTemplateStatus: null };
+  }, [createdKnowledgePack, setCreatedKnowledgePack]);
 
   // Fetch templates when component mounts or knowledge pack changes
   useEffect(() => {
@@ -157,6 +232,66 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [createdKnowledgePack?.id]);
+
+  // Polling effect: Start/stop polling based on knowledge pack status
+  useEffect(() => {
+    // Cleanup function to stop polling
+    const stopPolling = () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        console.log('🛑 Stopped polling knowledge pack status');
+      }
+    };
+
+    // Check if we should start polling
+    const shouldPoll =
+      createdKnowledgePack?.id &&
+      (createdKnowledgePack.status === KNOWLEDGE_GENERATION_STATUS.GENERATING ||
+        createdKnowledgePack.generation_task_id != null ||
+        masterTemplateStatus === TEMPLATE_GENERATION_STATUS.GENERATING ||
+        masterTemplateStatus === TEMPLATE_GENERATION_STATUS.PENDING);
+
+    // Check if we should stop polling (status is completed or failed)
+    const shouldStop =
+      createdKnowledgePack?.status === KNOWLEDGE_GENERATION_STATUS.COMPLETED ||
+      createdKnowledgePack?.status === KNOWLEDGE_GENERATION_STATUS.FAILED ||
+      masterTemplateStatus === TEMPLATE_GENERATION_STATUS.COMPLETED ||
+      masterTemplateStatus === TEMPLATE_GENERATION_STATUS.FAILED;
+
+    if (shouldStop) {
+      // Stop polling if status is completed or failed
+      stopPolling();
+      return;
+    }
+
+    if (shouldPoll && !pollingIntervalRef.current) {
+      // Start polling
+      console.log('🔄 Starting polling for knowledge pack status');
+      const interval = setInterval(async () => {
+        const { kpStatus, masterTemplateStatus: refreshedMasterStatus } = await refreshKnowledgePackStatus();
+        
+        // Stop polling if knowledge pack status or master template status changed to completed or failed
+        if (
+          kpStatus === KNOWLEDGE_GENERATION_STATUS.COMPLETED ||
+          kpStatus === KNOWLEDGE_GENERATION_STATUS.FAILED ||
+          refreshedMasterStatus === TEMPLATE_GENERATION_STATUS.COMPLETED ||
+          refreshedMasterStatus === TEMPLATE_GENERATION_STATUS.FAILED
+        ) {
+          stopPolling();
+        }
+      }, POLLING_INTERVAL);
+      pollingIntervalRef.current = interval;
+    } else if (!shouldPoll && pollingIntervalRef.current) {
+      // Stop polling if conditions no longer met
+      stopPolling();
+    }
+
+    // Cleanup on unmount or when knowledge pack changes
+    return () => {
+      stopPolling();
+    };
+  }, [createdKnowledgePack?.id, createdKnowledgePack?.status, createdKnowledgePack?.generation_task_id, masterTemplateStatus, refreshKnowledgePackStatus]);
 
   // Templates are now managed by local state
 
@@ -289,10 +424,14 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
       return;
     }
 
-    // Check if KP is completed
-    if (createdKnowledgePack.status !== KNOWLEDGE_GENERATION_STATUS.COMPLETED) {
+    // Check if KP or master template is completed
+    const isCompleted = 
+      masterTemplateStatus === TEMPLATE_GENERATION_STATUS.COMPLETED ||
+      createdKnowledgePack.status === KNOWLEDGE_GENERATION_STATUS.COMPLETED;
+    
+    if (!isCompleted) {
       toast.error(
-        'Only completed Knowledge Packs can be used to create templates. Please generate knowledge first.',
+        'Only completed Knowledge Packs or master templates can be used to create templates. Please generate knowledge first.',
       );
       return;
     }
@@ -407,7 +546,12 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
           </div>
           <Button
             onClick={handleAddCaptureTemplate}
-            disabled={createdKnowledgePack?.status !== KNOWLEDGE_GENERATION_STATUS.COMPLETED}
+            disabled={
+              !(
+                masterTemplateStatus === TEMPLATE_GENERATION_STATUS.COMPLETED ||
+                createdKnowledgePack?.status === KNOWLEDGE_GENERATION_STATUS.COMPLETED
+              )
+            }
             className="gap-2"
             
           >

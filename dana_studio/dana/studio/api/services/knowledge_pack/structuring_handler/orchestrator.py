@@ -325,6 +325,8 @@ class KPStructuringOrchestrator(AbstractHandler):
 
             if result.require_user:
                 role = SenderRole.ASSISTANT  # Assistant will ask for user input
+            elif tool_name == "explore_knowledge":
+                role = SenderRole.ASSISTANT  # Assistant will show explore knowledge result
             else:
                 role = SenderRole.USER  # User will provide tool result
             message_data = HandlerMessage(role=role, content=content, require_user=result.require_user, treat_as_tool=True)

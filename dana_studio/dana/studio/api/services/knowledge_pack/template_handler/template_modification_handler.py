@@ -85,7 +85,25 @@ class TemplateModificationHandler(AbstractHandler):
         conversation = request.chat_history
 
         if len(conversation) >= 10:  # FOR NOW, ONLY USE LAST 10 MESSAGES
-            conversation = [conversation[0]] + conversation[-10:]
+            conversation = conversation[-10:]
+
+        # Check if view_template was already called
+        has_view_template = any("<view_template>" in msg.content for msg in conversation)
+
+        if not has_view_template:
+            # Execute view_template tool with default parameters (view all)
+            tool_msg = await self._execute_tool(tool_name="view_template", params={"section": "all"}, thinking_content="")
+
+            # Create assistant message with tool call XML
+            thinking_msg = MessageData(
+                role=SenderRole.ASSISTANT,
+                content="<thinking>Starting template modification. First, I need to view the current template to understand its structure and content.</thinking>\n\n<view_template>\n  <section>all</section>\n</view_template>",
+                treat_as_tool=True,
+            )
+
+            # Append at the end of conversation
+            conversation.append(thinking_msg)
+            conversation.append(tool_msg)
 
         # Track if template was modified
         template_modified = False
@@ -214,6 +232,8 @@ class TemplateModificationHandler(AbstractHandler):
 
             if result.require_user:
                 role = SenderRole.ASSISTANT  # Assistant will ask for user input
+            elif tool_name == "view_template":
+                role = SenderRole.ASSISTANT  # Assistant will show template content
             else:
                 role = SenderRole.USER  # User will provide tool result
 
