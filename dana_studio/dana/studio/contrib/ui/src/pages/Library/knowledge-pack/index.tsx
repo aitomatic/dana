@@ -174,7 +174,7 @@ export function KnowledgePackDialog() {
             <Textarea
               value={textareaContent}
               onChange={handleTextareaChange}
-              placeholder="Provide a job description, CV, or any document describing the knowledge pack you want to create."
+              placeholder="Describe the expertise you want to capture, or upload a job description/CV. We'll automatically extract the domain, role, and tasks to build a targeted knowledge pack."
               className="pb-16 h-full text-sm leading-relaxed bg-gray-50 resize-none dark:bg-surface dark:text-white dark:border-primary"
               disabled={isParsingDocument || isCreatingPack}
             />
