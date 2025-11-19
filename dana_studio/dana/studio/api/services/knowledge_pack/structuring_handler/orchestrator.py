@@ -183,6 +183,23 @@ class KPStructuringOrchestrator(AbstractHandler):
         if len(conversation) >= 10:  # FOR NOW, ONLY USE LAST 10 MESSAGES
             conversation = conversation[-10:]
 
+        # Check if explore_knowledge was already called
+        has_explore_knowledge = any("<explore_knowledge>" in msg.content for msg in conversation)
+
+        if not has_explore_knowledge:
+            # Execute explore_knowledge tool with default parameters
+            tool_msg = await self._execute_tool(tool_name="explore_knowledge", params={}, thinking_content="")
+
+            # Create user message with tool call XML
+            thinking_msg = HandlerMessage(
+                sender=SenderRole.ASSISTANT,
+                content="<thinking>Starting knowledge pack structuring. First, I need to explore the current knowledge tree to understand what already exists.</thinking>\n\n<explore_knowledge></explore_knowledge>",
+                treat_as_tool=True,
+            )
+            first_part = conversation[:-2]
+            second_part = conversation[-2:]
+            conversation = first_part + [thinking_msg] + [tool_msg] + second_part
+
         # Track if tree was modified
         tree_modified = False
 
