@@ -7,6 +7,7 @@ This component provides functionality for:
 """
 
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 
 if TYPE_CHECKING:
@@ -32,13 +33,18 @@ class Communicator:
     # INTERACTIVE CONVERSATION INTERFACE
     # ============================================================================
 
-    def converse(self, initial_message: str | None = None) -> None:
+    def converse(self, initial_message: str | None = None, session_id: str | None = None) -> None:
         """
         Interactive conversation loop with a human user.
 
         Args:
             initial_message: Optional initial message to start the conversation
+            session_id: Optional session identifier. If None, generates UUID.
         """
+        # Generate session_id if not provided
+        if session_id is None:
+            session_id = str(uuid4())
+
         agent_type = self._agent.agent_type
         print(f"\n=== {agent_type.upper()} AGENT CONVERSATION ===")
         print("Type '/quit', '/exit', or '/bye' to end the conversation")
@@ -57,6 +63,12 @@ class Communicator:
                     first_iteration = False
                 else:
                     user_input = input("\nYou: ").strip()
+                    # Save events if EventLog exists
+                    if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
+                        self._agent._event_log.save(session_id)
+                    # Save timeline (agent, codec, storage_config already set in __init__)
+                    if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+                        self._agent._timeline.save(session_id)
 
                 # Check for exit commands
                 if user_input.lower() in ["/quit", "/exit", "/bye", "/q"]:
@@ -148,7 +160,7 @@ class Communicator:
 
                     # Send message to target agent
                     print(f"\nSending to {target_agent.agent_type}: ", end="", flush=True)
-                    traces = target_agent.query(message=message)
+                    traces = target_agent.query(message=message, session_id=session_id)
                     response = traces.get("response", "No response generated")
                     print(response)
                     continue
@@ -176,16 +188,35 @@ class Communicator:
 
                 # Process the message through the agent
                 print("\nAgent: ", end="", flush=True)
-                traces = self._agent.query(message=user_input)
+                traces = self._agent.query(message=user_input, session_id=session_id)
                 response = traces.get("response", "No response generated")
                 print(response)
 
             except KeyboardInterrupt:
                 print("\n\nAgent: Conversation interrupted. Goodbye!")
+                # Save events if EventLog exists
+                if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
+                    self._agent._event_log.save(session_id)
+                # Save timeline (agent, codec, storage_config already set in __init__)
+                if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+                    self._agent._timeline.save(session_id)
                 break
             except EOFError:
                 print("\n\nAgent: Input ended. Goodbye!")
+                # Save events if EventLog exists
+                if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
+                    self._agent._event_log.save(session_id)
+                # Save timeline (agent, codec, storage_config already set in __init__)
+                if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+                    self._agent._timeline.save(session_id)
                 break
             except Exception as e:
                 print(f"\nError: {e}")
                 print("Type '/help' for available commands or '/quit' to exit")
+        
+        # Save events if EventLog exists
+        if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
+            self._agent._event_log.save(session_id)
+        # Save timeline (agent, codec, storage_config already set in __init__)
+        if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+            self._agent._timeline.save(session_id)

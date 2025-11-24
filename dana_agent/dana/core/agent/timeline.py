@@ -5,12 +5,23 @@ This module provides a unified, chronological record of all agent interactions
 with efficient context management to prevent context window explosion.
 """
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Final
+from typing import TYPE_CHECKING, Any, Final
+
+from structlog import get_logger
 
 from dana.common.llm.types import LLMMessage
+from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory, RepositoryType
+
+
+if TYPE_CHECKING:
+    from dana.core.agent.base_agent import BaseAgent
+    from dana.core.knowledge.prompts.codecs import AbstractCodec
+
+logger = get_logger()
 
 
 class TimelineEntryType(Enum):
@@ -18,6 +29,7 @@ class TimelineEntryType(Enum):
     AGENT_RESPONSE = "agent_response"
     AGENT_THOUGHTS = "agent_thoughts"
     TOOL_CALL = "tool_call"
+    FAILED_TOOL_CALL = "failed_tool_call"
     SUB_AGENT_RESPONSE = "sub_agent_response"
     RESOURCE_RESULT = "resource_result"
     WORKFLOW_RESULT = "workflow_result"
@@ -137,6 +149,54 @@ class TimelineEntry:
         return self.entry_type == TimelineEntryType.RESOURCE_RESULT
 
 
+def _sanitize_for_json(obj: Any) -> Any:
+    """
+    Recursively sanitize objects to make them JSON serializable.
+
+    Converts non-serializable objects (like ReadFileResource) to serializable representations.
+
+    Args:
+        obj: Object to sanitize
+
+    Returns:
+        JSON-serializable representation of the object
+    """
+    if obj is None:
+        return None
+    elif isinstance(obj, (str, int, float, bool)):
+        return obj
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {key: _sanitize_for_json(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_sanitize_for_json(item) for item in obj]
+    elif isinstance(obj, Enum):
+        return obj.value
+    elif hasattr(obj, "__dict__"):
+        # For objects with __dict__, convert to a dict representation
+        # Include class name and object id if available
+        result = {
+            "__class__": obj.__class__.__name__,
+            "__module__": getattr(obj.__class__, "__module__", "unknown"),
+        }
+        # Try to get object_id if it exists
+        if hasattr(obj, "object_id"):
+            result["object_id"] = obj.object_id
+        # Try to get a string representation
+        try:
+            result["__repr__"] = repr(obj)
+        except Exception:
+            result["__repr__"] = f"<{obj.__class__.__name__} object>"
+        return result
+    else:
+        # Fallback: convert to string representation
+        try:
+            return str(obj)
+        except Exception:
+            return f"<{type(obj).__name__} object>"
+
+
 class Timeline:
     """
     Manages the timeline for an agent, handling context building and token management.
@@ -145,15 +205,36 @@ class Timeline:
     with efficient context management to prevent context window explosion.
     """
 
-    def __init__(self, max_context_tokens: int = 4000):
+    def __init__(
+        self,
+        max_context_tokens: int = 4000,
+        agent: "BaseAgent | None" = None,
+        repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
+    ):
         """
         Initialize the Timeline.
 
         Args:
             max_context_tokens: Maximum number of tokens to include in context
+            agent: Agent instance (can be None, for backward compatibility)
+            codec: Codec class for path structure (can be None, for backward compatibility)
+            repository_factory: Repository factory to create the repository
         """
-        self.timeline: list[TimelineEntry] = []
         self.max_context_tokens = max_context_tokens
+        self._agent = agent
+        self.timeline: list[TimelineEntry] = []
+        
+        # Create repository via factory
+        self._repository = repository_factory.create(RepositoryType.TIMELINE, agent=agent)
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the timeline.
+
+        Returns:
+            String representation of the timeline
+        """
+        return f"Timeline(max_context_tokens={self.max_context_tokens}, timeline={self.timeline[-10:]})"
 
     def add_entry(self, entry: TimelineEntry) -> None:
         """
@@ -390,3 +471,53 @@ class Timeline:
         for entry in self.timeline:
             counts[entry.entry_type] = counts.get(entry.entry_type, 0) + 1
         return counts
+
+    def save(self, session_id: str) -> None:
+        """
+        Save timeline for a session.
+
+        Args:
+            session_id: Session identifier
+        """
+        if self._repository is None:
+            raise ValueError("Cannot save timeline: repository is None. Initialize Timeline with repository or agent.")
+
+        self._repository.save(session_id, self.timeline)
+        logger.info(f"Saved timeline with {len(self.timeline)} entries for session {session_id}")
+
+    def read_since(self, checkpoint: int) -> Iterator[TimelineEntry]:
+        """
+        Read timeline entries since checkpoint for the current session.
+
+        Args:
+            checkpoint: Starting index for reading entries.
+                Negative values are supported (e.g., -10 means "last 10 entries").
+                -1 means "last entry only", -2 means "last 2 entries", etc.
+
+        Yields:
+            TimelineEntry objects since checkpoint
+        """
+        if self._repository is None:
+            raise ValueError("Cannot read timeline: repository is None. Initialize Timeline with repository or agent.")
+
+        if self._agent is None:
+            raise ValueError("Cannot read timeline: agent is None. Session ID cannot be extracted.")
+
+        # Extract session_id from agent
+        session_id = getattr(self._agent, "_session_id", None)
+        if session_id is None:
+            raise ValueError("Cannot read timeline: agent has no _session_id. Set session_id on agent first.")
+
+        # Collect all entries from the session
+        all_entries = list(self._repository.read_session_entries(session_id))
+
+        # Convert negative checkpoint to positive index
+        if checkpoint < 0:
+            total_count = len(all_entries)
+            # Convert negative index: -1 = last entry, -2 = second to last, etc.
+            # Similar to Python list slicing: checkpoint = total_count + checkpoint
+            checkpoint = max(0, total_count + checkpoint)
+
+        # Yield entries from checkpoint onwards
+        for i in range(checkpoint, len(all_entries)):
+            yield all_entries[i]
