@@ -23,6 +23,9 @@ class GoogleSearchConfig:
     api_key: str
     cse_id: str
 
+    # API endpoint
+    base_url: str
+
     # Search settings
     max_results: int = 10
     timeout_seconds: int = 30
@@ -97,6 +100,7 @@ def load_google_config() -> GoogleSearchConfig:
     """
     api_key = os.getenv("GOOGLE_SEARCH_API_KEY")
     cse_id = os.getenv("GOOGLE_SEARCH_CX")
+    base_url = os.getenv("GOOGLE_SEARCH_BASE_URL")
 
     if not api_key:
         raise ConfigurationError("GOOGLE_SEARCH_API_KEY environment variable is required")
@@ -104,10 +108,14 @@ def load_google_config() -> GoogleSearchConfig:
     if not cse_id:
         raise ConfigurationError("GOOGLE_SEARCH_CX environment variable is required")
 
+    if not base_url:
+        raise ConfigurationError("GOOGLE_SEARCH_BASE_URL environment variable is required")
+
     # Optional configuration with defaults
     config = GoogleSearchConfig(
         api_key=api_key,
         cse_id=cse_id,
+        base_url=base_url,
         max_results=int(os.getenv("GOOGLE_SEARCH_MAX_RESULTS", "10")),
         timeout_seconds=int(os.getenv("GOOGLE_SEARCH_TIMEOUT", "30")),
         enable_content_extraction=os.getenv("ENABLE_CONTENT_EXTRACTION", "true").lower() == "true",
