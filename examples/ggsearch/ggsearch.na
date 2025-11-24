@@ -3,7 +3,7 @@ from time.py import time
 def __main__() -> str:
     start_time = time()
     query = "HS-Code for following product Manufacturer PANDUIT, part number CDPP8RG-S, description INDUSTRIALNET, 8-PORT DIN RAIL"
-    query = "what is capital of France?"
+    # query = "what is capital of France?"
     search_depth = "basic"
     # sites = ["site:volza.com", "site:zauba.com", "site:mouser.com"]
     domain = ""

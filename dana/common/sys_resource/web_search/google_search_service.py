@@ -105,7 +105,7 @@ class GoogleSearchService(SearchService):
         """
         logger.info(f"🔍 Executing Google Custom Search: {optimized_query}")
         google_results = await self.search_engine.search(optimized_query, max_results=self.config.max_results)
-        logger.info(f"🔍 Google Search Results: {google_results}")
+        # logger.info(f"🔍 Google Search Results: {google_results}")
 
         if not google_results:
             raise GoogleSearchError("No results from Google Custom Search")
