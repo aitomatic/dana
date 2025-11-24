@@ -479,152 +479,6 @@ async def interview_session_websocket(session_id: int, websocket: WebSocket):
     await kp_interview_session_ws_notifier.run_ws_loop_forever(websocket, str(session_id))
 
 
-def _read_note_file(session_dir: str) -> str:
-    """Read current interview note content"""
-    note_path = Path(session_dir) / "interview_notes.md"
-    if note_path.exists():
-        try:
-            with open(note_path, encoding="utf-8") as f:
-                return f.read()
-        except Exception as e:
-            logger.warning(f"Failed to read note file: {e}")
-            return ""
-    return ""
-
-
-async def _classify_user_intent(
-    user_message: str,
-    conversation_history: list,
-    llm,
-) -> dict:
-    """
-    Use LLM to classify user message intent.
-    Returns: {
-        "is_meta_question": bool,
-        "is_information_sharing": bool,
-        "intent": str,  # "meta_question" | "information_sharing" | "clarification"
-        "confidence": float
-    }
-    """
-    from dana.lang.common.types import BaseRequest
-    from dana.lang.common.utils.misc import Misc
-
-    # Build conversation context (last 5 messages)
-    recent_history = conversation_history[-5:] if len(conversation_history) > 5 else conversation_history
-    history_text = "\n".join([f"{msg.role}: {msg.content}" for msg in recent_history])
-
-    prompt = f"""Classify the user's message intent in an interview context.
-
-CONVERSATION HISTORY:
-{history_text}
-
-USER MESSAGE: {user_message}
-
-Classify the user's intent into one of these categories:
-1. **information_sharing**: User is sharing expertise, knowledge, experience, or answering questions about their domain
-2. **meta_question**: User is asking about the interview process, progress, or how things work (e.g., "where are we?", "what's our progress?", "how does this work?")
-3. **clarification**: User is asking for clarification about something previously discussed (e.g., "what do you mean by X?", "can you explain Y?")
-
-Respond in JSON format:
-{{
-    "intent": "information_sharing" | "meta_question" | "clarification",
-    "is_meta_question": boolean,
-    "is_information_sharing": boolean,
-    "confidence": float (0.0-1.0),
-    "reasoning": "brief explanation"
-}}"""
-
-    llm_request = BaseRequest(
-        arguments={
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are an expert at classifying user intent in interview conversations. Respond only with valid JSON.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.1,
-            "max_tokens": 200,
-        }
-    )
-
-    try:
-        response = await llm.query(llm_request)
-        content = Misc.get_response_content(response).strip()
-
-        # Parse JSON response (remove markdown code blocks if present)
-        if content.startswith("```"):
-            parts = content.split("```")
-            if len(parts) > 1:
-                content = parts[1]
-                if content.startswith("json"):
-                    content = content[4:]
-        content = content.strip()
-
-        result = json.loads(content)
-        return {
-            "is_meta_question": result.get("is_meta_question", False),
-            "is_information_sharing": result.get("is_information_sharing", False),
-            "intent": result.get("intent", "information_sharing"),
-            "confidence": result.get("confidence", 0.5),
-            "reasoning": result.get("reasoning", ""),
-        }
-    except Exception as e:
-        logger.warning(f"LLM intent classification failed: {e}, defaulting to information_sharing")
-        # Default to information_sharing if classification fails
-        return {
-            "is_meta_question": False,
-            "is_information_sharing": True,
-            "intent": "information_sharing",
-            "confidence": 0.5,
-            "reasoning": "Classification failed, defaulting to information_sharing",
-        }
-
-
-async def _capture_notes_background(
-    note_handler,
-    request,
-    current_note_content: str,
-    session_id: int,
-    session_dir: str,
-):
-    """Background task for note capture with WebSocket notification"""
-    from dana.studio.api.routers.v2.ws.domain_knowledge_ws import kp_interview_session_ws_notifier
-
-    try:
-        result = await note_handler.handle(request, current_note_content=current_note_content)
-
-        # Notify FE via WebSocket
-        await kp_interview_session_ws_notifier.send_update_msg(
-            websocket_id=str(session_id),
-            message=json.dumps(
-                {
-                    "type": KPConversationType.INTERVIEW_SESSION.value,
-                    "message": {
-                        "tool_name": "note_capture",
-                        "status": "finish",
-                        "note_updated": result.get("note_updated", False),
-                        "content": "Interview notes updated successfully",
-                    },
-                    "timestamp": datetime.now().timestamp(),
-                }
-            ),
-        )
-    except Exception as e:
-        logger.error(f"Background note capture failed: {e}")
-        # Notify FE of error
-        await kp_interview_session_ws_notifier.send_update_msg(
-            websocket_id=str(session_id),
-            message=json.dumps(
-                {
-                    "type": KPConversationType.INTERVIEW_SESSION.value,
-                    "message": {"tool_name": "note_capture", "status": "error", "error": str(e)},
-                    "timestamp": datetime.now().timestamp(),
-                }
-            ),
-        )
-
-
 def _extract_question_info(message_content: str) -> dict[str, str] | None:
     """
     Extract question text and category from ask_question tool result.
@@ -680,58 +534,6 @@ def _find_relevant_messages(conversation_messages: list):
     if index is not None:
         return conversation_messages[index:]
     return conversation_messages
-
-
-def _find_last_interview_note_question_message(conversation_messages: list):
-    """
-    Find the last interview_note question message in conversation.
-
-    Args:
-        conversation_messages: List of conversation message objects
-
-    Returns:
-        The last interview_note question message object, or None if not found
-    """
-    for msg in reversed(conversation_messages):
-        if msg.sender == "assistant" and msg.require_user:
-            question_info = _extract_question_info(msg.content)
-            if question_info and question_info.get("category") == "interview_note":
-                return msg
-    return None
-
-
-def _has_more_questions(note_path: str) -> bool:
-    """
-    Check if there are more questions with not_asked status remaining.
-
-    Args:
-        note_path: Path to the interview_notes.md file
-
-    Returns:
-        True if there are more questions with not_asked status, False otherwise
-    """
-    try:
-        processor = InterviewNoteProcessor()
-        json_data = processor.from_file(note_path)
-
-        # Check all topics for questions with not_asked status
-        for topic in json_data.get("topics", []):
-            questions = topic.get("key_questions", [])
-            for question in questions:
-                if isinstance(question, dict):
-                    status = question.get("status", QuestionStatus.NOT_ASKED.value)
-                    if status == QuestionStatus.NOT_ASKED.value:
-                        return True
-                else:
-                    # String format question (backward compatibility) - treat as not_asked
-                    if question.strip():
-                        return True
-
-        return False
-    except Exception as e:
-        logger.warning(f"Failed to check remaining questions: {e}")
-        # On error, assume there might be more questions to be safe
-        return True
 
 
 def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgressData, note_path: str) -> InterviewProgressData:
@@ -1264,6 +1066,7 @@ async def session_chat(
             if last_interview_note_msg and last_interview_note_msg.metadata:
                 document_answer = last_interview_note_msg.metadata.get("document_answer")
                 if document_answer:
+                    document_answer = f"Question being asked: \n{last_interview_note_msg.content}\n\nDocument answer: \n{document_answer}"
                     logger.info("📚 Found precomputed document answer from last interview_note question")
                 else:
                     logger.debug("Last interview_note question found but no document_answer in metadata yet (may still be computing)")
