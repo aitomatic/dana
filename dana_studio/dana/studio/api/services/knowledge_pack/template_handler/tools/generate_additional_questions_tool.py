@@ -78,7 +78,9 @@ class GenerateAdditionalQuestionsTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    async def _execute(self, topic_name: str, focus_area: str = "", num_questions: int = 3, document_ids: list[int] = None, **kwargs) -> ToolResult:
+    async def _execute(
+        self, topic_name: str, focus_area: str = "", num_questions: int = 3, document_ids: list[int] = None, **kwargs
+    ) -> ToolResult:
         """
         Generate additional questions for a topic.
         """
@@ -111,9 +113,8 @@ class GenerateAdditionalQuestionsTool(BaseTool):
                     db = kwargs.get("db")
                     if db:
                         from dana.studio.api.repositories.document_repo import SQLDocumentRepo
-                        documents = await SQLDocumentRepo.get_document_by_ids(
-                            document_ids=document_ids, db=db
-                        )
+
+                        documents = await SQLDocumentRepo.get_document_by_ids(document_ids=document_ids, db=db)
                         document_names = [doc.original_filename for doc in documents]
                 except Exception as e:
                     print(f"Warning: Could not fetch document details: {e}")
@@ -125,11 +126,11 @@ class GenerateAdditionalQuestionsTool(BaseTool):
                     query = f"Extract key concepts, challenges, and best practices from the document about {topic_name}"
                     if focus_area:
                         query += f" specifically related to {focus_area}"
-                    query += f". Provide detailed content suitable for generating interview questions."
+                    query += ". Provide detailed content suitable for generating interview questions."
                 else:
                     # Normal query when knowledge summary exists
                     query = f"{topic_name} {focus_area} best practices interview questions"
-                
+
                 query += f" document_ids:{','.join(map(str, document_ids))}"
                 if document_names:
                     query += f" from documents: {', '.join(document_names)}"
@@ -150,7 +151,7 @@ class GenerateAdditionalQuestionsTool(BaseTool):
                 # Process results based on which RAGs are available
                 result_idx = 0
                 # Note: RAG query() returns formatted strings (not objects) since return_raw=False (default)
-                
+
                 if self.rag_knows:
                     knows_context = results[result_idx]  # Already a formatted string
                     result_idx += 1
@@ -160,7 +161,15 @@ class GenerateAdditionalQuestionsTool(BaseTool):
 
             # Generate questions using LLM with RAG context
             generated_questions = await self._generate_questions_from_summary(
-                topic_name, knowledge_summary, focus_area, num_questions, self.domain, self.role, knows_context, docs_context, document_names
+                topic_name,
+                knowledge_summary,
+                focus_area,
+                num_questions,
+                self.domain,
+                self.role,
+                knows_context,
+                docs_context,
+                document_names,
             )
 
             if not generated_questions:
@@ -269,22 +278,25 @@ class GenerateAdditionalQuestionsTool(BaseTool):
                 prompt_addition = ""
 
             # Create prompt
-            prompt = QUESTION_GENERATION_PROMPT.format(
-                role=role,
-                domain=domain,
-                topic_name=topic_name,
-                focus_area=focus_area or "general aspects",
-                knowledge_summary=knowledge_summary,
-                rag_context_section=rag_context_section,
-                num_questions=num_questions,
-            ) + prompt_addition
+            prompt = (
+                QUESTION_GENERATION_PROMPT.format(
+                    role=role,
+                    domain=domain,
+                    topic_name=topic_name,
+                    focus_area=focus_area or "general aspects",
+                    knowledge_summary=knowledge_summary,
+                    rag_context_section=rag_context_section,
+                    num_questions=num_questions,
+                )
+                + prompt_addition
+            )
 
             # Query LLM
             request = BaseRequest(
                 arguments={
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.7,
-                    "max_tokens": 1000,
+                    "max_tokens": None,
                 }
             )
 

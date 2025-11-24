@@ -82,10 +82,21 @@ class TemplateModificationHandler(AbstractHandler):
         }
         """
         # Initialize conversation with user request
-        conversation = request.chat_history
+        raw_conversation = request.chat_history
 
-        if len(conversation) >= 10:  # FOR NOW, ONLY USE LAST 10 MESSAGES
-            conversation = conversation[-10:]
+        conversation = []
+        is_in_editor_mode = False
+        for message in raw_conversation[::-1]:
+            if message.metadata.get("mode") == "editor":
+                is_in_editor_mode = True
+                continue
+            elif message.metadata.get("mode") == "auto" and is_in_editor_mode:
+                is_in_editor_mode = False
+                continue
+            conversation.append(message)
+            if len(conversation) >= 10:
+                break
+        conversation = conversation[::-1]
 
         # Check if view_template was already called
         has_view_template = any("<view_template>" in msg.content for msg in conversation)
@@ -197,7 +208,7 @@ class TemplateModificationHandler(AbstractHandler):
                 ]
                 + llm_conversation,
                 "temperature": 0.1,
-                "max_tokens": 8000,
+                "max_tokens": None,
             }
         )
 

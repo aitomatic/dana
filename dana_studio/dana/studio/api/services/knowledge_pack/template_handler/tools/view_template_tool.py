@@ -46,7 +46,7 @@ class ViewTemplateTool(BaseTool):
             template_data = parse_template(self.template_path)
 
             if section == "all":
-                content = template_data["raw_content"]
+                content = f'<template>\n{template_data["raw_content"]}\n</template>'
             elif section == "relationship_prompts":
                 content = template_data["relationship_prompts"]
             elif section == "followup_framework":

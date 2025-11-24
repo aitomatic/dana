@@ -290,7 +290,7 @@ class KPStructuringOrchestrator(AbstractHandler):
                 ]
                 + llm_conversation,
                 "temperature": 0.1,
-                "max_tokens": 8000,
+                "max_tokens": None,
             }
         )
 

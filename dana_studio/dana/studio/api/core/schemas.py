@@ -259,6 +259,7 @@ class MessageData(BaseModel):
     content: str
     require_user: bool = False
     treat_as_tool: bool = False
+    metadata: dict = {}
 
     model_config = ConfigDict(use_enum_values=True)
 

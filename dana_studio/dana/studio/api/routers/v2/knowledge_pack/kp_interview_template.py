@@ -463,7 +463,24 @@ MODES:
 
 CRITICAL DECISION LOGIC:
 
-**Content State Awareness (NEW - MOST IMPORTANT):**
+**Decision Tree (Use First):**
+1. Does it say "give me", "show me", "provide me", "generate for me"? → CHAT
+2. Does it say "apply the steps", "follow the steps", "execute the process", "run the workflow", "apply a process"? → CHAT
+3. Does it say "apply to template", "save to template", "update the template", "modify the template", "write to template"? → EDITOR
+4. Does it say "apply changes", "apply these", "apply this"? → Check context:
+   - If referring to template file ("apply these changes to the template") → EDITOR
+   - If referring to process/steps ("apply these steps") → CHAT
+5. If still unclear → Default to CHAT (safer)
+
+**"Apply Steps" vs "Apply Changes" Distinction (CRITICAL):**
+- "apply the steps" / "apply a process" / "follow the steps" / "execute the process" = CHAT
+  → User wants to see generated content from following a process/workflow
+  → Examples: "apply the steps to give me...", "follow the process and show me...", "execute the workflow to generate..."
+- "apply changes to template" / "apply to template" / "apply these to template" = EDITOR
+  → User wants to commit/write changes to the template file
+  → Examples: "apply these changes to the template", "apply this to the template", "update the template with this"
+
+**Content State Awareness:**
 - If assistant just provided content in chat AND user wants to modify it → CHAT mode (refining draft)
 - If content is already in template AND user wants to modify it → EDITOR mode (editing file)
 - If unclear whether content is committed → Default to CHAT (safer)
@@ -502,6 +519,15 @@ Explicit CHAT signals:
 - "give me the refined version"
 - "review the template" (exploring, not modifying)
 - Modification requests on content just provided in chat
+- "apply the steps and give me..."
+- "follow the steps to generate..."
+- "execute the process and show me..."
+- "review and apply [steps/process] to give me..."
+- "apply the steps in [X] to give me..."
+- "follow the process to create..."
+- "run the workflow to generate..."
+- "execute the workflow and provide..."
+- Any request that says "give me", "show me", "provide me", "generate for me" (user wants to see content first)
 
 AMBIGUOUS cases (default to CHAT to preserve continuity and prevent accidental template changes):
 - Simple affirmations: "yes", "ok", "proceed", "continue", "sure"
@@ -509,7 +535,6 @@ AMBIGUOUS cases (default to CHAT to preserve continuity and prevent accidental t
 - Requests for more: "give me more", "show me alternatives"
 - Vague references: "use that", "do it", "go ahead"
 - Modification commands without explicit template reference: "remove section 5", "change this", "add more detail"
-- First-time requests: "apply the steps and give me..." (likely wants to see it first, not commit)
 
 IMPORTANT: 
 - **CHAT is the safe default** - prevents accidental template overwrites
@@ -585,6 +610,33 @@ Assistant: "Here are the revised questions. Would you like me to apply these to 
 User: "Yes"
 → Mode: EDITOR
 Reasoning: User affirming explicit question about applying to template.
+
+Conversation:
+User: "Review the questions in the template and follow and apply the steps in the system prompt to give me an advanced set of enhanced questions"
+Previous mode: No previous chat context (first message)
+→ Mode: CHAT
+Reasoning: User says "apply the steps" (referring to a process) and "give me" (wants to see content). This is clearly a request to execute a process and show results, not to commit changes to template. The phrase "apply the steps" means "follow/execute the steps", not "apply changes to template".
+
+Conversation:
+User: "Review the template and apply the steps to generate enhanced questions"
+Previous mode: No previous chat context (first message)
+→ Mode: CHAT
+Reasoning: "apply the steps" refers to executing a process/workflow, and "generate" indicates user wants to see the output. No explicit "apply to template" or "save to template" signal.
+
+Conversation:
+User: "Apply the steps in the system prompt and show me the results"
+→ Mode: CHAT
+Reasoning: "Apply the steps" = execute process, "show me" = wants to see content. This is process execution, not template modification.
+
+Conversation:
+User: "Follow the process outlined in the prompt to give me better questions"
+→ Mode: CHAT
+Reasoning: "Follow the process" = execute workflow, "give me" = wants to see content. No template modification intent.
+
+Conversation:
+User: "Execute the workflow and apply these changes to the template"
+→ Mode: EDITOR
+Reasoning: "Apply these changes to the template" is explicit template modification signal, even though it starts with "execute the workflow".
 </examples>
 
 Respond with JSON:
@@ -780,6 +832,7 @@ async def template_finetune_chat(
                         content=message.content,
                         require_user=message.require_user,
                         treat_as_tool=message.treat_as_tool,
+                        metadata=message.metadata if hasattr(message, "metadata") else {},
                     )
                 )
             previous_mode = message.metadata.get("mode", ChatMode.CHAT)

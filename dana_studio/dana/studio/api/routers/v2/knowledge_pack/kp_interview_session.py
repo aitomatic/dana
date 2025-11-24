@@ -1002,6 +1002,7 @@ async def session_chat(
                 content=message.content,
                 require_user=message.require_user,
                 treat_as_tool=message.treat_as_tool,
+                metadata=message.metadata if hasattr(message, "metadata") else {},
             )
             for message in relevant_messages
             if message.require_user or not message.treat_as_tool

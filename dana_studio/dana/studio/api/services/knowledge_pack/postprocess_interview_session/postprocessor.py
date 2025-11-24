@@ -260,7 +260,7 @@ async def analyze_topic_with_llm(topic_name: str, sessions_data: list[dict[str, 
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.3,
-                "max_tokens": 3000,
+                "max_tokens": None,
             }
         )
 
@@ -650,7 +650,7 @@ async def generate_kp_analysis(kp_id: int, templates: list, use_llm: bool = True
     llm = None
     if use_llm:
         try:
-            default_config = {"model": "gpt-4o", "temperature": 0.3, "max_tokens": 3000}
+            default_config = {"max_tokens": None}
             config = {**default_config, **(llm_config or {})}
 
             llm = LLMResource(
@@ -808,7 +808,7 @@ async def aggregate_interview_insights(template_path: str, use_llm: bool = True,
     if use_llm:
         try:
             # Initialize LLM
-            default_config = {"model": "gpt-4o", "temperature": 0.3, "max_tokens": 3000}
+            default_config = {"max_tokens": None}
             config = {**default_config, **(llm_config or {})}
 
             logger.info(f"Initializing LLM with config: {config}")

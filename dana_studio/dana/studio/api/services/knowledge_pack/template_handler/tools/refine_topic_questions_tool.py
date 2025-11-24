@@ -12,7 +12,7 @@ from dana.studio.api.services.intent_detection.intent_handlers.handler_tools.bas
 from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.lang.common.types import BaseRequest
 from dana.lang.common.utils.misc import Misc
-from ..utils import parse_template, find_topic_by_name, find_topic_fuzzy, write_template
+from ..utils import parse_template, find_topic_fuzzy, write_template
 from ..prompts import QUESTION_REFINEMENT_PROMPT
 import re
 
@@ -121,7 +121,7 @@ class RefineTopicQuestionsTool(BaseTool):
                 arguments={
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.7,
-                    "max_tokens": 1000,
+                    "max_tokens": None,
                 }
             )
 

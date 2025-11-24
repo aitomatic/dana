@@ -163,7 +163,7 @@ Generate the complete markdown note:"""
                         {"role": "user", "content": prompt},
                     ],
                     "temperature": 0.1,
-                    "max_tokens": 4000,
+                    "max_tokens": None,
                 }
             )
 
@@ -336,7 +336,7 @@ Generate the complete markdown note:"""
                 ]
                 + llm_conversation,
                 "temperature": 0.1,
-                "max_tokens": 8000,
+                "max_tokens": None,
             }
         )
 
