@@ -78,8 +78,15 @@ class GoogleSearchService(SearchService):
         """
         optimized_query = self.search_engine.optimize_query(request.query, request.search_depth)
 
+        if request.domain:
+            optimized_query = f"{optimized_query} \nFocus on Domain (but not limited to): {request.domain}"
+        if request.target_sites:
+            sites_str = "\n".join([f"- {site}" for site in request.target_sites])
+            optimized_query = f"{optimized_query} \nFocus on Sites (but not limited to): {sites_str}"
+
         if optimized_query != request.query:
             logger.info(f"🔧 Query optimized for {request.search_depth} search")
+            logger.info(f"🔧 Optimized query: {optimized_query}")
 
         return optimized_query
 
