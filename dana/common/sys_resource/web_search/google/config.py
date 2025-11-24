@@ -110,6 +110,7 @@ def load_google_config() -> GoogleSearchConfig:
 
     if not base_url:
         raise ConfigurationError("GOOGLE_SEARCH_BASE_URL environment variable is required")
+    print(f"\n--------------------------------\nBase URL: {base_url}\n--------------------------------\n")
 
     # Optional configuration with defaults
     config = GoogleSearchConfig(

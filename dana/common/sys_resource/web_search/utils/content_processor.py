@@ -1,12 +1,9 @@
 """Content processing with query-focused summarization."""
 
-import logging
-
+from loguru import logger
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
-
-logger = logging.getLogger(__name__)
 
 
 class ContentProcessor:
@@ -47,7 +44,7 @@ class ContentProcessor:
                     "You are a helpful assistant that extracts query-relevant information. "
                     "Focus ONLY on information directly relevant to the user's query. "
                     "Keep all technical specs, numbers, and specific details. "
-                    "Remove unrelated sections completely. Be concise but complete."
+                    "Remove unrelated sections completely. Be concise but complete. If no relevant information exists, say 'No relevant information found', nothing else"
                 ),
             }
 
@@ -63,9 +60,8 @@ Instructions:
 - Keep all technical specs, numbers, and specific details
 - Remove unrelated sections completely
 - Be concise but complete for the query topic
-- If no relevant information exists, say "No relevant information found"
-
-Relevant information:""",
+- If no relevant information exists, say "No relevant information found", nothing else.
+""",
             }
 
             request = BaseRequest(
