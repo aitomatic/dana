@@ -2,7 +2,7 @@
 Live tests for all LLM providers
 
 These tests make real API calls to verify provider functionality.
-Run with: pytest adana/common/llm/tests/test_providers_live.py -v -m live
+Run with: uv run pytest --live -v dana_agent/tests/live/llm/test_providers_live.py
 """
 
 import asyncio
@@ -42,7 +42,8 @@ class TestProviderLive:
     @pytest.mark.live
     @pytest.mark.slow
     @pytest.mark.parametrize(
-        "provider_name", ["openai", "anthropic", "groq", "deepseek", "openrouter", "moonshot", "huggingface", "qwen", "azure", "ollama"]
+        "provider_name",
+        ["openai", "anthropic", "groq", "deepseek", "openrouter", "moonshot", "huggingface", "qwen", "azure", "ollama", "llamastack"],
     )
     def test_provider_creation(self, provider_name):
         """Test that each provider can be created without errors."""
@@ -62,7 +63,8 @@ class TestProviderLive:
     @pytest.mark.live
     @pytest.mark.slow
     @pytest.mark.parametrize(
-        "provider_name", ["openai", "anthropic", "groq", "deepseek", "openrouter", "moonshot", "huggingface", "qwen", "azure", "ollama"]
+        "provider_name",
+        ["openai", "anthropic", "groq", "deepseek", "openrouter", "moonshot", "huggingface", "qwen", "azure", "ollama", "llamastack"],
     )
     def test_provider_chat(self, provider_name):
         """Test that each provider can handle chat requests."""
