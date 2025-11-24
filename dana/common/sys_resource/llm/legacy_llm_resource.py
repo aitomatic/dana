@@ -823,14 +823,17 @@ class LegacyLLMResource(BaseSysResource):
                 deployment_name = model_name.split(":", 1)[1]  # Extract model name (e.g., "gpt-4o")
                 base_url = config_copy.get("base_url", "")
 
-                # Construct the full deployment URL if base_url doesn't already include deployment path
-                if base_url and not base_url.endswith(f"/openai/deployments/{deployment_name}"):
-                    # Remove trailing slash if present
+                # Check if customer wants to skip Azure URL construction
+                skip_construction = os.getenv("AZURE_SKIP_URL_CONSTRUCTION", "").lower() == "true"
+
+                if skip_construction:
+                    print(f"AZURE_SKIP_URL_CONSTRUCTION=true, using customer-provided URL as-is: {base_url}")
+                elif base_url and not base_url.endswith(f"/openai/deployments/{deployment_name}"):
+                    # Construct the full deployment URL if base_url doesn't already include deployment path
                     base_url = base_url.rstrip("/")
-                    # Construct deployment URL
                     deployment_url = f"{base_url}/openai/deployments/{deployment_name}"
                     config_copy["base_url"] = deployment_url
-                    self.debug(f"Constructed Azure deployment URL: {deployment_url}")
+                    print(f"\n\nConstructed Azure URL: {deployment_url}\n")
 
                 return {provider: config_copy}
             else:
