@@ -273,7 +273,8 @@ def create_google_search_service(api_key: str | None = None, cse_id: str | None 
         config = GoogleSearchConfig(
             api_key=api_key or base_config.api_key,
             cse_id=cse_id or base_config.cse_id,
-            **{k: v for k, v in kwargs.items() if hasattr(GoogleSearchConfig, k)},
+            base_url=kwargs.get("base_url", base_config.base_url),
+            **{k: v for k, v in kwargs.items() if k != "base_url" and hasattr(GoogleSearchConfig, k)},
         )
         return GoogleSearchService(config)
     else:

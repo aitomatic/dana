@@ -40,7 +40,7 @@ class GoogleSearchEngine:
             config: Google search configuration
         """
         self.config = config
-        self.base_url = "https://www.googleapis.com/customsearch/v1"
+        self.base_url = config.base_url
 
     async def search(self, query: str, max_results: int = None) -> list[GoogleResult]:
         """
