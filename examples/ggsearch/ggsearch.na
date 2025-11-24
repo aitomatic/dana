@@ -1,0 +1,20 @@
+from time.py import time
+
+def __main__() -> str:
+    start_time = time()
+    query = "HS-Code for following product Manufacturer PANDUIT, part number CDPP8RG-S, description INDUSTRIALNET, 8-PORT DIN RAIL"
+    query = "what is capital of France?"
+    search_depth = "basic"
+    # sites = ["site:volza.com", "site:zauba.com", "site:mouser.com"]
+    domain = ""
+    websearch = use("websearch", service_type="google")
+    data = websearch.search(query, search_depth=search_depth, domain=domain, target_sites=sites)
+    sources = data.sources
+    print(f"Sources found: {len(sources)}")
+    for source in sources:
+        print(f"Source: {source.url}")
+        print(f"Content: {source.content}")
+        print(f"--------------------------------")
+    return sources
+    end_time = time()
+    print(f"Time taken: {end_time - start_time} seconds")

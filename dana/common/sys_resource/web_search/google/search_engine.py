@@ -42,7 +42,7 @@ class GoogleSearchEngine:
         self.config = config
         self.base_url = config.base_url
 
-    async def search(self, query: str, max_results: int = None) -> list[GoogleResult]:
+    async def search(self, query: str, max_results: int | None = None) -> list[GoogleResult]:
         """
         Perform async Google Custom Search and return structured results.
 
@@ -61,46 +61,62 @@ class GoogleSearchEngine:
         if max_results is None:
             max_results = self.config.max_results
 
-        # Limit to Google API maximum
-        max_results = min(max_results, 10)
-
-        params = {
-            "q": query,
-            "key": self.config.api_key,
-            "cx": self.config.cse_id,
-            "num": max_results,
-            "lr": "lang_en",
-            "gl": "us",
-            "hl": "en",
-        }
+        # Limit to 20 results maximum (2 API calls of 10 each)
+        max_results = 25
 
         logger.info(f"🔍 Google Search: {query[:100]}{'...' if len(query) > 100 else ''}")
 
         try:
             timeout = httpx.Timeout(timeout=self.config.timeout_seconds)
+            all_results = []
 
             async with httpx.AsyncClient(timeout=timeout) as client:
-                response = await client.get(self.base_url, params=params)
-                await self._handle_api_errors(response)
-                results_data = response.json()
+                # Calculate how many API calls we need (max 10 results per call)
+                num_calls = (max_results + 9) // 10  # Ceiling division
 
-            if "items" not in results_data:
-                logger.info(f"No search results for query: {query}")
-                return []
+                for call_index in range(num_calls):
+                    start_index = call_index * 10 + 1
+                    results_for_this_call = min(10, max_results - len(all_results))
 
-            # Convert to structured results
-            results = []
-            for item in results_data["items"]:
-                result = GoogleResult(
-                    url=item.get("link", ""),
-                    title=item.get("title", ""),
-                    snippet=item.get("snippet", ""),
-                    display_link=item.get("displayLink", ""),
-                )
-                results.append(result)
+                    params = {
+                        "q": query,
+                        "key": self.config.api_key,
+                        "cx": self.config.cse_id,
+                        "num": results_for_this_call,
+                        "start": start_index,
+                        "lr": "lang_en",
+                        "gl": "us",
+                        "hl": "en",
+                    }
 
-            logger.info(f"✅ Found {len(results)} Google search results")
-            return results
+                    logger.info(
+                        f"🔍 API call {call_index + 1}/{num_calls}: requesting {results_for_this_call} results starting at {start_index}"
+                    )
+
+                    response = await client.get(self.base_url, params=params)
+                    await self._handle_api_errors(response)
+                    results_data = response.json()
+
+                    if "items" not in results_data:
+                        logger.info(f"No more search results available (call {call_index + 1})")
+                        break
+
+                    # Convert to structured results
+                    for item in results_data["items"]:
+                        result = GoogleResult(
+                            url=item.get("link", ""),
+                            title=item.get("title", ""),
+                            snippet=item.get("snippet", ""),
+                            display_link=item.get("displayLink", ""),
+                        )
+                        all_results.append(result)
+
+                    # Break if we got fewer results than requested (no more available)
+                    if len(results_data["items"]) < results_for_this_call:
+                        break
+
+            logger.info(f"✅ Found {len(all_results)} Google search results")
+            return all_results
 
         except (APIKeyError, RateLimitError, ServiceUnavailableError) as e:
             # Sanitize any API key that might appear in error message
