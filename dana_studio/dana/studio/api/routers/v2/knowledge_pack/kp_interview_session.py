@@ -215,30 +215,43 @@ Before returning your answer, confirm:
 - If unsure about a topic, EXCLUDE it (better to have fewer topics than topics without questions)
 """
 
-        llm_request = BaseRequest(
-            arguments={
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are an expert interview coordinator who creates structured interview notes from templates.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                "temperature": 0.1,
-                "max_tokens": None,
-            }
-        )
+        note_content = None
+        MAX_RETRIES = 5
+        for i in range(MAX_RETRIES + 1):
+            llm_request = BaseRequest(
+                arguments={
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are an expert interview coordinator who creates structured interview notes from templates.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": None,
+                }
+            )
 
-        response = await llm.query(llm_request)
-        note_content = Misc.get_response_content(response)
+            response = await llm.query(llm_request)
+            note_content = Misc.get_response_content(response)
+            note_content = Misc.get_md(note_content)
+            if note_content:
+                json_data = InterviewNoteProcessor().markdown_to_json(note_content)
+                if (
+                    json_data
+                    and "topics" in json_data
+                    and len(json_data["topics"]) > 0
+                    and all(topic["key_questions"] for topic in json_data["topics"])
+                ):
+                    note_content = InterviewNoteProcessor().json_to_markdown(json_data)
+                    break
+                else:
+                    logger.warning(f"Failed to generate valid interview note. Error: Invalid JSON data. Retrying ({i+1}/{MAX_RETRIES}) ...")
+            else:
+                logger.warning(f"Failed to generate valid interview note. Error: Empty note content. Retrying ({i+1}/{MAX_RETRIES}) ...")
 
-        # Clean up the response to ensure it's valid markdown
-        if note_content.startswith("```markdown"):
-            note_content = note_content[11:]
-        if note_content.endswith("```"):
-            note_content = note_content[:-3]
-
-        note_content = note_content.strip()
+        if not note_content:
+            raise ValueError("Failed to generate valid interview note")
 
         # Write note
         with open(note_path, "w") as f:
@@ -249,29 +262,7 @@ Before returning your answer, confirm:
 
     except Exception as e:
         logger.error(f"Failed to initialize interview session: {e}")
-        # Create minimal note as fallback
-        minimal_note = f"""# Interview Notes - {domain}
-**Date**: {datetime.now().strftime('%Y-%m-%d')}
-
-## Topics to Cover
-*To be determined from conversation*
-
-## Expert Insights
-*No insights captured yet*
-
-## Current Understanding Level
-- **Completeness**: 0% - Interview just started
-- **Confidence**: Low
-- **Next Steps**: Begin with opening questions
-
-## Documents Found
-*No documents searched yet*
-"""
-        Path(session_dir).mkdir(parents=True, exist_ok=True)
-        note_path = f"{session_dir}/interview_notes.md"
-        with open(note_path, "w") as f:
-            f.write(minimal_note)
-        return note_path, minimal_note
+        raise e
 
 
 @router.post("/create", response_model=InterviewSessionResponse)
@@ -847,7 +838,11 @@ def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgr
                     for idx in top_candidates:
                         candidate_text = new_question_texts[idx]
                         similarity = similarity_ratio(old_q_text, candidate_text)
-                        if similarity > best_similarity and similarity > 0.7:  # Threshold for matching
+                        old_q_text_lower = old_q_text.strip().lower()
+                        candidate_text_lower = candidate_text.strip().lower()
+                        if similarity > best_similarity and (
+                            old_q_text_lower in candidate_text_lower or candidate_text_lower in old_q_text_lower or similarity > 0.7
+                        ):  # Threshold for matching
                             best_similarity = similarity
                             matched_new_status = new_question_map[candidate_text]
 
@@ -1054,7 +1049,7 @@ Return ONLY the consolidated expert insights in bullet point format. Do not incl
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.1,
-                "max_tokens": 2000,
+                "max_tokens": None,
             }
         )
 

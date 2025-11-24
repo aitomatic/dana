@@ -375,6 +375,23 @@ class Misc:
                 raise ValueError(f"Failed to parse JSON: {str(e)}")
 
     @staticmethod
+    def get_md(text: str) -> str:
+        """Parse JSON content from LLM text response."""
+        import re
+
+        # Check if content is wrapped in ```json``` tags
+        markdown_match = re.search(r"```markdown\s*(.*?)\s*```", text, re.DOTALL)
+        if markdown_match:
+            # Extract and parse the markdown content
+            markdown_content = markdown_match.group(1)
+            return markdown_content
+        else:
+            try:
+                return text
+            except Exception as e:
+                raise ValueError(f"Failed to parse markdown: {str(e)}")
+
+    @staticmethod
     def get_response_content(response: BaseResponse) -> Any:
         """Get the content of a BaseResponse."""
         content = Misc.get_field(response, "content", None)
