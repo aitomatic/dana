@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 
 from .core.interfaces import SearchService
 from .core.models import SearchRequest, SearchResults, SearchSource
@@ -15,6 +16,7 @@ from .google import (
 )
 from .google.content_extractor import ContentResult
 from .google.reference_extractor import ReferenceExtractor
+from .utils.content_processor import ContentProcessor
 
 from loguru import logger
 
@@ -30,13 +32,12 @@ class GoogleSearchService(SearchService):
     to provide comprehensive search results with actual page content.
     """
 
-    def __init__(self, config: GoogleSearchConfig | None = None, enable_summarization: bool = True):
+    def __init__(self, config: GoogleSearchConfig | None = None):
         """
         Initialize Google search service.
 
         Args:
             config: Google search configuration (loads from environment if None)
-            enable_summarization: Whether to enable content summarization
         """
         self.config = config or load_google_config()
 
@@ -45,20 +46,8 @@ class GoogleSearchService(SearchService):
         self.result_processor = ResultProcessor(self.config)
         self.reference_extractor = ReferenceExtractor(self.config)
 
-        # Initialize content processor if enabled
-        self.content_processor = None
-        if enable_summarization:
-            try:
-                import os
-                from .utils.content_processor import ContentProcessor
-
-                if os.getenv("OPENAI_API_KEY"):
-                    self.content_processor = ContentProcessor()
-                    logger.info("✅ Content processing enabled")
-                else:
-                    logger.warning("OPENAI_API_KEY not found, content processing disabled")
-            except Exception as e:
-                logger.warning(f"Failed to initialize content processor: {e}")
+        # Initialize content processor
+        self.content_processor = ContentProcessor()
 
         # Validate configuration
         if not self.search_engine.is_available():
@@ -78,11 +67,11 @@ class GoogleSearchService(SearchService):
         """
         optimized_query = self.search_engine.optimize_query(request.query, request.search_depth)
 
-        # if request.domain:
-        #     optimized_query = f"{optimized_query} \nFocus on Domain (but not limited to): {request.domain}"
-        # if request.target_sites:
-        #     sites_str = "\n".join([f"- {site}" for site in request.target_sites])
-        #     optimized_query = f"{optimized_query} \nFocus on Sites (but not limited to): {sites_str}"
+        if request.domain and os.getenv("ENABLE_DOMAIN_FOCUS", "false").lower() == "true":
+            optimized_query = f"{optimized_query} \nFocus on Domain (but not limited to): {request.domain}"
+        if request.target_sites and os.getenv("ENABLE_SITES_FOCUS", "false").lower() == "true":
+            sites_str = "\n".join([f"- {site}" for site in request.target_sites])
+            optimized_query = f"{optimized_query} \nFocus on Sites (but not limited to): {sites_str}"
 
         if optimized_query != request.query:
             logger.info(f"🔧 Query optimized for {request.search_depth} search")
@@ -90,12 +79,13 @@ class GoogleSearchService(SearchService):
 
         return optimized_query.replace(":", "")
 
-    async def _execute_google_search(self, optimized_query: str) -> tuple[list, list]:
+    async def _execute_google_search(self, optimized_query: str, request: SearchRequest) -> tuple[list, list]:
         """
         Execute Google Custom Search and process results.
 
         Args:
             optimized_query: The optimized search query
+            request: The search request, containing the supporting query
 
         Returns:
             List of processed and scored results
@@ -104,20 +94,38 @@ class GoogleSearchService(SearchService):
             GoogleSearchError: If search fails or returns no results
         """
         logger.info(f"🔍 Executing Google Custom Search: {optimized_query}")
-        google_results = await self.search_engine.search(optimized_query, max_results=self.config.max_results)
-        # logger.info(f"🔍 Google Search Results: {google_results}")
+        main_google_results = await self.search_engine.search(optimized_query, max_results=self.config.max_results)
+
+        supporting_google_results = []
+        if request.supporting_query:
+            logger.info(f"🔍 Executing supporting Google Custom Search: {request.supporting_query}")
+            try:
+                supporting_google_results = await self.search_engine.search(request.supporting_query, max_results=10)
+            except GoogleSearchError as e:
+                logger.warning(f"Supporting search failed: {e}")
+
+        # Consolidate and deduplicate results
+        combined_results = main_google_results + supporting_google_results
+        unique_results = []
+        seen_urls = set()
+        for result in combined_results:
+            if hasattr(result, "url") and result.url not in seen_urls:
+                unique_results.append(result)
+                seen_urls.add(result.url)
+
+        google_results = unique_results
 
         if not google_results:
             raise GoogleSearchError("No results from Google Custom Search")
 
-        # Process and score results
+        # Process and score results - using the main optimized query for relevance
         processed_results = self.result_processor.process_and_score_results(google_results, optimized_query)
 
         if not processed_results:
             raise GoogleSearchError("No results passed filtering criteria")
 
         # Log the found links
-        logger.info(f"📋 Found {len(processed_results)} links after filtering:")
+        logger.info(f"📋 Found {len(processed_results)} links after filtering and consolidation:")
         for i, result in enumerate(processed_results, 1):
             logger.info(f"  {i}. {result.url} - {result.title[:60]}...")
 
@@ -383,7 +391,7 @@ class GoogleSearchService(SearchService):
             optimized_query = await self._optimize_query(request)
 
             # Step 2: Execute Google Custom Search and process results
-            processed_results, google_results = await self._execute_google_search(optimized_query)
+            processed_results, google_results = await self._execute_google_search(optimized_query, request)
 
             # Step 3: Extract content from URLs (if enabled)
             search_sources, reference_links, urls_attempted, extraction_success = await self._extract_content_from_urls(

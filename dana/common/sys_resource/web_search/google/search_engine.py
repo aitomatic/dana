@@ -61,9 +61,6 @@ class GoogleSearchEngine:
         if max_results is None:
             max_results = self.config.max_results
 
-        # Limit to 20 results maximum (2 API calls of 10 each)
-        max_results = 25
-
         logger.info(f"🔍 Google Search: {query[:100]}{'...' if len(query) > 100 else ''}")
 
         try:

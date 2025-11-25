@@ -34,7 +34,7 @@ from dana.common.sys_resource.web_search.google_search_service import (
 )
 
 
-class TestGoogleSearchConfig:
+class TestGoogleConfig:
     """Tests for GoogleSearchConfig."""
 
     def test_google_config_creation(self):
@@ -42,6 +42,7 @@ class TestGoogleSearchConfig:
         config = GoogleSearchConfig(
             api_key="test_api_key_1234567890",
             cse_id="test_cse_id_123",
+            base_url="https://test.com",
             max_results=5,
         )
 
@@ -55,9 +56,10 @@ class TestGoogleSearchConfig:
         config = GoogleSearchConfig(
             api_key="test_key",
             cse_id="test_cse",
+            base_url="https://test.com",
         )
 
-        assert config.max_results == 10
+        assert config.max_results == 25
         assert config.timeout_seconds == 30
         assert config.enable_content_extraction is True
         assert config.max_content_length == 50000
@@ -65,12 +67,12 @@ class TestGoogleSearchConfig:
     def test_google_config_validation_missing_api_key(self):
         """Test configuration validation with missing API key."""
         with pytest.raises(ConfigurationError, match="Google Search API key is required"):
-            GoogleSearchConfig(api_key="", cse_id="test_cse")
+            GoogleSearchConfig(api_key="", cse_id="test_cse", base_url="https://test.com")
 
     def test_google_config_validation_missing_cse_id(self):
         """Test configuration validation with missing CSE ID."""
         with pytest.raises(ConfigurationError, match="Google Custom Search Engine ID is required"):
-            GoogleSearchConfig(api_key="test_key", cse_id="")
+            GoogleSearchConfig(api_key="test_key", cse_id="", base_url="https://test.com")
 
     def test_google_config_validation_invalid_max_results(self):
         """Test configuration validation with invalid max_results."""
@@ -78,14 +80,16 @@ class TestGoogleSearchConfig:
             GoogleSearchConfig(
                 api_key="test_key",
                 cse_id="test_cse",
+                base_url="https://test.com",
                 max_results=0,
             )
 
-        with pytest.raises(ConfigurationError, match="max_results cannot exceed 10"):
+        with pytest.raises(ConfigurationError, match="max_results cannot exceed 25"):
             GoogleSearchConfig(
                 api_key="test_key",
                 cse_id="test_cse",
-                max_results=15,
+                base_url="https://test.com",
+                max_results=30,
             )
 
     def test_google_config_str_representation(self):
@@ -93,6 +97,7 @@ class TestGoogleSearchConfig:
         config = GoogleSearchConfig(
             api_key="test_api_key_1234567890",
             cse_id="test_cse_id_123456789",
+            base_url="https://test.com",
         )
 
         config_str = str(config)
@@ -114,15 +119,12 @@ class TestGoogleSearchConfig:
         empty_masked = _mask_api_key("")
         assert empty_masked == "****"
 
-
-class TestLoadGoogleConfig:
-    """Tests for loading Google configuration from environment."""
-
     @patch.dict(
         "os.environ",
         {
             "GOOGLE_SEARCH_API_KEY": "env_api_key_123",
             "GOOGLE_SEARCH_CX": "env_cse_id_456",
+            "GOOGLE_SEARCH_BASE_URL": "https://test.com",
         },
     )
     def test_load_google_config_from_env(self):
@@ -131,7 +133,7 @@ class TestLoadGoogleConfig:
 
         assert config.api_key == "env_api_key_123"
         assert config.cse_id == "env_cse_id_456"
-        assert config.max_results == 10  # Default value
+        assert config.max_results == 25  # Default value
 
     def test_load_google_config_missing_api_key(self):
         """Test loading configuration with missing API key."""
@@ -150,6 +152,7 @@ class TestLoadGoogleConfig:
         {
             "GOOGLE_SEARCH_API_KEY": "test_key",
             "GOOGLE_SEARCH_CX": "test_cse",
+            "GOOGLE_SEARCH_BASE_URL": "https://test.com",
             "GOOGLE_SEARCH_MAX_RESULTS": "5",
             "GOOGLE_SEARCH_TIMEOUT": "45",
             "ENABLE_CONTENT_EXTRACTION": "false",
@@ -174,6 +177,7 @@ class TestGoogleSearchEngine:
         self.config = GoogleSearchConfig(
             api_key="test_api_key_123456789",
             cse_id="test_cse_id_123",
+            base_url="https://www.googleapis.com/customsearch/v1",
             max_results=5,
         )
         self.engine = GoogleSearchEngine(self.config)
@@ -181,7 +185,7 @@ class TestGoogleSearchEngine:
     def test_google_search_engine_initialization(self):
         """Test GoogleSearchEngine initialization."""
         assert self.engine.config == self.config
-        assert self.engine.base_url == "https://www.googleapis.com/customsearch/v1"
+        assert self.engine.base_url == self.config.base_url
 
     def test_is_available(self):
         """Test GoogleSearchEngine availability check."""
@@ -189,7 +193,7 @@ class TestGoogleSearchEngine:
 
         # Test with missing credentials - use patch to bypass validation
         with patch.object(GoogleSearchConfig, "__post_init__", return_value=None):
-            invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse")
+            invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse", base_url="https://test.com")
             invalid_engine = GoogleSearchEngine(invalid_config)
             assert invalid_engine.is_available() is False
 
@@ -338,6 +342,7 @@ class TestGoogleSearchEngine:
         assert short_sanitized == "Error with short key"
 
 
+@patch("dana.common.sys_resource.web_search.google_search_service.ContentProcessor")
 class TestGoogleSearchService:
     """Tests for GoogleSearchService."""
 
@@ -346,39 +351,25 @@ class TestGoogleSearchService:
         self.config = GoogleSearchConfig(
             api_key="test_api_key_123456789",
             cse_id="test_cse_id_123",
+            base_url="https://test.com",
         )
 
     @patch("dana.common.sys_resource.web_search.google_search_service.load_google_config")
-    def test_google_search_service_initialization(self, mock_load_config):
+    def test_google_search_service_initialization(self, mock_load_config, mock_content_processor):
         """Test GoogleSearchService initialization."""
         mock_load_config.return_value = self.config
 
-        with patch("os.getenv") as mock_getenv:
-            mock_getenv.return_value = "test_openai_key"
+        service = GoogleSearchService()
 
-            service = GoogleSearchService(enable_summarization=False)
+        assert service.config == self.config
+        assert service.search_engine is not None
+        assert service.result_processor is not None
+        assert service.content_processor is not None
 
-            assert service.config == self.config
-            assert service.search_engine is not None
-            assert service.result_processor is not None
-            assert service.content_processor is None
-
-    @patch("dana.common.sys_resource.web_search.google_search_service.load_google_config")
-    def test_google_search_service_with_summarization(self, mock_load_config):
-        """Test GoogleSearchService with content processing enabled."""
-        mock_load_config.return_value = self.config
-
-        with patch("os.getenv") as mock_getenv:
-            mock_getenv.return_value = "test_openai_key"
-
-            with patch("dana.common.sys_resource.web_search.utils.content_processor.ContentProcessor"):
-                GoogleSearchService(enable_summarization=True)
-                # ContentProcessor should be initialized when OPENAI_API_KEY is available
-
-    def test_google_search_service_not_available(self):
+    def test_google_search_service_not_available(self, mock_content_processor):
         """Test GoogleSearchService initialization when not available."""
         with patch.object(GoogleSearchConfig, "__post_init__", return_value=None):
-            invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse")
+            invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse", base_url="https://test.com")
 
             with patch("dana.common.sys_resource.web_search.google.search_engine.GoogleSearchEngine.is_available") as mock_available:
                 mock_available.return_value = False
@@ -387,68 +378,64 @@ class TestGoogleSearchService:
                     GoogleSearchService(config=invalid_config)
 
     @pytest.mark.asyncio
-    async def test_search_basic_functionality(self):
+    async def test_search_basic_functionality(self, mock_content_processor):
         """Test basic search functionality."""
         # Mock all dependencies
         with patch.multiple(
             "dana.common.sys_resource.web_search.google_search_service",
             load_google_config=MagicMock(return_value=self.config),
         ):
-            with patch("os.getenv") as mock_getenv:
-                mock_getenv.return_value = None  # No OpenAI key
+            service = GoogleSearchService()
 
-                service = GoogleSearchService(enable_summarization=False)
-
-                # Mock search engine
-                mock_google_results = [
-                    GoogleResult(
-                        url="https://example.com/page1",
-                        title="Test Page 1",
-                        snippet="Content from page 1",
-                        display_link="example.com",
-                    )
-                ]
-
-                service.search_engine.search = AsyncMock(return_value=mock_google_results)
-                service.result_processor.process_and_score_results = MagicMock(return_value=mock_google_results)
-
-                request = SearchRequest(
-                    query="test query",
-                    search_depth=SearchDepth.BASIC,
+            # Mock search engine
+            mock_google_results = [
+                GoogleResult(
+                    url="https://example.com/page1",
+                    title="Test Page 1",
+                    snippet="Content from page 1",
+                    display_link="example.com",
                 )
+            ]
 
-                results = await service.search(request)
+            service.search_engine.search = AsyncMock(return_value=mock_google_results)
+            service.result_processor.process_and_score_results = MagicMock(return_value=mock_google_results)
 
-                assert isinstance(results, SearchResults)
-                assert results.success is True
-                assert len(results.sources) == 1
-                assert results.sources[0].url == "https://example.com/page1"
+            # mock _extract_content_from_urls to avoid running it
+            mock_search_sources = [SearchSource(url="https://example.com/page1", content="Content from page 1")]
+            service._extract_content_from_urls = AsyncMock(return_value=(mock_search_sources, [], 1, 1))
+            service._process_reference_links = AsyncMock(return_value=[])
 
-    def test_is_available(self):
+            request = SearchRequest(
+                query="test query",
+                search_depth=SearchDepth.BASIC,
+            )
+
+            results = await service.search(request)
+
+            assert isinstance(results, SearchResults)
+            assert results.success is True
+            assert len(results.sources) == 1
+            assert results.sources[0].url == "https://example.com/page1"
+
+    def test_is_available(self, mock_content_processor):
         """Test GoogleSearchService availability check."""
         with patch("dana.common.sys_resource.web_search.google_search_service.load_google_config"):
-            with patch("os.getenv") as mock_getenv:
-                mock_getenv.return_value = None
+            service = GoogleSearchService(config=self.config)
+            assert service.is_available() is True
 
-                service = GoogleSearchService(config=self.config, enable_summarization=False)
-                assert service.is_available() is True
-
-    def test_create_google_search_service_factory(self):
+    def test_create_google_search_service_factory(self, mock_content_processor):
         """Test factory function for creating GoogleSearchService."""
         with patch("dana.common.sys_resource.web_search.google_search_service.load_google_config") as mock_load:
             mock_load.return_value = self.config
 
-            with patch("os.getenv") as mock_getenv:
-                mock_getenv.return_value = None
+            # Test with override parameters
+            service = create_google_search_service(
+                api_key="override_key",
+                cse_id="override_cse",
+                max_results=3,
+            )
 
-                # Test with override parameters
-                service = create_google_search_service(
-                    api_key="override_key",
-                    cse_id="override_cse",
-                    max_results=3,
-                )
-
-                assert isinstance(service, GoogleSearchService)
+            assert isinstance(service, GoogleSearchService)
 
 
 class TestMockGoogleSearchService:
