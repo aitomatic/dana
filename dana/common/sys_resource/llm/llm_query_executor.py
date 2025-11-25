@@ -371,16 +371,6 @@ class LLMQueryExecutor(Loggable):
 
             self.override_client_provider(model)
 
-            if self._client.providers.get("azure"):
-                base_url = self._client.providers.get("azure").base_url
-                api_version = self._client.providers.get("azure").api_version
-                api_key = self._client.providers.get("azure").api_key
-                masked_key = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "***"
-                print(f"Debug - Azure Config for model: {model}\n--------------------------------\n")
-                print(f"Azure URL: {base_url}")
-                print(f"Azure Key: {masked_key}")
-                print(f"Azure Version: {api_version}")
-
             # Make the actual API call (aisuite is synchronous)
             response: ChatCompletion = await asyncio.to_thread(
                 self._client.chat.completions.create,
