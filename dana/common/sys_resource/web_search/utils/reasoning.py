@@ -143,22 +143,31 @@ class AzureReasoning(AnLLM):
 
 
 class ValidateAzure:
-    _instance = None
+    _has_validated = False
 
-    def __new__(cls):
-        if cls._instance is None:
-            print("Running Azure configuration validation for the first time...")
-            cls._instance = super().__new__(cls)
-            # Run the validation logic here, only on first creation
-            try:
-                asyncio.run(cls._instance._validate())
-            except Exception as e:
-                print(f"An error occurred during validation: {e}")
-        else:
+    def __init__(self):
+        """Initialize ValidateAzure without running validation."""
+        pass
+
+    async def validate(self):
+        """
+        Validate Azure configuration. This method will only run the actual
+        validation once, even if called multiple times.
+        """
+        if ValidateAzure._has_validated:
             print("Azure configuration has already been validated.")
-        return cls._instance
+            return
+
+        print("Running Azure configuration validation for the first time...")
+        try:
+            await self._validate()
+            ValidateAzure._has_validated = True
+        except Exception as e:
+            print(f"An error occurred during validation: {e}")
+            raise
 
     async def _validate(self):
+        """Internal validation logic."""
         reasoning = AzureReasoning()
 
         print("\n--- Azure Configuration ---")
@@ -189,11 +198,11 @@ class ValidateAzure:
         print("Azure configuration and test successful.")
 
 
-ValidateAzure()
-
 if __name__ == "__main__":
+    validator = ValidateAzure()
+
     print("First validation run:")
-    ValidateAzure()
+    asyncio.run(validator.validate())
 
     print("\nAttempting second validation run:")
-    ValidateAzure()
+    asyncio.run(validator.validate())
