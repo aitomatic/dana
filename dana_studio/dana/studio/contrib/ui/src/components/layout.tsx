@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './app-sidebar';
-import { ArrowLeft, ArrowUpRight } from 'iconoir-react';
+import { ArrowLeft, ArrowUpRight, Play, Pause } from 'iconoir-react';
 import { Settings } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { useContributionStore } from '@/stores/contribution-store';
@@ -14,6 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDanaAnalytics } from '@/hooks/useAnalytics';
 import VersionNotification from '@/components/version-notification';
+import { useSessionTimer } from '@/hooks/useSessionTimer';
+import { SESSION_STATUS } from '@/lib/constants';
+import { toast } from 'sonner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -26,10 +29,147 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   const navigate = useNavigate();
   const { fetchAgent, selectedAgent } = useAgentStore();
   const { currentTemplate } = useContributionStore();
-  const { contributionTemplate } = useCaptureKnowledgeStore();
+  const { 
+    contributionTemplate, 
+    currentSession, 
+    updateSession, 
+    updateSessionStatus 
+  } = useCaptureKnowledgeStore();
   const [prebuiltAgent, setPrebuiltAgent] = useState<any>(null);
   const [knowledgePack, setKnowledgePack] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { trackTabNavigation, trackError } = useDanaAnalytics();
+
+  const isCaptureKnowledgePage = location.pathname.includes('/capture-knowledge');
+  
+  // Track last saved duration to prevent duplicate saves
+  const lastSavedDurationRef = useRef<number>(0);
+  const lastSessionIdRef = useRef<number | null>(null);
+  
+  // Initialize timer for capture-knowledge page
+  // Use a memoized value to ensure timer hook gets updated when session loads
+  const initialDuration = currentSession?.session_metadata?.duration_seconds || 0;
+  const initialIsPaused = currentSession?.session_metadata?.timer_paused ?? undefined;
+  const timer = useSessionTimer({
+    initialDurationSeconds: initialDuration,
+    autoStart: isCaptureKnowledgePage,
+    initialIsPaused: initialIsPaused,
+  });
+
+  // Reset last saved duration and paused state when session ID changes
+  useEffect(() => {
+    if (currentSession?.id !== lastSessionIdRef.current) {
+      lastSessionIdRef.current = currentSession?.id || null;
+      const savedDuration = currentSession?.session_metadata?.duration_seconds || 0;
+      const savedPaused = currentSession?.session_metadata?.timer_paused;
+      lastSavedDurationRef.current = savedDuration;
+      lastSavedPausedRef.current = savedPaused;
+      if (isCaptureKnowledgePage && savedDuration > 0) {
+        console.log('[Timer] Session loaded with saved duration:', savedDuration, 'seconds, paused:', savedPaused);
+      }
+    }
+  }, [currentSession?.id, currentSession?.session_metadata?.duration_seconds, currentSession?.session_metadata?.timer_paused, isCaptureKnowledgePage]);
+
+  // Track last saved paused state to prevent duplicate saves
+  const lastSavedPausedRef = useRef<boolean | undefined>(undefined);
+
+  // Save timer duration and paused state when paused
+  useEffect(() => {
+    if (
+      isCaptureKnowledgePage &&
+      timer.isPaused &&
+      currentSession?.id &&
+      timer.elapsedSeconds > 0 &&
+      (timer.elapsedSeconds !== lastSavedDurationRef.current || timer.isPaused !== lastSavedPausedRef.current)
+    ) {
+      const saveTimerState = async () => {
+        try {
+          const durationToSave = timer.elapsedSeconds;
+          console.log('[Timer] Saving timer duration on pause:', durationToSave, 'seconds, paused:', timer.isPaused);
+          const updatedMetadata = {
+            ...(currentSession.session_metadata || {}),
+            duration_seconds: durationToSave,
+            timer_paused: timer.isPaused,
+          };
+          await updateSession(currentSession.id, {
+            session_metadata: updatedMetadata,
+          }, { silent: true });
+          // Update last saved values after successful save
+          lastSavedDurationRef.current = durationToSave;
+          lastSavedPausedRef.current = timer.isPaused;
+          console.log('[Timer] Successfully saved duration:', durationToSave, 'seconds, paused:', timer.isPaused);
+        } catch (error) {
+          console.error('[Timer] Failed to save timer state:', error);
+        }
+      };
+      saveTimerState();
+    }
+  }, [timer.isPaused, timer.elapsedSeconds, isCaptureKnowledgePage, currentSession?.id, updateSession]);
+
+  // Save timer state when resumed (to clear paused state)
+  useEffect(() => {
+    if (
+      isCaptureKnowledgePage &&
+      !timer.isPaused &&
+      currentSession?.id &&
+      lastSavedPausedRef.current === true
+    ) {
+      const saveTimerState = async () => {
+        try {
+          const durationToSave = timer.elapsedSeconds;
+          console.log('[Timer] Saving timer state on resume:', durationToSave, 'seconds, paused:', timer.isPaused);
+          const updatedMetadata = {
+            ...(currentSession.session_metadata || {}),
+            duration_seconds: durationToSave,
+            timer_paused: timer.isPaused,
+          };
+          await updateSession(currentSession.id, {
+            session_metadata: updatedMetadata,
+          }, { silent: true });
+          // Update last saved paused state
+          lastSavedPausedRef.current = timer.isPaused;
+          console.log('[Timer] Successfully saved state on resume, paused:', timer.isPaused);
+        } catch (error) {
+          console.error('[Timer] Failed to save timer state on resume:', error);
+        }
+      };
+      saveTimerState();
+    }
+  }, [timer.isPaused, timer.elapsedSeconds, isCaptureKnowledgePage, currentSession?.id, updateSession]);
+
+  // Handle Save & Exit
+  const handleSaveAndExit = async () => {
+    if (!currentSession || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      // Save current timer duration
+      const updatedMetadata = {
+        ...(currentSession.session_metadata || {}),
+        duration_seconds: timer.getDurationSeconds(),
+      };
+      
+      // Update session with timer duration
+      await updateSession(currentSession.id, {
+        session_metadata: updatedMetadata,
+      });
+
+      // Mark as completed if not already completed
+      if (currentSession.status !== SESSION_STATUS.COMPLETED) {
+        await updateSessionStatus(currentSession.id, SESSION_STATUS.COMPLETED);
+      }
+
+      // Navigate to knowledge center
+      navigate('/knowledge-center');
+    } catch (error: any) {
+      console.error('Failed to save and exit:', error);
+      toast.error('Failed to save session', {
+        description: error?.message || 'Please try again.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Fetch agent data when on chat pages
   useEffect(() => {
@@ -132,7 +272,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
         if (location.pathname.startsWith('/capture-knowledge/')) {
           // Return JSX for capture-knowledge page to apply different styling
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="font-semibold">Capture knowledge</span>
               {contributionTemplate?.name && (
                 <Tooltip>
@@ -153,16 +293,32 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                   </TooltipContent>
                 </Tooltip>
               )}
+              {/* Timer display */}
+              {isCaptureKnowledgePage && (
+                <div className="flex items-center gap-2 ml-2">
+                  <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
+                    {timer.formattedTime}
+                  </span>
+                  <Button
+                    onClick={timer.toggle}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-3"
+                    aria-label={timer.isPaused ? 'Continue session' : 'Pause session'}
+                  >
+                    {timer.isPaused ? 'Continue' : 'Pause'}
+                  </Button>
+                </div>
+              )}
             </div>
           );
         }
         return 'Agent workspace';
     }
-  }, [location.pathname, selectedAgent?.name, agent_id, prebuiltAgent?.name, currentTemplate?.name, contributionTemplate?.name, knowledgePack]);
+  }, [location.pathname, selectedAgent?.name, agent_id, prebuiltAgent?.name, currentTemplate?.name, contributionTemplate?.name, knowledgePack, isCaptureKnowledgePage, timer.formattedTime, timer.isPaused]);
 
   const isChatPage = location.pathname.includes('/chat');
   const isContributionTemplatePage = location.pathname.includes('/capture-template');
-  const isCaptureKnowledgePage = location.pathname.includes('/capture-knowledge');
 
   if (hideLayout) {
     return <>{children}</>;
@@ -241,6 +397,19 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                 >
                   <Settings style={{ width: '16', height: '16' }} />
                   Customize
+                </Button>
+              </div>
+            )}
+            {isCaptureKnowledgePage && currentSession && currentSession.status !== SESSION_STATUS.COMPLETED && (
+              <div className="flex gap-2 items-center">
+                <Button
+                  onClick={handleSaveAndExit}
+                  variant="default"
+                  className="hover:bg-green-700"
+                  disabled={isSaving}
+                  aria-label="Save & Exit"
+                >
+                  {isSaving ? 'Saving...' : 'Save & Exit'}
                 </Button>
               </div>
             )}

@@ -24,7 +24,7 @@ interface CaptureKnowledgeState {
   loadSession: (sessionId: number) => Promise<void>;
   loadTemplate: (templateId: number) => Promise<void>;
   updateSessionStatus: (sessionId: number, status: InterviewSessionStatus) => Promise<void>;
-  updateSession: (sessionId: number, updates: InterviewSessionUpdate) => Promise<void>;
+  updateSession: (sessionId: number, updates: InterviewSessionUpdate, options?: { silent?: boolean }) => Promise<void>;
   reset: () => void;
 }
 
@@ -98,12 +98,15 @@ export const useCaptureKnowledgeStore = create<CaptureKnowledgeState>((set, get)
   },
 
   // Update session with multiple fields
-  updateSession: async (sessionId: number, updates: InterviewSessionUpdate) => {
+  updateSession: async (sessionId: number, updates: InterviewSessionUpdate, options?: { silent?: boolean }) => {
+    const { silent = false } = options || {};
     try {
       const response = await apiService.updateInterviewSession(sessionId, updates);
       if (response.success && response.data) {
         set({ currentSession: response.data });
-        toast.success('Session updated successfully');
+        if (!silent) {
+          toast.success('Session updated successfully');
+        }
       } else {
         const errorMsg = response.error || response.message || 'Failed to update session';
         toast.error(errorMsg);

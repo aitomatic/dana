@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCaptureKnowledgeStore } from '@/stores';
-import { IconLoader2, IconCheck, IconDownload } from '@tabler/icons-react';
+import { IconLoader2, IconDownload } from '@tabler/icons-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { SESSION_STATUS } from '@/lib/constants';
 import { ChatSidebar } from './chat-sidebar';
 import { SummaryPanel } from './summary-panel';
 import { apiService } from '@/lib/api';
@@ -23,7 +22,6 @@ export default function CaptureKnowledgePage() {
     isLoadingTemplate,
     loadSession,
     reset,
-    updateSessionStatus,
   } = useCaptureKnowledgeStore();
 
   useEffect(() => {
@@ -36,17 +34,6 @@ export default function CaptureKnowledgePage() {
       reset();
     };
   }, [sessionId, loadSession, reset]);
-
-  const handleCompleteSession = async () => {
-    if (!currentSession) return;
-    
-    try {
-      await updateSessionStatus(currentSession.id, SESSION_STATUS.COMPLETED);
-      toast.success('Session marked as completed!');
-    } catch (error) {
-      console.error('Failed to complete session:', error);
-    }
-  };
 
   const handleDownloadInterviewNote = async () => {
     if (!currentSession) return;
@@ -143,17 +130,6 @@ export default function CaptureKnowledgePage() {
                 >
                   <IconDownload className="w-4 h-4" />
                 </Button>
-                {currentSession?.status !== SESSION_STATUS.COMPLETED && (
-                  <Button
-                    onClick={handleCompleteSession}
-                    variant="default"
-                    className="hover:bg-green-700 gap-2"
-                    size="sm"
-                  >
-                    <IconCheck className="w-4 h-4" />
-                    Mark as Completed
-                  </Button>
-                )}
               </div>
             </div>
           </div>
