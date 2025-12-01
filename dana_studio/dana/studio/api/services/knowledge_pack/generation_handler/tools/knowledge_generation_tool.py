@@ -88,13 +88,15 @@ class KnowledgeGenerationTool(BaseTool):
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
         ws_manager=None,
-        question_batch_size: int = 5,
+        question_batch_size: int = 1,
+        allow_outside_document: bool = False,
     ):
         self.knowledge_id = knowledge_id
         self.knowledge_status_path = knowledge_status_path
         self.storage_path = storage_path
         self.document_paths = document_paths or []
         self.tree_structure_path = tree_structure_path
+        self.allow_outside_document = allow_outside_document
         # Load tree structure from path if provided
         self.tree_structure = None
         if tree_structure_path:
@@ -675,10 +677,13 @@ For each topic, provide:
                     reason, KNOWLEDGE_EXTRACTION_PROMPT.format(path=path_str, question=question, chunks=_format_chunks(chunks))
                 )
                 from_doc = True
-            else:
+            elif self.allow_outside_document:
                 res = await asyncio.to_thread(
                     reason, KNOWLEDGE_GENERATION_PROMPT.format(path=path_str, question=question, role=self.role, domain=self.domain)
                 )
+                from_doc = False
+            else:
+                res = ""
                 from_doc = False
             return RawFormatKnowledge(question=question, chunks=chunks, knowledge=res, from_doc=from_doc)
 

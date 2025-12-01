@@ -751,9 +751,8 @@ const SmartAgentChat: React.FC<{
                 The knowledge generation process is completed. Please proceed to:
               </div>
               <div className="flex flex-col gap-3 pl-4">
-                <div className="flex items-center gap-3 text-base text-blue-600 font-medium">
-                  <span className="text-xl">→</span>
-                  <span>Capture Templates tab</span>
+                <div className="flex items-center gap-3 text-base text-gray-700 font-medium">
+                  <span>`Capture Templates` tab above</span>
                 </div>
               </div>
               <div className="pt-2 mt-2 text-xs text-gray-500 border-t border-green-200">

@@ -41,7 +41,7 @@ class ModifyTreeTool(BaseTool):
 
         tool_info = BaseToolInformation(
             name="modify_tree",
-            description="Manage domain knowledge tree structure with: 'bulk' for all tree modifications (create/modify/remove nodes). Supports single or multiple operations atomically.",
+            description="Manage domain knowledge tree structure with: 'bulk' for all tree modifications (create/modify/remove nodes). Supports single or multiple operations atomically. MUST INCLUDE FULL PATHS IN `bulk_operations`",
             input_schema=InputSchema(
                 type="object",
                 properties=[

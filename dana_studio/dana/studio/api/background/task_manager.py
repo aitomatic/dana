@@ -141,7 +141,7 @@ class TaskManager:
                         else:
                             logger.warning(f"Unknown task type: {task.type}")
                 else:
-                    logger.info("No pending tasks found in database")
+                    logger.warning("No pending tasks found in database")
 
         except Exception as e:
             logger.error(f"Error loading pending tasks: {e}")

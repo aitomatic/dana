@@ -19,6 +19,7 @@ interface LibraryTableProps {
   selectionMode?: 'none' | 'multiple' | 'single'; // Added 'single' for radio buttons
   selectedItems?: LibraryItem[];
   filterType?: 'all' | 'knowledge-packs' | 'contribution-templates'; // Filter items by type
+  hideActions?: boolean; // Hide the Actions column
 }
 
 export function LibraryTable({
@@ -35,6 +36,7 @@ export function LibraryTable({
   selectionMode = 'none',
   selectedItems = [],
   filterType = 'all',
+  hideActions = false,
 }: LibraryTableProps) {
   // Filter data by type if needed
   const filteredData = React.useMemo(() => {
@@ -88,8 +90,9 @@ export function LibraryTable({
 
   // Get appropriate columns based on mode
   const columns = React.useMemo(() => {
+    let cols;
     if (effectiveMode === 'selection') {
-      return getSelectionColumns(
+      cols = getSelectionColumns(
         effectiveSelectedIds,
         handleSelectionChange,
         filteredData,
@@ -97,12 +100,19 @@ export function LibraryTable({
         selectionMode === 'single', // Pass radio button mode flag
       );
     } else {
-      return getLibraryColumns(
+      cols = getLibraryColumns(
         onViewItem || (() => {}),
         onEditItem || (() => {}),
         onDeleteItem || (() => {}),
       );
     }
+    
+    // Filter out Actions column if hideActions is true
+    if (hideActions) {
+      return cols.filter((col) => col.id !== 'actions');
+    }
+    
+    return cols;
   }, [
     effectiveMode,
     effectiveSelectedIds,
@@ -113,6 +123,7 @@ export function LibraryTable({
     onEditItem,
     onDeleteItem,
     selectionMode,
+    hideActions,
   ]);
 
   // Get children for expandable rows (e.g., templates within knowledge packs)

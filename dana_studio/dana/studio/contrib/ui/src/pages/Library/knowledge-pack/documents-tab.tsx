@@ -109,6 +109,7 @@ export function DocumentsTab({ documentIds }: DocumentsTabProps) {
             filterType="all"
             onRowClick={handleViewItem}
             onViewItem={handleViewItem}
+            hideActions={true}
           />
         </div>
       )}

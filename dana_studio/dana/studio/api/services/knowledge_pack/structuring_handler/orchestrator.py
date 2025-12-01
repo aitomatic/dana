@@ -193,12 +193,12 @@ class KPStructuringOrchestrator(AbstractHandler):
             # Create user message with tool call XML
             thinking_msg = HandlerMessage(
                 sender=SenderRole.ASSISTANT,
-                content="<thinking>Starting knowledge pack structuring. First, I need to explore the current knowledge tree to understand what already exists.</thinking>\n\n<explore_knowledge></explore_knowledge>",
+                content="<thinking>First, I need to explore the current knowledge tree to understand what already exists.</thinking>\n\n<explore_knowledge></explore_knowledge>",
                 treat_as_tool=True,
             )
             first_part = conversation[:-2]
             second_part = conversation[-2:]
-            conversation = first_part + [thinking_msg] + [tool_msg] + second_part
+            conversation = first_part + second_part + [thinking_msg] + [tool_msg]
 
         # Track if tree was modified
         tree_modified = False
