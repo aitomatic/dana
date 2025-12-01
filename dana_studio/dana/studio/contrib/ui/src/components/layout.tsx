@@ -582,7 +582,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                     >
                       {timer.isPaused ? (
                         <>
-                          <Play className="w-4 h-4 mr-1" />
+                          <Play className="w-4 h-4" />
                           {timer.elapsedSeconds === 0 ? 'Start' : 'Continue'}
                         </>
                       ) : (

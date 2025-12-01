@@ -6,7 +6,7 @@ interface UseSessionTimerOptions {
   initialIsPaused?: boolean;
 }
 
-interface UseSessionTimerReturn {
+export interface UseSessionTimerReturn {
   elapsedSeconds: number;
   formattedTime: string;
   isPaused: boolean;
