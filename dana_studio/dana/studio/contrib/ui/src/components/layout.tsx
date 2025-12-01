@@ -86,17 +86,26 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   const prevSessionIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (isCaptureKnowledgePage && currentSession?.id) {
-      // Check if session ID actually changed
-      if (prevSessionIdRef.current !== null && prevSessionIdRef.current !== currentSession.id) {
-        // Session changed - reset timer to start fresh for the new session
+      // Check if session ID actually changed or if this is the first session load
+      const sessionChanged = prevSessionIdRef.current !== null && prevSessionIdRef.current !== currentSession.id;
+      const isFirstLoad = prevSessionIdRef.current === null;
+      
+      if (sessionChanged || isFirstLoad) {
+        // Always reset timer when session changes or on first load
+        // This ensures new sessions start at 00:00:00 and existing sessions load their saved duration
         timer.reset();
-        console.log('[Timer] Session changed, resetting timer for session:', currentSession.id);
+        const savedDuration = currentSession?.session_metadata?.duration_seconds || 0;
+        if (savedDuration === 0) {
+          console.log('[Timer] New session detected, timer reset to 00:00:00 for session:', currentSession.id);
+        } else {
+          console.log('[Timer] Session changed, timer reset to saved duration:', savedDuration, 'seconds for session:', currentSession.id);
+        }
       }
       prevSessionIdRef.current = currentSession.id;
     } else if (!currentSession?.id) {
       prevSessionIdRef.current = null;
     }
-  }, [currentSession?.id, isCaptureKnowledgePage, timer]);
+  }, [currentSession?.id, currentSession?.session_metadata?.duration_seconds, isCaptureKnowledgePage, timer]);
 
   // Check if session has user messages to enable/disable Complete button
   const checkUserMessages = useCallback(async () => {
