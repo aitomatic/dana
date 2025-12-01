@@ -242,7 +242,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
     return () => {
       clearInterval(intervalId);
     };
-  }, [isCaptureKnowledgePage, timer.isPaused, timer.elapsedSeconds, currentSession?.id, currentSession?.status, updateSession]);
+  }, [isCaptureKnowledgePage, timer.isPaused, currentSession?.id, currentSession?.status, updateSession]);
 
   // Save timer on page unload (refresh/navigation)
   useEffect(() => {
