@@ -4,7 +4,7 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './app-sidebar';
-import { ArrowLeft, ArrowUpRight, Play, Pause } from 'iconoir-react';
+import { ArrowLeft, ArrowUpRight, Pause, Play } from 'iconoir-react';
 import { Settings } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { useContributionStore } from '@/stores/contribution-store';
@@ -17,6 +17,8 @@ import VersionNotification from '@/components/version-notification';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { SESSION_STATUS } from '@/lib/constants';
 import { toast } from 'sonner';
+import { TimerProvider } from '@/contexts/TimerContext';
+import { ConfirmDialog } from '@/components/library/confirm-dialog';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -38,6 +40,8 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   const [prebuiltAgent, setPrebuiltAgent] = useState<any>(null);
   const [knowledgePack, setKnowledgePack] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUserMessages, setHasUserMessages] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const { trackTabNavigation, trackError } = useDanaAnalytics();
 
   const isCaptureKnowledgePage = location.pathname.includes('/capture-knowledge');
@@ -50,10 +54,18 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   // Use a memoized value to ensure timer hook gets updated when session loads
   const initialDuration = currentSession?.session_metadata?.duration_seconds || 0;
   const initialIsPaused = currentSession?.session_metadata?.timer_paused ?? undefined;
+  
+  // For new sessions (duration = 0), don't auto-start - wait for first message
+  // For existing sessions, auto-start if not paused
+  // For completed sessions, don't auto-start (timer is read-only)
+  const isNewSession = initialDuration === 0 && initialIsPaused === undefined;
+  const isCompleted = currentSession?.status === SESSION_STATUS.COMPLETED;
+  const shouldAutoStart = isCaptureKnowledgePage && !isNewSession && !isCompleted && initialIsPaused !== true;
+  
   const timer = useSessionTimer({
     initialDurationSeconds: initialDuration,
-    autoStart: isCaptureKnowledgePage,
-    initialIsPaused: initialIsPaused,
+    autoStart: shouldAutoStart,
+    initialIsPaused: isCompleted ? true : initialIsPaused, // Always paused for completed sessions
   });
 
   // Reset last saved duration and paused state when session ID changes
@@ -69,6 +81,57 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
       }
     }
   }, [currentSession?.id, currentSession?.session_metadata?.duration_seconds, currentSession?.session_metadata?.timer_paused, isCaptureKnowledgePage]);
+
+  // Reset timer when session ID changes (each session has its own timer)
+  const prevSessionIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (isCaptureKnowledgePage && currentSession?.id) {
+      // Check if session ID actually changed
+      if (prevSessionIdRef.current !== null && prevSessionIdRef.current !== currentSession.id) {
+        // Session changed - reset timer to start fresh for the new session
+        timer.reset();
+        console.log('[Timer] Session changed, resetting timer for session:', currentSession.id);
+      }
+      prevSessionIdRef.current = currentSession.id;
+    } else if (!currentSession?.id) {
+      prevSessionIdRef.current = null;
+    }
+  }, [currentSession?.id, isCaptureKnowledgePage, timer]);
+
+  // Check if session has user messages to enable/disable Complete button
+  const checkUserMessages = useCallback(async () => {
+    if (!isCaptureKnowledgePage || !currentSession?.id) {
+      setHasUserMessages(false);
+      return;
+    }
+
+    try {
+      const response = await apiService.getSessionConversation(currentSession.id);
+      if (response && response.messages && Array.isArray(response.messages)) {
+        // Check if there are any user messages
+        const userMessages = response.messages.filter((msg: any) => msg.sender === 'user');
+        setHasUserMessages(userMessages.length > 0);
+      } else {
+        setHasUserMessages(false);
+      }
+    } catch (error) {
+      console.error('[Layout] Failed to check user messages:', error);
+      setHasUserMessages(false);
+    }
+  }, [isCaptureKnowledgePage, currentSession?.id]);
+
+  // Check user messages on mount and when session changes
+  useEffect(() => {
+    checkUserMessages();
+  }, [checkUserMessages]);
+
+  // Expose refresh function on window object for chat sidebar to call
+  useEffect(() => {
+    (window as any).refreshCompleteButton = checkUserMessages;
+    return () => {
+      delete (window as any).refreshCompleteButton;
+    };
+  }, [checkUserMessages]);
 
   // Track last saved paused state to prevent duplicate saves
   const lastSavedPausedRef = useRef<boolean | undefined>(undefined);
@@ -137,22 +200,133 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
     }
   }, [timer.isPaused, timer.elapsedSeconds, isCaptureKnowledgePage, currentSession?.id, updateSession]);
 
-  // Handle Save & Exit
+  // Save timer duration periodically (every 10 seconds) while running
+  useEffect(() => {
+    if (
+      !isCaptureKnowledgePage ||
+      timer.isPaused ||
+      !currentSession?.id ||
+      currentSession.status === SESSION_STATUS.COMPLETED
+    ) {
+      return;
+    }
+
+    const saveTimerPeriodically = async () => {
+      try {
+        const durationToSave = timer.elapsedSeconds;
+        // Save if duration has changed (avoid saving same value repeatedly)
+        // But always save at least every 10 seconds to ensure we don't lose progress
+        if (durationToSave !== lastSavedDurationRef.current || timer.isPaused !== lastSavedPausedRef.current) {
+          console.log('[Timer] Periodic save: Saving timer duration:', durationToSave, 'seconds, paused:', timer.isPaused);
+          const updatedMetadata = {
+            ...(currentSession.session_metadata || {}),
+            duration_seconds: durationToSave,
+            timer_paused: timer.isPaused,
+          };
+          await updateSession(currentSession.id, {
+            session_metadata: updatedMetadata,
+          }, { silent: true });
+          lastSavedDurationRef.current = durationToSave;
+          lastSavedPausedRef.current = timer.isPaused;
+          console.log('[Timer] Periodic save: Successfully saved duration:', durationToSave, 'seconds');
+        }
+      } catch (error) {
+        console.error('[Timer] Periodic save: Failed to save timer state:', error);
+      }
+    };
+
+    // Save immediately when timer starts running, then every 10 seconds
+    saveTimerPeriodically();
+    const intervalId = setInterval(saveTimerPeriodically, 10000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isCaptureKnowledgePage, timer.isPaused, timer.elapsedSeconds, currentSession?.id, currentSession?.status, updateSession]);
+
+  // Save timer on page unload (refresh/navigation)
+  useEffect(() => {
+    if (
+      !isCaptureKnowledgePage ||
+      !currentSession?.id ||
+      currentSession.status === SESSION_STATUS.COMPLETED
+    ) {
+      return;
+    }
+
+    const handleBeforeUnload = () => {
+      // Save timer state before page unloads
+      if (timer.elapsedSeconds > 0) {
+        const durationToSave = timer.elapsedSeconds;
+        const updatedMetadata = {
+          ...(currentSession.session_metadata || {}),
+          duration_seconds: durationToSave,
+          timer_paused: timer.isPaused,
+        };
+        
+        // Try to save using fetch with keepalive (works during page unload)
+        try {
+          const data = JSON.stringify({
+            session_metadata: updatedMetadata,
+          });
+          
+          // Use fetch with keepalive flag - ensures request completes even if page unloads
+          fetch(`/api/v2/knowledge/session/${currentSession.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: data,
+            keepalive: true, // Ensures request completes even if page unloads
+          }).catch(() => {
+            // Silently fail - we can't do anything about it during unload
+          });
+          
+          // Also try to save via updateSession (non-blocking)
+          updateSession(currentSession.id, {
+            session_metadata: updatedMetadata,
+          }, { silent: true }).catch(() => {
+            // Silently fail during unload
+          });
+          
+          console.log('[Timer] Attempting to save timer on page unload:', durationToSave, 'seconds');
+        } catch (error) {
+          console.error('[Timer] Failed to save timer on unload:', error);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isCaptureKnowledgePage, currentSession?.id, currentSession?.status, currentSession?.session_metadata, timer.elapsedSeconds, timer.isPaused, updateSession]);
+
+  // Handle Complete button click - show confirmation dialog
+  const handleCompleteClick = () => {
+    setShowCompleteDialog(true);
+  };
+
+  // Handle Save & Exit (called after confirmation)
   const handleSaveAndExit = async () => {
     if (!currentSession || isSaving) return;
 
     setIsSaving(true);
     try {
       // Save current timer duration
+      const timerDuration = timer.getDurationSeconds();
+      console.log('[Timer] Save & Exit: Saving timer duration:', timerDuration, 'seconds');
       const updatedMetadata = {
         ...(currentSession.session_metadata || {}),
-        duration_seconds: timer.getDurationSeconds(),
+        duration_seconds: timerDuration,
       };
       
       // Update session with timer duration
       await updateSession(currentSession.id, {
         session_metadata: updatedMetadata,
-      });
+      }, { silent: true });
+      console.log('[Timer] Save & Exit: Successfully saved timer duration:', timerDuration, 'seconds');
 
       // Mark as completed if not already completed
       if (currentSession.status !== SESSION_STATUS.COMPLETED) {
@@ -166,6 +340,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
       toast.error('Failed to save session', {
         description: error?.message || 'Please try again.',
       });
+      setShowCompleteDialog(false);
     } finally {
       setIsSaving(false);
     }
@@ -293,23 +468,6 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                   </TooltipContent>
                 </Tooltip>
               )}
-              {/* Timer display */}
-              {isCaptureKnowledgePage && (
-                <div className="flex items-center gap-2 ml-2">
-                  <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                    {timer.formattedTime}
-                  </span>
-                  <Button
-                    onClick={timer.toggle}
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-3"
-                    aria-label={timer.isPaused ? 'Continue session' : 'Pause session'}
-                  >
-                    {timer.isPaused ? 'Continue' : 'Pause'}
-                  </Button>
-                </div>
-              )}
             </div>
           );
         }
@@ -400,26 +558,90 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                 </Button>
               </div>
             )}
-            {isCaptureKnowledgePage && currentSession && currentSession.status !== SESSION_STATUS.COMPLETED && (
+            {isCaptureKnowledgePage && currentSession && (
               <div className="flex gap-2 items-center">
-                <Button
-                  onClick={handleSaveAndExit}
-                  variant="default"
-                  className="hover:bg-green-700"
-                  disabled={isSaving}
-                  aria-label="Save & Exit"
-                >
-                  {isSaving ? 'Saving...' : 'Save & Exit'}
-                </Button>
+                {/* Timer display - show for both active and completed sessions */}
+                <div className="flex items-center gap-2 border border-gray-100 h-[40px] px-2 bg-gray-100 rounded-sm">
+                  {currentSession.status === SESSION_STATUS.COMPLETED ? (
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Completed in <span className="font-mono">{timer.formattedTime}</span>
+                    </span>
+                  ) : (
+                    <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
+                      {timer.formattedTime}
+                    </span>
+                  )}
+                  {/* Only show pause/continue button for non-completed sessions */}
+                  {currentSession.status !== SESSION_STATUS.COMPLETED && (
+                    <Button
+                      onClick={timer.toggle}
+                      variant="outline"
+                      size="default"
+                      className="h-7 px-3"
+                      aria-label={timer.isPaused ? (timer.elapsedSeconds === 0 ? 'Start session' : 'Continue session') : 'Pause session'}
+                    >
+                      {timer.isPaused ? (
+                        <>
+                          <Play className="w-4 h-4 mr-1" />
+                          {timer.elapsedSeconds === 0 ? 'Start' : 'Continue'}
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="w-4 h-4 mr-1" />
+                          Pause
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+                {/* Only show Complete button for non-completed sessions */}
+                {currentSession.status !== SESSION_STATUS.COMPLETED && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          onClick={handleCompleteClick}
+                          variant="default"
+                          className="hover:bg-green-700"
+                          disabled={isSaving || !hasUserMessages}
+                          aria-label="Complete"
+                        >
+                          {isSaving ? 'Saving...' : 'Complete'}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!hasUserMessages && (
+                      <TooltipContent>
+                        <p>Session has collected no insight to complete</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                )}
               </div>
             )}
           </div>
         </header>
         <main className={isCaptureKnowledgePage ? 'flex-1 min-h-0 overflow-hidden' : ''}>
           <VersionNotification />
-          {children}
+          {isCaptureKnowledgePage ? (
+            <TimerProvider timer={timer}>
+              {children}
+            </TimerProvider>
+          ) : (
+            children
+          )}
         </main>
       </SidebarInset>
+      <ConfirmDialog
+        isOpen={showCompleteDialog}
+        onClose={() => setShowCompleteDialog(false)}
+        onConfirm={handleSaveAndExit}
+        title="Complete Session?"
+        description="This action will end the session. You won't be able to add more insights after completion."
+        confirmText="Complete"
+        cancelText="Cancel"
+        variant="default"
+      />
     </SidebarProvider>
   );
 }

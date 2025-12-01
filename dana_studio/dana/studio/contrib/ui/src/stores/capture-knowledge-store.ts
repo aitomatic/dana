@@ -105,7 +105,7 @@ export const useCaptureKnowledgeStore = create<CaptureKnowledgeState>((set, get)
       if (response.success && response.data) {
         set({ currentSession: response.data });
         if (!silent) {
-          toast.success('Session updated successfully');
+        toast.success('Session updated successfully');
         }
       } else {
         const errorMsg = response.error || response.message || 'Failed to update session';

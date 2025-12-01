@@ -5,6 +5,7 @@ import { createSmartChatStore } from '@/stores/smart-chat-store';
 import { useCaptureKnowledgeStore } from '@/stores';
 import { ArrowUp, Expand, Collapse } from 'iconoir-react';
 import { HybridRenderer } from '@/pages/Agents/chat/hybrid-renderer';
+import { useTimerContext } from '@/contexts/TimerContext';
 
 // CSS for blinking cursor animation
 const cursorBlinkStyle = `
@@ -232,6 +233,9 @@ const CaptureKnowledgeSessionChat: React.FC<{
 
   // Access template data from capture knowledge store
   const { contributionTemplate } = useCaptureKnowledgeStore();
+  
+  // Access timer context to start timer on first message
+  const { timer } = useTimerContext();
 
   // Debug logging for template loading
   useEffect(() => {
@@ -598,6 +602,13 @@ const CaptureKnowledgeSessionChat: React.FC<{
       const textToSend = messageText || input.trim();
       if (!textToSend || !sessionId) return;
 
+      // Check if this is the first user message and start timer if needed
+      const isFirstMessage = messages.filter(m => m.sender === 'user').length === 0;
+      if (isFirstMessage && timer && timer.isPaused) {
+        console.log('[Timer] First message sent, starting timer');
+        timer.resume();
+      }
+
       // Clear previous thinking messages when starting new processing
       setProcessingStatusHistory([]);
 
@@ -645,14 +656,20 @@ const CaptureKnowledgeSessionChat: React.FC<{
           removeMessageById(thinkingMessageId);
         }
 
-        // Add the actual response
-        if (result && result.success && result.agent_response) {
-          const agentResponse = {
-            sender: 'agent' as const,
-            text: result.agent_response,
-            timestamp: Date.now(),
-          };
-          addMessage(agentResponse);
+          // Add the actual response
+          if (result && result.success && result.agent_response) {
+            const agentResponse = {
+              sender: 'agent' as const,
+              text: result.agent_response,
+              timestamp: Date.now(),
+            };
+            addMessage(agentResponse);
+
+            // Refresh Complete button state after message is sent
+            if ((window as any).refreshCompleteButton) {
+              console.log('[Chat] Refreshing Complete button state after message sent');
+              (window as any).refreshCompleteButton();
+            }
 
           // Check if the response contains buttons and activate them
           const responseText = agentResponse.text;
@@ -747,6 +764,8 @@ const CaptureKnowledgeSessionChat: React.FC<{
       setMessageButtonsActive,
       deactivateAllButtons,
       useSessionChatStore,
+      messages,
+      timer,
     ],
   );
 
