@@ -85,15 +85,15 @@ class SQLApplicationSettingsRepo(AbstractApplicationSettingsRepo):
 
         if setting:
             setting.value = value
-            if name:
+            if name is not None:
                 setting.name = name
-            if description:
+            if description is not None:
                 setting.description = description
             if placeholders is not None:
                 setting.placeholders = placeholders
             if placeholder_examples is not None:
                 setting.placeholder_examples = placeholder_examples
-            if default_value:
+            if default_value is not None:
                 setting.default_value = default_value
         else:
             setting = ApplicationSettings(

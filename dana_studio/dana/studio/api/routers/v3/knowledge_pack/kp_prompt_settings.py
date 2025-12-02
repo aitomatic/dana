@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dana.studio.api.core.database import get_db
-from dana.studio.api.repositories import get_domain_knowledge_repo
+from dana.studio.api.repositories import get_domain_knowledge_repo, AbstractDomainKnowledgeRepo
 from pydantic import BaseModel
 import logging
 
@@ -19,7 +19,7 @@ class PromptOverrideRequest(BaseModel):
 @router.get("")
 async def get_kp_prompt_overrides(
     knowledge_id: int,
-    kb_repo: type = Depends(get_domain_knowledge_repo),
+    kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
     db: Session = Depends(get_db),
 ):
     """Get all prompt overrides for a knowledge pack."""
@@ -43,7 +43,7 @@ async def set_kp_prompt_override(
     category: str,
     key: str,
     request: PromptOverrideRequest,
-    kb_repo: type = Depends(get_domain_knowledge_repo),
+    kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
     db: Session = Depends(get_db),
 ):
     """Set a prompt override for a knowledge pack."""
@@ -74,7 +74,7 @@ async def remove_kp_prompt_override(
     knowledge_id: int,
     category: str,
     key: str,
-    kb_repo: type = Depends(get_domain_knowledge_repo),
+    kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
     db: Session = Depends(get_db),
 ):
     """Remove a prompt override for a knowledge pack."""

@@ -78,7 +78,7 @@ class KnowledgeNode(BaseModel):
 
 class KnowledgeGenerationTool(BaseTool):
     # Timeout constants (in seconds)
-    DEFAULT_LLM_CALL_TIMEOUT = 30  # 5 minutes for LLM calls
+    DEFAULT_LLM_CALL_TIMEOUT = 30  # 30 secs for LLM calls
     DEFAULT_RAG_QUERY_TIMEOUT = 60  # 1 minute for RAG queries
     DEFAULT_BATCH_TIMEOUT = 600  # 10 minutes for batch operations
     DEFAULT_LEAF_PROCESSING_TIMEOUT = 600  # 10 minutes per leaf

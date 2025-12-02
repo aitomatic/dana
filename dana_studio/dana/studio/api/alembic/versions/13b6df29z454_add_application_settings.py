@@ -1,6 +1,6 @@
 """Add application_settings table
 
-Revision ID: xxx_add_application_settings
+Revision ID: 13b6df29z454_add_application_settings
 Revises: c7cd1ef038b1
 Create Date: 2025-01-XX XX:XX:XX.XXXXXX
 
