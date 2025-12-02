@@ -6,6 +6,7 @@ import { useCaptureKnowledgeStore } from '@/stores';
 import { ArrowUp, Expand, Collapse } from 'iconoir-react';
 import { HybridRenderer } from '@/pages/Agents/chat/hybrid-renderer';
 import { useTimerContext } from '@/contexts/TimerContext';
+import { SESSION_STATUS } from '@/lib/constants';
 
 // CSS for blinking cursor animation
 const cursorBlinkStyle = `
@@ -231,11 +232,14 @@ const CaptureKnowledgeSessionChat: React.FC<{
   const setMessageButtonsActive = useSessionChatStore((s) => s.setMessageButtonsActive);
   const deactivateAllButtons = useSessionChatStore((s) => s.deactivateAllButtons);
 
-  // Access template data from capture knowledge store
-  const { contributionTemplate } = useCaptureKnowledgeStore();
+  // Access template data and session from capture knowledge store
+  const { contributionTemplate, currentSession } = useCaptureKnowledgeStore();
   
   // Access timer context to start timer on first message
   const { timer } = useTimerContext();
+
+  // Check if session is completed
+  const isSessionCompleted = currentSession?.status === SESSION_STATUS.COMPLETED;
 
   // Debug logging for template loading
   useEffect(() => {
@@ -600,7 +604,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
   const handleSendMessage = useCallback(
     async (messageText?: string) => {
       const textToSend = messageText || input.trim();
-      if (!textToSend || !sessionId) return;
+      if (!textToSend || !sessionId || isSessionCompleted) return;
 
       // Check if this is the first user message and start timer if needed
       const isFirstMessage = messages.filter(m => m.sender === 'user').length === 0;
@@ -766,6 +770,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
       useSessionChatStore,
       messages,
       timer,
+      isSessionCompleted,
     ],
   );
 
@@ -881,7 +886,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
       <div className="flex-shrink-0 p-3">
         <div className="relative">
           {/* Animated placeholder overlay */}
-          {!input && !isSending && (
+          {!input && !isSending && !isSessionCompleted && (
             <div className="absolute top-3 left-3 z-10 text-sm text-gray-500 pointer-events-none">
               <AnimatedPlaceholder
                 hasMessages={messages.some((msg) => msg.sender === 'user')}
@@ -890,9 +895,16 @@ const CaptureKnowledgeSessionChat: React.FC<{
               />
             </div>
           )}
+          {/* Completed session message */}
+          {isSessionCompleted && (
+            <div className="absolute top-3 left-3 z-10 text-sm text-gray-500 pointer-events-none">
+              This session has been completed. Chat is disabled.
+            </div>
+          )}
           <textarea
             className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
-              focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
+              focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto
+              disabled:opacity-60 disabled:cursor-not-allowed"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -903,7 +915,7 @@ const CaptureKnowledgeSessionChat: React.FC<{
               setHasInteracted(true);
             }}
             onBlur={() => setIsFocused(false)}
-            disabled={isSending}
+            disabled={isSending || isSessionCompleted}
             rows={1}
             style={{
               height: 'auto',
@@ -914,13 +926,14 @@ const CaptureKnowledgeSessionChat: React.FC<{
               target.style.height = 'auto';
               target.style.height = Math.min(target.scrollHeight, 120) + 'px';
             }}
+            title={isSessionCompleted ? 'This session has been completed. Chat is disabled.' : ''}
           />
           {input.trim() && (
             <button
               onClick={() => handleSendMessage()}
-              className="absolute right-3 bottom-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:shadow-md hover:cursor-pointer"
-              title="Send message"
-              disabled={isSending}
+              className="absolute right-3 bottom-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:shadow-md hover:cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              title={isSessionCompleted ? 'This session has been completed. Chat is disabled.' : 'Send message'}
+              disabled={isSending || isSessionCompleted}
             >
               <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
             </button>

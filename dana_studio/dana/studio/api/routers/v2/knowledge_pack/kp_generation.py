@@ -119,6 +119,12 @@ async def generate_knowledge(
                 success=False, message="Questions not found. Please generate questions first.", error=error_msg
             )
 
+        # Get template generation prompt override from kp_metadata if exists
+        prompt_overrides = kp_metadata.get("prompt_overrides", {})
+        template_generation_prompt = None
+        if "template_generation" in prompt_overrides and "prompt" in prompt_overrides["template_generation"]:
+            template_generation_prompt = prompt_overrides["template_generation"]["prompt"]
+
         # Create background task data
         task_data = {
             "knowledge_id": knowledge_id,
@@ -129,6 +135,7 @@ async def generate_knowledge(
             "domain": spec.domain,
             "role": spec.role,
             "tasks": [spec.task],
+            "template_generation_prompt": template_generation_prompt,  # KP override (can be None)
         }
 
         # Create background task

@@ -1694,6 +1694,99 @@ class ApiService {
     return response.data;
   }
 
+  // ========================================
+  // V3 Prompt Settings Methods
+  // ========================================
+
+  /**
+   * Get all prompt settings organized by category
+   */
+  async getAllPromptSettings(): Promise<any> {
+    const response = await this.client.get('/v3/settings/prompts');
+    return response.data;
+  }
+
+  /**
+   * Get a specific prompt setting
+   * @param category - Prompt category (e.g., "template_generation")
+   * @param key - Prompt key (e.g., "prompt")
+   */
+  async getPromptSetting(category: string, key: string): Promise<any> {
+    const response = await this.client.get(`/v3/settings/prompts/${category}/${key}`);
+    return response.data;
+  }
+
+  /**
+   * Update a prompt setting
+   * @param category - Prompt category
+   * @param key - Prompt key
+   * @param value - New prompt value
+   * @param name - Optional name
+   * @param description - Optional description
+   */
+  async updatePromptSetting(
+    category: string,
+    key: string,
+    value: string,
+    name?: string,
+    description?: string,
+  ): Promise<any> {
+    const response = await this.client.put(`/v3/settings/prompts/${category}/${key}`, {
+      value,
+      name,
+      description,
+    });
+    return response.data;
+  }
+
+  /**
+   * Reset a prompt setting to its default value
+   * @param category - Prompt category
+   * @param key - Prompt key
+   */
+  async resetPromptSetting(category: string, key: string): Promise<any> {
+    const response = await this.client.post(`/v3/settings/prompts/${category}/${key}/reset`);
+    return response.data;
+  }
+
+  // ========================================
+  // V3 Knowledge Pack Prompt Override Methods
+  // ========================================
+
+  /**
+   * Get all prompt overrides for a knowledge pack
+   * @param knowledgeId - Knowledge Pack ID
+   */
+  async getKPPromptOverrides(knowledgeId: number): Promise<any> {
+    const response = await this.client.get(`/v3/knowledge/${knowledgeId}/prompt-settings`);
+    return response.data;
+  }
+
+  /**
+   * Set a prompt override for a knowledge pack
+   * @param knowledgeId - Knowledge Pack ID
+   * @param category - Prompt category
+   * @param key - Prompt key
+   * @param value - Prompt value
+   */
+  async setKPPromptOverride(knowledgeId: number, category: string, key: string, value: string): Promise<any> {
+    const response = await this.client.put(`/v3/knowledge/${knowledgeId}/prompt-settings/${category}/${key}`, {
+      value,
+    });
+    return response.data;
+  }
+
+  /**
+   * Remove a prompt override for a knowledge pack
+   * @param knowledgeId - Knowledge Pack ID
+   * @param category - Prompt category
+   * @param key - Prompt key
+   */
+  async removeKPPromptOverride(knowledgeId: number, category: string, key: string): Promise<any> {
+    const response = await this.client.delete(`/v3/knowledge/${knowledgeId}/prompt-settings/${category}/${key}`);
+    return response.data;
+  }
+
   /**
    * Download interview session notes as markdown file
    * @param sessionId - Session ID

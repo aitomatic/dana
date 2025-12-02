@@ -249,3 +249,31 @@ class BackGroundTask(Base):
     error = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class ApplicationSettings(Base):
+    __tablename__ = "application_settings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    category = Column(String, nullable=False, index=True)  # e.g., "template_generation", "interview_system"
+    key = Column(String, nullable=False, index=True)  # e.g., "prompt", "default_prompt", "system_prompt"
+    full_key = Column(String, unique=True, nullable=False, index=True)  # category.key for unique constraint
+
+    # Content
+    value = Column(Text, nullable=True)  # The actual prompt content
+
+    # Metadata for UI and documentation
+    name = Column(String, nullable=True)  # Human-readable name: "Template Generation Prompt"
+    description = Column(Text, nullable=True)  # What this prompt does
+    placeholders = Column(JSON, nullable=True)  # Available placeholders: ["{formatted_summaries}", "{domain}", "{role}"]
+    placeholder_examples = Column(JSON, nullable=True)  # Example values: {"{domain}": "Sugar Manufacturing", "{role}": "Process Engineer"}
+    default_value = Column(Text, nullable=True)  # Hardcoded fallback for reference
+
+    # Versioning and tracking
+    version = Column(String, nullable=True, default="1.0.0")
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+    # Usage context
+    applies_to = Column(String, nullable=True)  # e.g., "knowledge_pack", "interview_template", "global"
+    is_active = Column(Boolean, default=True)

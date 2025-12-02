@@ -11,6 +11,7 @@ import CaptureKnowledgePage from './pages/ExpertKnowledge';
 import ContributionTemplatePage from './pages/ContributionTemplate';
 import DocumentationPage from './pages/Documentation';
 import SupportPage from './pages/Support';
+import SettingsPage from './pages/Settings';
 import StyleGuidePage from './pages/StyleGuide';
 import './index.css';
 import AgentChat from './pages/Agents/chat';
@@ -191,6 +192,14 @@ createRoot(document.getElementById('root')!).render(
           element={
             <Layout>
               <SupportPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <Layout>
+              <SettingsPage />
             </Layout>
           }
         />

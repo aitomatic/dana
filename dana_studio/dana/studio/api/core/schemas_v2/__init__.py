@@ -62,6 +62,12 @@ from ._interview_analysis import (
     InterviewAnalysisGenerateResponse,
     InterviewAnalysisGetResponse,
 )
+from ._prompt_settings import (
+    PromptCategory,
+    PromptSetting,
+    PromptSettingsResponse,
+    PromptUpdateRequest,
+)
 from ..schemas import SenderRole
 from ._doc import DocumentReadV2
 
@@ -131,4 +137,8 @@ __all__ = [
     "InterviewAnalysisGenerateRequest",
     "InterviewAnalysisGenerateResponse",
     "InterviewAnalysisGetResponse",
+    "PromptCategory",
+    "PromptSetting",
+    "PromptSettingsResponse",
+    "PromptUpdateRequest",
 ]

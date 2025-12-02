@@ -5,6 +5,7 @@ from .document_repo import SQLDocumentRepo, AbstractDocumentRepo
 from .interview_template_repo import SQLInterviewTemplateRepo, AbstractInterviewTemplateRepo
 from .interview_session_repo import SQLInterviewSessionRepo, AbstractInterviewSessionRepo
 from .agent_repo import SQLAgentRepo, AbstractAgentRepo
+from .application_settings_repo import SQLApplicationSettingsRepo, AbstractApplicationSettingsRepo
 
 
 def get_domain_knowledge_repo() -> type(AbstractDomainKnowledgeRepo):
@@ -33,3 +34,7 @@ def get_interview_session_repo() -> type(AbstractInterviewSessionRepo):
 
 def get_agent_repo() -> type(AbstractAgentRepo):
     return SQLAgentRepo
+
+
+def get_application_settings_repo() -> type(AbstractApplicationSettingsRepo):
+    return SQLApplicationSettingsRepo

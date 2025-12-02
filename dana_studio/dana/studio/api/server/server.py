@@ -117,6 +117,7 @@ def create_app():
     from ..routers.main import router as main_router
     from ..routers.poet import router as poet_router
     from ..routers.v2 import router as v2_router
+    from ..routers.v3 import router as v3_router
 
     app.include_router(main_router)
 
@@ -124,6 +125,7 @@ def create_app():
     app.include_router(poet_router, prefix="/api")
     app.include_router(ws_router)
     app.include_router(v2_router, prefix="/api/v2")
+    app.include_router(v3_router, prefix="/api/v3")
     app.include_router(v1_router, prefix="/api")
 
     # Serve static files (React build)

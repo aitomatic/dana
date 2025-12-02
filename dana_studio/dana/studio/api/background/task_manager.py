@@ -172,6 +172,8 @@ class TaskManager:
         thread_name = f"{task_type}-Worker-{worker_id}"
         logger.info(f"{thread_name} started")
 
+        print(f"{thread_name} started")
+
         while not self._shutdown_event.is_set():
             try:
                 # Get task from type-specific queue
@@ -302,6 +304,7 @@ class TaskManager:
             domain=task["data"]["domain"],
             role=task["data"]["role"],
             tasks=task["data"]["tasks"],
+            template_generation_prompt=task["data"].get("template_generation_prompt"),  # KP override
         )
 
         # Execute knowledge generation
