@@ -606,10 +606,9 @@ const CaptureKnowledgeSessionChat: React.FC<{
       const textToSend = messageText || input.trim();
       if (!textToSend || !sessionId || isSessionCompleted) return;
 
-      // Check if this is the first user message and start timer if needed
-      const isFirstMessage = messages.filter(m => m.sender === 'user').length === 0;
-      if (isFirstMessage && timer && timer.isPaused) {
-        console.log('[Timer] First message sent, starting timer');
+      // Resume timer if paused when user sends a message
+      if (timer && timer.isPaused) {
+        console.log('[Timer] Message sent while paused, resuming timer');
         timer.resume();
       }
 
