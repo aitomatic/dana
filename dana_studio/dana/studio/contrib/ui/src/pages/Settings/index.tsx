@@ -46,7 +46,7 @@ export default function SettingsPage() {
       setSettings(response);
       // Initialize edited values with current values
       const initialValues: Record<string, string> = {};
-      Object.values(response.settings).forEach((categorySettings) => {
+      (Object.values(response.settings) as PromptSetting[][]).forEach((categorySettings) => {
         categorySettings.forEach((setting) => {
           initialValues[setting.full_key] = setting.value || '';
         });
