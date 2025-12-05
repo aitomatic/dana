@@ -24,6 +24,7 @@ class StorageConfig(BaseSettings):
 
 
 class FileStorageConfig(StorageConfig):
+    type: StorageType = StorageType.FILE
     workspace_folder: str | None
 
 

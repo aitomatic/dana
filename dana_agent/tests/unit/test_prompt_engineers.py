@@ -337,7 +337,24 @@ class TestResourcePromptEngineerWithCreateFileResource:
         # Import here to avoid issues if module doesn't exist yet
         import sys
 
-        sys.path.insert(0, "/Users/lam/Desktop/another_opendxa/examples/agents/financial-analysis/resources")
+        # Use relative path from test file to examples directory
+        examples_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "..",
+            "examples",
+            "agents",
+            "financial-analysis",
+            "resources",
+        )
+        examples_path = os.path.abspath(examples_path)
+
+        if not os.path.exists(examples_path):
+            pytest.skip("CreateFileResource example not available")
+
+        sys.path.insert(0, examples_path)
         from create_file_resource import CreateFileResource
 
         return CreateFileResource(workspace_root="/tmp", auto_register=False)
@@ -400,7 +417,24 @@ class TestResourcePromptEngineerPromptPriority:
         # The CreateFileResource has its prompt in examples/agents/financial-analysis/prompts/
         import sys
 
-        sys.path.insert(0, "/Users/lam/Desktop/another_opendxa/examples/agents/financial-analysis/resources")
+        # Use relative path from test file to examples directory
+        examples_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "..",
+            "..",
+            "examples",
+            "agents",
+            "financial-analysis",
+            "resources",
+        )
+        examples_path = os.path.abspath(examples_path)
+
+        if not os.path.exists(examples_path):
+            pytest.skip("CreateFileResource example not available")
+
+        sys.path.insert(0, examples_path)
         from create_file_resource import CreateFileResource
 
         component = CreateFileResource(workspace_root="/tmp", auto_register=False)
