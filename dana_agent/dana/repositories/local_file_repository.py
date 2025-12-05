@@ -113,7 +113,7 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
                 / self._get_relative_storage_path(self._agent)
                 / "prompts"
                 / subfolder
-                / self._component.__class__.__qualname__
+                / str(self._component.object_id)
             )
         target_path.mkdir(parents=True, exist_ok=True)
         return target_path
