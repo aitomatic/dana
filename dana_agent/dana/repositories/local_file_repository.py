@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import datetime
-import inspect
 import json
 import os
 from pathlib import Path
@@ -80,9 +79,7 @@ class LocalRepositoryMixin:
 
     def _get_relative_storage_path(self, agent: BaseAgent) -> str:
         _codec_str = self._get_codec_prefix(agent)
-        filepath = inspect.getfile(agent.__class__)
-        filename = Path(filepath).stem
-        return f"{_codec_str}/{agent.__class__.__qualname__}__{filename}"
+        return f"{_codec_str}/{agent.object_id}"
 
 
 class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
