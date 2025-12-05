@@ -4,16 +4,12 @@ Integration tests for EventLogAPI with repository pattern.
 Tests the full save/read cycle with LocalEventRepository.
 """
 
-from datetime import datetime
-import tempfile
 import shutil
+import tempfile
 from unittest.mock import Mock
-
-import pytest
 
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
-from dana.common.schemas import Event
 from dana.core.agent.components.event_log_api import EventLogAPI
 from dana.core.agent.components.observer import ObserverProtocol
 from dana.repositories import LocalEventRepository
@@ -21,6 +17,7 @@ from dana.repositories import LocalEventRepository
 
 class MockAgentForIntegration(BaseAgent):
     """Mock agent for integration testing."""
+
     def __init__(self, codec=None, storage_config=None, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         if codec is None:
@@ -37,6 +34,7 @@ class MockAgentForIntegration(BaseAgent):
 
 class MockObserverForIntegration(ObserverProtocol):
     """Mock observer for integration testing."""
+
     def __init__(self, return_data=None):
         self.return_data = return_data or {}
         self.observe_count = 0
@@ -174,4 +172,3 @@ class TestEventLogAPIRepositoryIntegration:
             assert read_events[0].data == {"key": "value"}
         finally:
             shutil.rmtree(temp_dir)
-

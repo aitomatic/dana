@@ -19,9 +19,9 @@ import sys
 from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
+from dana.common.protocols.types import LearningPhase
 from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
-from dana.common.protocols.types import LearningPhase
 
 
 class PromptFormatter:
@@ -817,7 +817,6 @@ class PromptEngineer:
                 if related_acquisitive_learnings:
                     messages.append(LLMMessage(role="user", content=f"Learning from the past : {related_acquisitive_learnings}"))
 
-        
         # Hack: put the user state/locale here for now
         state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]
         state_info_content = "\n".join(state_info)

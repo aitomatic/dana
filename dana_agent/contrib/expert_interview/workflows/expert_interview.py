@@ -212,15 +212,17 @@ RULES:
 OUTPUT: Just the next question (or "END_INTERVIEW" if conversation should end). No explanation."""
 
         try:
-            response = asyncio.run(self.llm.chat_response(
-                messages=[LLMMessage(role="user", content=prompt)],
-                system_message="You are a skilled professional interviewer. Generate natural, context-aware questions.",
-                max_tokens=150,
-                temperature=0.7
-            ))
+            response = asyncio.run(
+                self.llm.chat_response(
+                    messages=[LLMMessage(role="user", content=prompt)],
+                    system_message="You are a skilled professional interviewer. Generate natural, context-aware questions.",
+                    max_tokens=150,
+                    temperature=0.7,
+                )
+            )
 
             question = response.content if hasattr(response, "content") else str(response)
-            question = question.strip().strip('"\'')
+            question = question.strip().strip("\"'")
 
             # Check if interview should end
             if "END_INTERVIEW" in question:
@@ -228,7 +230,7 @@ OUTPUT: Just the next question (or "END_INTERVIEW" if conversation should end). 
 
             return question
 
-        except Exception as e:
+        except Exception:
             # Fallback to simple question if LLM fails
             if topics.get("current_focus"):
                 return f"Could you elaborate on {topics['current_focus']}?"

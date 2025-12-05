@@ -5,10 +5,50 @@ This module tests the parse_method_call functionality for both codec classes,
 ensuring they can parse XML method call strings back into ToolCall objects.
 """
 
-import pytest
-
-from dana.common.schemas.tool_call import ToolCall, MethodSignature, ParameterInfo, ParsedCodecResponse
+from dana.common.schemas.tool_call import MethodSignature, ParameterInfo, ParsedCodecResponse, ToolCall
 from dana.core.knowledge.prompts.codecs.xml_format import CSXMLCodec, KLXMLCodec
+
+
+class TestToolCallSchemas:
+    """Test ToolCall and MethodSignature schemas with object_id field."""
+
+    def test_method_signature_with_object_id(self):
+        """Test MethodSignature can be created with object_id."""
+        param = ParameterInfo(name="query", type="str", description="Search query", has_default=False)
+        signature = MethodSignature(
+            class_name="SearchResource", object_id="my-search-resource", name="search", description="Search method", parameters=[param]
+        )
+
+        assert signature.class_name == "SearchResource"
+        assert signature.object_id == "my-search-resource"
+        assert signature.name == "search"
+
+    def test_method_signature_without_object_id(self):
+        """Test MethodSignature backward compatibility - works without object_id."""
+        param = ParameterInfo(name="query", type="str", description="Search query", has_default=False)
+        signature = MethodSignature(class_name="SearchResource", name="search", description="Search method", parameters=[param])
+
+        assert signature.class_name == "SearchResource"
+        assert signature.object_id is None
+        assert signature.name == "search"
+
+    def test_tool_call_with_object_id(self):
+        """Test ToolCall can be created with object_id."""
+        tool_call = ToolCall(class_name="SearchResource", object_id="my-search-resource", name="search", parameters={"query": "test"})
+
+        assert tool_call.class_name == "SearchResource"
+        assert tool_call.object_id == "my-search-resource"
+        assert tool_call.name == "search"
+        assert tool_call.parameters == {"query": "test"}
+
+    def test_tool_call_without_object_id(self):
+        """Test ToolCall backward compatibility - works without object_id."""
+        tool_call = ToolCall(class_name="SearchResource", name="search", parameters={"query": "test"})
+
+        assert tool_call.class_name == "SearchResource"
+        assert tool_call.object_id is None
+        assert tool_call.name == "search"
+        assert tool_call.parameters == {"query": "test"}
 
 
 class TestKLXMLCodecParseMethodCall:
@@ -194,18 +234,14 @@ class TestXMLCodecsRoundTrip:
             description="Create a new file",
             parameters=[
                 ParameterInfo(
-                    name="relative_workspace_path",
-                    type="str",
-                    description="Path to file",
-                    has_default=False,
-                    example="dana/hello.py"
+                    name="relative_workspace_path", type="str", description="Path to file", has_default=False, example="dana/hello.py"
                 )
-            ]
+            ],
         )
 
         # Construct XML
-        xml_output = KLXMLCodec.construct(signature)
-        
+        KLXMLCodec.construct(signature)
+
         # Extract just the usage example part (the XML call format)
         # The construct method returns a full description, we need the usage example
         usage_example = KLXMLCodec._usage_example(signature)
@@ -225,18 +261,14 @@ class TestXMLCodecsRoundTrip:
             description="Create a new file",
             parameters=[
                 ParameterInfo(
-                    name="relative_workspace_path",
-                    type="str",
-                    description="Path to file",
-                    has_default=False,
-                    example="dana/hello.py"
+                    name="relative_workspace_path", type="str", description="Path to file", has_default=False, example="dana/hello.py"
                 )
-            ]
+            ],
         )
 
         # Construct XML
-        xml_output = CSXMLCodec.construct(signature)
-        
+        CSXMLCodec.construct(signature)
+
         # Extract just the usage example part (the XML call format)
         usage_example = CSXMLCodec._usage_example(signature)
 
@@ -791,4 +823,3 @@ This is the response content without thinking or tool calls.
         assert result.response == "This is the response content without thinking or tool calls."
         assert result.thinking == ""  # No thinking tag
         assert result.tool_calls is None
-
