@@ -3,11 +3,13 @@ Unit tests for LangfusePromptRepository.
 
 Tests the Langfuse-based prompt repository with mocked Langfuse SDK.
 """
+
+from datetime import UTC, datetime
 import sys
-from datetime import datetime, UTC
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 
 # Mock the problematic import before any dana imports
 sys.modules["dana.core.knowledge.prompts.agent_prompt_engineer"] = MagicMock()
@@ -15,7 +17,6 @@ sys.modules["dana.core.knowledge.prompts.resource_prompt_engineer"] = MagicMock(
 sys.modules["dana.core.knowledge.prompts.workflow_prompt_engineer"] = MagicMock()
 
 # Now import normally
-from dana.common.schemas import PromptVersionSnapshot
 from dana.config.storage_config import LangfuseStorageConfig
 from dana.core.agent import BaseAgent
 from dana.core.resource import BaseResource
@@ -25,6 +26,7 @@ from dana.repositories.langfuse_repository import LangfusePromptRepository
 
 class MockAgent(BaseAgent):
     """Mock agent for testing."""
+
     def __init__(self, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         # Mock codec
@@ -34,12 +36,14 @@ class MockAgent(BaseAgent):
 
 class MockResource(BaseResource):
     """Mock resource for testing."""
+
     def __init__(self, **kwargs):
         super().__init__(resource_type="test_resource", auto_register=False, **kwargs)
 
 
 class MockWorkflow(BaseWorkflow):
     """Mock workflow for testing."""
+
     def __init__(self, **kwargs):
         super().__init__(workflow_type="test_workflow", auto_register=False, **kwargs)
 
@@ -53,13 +57,13 @@ class TestLangfusePromptRepositoryInitialization:
         # Mock Langfuse client
         mock_langfuse = MagicMock()
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         component = MockResource()
-        
+
         repository = LangfusePromptRepository(config, agent, component)
-        
+
         assert repository._agent == agent
         assert repository._component == component
         assert repository._langfuse == mock_langfuse
@@ -72,12 +76,12 @@ class TestLangfusePromptRepositoryInitialization:
         # Mock Langfuse client
         mock_langfuse = MagicMock()
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
-        
+
         repository = LangfusePromptRepository(config, agent, component=None)
-        
+
         assert repository._agent == agent
         assert repository._component is None
         assert "system_prompt_template" in repository._prompt_name
@@ -88,13 +92,13 @@ class TestLangfusePromptRepositoryInitialization:
         # Mock Langfuse client
         mock_langfuse = MagicMock()
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         component = MockResource()
-        
+
         repository = LangfusePromptRepository(config, agent, component)
-        
+
         # Check prompt name format
         assert "TestCodec" in repository._prompt_name
         assert "MockAgent" in repository._prompt_name
@@ -112,17 +116,17 @@ class TestLangfusePromptRepositoryCreateSnapshot:
         mock_langfuse = MagicMock()
         mock_langfuse.prompt.return_value = None  # No existing prompt
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         content = "Test prompt content"
         provenance = {"source": "test"}
         metrics = {"test_metric": 1}
-        
+
         snapshot = repository.create_snapshot(content, provenance, metrics)
-        
+
         assert snapshot.version == "v1"
         assert snapshot.content == content
         assert snapshot.provenance == provenance
@@ -139,17 +143,17 @@ class TestLangfusePromptRepositoryCreateSnapshot:
         mock_existing_prompt.metadata = {"dana_versions": ["v1", "v2"]}
         mock_langfuse.prompt.return_value = mock_existing_prompt
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         content = "Test prompt content v3"
         provenance = {"source": "test"}
         metrics = {}
-        
+
         snapshot = repository.create_snapshot(content, provenance, metrics)
-        
+
         assert snapshot.version == "v3"
         mock_langfuse.prompt.assert_called()
         mock_langfuse.flush.assert_called_once()
@@ -166,21 +170,18 @@ class TestLangfusePromptRepositoryLoadSnapshot:
         mock_prompt = MagicMock()
         mock_prompt.prompt = "Test prompt content"
         mock_prompt.content = "Test prompt content"
-        mock_prompt.metadata = {
-            "provenance": {"source": "test"},
-            "metrics": {"test_metric": 1}
-        }
+        mock_prompt.metadata = {"provenance": {"source": "test"}, "metrics": {"test_metric": 1}}
         mock_prompt.created_at = datetime.now(UTC)
         mock_prompt.updated_at = datetime.now(UTC)
         mock_langfuse.prompt.return_value = mock_prompt
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         snapshot = repository.load_snapshot("v1")
-        
+
         assert snapshot is not None
         assert snapshot.version == "v1"
         assert snapshot.content == "Test prompt content"
@@ -194,14 +195,14 @@ class TestLangfusePromptRepositoryLoadSnapshot:
         mock_langfuse = MagicMock()
         mock_langfuse.prompt.return_value = None
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         with pytest.raises(ValueError, match="Version v1 not found"):
             repository.load_snapshot("v1", error_if_not_found=True)
-        
+
         # Test with error_if_not_found=False
         snapshot = repository.load_snapshot("v1", error_if_not_found=False)
         assert snapshot is None
@@ -219,13 +220,13 @@ class TestLangfusePromptRepositoryListVersions:
         mock_prompt.metadata = {"dana_versions": ["v1", "v2", "v3"]}
         mock_langfuse.prompt.return_value = mock_prompt
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         versions = repository.list_versions()
-        
+
         assert versions == ["v1", "v2", "v3"]
 
     @patch("dana.repositories.langfuse_prompt_repository._get_langfuse_client")
@@ -237,13 +238,13 @@ class TestLangfusePromptRepositoryListVersions:
         mock_prompt.metadata = {}
         mock_langfuse.prompt.return_value = mock_prompt
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         versions = repository.list_versions()
-        
+
         assert versions == []
 
     @patch("dana.repositories.langfuse_prompt_repository._get_langfuse_client")
@@ -253,13 +254,13 @@ class TestLangfusePromptRepositoryListVersions:
         mock_langfuse = MagicMock()
         mock_langfuse.prompt.return_value = None
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         versions = repository.list_versions()
-        
+
         assert versions == []
 
 
@@ -278,23 +279,23 @@ class TestLangfusePromptRepositoryGetActive:
         mock_version_prompt.metadata = {"provenance": {}, "metrics": {}}
         mock_version_prompt.created_at = datetime.now(UTC)
         mock_version_prompt.updated_at = datetime.now(UTC)
-        
+
         def prompt_side_effect(name, label=None):
             if label is None:
                 return mock_base_prompt
             elif label == "v2":
                 return mock_version_prompt
             return None
-        
+
         mock_langfuse.prompt.side_effect = prompt_side_effect
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         snapshot = repository.get_active()
-        
+
         assert snapshot is not None
         assert snapshot.version == "v2"
         assert snapshot.content == "Active prompt content"
@@ -311,23 +312,23 @@ class TestLangfusePromptRepositoryGetActive:
         mock_version_prompt.metadata = {"provenance": {}, "metrics": {}}
         mock_version_prompt.created_at = datetime.now(UTC)
         mock_version_prompt.updated_at = datetime.now(UTC)
-        
+
         def prompt_side_effect(name, label=None):
             if label is None:
                 return mock_base_prompt
             elif label == "v2":
                 return mock_version_prompt
             return None
-        
+
         mock_langfuse.prompt.side_effect = prompt_side_effect
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         snapshot = repository.get_active()
-        
+
         assert snapshot is not None
         assert snapshot.version == "v2"  # Latest version
 
@@ -344,23 +345,23 @@ class TestLangfusePromptRepositorySetActive:
         mock_version_prompt.prompt = "Version prompt content"
         mock_base_prompt = MagicMock()
         mock_base_prompt.metadata = {}
-        
+
         def prompt_side_effect(name, label=None):
             if label == "v1":
                 return mock_version_prompt
             elif label is None:
                 return mock_base_prompt
             return None
-        
+
         mock_langfuse.prompt.side_effect = prompt_side_effect
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         repository.set_active("v1")
-        
+
         # Verify active version was set in cache
         assert repository._active_version_cache == "v1"
         # Verify prompt was updated
@@ -379,11 +380,11 @@ class TestLangfusePromptRepositoryHasAnyVersions:
         mock_prompt.metadata = {"dana_versions": ["v1"]}
         mock_langfuse.prompt.return_value = mock_prompt
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
+
         assert repository.has_any_versions() is True
 
     @patch("dana.repositories.langfuse_prompt_repository._get_langfuse_client")
@@ -395,10 +396,9 @@ class TestLangfusePromptRepositoryHasAnyVersions:
         mock_prompt.metadata = {}
         mock_langfuse.prompt.return_value = mock_prompt
         mock_get_client.return_value = mock_langfuse
-        
+
         config = LangfuseStorageConfig(public_key="test_key", secret_key="test_secret")
         agent = MockAgent()
         repository = LangfusePromptRepository(config, agent)
-        
-        assert repository.has_any_versions() is False
 
+        assert repository.has_any_versions() is False

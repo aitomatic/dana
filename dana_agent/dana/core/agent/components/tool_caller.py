@@ -6,7 +6,9 @@ This component provides functionality for:
 - Tool call result processing
 - Tool call error handling
 """
+
 from __future__ import annotations
+
 import asyncio
 import json
 import re
@@ -30,7 +32,7 @@ if TYPE_CHECKING:
 class WARCaller:
     """Unified caller for Workflows, Agents, and Resources with consistent behavior."""
 
-    def __init__(self, agent: "STARAgent", tool_caller: ToolCaller | None = None):
+    def __init__(self, agent: STARAgent, tool_caller: ToolCaller | None = None):
         """Initialize with agent reference."""
         self._agent = agent
         self._llm = agent.llm_client  # TODO: maintain our own LLM (maybe local?)
@@ -249,7 +251,7 @@ class WARCaller:
 class ToolCaller(WARCaller):
     """Component providing tool call execution and orchestration capabilities."""
 
-    def __init__(self, agent: "STARAgent"):
+    def __init__(self, agent: STARAgent):
         """
         Initialize the component with a reference to the agent.
 
@@ -1193,7 +1195,7 @@ Please provide the canonical XML format:
 
 
 class CodecToolCaller(WARCaller):
-    def __init__(self, agent: "STARAgent", codec: type[AbstractCodec]):
+    def __init__(self, agent: STARAgent, codec: type[AbstractCodec]):
         super().__init__(agent, self)
         self._agent = agent
         self._codec = codec
@@ -1257,13 +1259,10 @@ class CodecToolCaller(WARCaller):
 
         # Parse using codec's parse_response method
         parsed_response = self._codec.parse_response(content)
-        
+
         # Extract thinking as reasoning
         response_reasoning = parsed_response.thinking if parsed_response.thinking else None
         response_text = parsed_response.response if parsed_response.response else None
-
-
-
 
         if response_reasoning and not (parsed_response.tool_calls or response_text):
             suggestion_message = f"[Error] invalid format, please follow the following instruction.\n{self._codec.get_instruction()}"
@@ -1275,19 +1274,15 @@ class CodecToolCaller(WARCaller):
 
         if not response_reasoning:
             print(f"Response reasoning: {response_reasoning}")
-        
+
         # Convert tool calls to DictParams format
         if parsed_response.tool_calls:
             for tool_call in parsed_response.tool_calls:
                 function_name = f"{tool_call.class_name}:{tool_call.name}"
-                result_tool_calls.append({
-                    "function": function_name,
-                    "arguments": tool_call.parameters
-                })
-            return "No response generated", response_reasoning , result_tool_calls
+                result_tool_calls.append({"function": function_name, "arguments": tool_call.parameters})
+            return "No response generated", response_reasoning, result_tool_calls
         else:
-            return response_text, response_reasoning , result_tool_calls
-
+            return response_text, response_reasoning, result_tool_calls
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
         """Convert structured function calls to our internal format."""
@@ -1315,22 +1310,24 @@ class CodecToolCaller(WARCaller):
         function_name = tool_call.get("function", "")
         arguments = tool_call.get("arguments", {})
         if ":" not in function_name:
-            return self._create_tool_error(
-                "codec_format", function_name, "Expected ClassName:methodName format"
-            )
-        
+            return self._create_tool_error("codec_format", function_name, "Expected ClassName:methodName format")
+
         parts = function_name.split(":", 1)
-        class_name = parts[0]
+        identifier = parts[0]
         method_name = parts[1]
 
-        obj_info = self._find_object_by_class_name(class_name)
+        # Try object_id lookup first, then fallback to class_name lookup
+        obj_info = self._find_object_by_id(identifier)
+        if not obj_info:
+            obj_info = self._find_object_by_class_name(identifier)
+
         if not obj_info:
             available_classes = self._get_available_class_names()
             return self._create_tool_error(
                 "class_not_found",
-                class_name,
-                f"Class '{class_name}' not found in available agents/resources/workflows. "
-                f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}"
+                identifier,
+                f"Object '{identifier}' not found by object_id or class_name in available agents/resources/workflows. "
+                f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}",
             )
 
         # Method signature validation and conversion to the expected type
@@ -1362,7 +1359,7 @@ class CodecToolCaller(WARCaller):
                                 break
                             except Exception:
                                 continue
-                            
+
             try:
                 # Set session_id for EventLog if it exists
                 if obj_info["type"] == "agent":
@@ -1374,19 +1371,53 @@ class CodecToolCaller(WARCaller):
                     result = Misc.safe_asyncio_run(method, **arguments)
                 else:
                     result = method(**arguments)
-                return self._create_tool_success(obj_info["type"], f"{class_name}.{method_name}", result)
+                return self._create_tool_success(obj_info["type"], f"{identifier}.{method_name}", result)
             except Exception as e:
                 return self._create_tool_error(
                     "execution_error",
-                    f"{class_name}.{method_name}",
-                    f"Error executing call {class_name}.{method_name}: {str(e)}\n{traceback.format_exc()}"
+                    f"{identifier}.{method_name}",
+                    f"Error executing call {identifier}.{method_name}: {str(e)}\n{traceback.format_exc()}",
                 )
         else:
             return self._create_tool_error(
                 "method_not_found",
-                f"{class_name}.{method_name}",
-                f"Method '{method_name}' not found in class '{class_name}'\n{traceback.format_exc()}"
+                f"{identifier}.{method_name}",
+                f"Method '{method_name}' not found in object '{identifier}'\n{traceback.format_exc()}",
             )
+
+    def _find_object_by_id(self, object_id: str) -> dict[str, Any] | None:
+        """
+        Find an object by its object_id in available agents, resources, and workflows.
+
+        Args:
+            object_id: The object_id to search for
+
+        Returns:
+            Dictionary with "type" and "object" keys, or None if not found
+        """
+        # Search in resources (check both object_id and resource_id)
+        for resource in self._agent.available_resources:
+            if (hasattr(resource, "object_id") and resource.object_id == object_id) or (
+                hasattr(resource, "resource_id") and resource.resource_id == object_id
+            ):
+                return {"type": "resource", "object": resource}
+
+        # Search in workflows (check both object_id and workflow_id)
+        for workflow in self._agent.available_workflows:
+            if (hasattr(workflow, "object_id") and workflow.object_id == object_id) or (
+                hasattr(workflow, "workflow_id") and workflow.workflow_id == object_id
+            ):
+                return {"type": "workflow", "object": workflow}
+
+        # Search in agents (check object_id via registry)
+        self._agent.ensure_registered()
+        registry = self._agent._registry
+        if registry and object_id in registry._items:
+            agent = registry.get(object_id)
+            if agent:
+                return {"type": "agent", "object": agent}
+
+        return None
 
     def _find_object_by_class_name(self, class_name: str) -> dict[str, Any] | None:
         """
@@ -1405,17 +1436,17 @@ class CodecToolCaller(WARCaller):
         for agent in self._agent.available_agents:
             if agent.__class__.__name__ == class_name:
                 return {"type": "agent", "object": agent}
-        
+
         # Search in resources
         for resource in self._agent.available_resources:
             if resource.__class__.__name__ == class_name:
                 return {"type": "resource", "object": resource}
-        
+
         # Search in workflows
         for workflow in self._agent.available_workflows:
             if workflow.__class__.__name__ == class_name:
                 return {"type": "workflow", "object": workflow}
-        
+
         return None
 
     def _get_available_class_names(self) -> list[str]:

@@ -14,10 +14,12 @@ import pytest
 
 from dana.common.llm.types import LLMResponse
 from dana.core.agent.components.tool_caller import (
+    CodecToolCaller,
     ToolCaller,
     WARCaller,
 )
 from dana.core.agent.star_agent import STARAgent
+from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
 
 class TestToolCallerArchitecture:
@@ -613,3 +615,85 @@ class TestLLMResponseParsing:
         assert response_text is None
         assert reasoning is None
         assert len(tool_calls) == 0
+
+
+class TestCodecToolCallerWithObjectId:
+    """Test CodecToolCaller with object_id format."""
+
+    @pytest.fixture
+    def mock_agent(self):
+        """Create a mock agent with resources."""
+        agent = Mock(spec=STARAgent)
+        agent.agent_type = "test_agent"
+        agent.object_id = "test-agent-123"
+        agent.available_agents = []
+        agent.available_workflows = []
+        agent._registry = Mock()
+        agent._registry._items = {}
+        agent.ensure_registered = Mock()
+
+        # Create mock resources with object_id
+        mock_resource1 = Mock()
+        mock_resource1.__class__.__name__ = "SearchResource"
+        mock_resource1.object_id = "my-search-resource"
+        mock_resource1.resource_id = "my-search-resource"
+        search_method1 = Mock(return_value={"results": ["result1", "result2"]})
+        search_method1.__name__ = "search"
+        mock_resource1.search = search_method1
+
+        mock_resource2 = Mock()
+        mock_resource2.__class__.__name__ = "SearchResource"  # Same class, different instance
+        mock_resource2.object_id = "another-search-resource"
+        mock_resource2.resource_id = "another-search-resource"
+        search_method2 = Mock(return_value={"results": ["result3"]})
+        search_method2.__name__ = "search"
+        mock_resource2.search = search_method2
+
+        agent.available_resources = [mock_resource1, mock_resource2]
+        return agent
+
+    @pytest.fixture
+    def codec_tool_caller(self, mock_agent):
+        """Create a CodecToolCaller instance."""
+        return CodecToolCaller(mock_agent, CSXMLCodec)
+
+    def test_find_object_by_id_finds_resource(self, codec_tool_caller):
+        """Test _find_object_by_id finds resource by object_id."""
+        obj_info = codec_tool_caller._find_object_by_id("my-search-resource")
+
+        assert obj_info is not None
+        assert obj_info["type"] == "resource"
+        assert obj_info["object"].object_id == "my-search-resource"
+
+    def test_find_object_by_id_finds_correct_instance(self, codec_tool_caller):
+        """Test _find_object_by_id finds the correct instance when multiple exist."""
+        # Both resources have same class name but different object_id
+        obj_info1 = codec_tool_caller._find_object_by_id("my-search-resource")
+        obj_info2 = codec_tool_caller._find_object_by_id("another-search-resource")
+
+        assert obj_info1 is not None
+        assert obj_info2 is not None
+        assert obj_info1["object"].object_id == "my-search-resource"
+        assert obj_info2["object"].object_id == "another-search-resource"
+        assert obj_info1["object"] != obj_info2["object"]
+
+    def test_execute_single_call_with_object_id(self, codec_tool_caller):
+        """Test _execute_single_call works with object_id:method format."""
+        tool_call = {"function": "my-search-resource:search", "arguments": {"query": "test query"}}
+
+        result = codec_tool_caller._execute_single_call(tool_call)
+
+        assert result["success"] is True
+        assert result["type"] == "resource"
+        assert "my-search-resource.search" in result["target"]
+
+    def test_execute_single_call_falls_back_to_class_name(self, codec_tool_caller):
+        """Test _execute_single_call falls back to class_name lookup."""
+        # Use class name format (backward compatibility)
+        tool_call = {"function": "SearchResource:search", "arguments": {"query": "test query"}}
+
+        result = codec_tool_caller._execute_single_call(tool_call)
+
+        # Should still work with class_name format
+        assert result["success"] is True
+        assert result["type"] == "resource"

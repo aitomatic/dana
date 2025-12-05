@@ -1,7 +1,7 @@
-from pydantic import BaseSettings, ConfigDict
-from pathlib import Path
 from enum import StrEnum
 import os
+
+from pydantic import BaseSettings, ConfigDict
 
 
 # Storage configuration
@@ -9,16 +9,19 @@ class StorageType(StrEnum):
     """
     Use StrEnum to avoid issues with string comparison.
     """
+
     FILE = "file"
     # TODO: Implement other storage types
-    # S3 = "s3" 
+    # S3 = "s3"
     # GCS = "gcs"
     # AZURE = "azure"
     # LOCAL = "local"
 
+
 class StorageConfig(BaseSettings):
     type: StorageType
     model_config = ConfigDict(use_enum_values=True)
+
 
 class FileStorageConfig(StorageConfig):
     workspace_folder: str | None

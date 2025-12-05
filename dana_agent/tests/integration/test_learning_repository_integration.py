@@ -5,11 +5,9 @@ Tests the full save/load cycle with LocalLearningRepository.
 """
 
 from datetime import datetime
-import tempfile
 import shutil
+import tempfile
 from unittest.mock import Mock
-
-import pytest
 
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
@@ -18,6 +16,7 @@ from dana.repositories import LocalLearningRepository
 
 class MockAgentForIntegration(BaseAgent):
     """Mock agent for integration testing."""
+
     def __init__(self, codec=None, storage_config=None, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         if codec is None:
@@ -145,4 +144,3 @@ class TestLearningRepositoryIntegration:
             assert loaded_feedback == feedback_content
         finally:
             shutil.rmtree(temp_dir)
-

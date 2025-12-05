@@ -21,7 +21,6 @@ sys.modules["dana.core.knowledge.prompts.workflow_prompt_engineer"] = MagicMock(
 # Now import normally
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
-from dana.common.base_war import BaseWAR
 from dana.core.resource import BaseResource
 from dana.core.workflow import BaseWorkflow
 from dana.repositories.local_file_repository import LocalPromptRepository
@@ -29,6 +28,7 @@ from dana.repositories.local_file_repository import LocalPromptRepository
 
 class MockAgent(BaseAgent):
     """Mock agent for testing."""
+
     def __init__(self, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         # Mock codec
@@ -38,12 +38,14 @@ class MockAgent(BaseAgent):
 
 class MockResource(BaseResource):
     """Mock resource for testing."""
+
     def __init__(self, **kwargs):
         super().__init__(resource_type="test_resource", auto_register=False, **kwargs)
 
 
 class MockWorkflow(BaseWorkflow):
     """Mock workflow for testing."""
+
     def __init__(self, **kwargs):
         super().__init__(workflow_type="test_workflow", auto_register=False, **kwargs)
 
@@ -59,7 +61,7 @@ class TestLocalPromptRepositoryInitialization:
             agent = MockAgent()
             component = MockResource()
             repository = LocalPromptRepository(config, agent, component)
-            
+
             assert Path(temp_dir).exists()
             assert Path(temp_dir).is_dir()
             assert repository._workspace_folder == Path(temp_dir)
@@ -75,7 +77,7 @@ class TestLocalPromptRepositoryInitialization:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent, component=None)
-            
+
             assert Path(temp_dir).exists()
             assert Path(temp_dir).is_dir()
             assert repository._workspace_folder == Path(temp_dir)
@@ -92,7 +94,7 @@ class TestLocalPromptRepositoryInitialization:
             config = FileStorageConfig(workspace_folder=str(nested_path))
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             assert nested_path.exists()
             assert nested_path.is_dir()
             assert repository._workspace_folder == nested_path
@@ -110,9 +112,9 @@ class TestLocalPromptRepositoryPathResolution:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent, component=None)
-            
+
             path = repository._get_relative_prompt_path()
-            
+
             expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "system_prompt_template"
             assert path == expected_path
             assert path.exists()
@@ -127,9 +129,9 @@ class TestLocalPromptRepositoryPathResolution:
             agent = MockAgent()
             component = MockResource()
             repository = LocalPromptRepository(config, agent, component)
-            
+
             path = repository._get_relative_prompt_path()
-            
+
             expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "resources" / "MockResource"
             assert path == expected_path
             assert path.exists()
@@ -144,9 +146,9 @@ class TestLocalPromptRepositoryPathResolution:
             agent = MockAgent()
             component = MockWorkflow()
             repository = LocalPromptRepository(config, agent, component)
-            
+
             path = repository._get_relative_prompt_path()
-            
+
             expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "workflows" / "MockWorkflow"
             assert path == expected_path
             assert path.exists()
@@ -161,9 +163,9 @@ class TestLocalPromptRepositoryPathResolution:
             agent = MockAgent()
             nested_agent = MockAgent()
             repository = LocalPromptRepository(config, agent, nested_agent)
-            
+
             path = repository._get_relative_prompt_path()
-            
+
             expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "agents" / "MockAgent"
             assert path == expected_path
             assert path.exists()
@@ -181,7 +183,7 @@ class TestLocalPromptRepositoryHasAnyVersions:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             assert repository.has_any_versions() is False
         finally:
             shutil.rmtree(temp_dir)
@@ -193,13 +195,13 @@ class TestLocalPromptRepositoryHasAnyVersions:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             # Create a version file
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Test content")
-            
+
             assert repository.has_any_versions() is True
         finally:
             shutil.rmtree(temp_dir)
@@ -215,9 +217,9 @@ class TestLocalPromptRepositoryListVersions:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             versions = repository.list_versions()
-            
+
             assert versions == []
         finally:
             shutil.rmtree(temp_dir)
@@ -229,7 +231,7 @@ class TestLocalPromptRepositoryListVersions:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             # Create version files in non-sorted order
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
@@ -237,9 +239,9 @@ class TestLocalPromptRepositoryListVersions:
             (versions_dir / "v3.prompt").write_text("Content 3")
             (versions_dir / "v1.prompt").write_text("Content 1")
             (versions_dir / "v2.prompt").write_text("Content 2")
-            
+
             versions = repository.list_versions()
-            
+
             assert versions == ["v1", "v2", "v3"]
         finally:
             shutil.rmtree(temp_dir)
@@ -251,7 +253,7 @@ class TestLocalPromptRepositoryListVersions:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
@@ -259,9 +261,9 @@ class TestLocalPromptRepositoryListVersions:
             (versions_dir / "invalid.prompt").write_text("Invalid")
             (versions_dir / "v2.prompt").write_text("Content 2")
             (versions_dir / "readme.txt").write_text("Readme")
-            
+
             versions = repository.list_versions()
-            
+
             assert versions == ["v1", "v2"]
             assert "invalid" not in versions
             assert "readme" not in versions
@@ -279,16 +281,12 @@ class TestLocalPromptRepositoryCreateSnapshot:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
-            snapshot = repository.create_snapshot(
-                content="Test prompt content",
-                provenance={"source": "test"},
-                metrics={"score": 0.95}
-            )
-            
+
+            snapshot = repository.create_snapshot(content="Test prompt content", provenance={"source": "test"}, metrics={"score": 0.95})
+
             assert snapshot.version == "v1"
             assert snapshot.content == "Test prompt content"
-            
+
             # Verify file was created
             path = repository._get_relative_prompt_path()
             version_file = path / "versions" / "v1.prompt"
@@ -304,21 +302,17 @@ class TestLocalPromptRepositoryCreateSnapshot:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             # Create initial version
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content 1")
-            
-            snapshot = repository.create_snapshot(
-                content="Content 2",
-                provenance={"source": "test"},
-                metrics={"score": 0.96}
-            )
-            
+
+            snapshot = repository.create_snapshot(content="Content 2", provenance={"source": "test"}, metrics={"score": 0.96})
+
             assert snapshot.version == "v2"
-            
+
             # Verify new file was created
             version_file = path / "versions" / "v2.prompt"
             assert version_file.exists()
@@ -328,30 +322,27 @@ class TestLocalPromptRepositoryCreateSnapshot:
     def test_create_snapshot_saves_provenance_and_metrics_to_json_files(self):
         """Test create_snapshot saves provenance and metrics to JSON files."""
         import json
+
         temp_dir = tempfile.mkdtemp()
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             provenance = {"source": "test", "author": "unit_test"}
             metrics_input = {"score": 0.95, "quality": "high"}
-            
-            snapshot = repository.create_snapshot(
-                content="Test content",
-                provenance=provenance,
-                metrics=metrics_input
-            )
-            
+
+            snapshot = repository.create_snapshot(content="Test content", provenance=provenance, metrics=metrics_input)
+
             path = repository._get_relative_prompt_path()
-            
+
             # Verify provenance.json
             provenance_file = path / "provenance.json"
             assert provenance_file.exists()
             provenances = json.loads(provenance_file.read_text())
             assert snapshot.version in provenances
             assert provenances[snapshot.version] == provenance
-            
+
             # Verify metrics.json
             metrics_file = path / "metrics.json"
             assert metrics_file.exists()
@@ -372,15 +363,15 @@ class TestLocalPromptRepositoryLoadSnapshot:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             content = "This is test prompt content"
             (versions_dir / "v1.prompt").write_text(content)
-            
+
             snapshot = repository.load_snapshot("v1")
-            
+
             assert snapshot.version == "v1"
             assert snapshot.content == content
         finally:
@@ -389,23 +380,24 @@ class TestLocalPromptRepositoryLoadSnapshot:
     def test_load_snapshot_includes_provenance_from_json_file(self):
         """Test load_snapshot includes provenance from JSON file."""
         import json
+
         temp_dir = tempfile.mkdtemp()
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content")
-            
+
             provenance = {"source": "test", "author": "unit_test"}
             provenance_file = path / "provenance.json"
             provenance_file.write_text(json.dumps({"v1": provenance}, indent=4))
-            
+
             snapshot = repository.load_snapshot("v1")
-            
+
             assert snapshot.provenance == provenance
         finally:
             shutil.rmtree(temp_dir)
@@ -417,14 +409,14 @@ class TestLocalPromptRepositoryLoadSnapshot:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content")
-            
+
             snapshot = repository.load_snapshot("v1")
-            
+
             assert snapshot.provenance == {}
             assert snapshot.metrics == {}
         finally:
@@ -441,19 +433,19 @@ class TestLocalPromptRepositoryGetActive:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content 1")
             (versions_dir / "v2.prompt").write_text("Content 2")
-            
+
             # Set version.txt to v2
             version_file = path / "version.txt"
             version_file.write_text("v2")
-            
+
             snapshot = repository.get_active()
-            
+
             assert snapshot.version == "v2"
             assert snapshot.content == "Content 2"
         finally:
@@ -466,14 +458,14 @@ class TestLocalPromptRepositoryGetActive:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content 1")
-            
+
             snapshot = repository.get_active()
-            
+
             # Should use latest version when no version.txt exists
             assert snapshot.version == "v1"
             assert snapshot.content == "Content 1"
@@ -491,15 +483,15 @@ class TestLocalPromptRepositorySetActiveVersion:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content 1")
             (versions_dir / "v2.prompt").write_text("Content 2")
-            
+
             repository.set_active_version("v2")
-            
+
             version_file = path / "version.txt"
             assert version_file.exists()
             assert version_file.read_text().strip() == "v2"
@@ -517,7 +509,7 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             with pytest.raises(ValueError, match="No versions found"):
                 repository.get_active(error_if_not_found=True)
         finally:
@@ -530,9 +522,9 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             result = repository.get_active(error_if_not_found=False)
-            
+
             assert result is None
         finally:
             shutil.rmtree(temp_dir)
@@ -544,14 +536,14 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content 1")
-            
+
             result = repository.get_active(error_if_not_found=False)
-            
+
             assert result is not None
             assert result.version == "v1"
             assert result.content == "Content 1"
@@ -565,7 +557,7 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             with pytest.raises(ValueError, match="Version v99 not found"):
                 repository.load_snapshot("v99", error_if_not_found=True)
         finally:
@@ -578,9 +570,9 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             result = repository.load_snapshot("v99", error_if_not_found=False)
-            
+
             assert result is None
         finally:
             shutil.rmtree(temp_dir)
@@ -592,14 +584,14 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content 1")
-            
+
             result = repository.load_snapshot("v1", error_if_not_found=False)
-            
+
             assert result is not None
             assert result.version == "v1"
             assert result.content == "Content 1"
@@ -613,22 +605,21 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent()
             repository = LocalPromptRepository(config, agent)
-            
+
             path = repository._get_relative_prompt_path()
             versions_dir = path / "versions"
             versions_dir.mkdir(parents=True)
             (versions_dir / "v1.prompt").write_text("Content 1")
             (versions_dir / "v2.prompt").write_text("Content 2")
-            
+
             repository.set_active("v2")
-            
+
             version_file = path / "version.txt"
             assert version_file.exists()
             assert version_file.read_text().strip() == "v2"
-            
+
             # Verify it works the same as set_active_version
             repository.set_active_version("v1")
             assert version_file.read_text().strip() == "v1"
         finally:
             shutil.rmtree(temp_dir)
-

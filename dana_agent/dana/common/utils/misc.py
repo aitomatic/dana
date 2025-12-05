@@ -2,11 +2,11 @@
 
 # Configure asyncio to only warn about tasks taking longer than 30 seconds
 # (LLM operations typically take 1-10 seconds, so this avoids false warnings)
+import asyncio
+from collections.abc import Callable
 import inspect
 import re
 from typing import Any, get_type_hints
-from collections.abc import Callable
-import asyncio
 
 from dana.common.protocols.war import IS_TOOL_USE
 from dana.common.schemas.tool_call import MethodSignature, ParameterInfo, ParsedArgKwargsResults
@@ -68,7 +68,6 @@ class Misc:
 
     @staticmethod
     def parse_args_kwargs(func, *args, **kwargs) -> ParsedArgKwargsResults:
-
         """
         Bind (args, kwargs) to `func`'s signature, returning a dict with:
         - matched_args:      positional args that were bound to named parameters
@@ -131,70 +130,82 @@ class Misc:
         )
 
     @staticmethod
-    def extract_tool_use_methods(resource_class) -> list[tuple[str, callable]]:
+    def extract_tool_use_methods(resource_instance) -> list[tuple[str, callable]]:
         """
         Find all methods decorated with @tool_use.
-        
+
         Args:
-            resource_class: The class to inspect for tool_use decorated methods
-            
+            resource_instance: The instance to inspect for tool_use decorated methods
+
         Returns:
             List of (method_name, method) tuples for methods decorated with @tool_use
         """
         tool_methods = []
-        
-        for name, method in inspect.getmembers(resource_class, predicate=inspect.isfunction):
-            # Check if method has @tool_use decorator (IS_TOOL_USE attribute)
-            if hasattr(method, IS_TOOL_USE) and getattr(method, IS_TOOL_USE):
-                tool_methods.append((name, method))
-        
+
+        # Iterate over all attributes of the instance
+        for name in dir(resource_instance):
+            # Skip private attributes
+            if name.startswith("_"):
+                continue
+
+            # Get the attribute
+            attr = getattr(resource_instance, name, None)
+
+            # Check if it's callable and has __dict__ (methods have this)
+            if callable(attr) and hasattr(attr, "__dict__"):
+                # Check if method has @tool_use decorator (IS_TOOL_USE attribute)
+                if attr.__dict__.get(IS_TOOL_USE, False):
+                    tool_methods.append((name, attr))
+
         return tool_methods
 
     @staticmethod
     def parse_docstring_sections(docstring: str) -> dict[str, str]:
         """
         Parse docstring into sections (description, Args, Returns, etc.).
-        
+
         Args:
             docstring: The docstring to parse
-            
+
         Returns:
             Dict with sections: {'description', 'args', 'returns', 'raises', etc.}
         """
         if not docstring:
-            return {'description': ''}
-        
+            return {"description": ""}
+
         sections = {}
-        
+
         # Extract description (everything before first section header)
-        desc_match = re.split(r'\n\s*(Args|Returns|Raises|Examples?|Notes?):', docstring, maxsplit=1)
-        sections['description'] = desc_match[0].strip()
-        
+        desc_match = re.split(r"\n\s*(Args|Returns|Raises|Examples?|Notes?):", docstring, maxsplit=1)
+        sections["description"] = desc_match[0].strip()
+
         # Extract Args section
-        args_match = re.search(r'Args:(.*?)(?=\n\s*(?:Returns|Raises|Examples?|Notes?):|\Z)', docstring, re.DOTALL)
-        sections['args'] = args_match.group(1).strip() if args_match else ''
-        
+        args_match = re.search(r"Args:(.*?)(?=\n\s*(?:Returns|Raises|Examples?|Notes?):|\Z)", docstring, re.DOTALL)
+        sections["args"] = args_match.group(1).strip() if args_match else ""
+
         # Extract Returns section
-        returns_match = re.search(r'Returns:(.*?)(?=\n\s*(?:Args|Raises|Examples?|Notes?):|\Z)', docstring, re.DOTALL)
-        sections['returns'] = returns_match.group(1).strip() if returns_match else ''
-        
+        returns_match = re.search(r"Returns:(.*?)(?=\n\s*(?:Args|Raises|Examples?|Notes?):|\Z)", docstring, re.DOTALL)
+        sections["returns"] = returns_match.group(1).strip() if returns_match else ""
+
         # Extract Raises section
-        raises_match = re.search(r'Raises:(.*?)(?=\n\s*(?:Args|Returns|Examples?|Notes?):|\Z)', docstring, re.DOTALL)
-        sections['raises'] = raises_match.group(1).strip() if raises_match else ''
-        
+        raises_match = re.search(r"Raises:(.*?)(?=\n\s*(?:Args|Returns|Examples?|Notes?):|\Z)", docstring, re.DOTALL)
+        sections["raises"] = raises_match.group(1).strip() if raises_match else ""
+
         return sections
 
     @staticmethod
-    def parse_method_signature(method: callable) -> MethodSignature:
+    def parse_method_signature(method: callable, object_id: str | None = None) -> MethodSignature:
         """
         Parse method signature and return structured parameter info.
-        
+
         Args:
             method: The method to parse
-            
+            object_id: Optional object_id to include in the signature
+
         Returns:
             MethodSignature: Pydantic model containing:
                 - class_name: str | None (None for functions, class name for methods)
+                - object_id: str | None (Optional object identifier)
                 - name: str
                 - description: str
                 - parameters: list[ParameterInfo] where each ParameterInfo contains:
@@ -209,7 +220,7 @@ class Misc:
         class_name = None
         if inspect.ismethod(method):
             # Bound method: extract class from __self__
-            if hasattr(method, '__self__'):
+            if hasattr(method, "__self__"):
                 self_obj = method.__self__
                 # Check if __self__ is a class (for classmethods)
                 if inspect.isclass(self_obj):
@@ -217,61 +228,61 @@ class Misc:
                 else:
                     # Regular instance method: get class from instance
                     class_name = self_obj.__class__.__name__
-        elif hasattr(method, '__qualname__'):
+        elif hasattr(method, "__qualname__"):
             # Unbound method or function: check __qualname__ format
             qualname = method.__qualname__
             # If qualname contains '.', it's likely "ClassName.method_name" or "OuterClass.InnerClass.method_name"
-            if '.' in qualname:
-                parts = qualname.split('.')
+            if "." in qualname:
+                parts = qualname.split(".")
                 # Get the class name (second-to-last part, e.g., "ClassName" from "ClassName.method_name")
                 # For nested classes, this gets the direct class containing the method
                 if len(parts) > 1:
                     class_name = parts[-2]  # Get class name before method name
         # If class_name is still None at this point, it's a standalone function
-        
+
         sig = inspect.signature(method)
         docstring = inspect.getdoc(method) or ""
-        
+
         # Parse docstring sections
         sections = Misc.parse_docstring_sections(docstring)
-        method_description = sections['description']
-        
+        method_description = sections["description"]
+
         # Extract parameter descriptions from Args section
-        param_descriptions = Misc._parse_param_descriptions(sections['args'])
-        
+        param_descriptions = Misc._parse_param_descriptions(sections["args"])
+
         # Get type hints
         try:
             type_hints = get_type_hints(method)
         except Exception:
             type_hints = {}
-        
+
         # Build parameter list
         parameters = []
         for param_name, param in sig.parameters.items():
             # Skip 'self' and '**kwargs'
-            if param_name in ('self', 'kwargs'):
+            if param_name in ("self", "kwargs"):
                 continue
             if param.kind == inspect.Parameter.VAR_KEYWORD:
                 continue
-            
+
             # Get parameter type (string representation for serialization)
             param_type = Misc._format_type_annotation(param, type_hints.get(param_name))
-            
+
             # Get actual type object for programmatic use
             type_object = type_hints.get(param_name)
             if type_object is None and param.annotation != inspect.Parameter.empty:
                 type_object = param.annotation
-            
+
             # Get parameter description
             param_desc = param_descriptions.get(param_name, f"Parameter {param_name}")
-            
+
             # Check for default value
             has_default = param.default != inspect.Parameter.empty
             default_value = param.default if has_default else None
-            
+
             # Extract example from description or docstring
             example = Misc._extract_example_from_text(param_name, docstring)
-            
+
             param_info = ParameterInfo(
                 name=param_name,
                 type=param_type,
@@ -279,59 +290,56 @@ class Misc:
                 description=param_desc,
                 has_default=has_default,
                 default=default_value if has_default and default_value is not None else None,
-                example=example
+                example=example,
             )
-            
+
             parameters.append(param_info)
-        
+
         return MethodSignature(
-            class_name=class_name,
-            name=method.__name__,
-            description=method_description,
-            parameters=parameters
+            class_name=class_name, object_id=object_id, name=method.__name__, description=method_description, parameters=parameters
         )
 
     @staticmethod
     def _parse_param_descriptions(args_section: str) -> dict[str, str]:
         """
         Parse parameter descriptions from Args section of docstring.
-        
+
         Args:
             args_section: The Args section text from docstring
-            
+
         Returns:
             Dict mapping parameter names to descriptions
         """
         descriptions = {}
-        
+
         if not args_section:
             return descriptions
-        
+
         # Parse parameter lines (format: "param_name: description" or "param_name (type): description")
         # This regex handles multi-line descriptions and special params like **kwargs, *args
-        param_pattern = r'^\s*(\*{0,2}\w+)(?:\s*\([^)]+\))?\s*:\s*(.+?)(?=^\s*\*{0,2}\w+\s*(?:\([^)]+\))?\s*:|\Z)'
+        param_pattern = r"^\s*(\*{0,2}\w+)(?:\s*\([^)]+\))?\s*:\s*(.+?)(?=^\s*\*{0,2}\w+\s*(?:\([^)]+\))?\s*:|\Z)"
         matches = re.finditer(param_pattern, args_section, re.MULTILINE | re.DOTALL)
-        
+
         for match in matches:
             param_name = match.group(1)
             # Remove * from param names like **kwargs and *args
-            clean_param_name = param_name.lstrip('*')
+            clean_param_name = param_name.lstrip("*")
             param_desc = match.group(2).strip()
             # Clean up description (collapse multiple whitespace)
-            param_desc = ' '.join(param_desc.split())
+            param_desc = " ".join(param_desc.split())
             descriptions[clean_param_name] = param_desc
-        
+
         return descriptions
 
     @staticmethod
     def _format_type_annotation(param: inspect.Parameter, type_hint: Any) -> str:
         """
         Format parameter type annotation as string.
-        
+
         Args:
             param: The parameter object from signature
             type_hint: Type hint from get_type_hints()
-            
+
         Returns:
             Formatted type string
         """
@@ -339,56 +347,61 @@ class Misc:
             # Handle typing module types
             type_str = str(type_hint)
             # Clean up typing module notation
-            type_str = type_str.replace('typing.', '')
-            type_str = type_str.replace('<class \'', '').replace('\'>', '')
+            type_str = type_str.replace("typing.", "")
+            type_str = type_str.replace("<class '", "").replace("'>", "")
             # Clean up common patterns
-            type_str = type_str.replace('builtins.', '')
+            type_str = type_str.replace("builtins.", "")
             return type_str
-        
+
         if param.annotation != inspect.Parameter.empty:
             ann_str = str(param.annotation)
-            ann_str = ann_str.replace('<class \'', '').replace('\'>', '')
-            ann_str = ann_str.replace('builtins.', '')
+            ann_str = ann_str.replace("<class '", "").replace("'>", "")
+            ann_str = ann_str.replace("builtins.", "")
             return ann_str
-        
+
         return "Any"
 
     @staticmethod
     def _extract_example_from_text(param_name: str, text: str) -> str | None:
         """
         Extract example value for parameter from text.
-        
+
         Looks for patterns like:
         - Example: value
         - (example: value)
         - EXAMPLE tag in XML-like format
-        
+
         Args:
             param_name: Name of the parameter to find example for
             text: Text to search for examples
-            
+
         Returns:
             Example string if found, None otherwise
         """
         # Look for examples in parameter description
         # Pattern 1: "param_name: description Example: value"
-        pattern1 = rf'{param_name}[^:]*:.*?[Ee]xample[:\s]+([^\n\)]+)'
+        pattern1 = rf"{param_name}[^:]*:.*?[Ee]xample[:\s]+([^\n\)]+)"
         match = re.search(pattern1, text)
         if match:
             return match.group(1).strip()
-        
+
         # Pattern 2: "(example: value)" near parameter
-        pattern2 = rf'{param_name}[^:]*:.*?\([Ee]xample:\s*([^\)]+)\)'
+        pattern2 = rf"{param_name}[^:]*:.*?\([Ee]xample:\s*([^\)]+)\)"
         match = re.search(pattern2, text)
         if match:
             return match.group(1).strip()
-        
+
         return None
+
 
 if __name__ == "__main__":
     import os
     import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "examples", "agents", "financial-analysis", "resources"))
+
+    sys.path.append(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "examples", "agents", "financial-analysis", "resources")
+    )
     from create_file_resource import CreateFileResource
+
     resource = CreateFileResource()
     print(Misc.parse_method_signature(resource.create))
