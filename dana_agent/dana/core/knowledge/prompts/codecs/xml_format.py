@@ -223,16 +223,19 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
 
         tool_calls = []
         for match in function_call_matches:
-            function_call_content = match.group(0)  # Get the full <function_call>...</function_call>
-            # Skip empty function_call blocks (no <invoke> tag inside)
-            if not re.search(r'<invoke\s+name=["\']([^"\']+):([^"\']+)["\']', function_call_content):
-                continue
-            try:
-                tool_call = cls.parse_method_call(function_call_content)
-                tool_calls.append(tool_call)
-            except ValueError:
-                # Skip malformed function_call blocks gracefully
-                continue
+            function_call_content = match.group(1)  # Get the inner content of <function_call>
+            # Find all <invoke>...</invoke> blocks inside this function_call
+            invoke_pattern = r"<invoke\s+name=[\"'][^\"']+:[^\"']+[\"'][^>]*>.*?</invoke>"
+            invoke_matches = re.finditer(invoke_pattern, function_call_content, re.DOTALL)
+
+            for invoke_match in invoke_matches:
+                invoke_xml = invoke_match.group(0)
+                try:
+                    tool_call = cls.parse_method_call(invoke_xml)
+                    tool_calls.append(tool_call)
+                except ValueError:
+                    # Skip malformed invoke blocks gracefully
+                    continue
 
         # Extract response tag if it exists
         response_match = re.search(r"<response>(.*?)</response>", xml_string, re.DOTALL)
@@ -535,122 +538,38 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
 
 
 if __name__ == "__main__":
-    import sys
-
-    from dana.common.utils.misc import Misc
-
-    sys.path.append("examples/agents/financial-analysis/resources")
-    from create_file_resource import CreateFileResource
-
-    resource = CreateFileResource()
-
-    # Test construct methods
-    print("=" * 80)
-    print("CSXMLCodec.construct output:")
-    print("=" * 80)
-    print(CSXMLCodec.construct(Misc.parse_method_signature(resource.create)))
-    print("\n")
-
-    print("=" * 80)
-    print("KLXMLCodec.construct output:")
-    print("=" * 80)
-    print(KLXMLCodec.construct(Misc.parse_method_signature(resource.create)))
-    print("\n")
-
-    # Test parse_method_call methods
-    print("=" * 80)
-    print("Testing KLXMLCodec.parse_method_call:")
-    print("=" * 80)
-
-    klxml_examples = [
-        """<CreateFileResource:create>
-<relative_workspace_path>dana/hello.py</relative_workspace_path>
-</CreateFileResource:create>""",
-        """<MyResource:myMethod>
-<param1>value1</param1>
-<param2>value2</param2>
-</MyResource:myMethod>""",
-        """<CreateFileResource:create>
-<relative_workspace_path>dana/hello.py</relative_workspace_path>
-<another_param>some value</another_param>
-</CreateFileResource:create>""",
-        """Hello world
-<CreateFileResource:create>
-<relative_workspace_path>dana/hello.py</relative_workspace_path>
-</CreateFileResource:create>""",
-        """<thinking>
-This is my thinking about the task.
-</thinking>
-<CreateFileResource:create>
-<relative_workspace_path>dana/hello.py</relative_workspace_path>
-</CreateFileResource:create>""",
-        """Some text before
-<thinking>
-This is my thinking about the task.
-</thinking>
-<CreateFileResource:create>
-<relative_workspace_path>dana/hello.py</relative_workspace_path>
-</CreateFileResource:create>""",
-    ]
-
-    for i, xml_string in enumerate(klxml_examples, 1):
-        print(f"\nExample {i}:")
-        print(xml_string)
-        print("\nParsed result:")
-        try:
-            result = KLXMLCodec.parse_method_call(xml_string)
-            print(f"  class_name: {result.class_name}")
-            print(f"  name: {result.name}")
-            print(f"  thinking: {repr(result.thinking)}")
-            print(f"  parameters: {result.parameters}")
-        except Exception as e:
-            print(f"  ERROR: {e}")
-
-    print("\n" + "=" * 80)
-    print("Testing CSXMLCodec.parse_method_call:")
-    print("=" * 80)
-
     csxml_examples = [
-        """<function_call>
-<invoke name="CreateFileResource:create">
-<parameter name="relative_workspace_path">dana/hello.py</parameter>
-</invoke>
-</function_call>""",
-        """<function_call>
-<invoke name="MyResource:myMethod">
-<parameter name="param1">value1</parameter>
-<parameter name="param2">value2</parameter>
-</invoke>
-</function_call>""",
-        """<function_call>
-<invoke name="CreateFileResource:create">
-<parameter name="relative_workspace_path">dana/hello.py</parameter>
-<parameter name="another_param">some value</parameter>
-</invoke>
-</function_call>""",
-        """Hello world
-<function_call>
-<invoke name="CreateFileResource:create">
-<parameter name="relative_workspace_path">dana/hello.py</parameter>
-</invoke>
-</function_call>""",
-        """<thinking>
-This is my thinking about the task.
-</thinking>
-<function_call>
-<invoke name="CreateFileResource:create">
-<parameter name="relative_workspace_path">dana/hello.py</parameter>
-</invoke>
-</function_call>""",
-        """Some text before
+        """
 <thinking>
-This is my thinking about the task.
+/* I have found key ontology nodes: "Monomer" (id:1), "Anion" (id:3), and several related to polymerization process ("Solvent", "SMValue", "Temperature", "ReactionTime", all in polymerization conditions). The "Anion" node's expert insight states: "Only monomers with the same anion are replaceable. Anion compatibility is critical for PAG monomer replacement." This directly supports the user's first request. For the second request, nodes for process parameters and their similarity criteria (e.g., SMValue ±0.5, Temperature ±10°C, Solvent must match) are present. Next, I need to explore the relationships between these nodes, especially how monomers are linked to anions, and how polymers are linked to process conditions and lot numbers. I will get connected nodes and edges for "Monomer", "Anion", and process-related nodes in parallel. */
 </thinking>
 <function_call>
-<invoke name="CreateFileResource:create">
-<parameter name="relative_workspace_path">dana/hello.py</parameter>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">1</parameter>
+  <parameter name="direction">both</parameter>
 </invoke>
-</function_call>""",
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">3</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">8</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">10</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">7</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">12</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+</function_call>
+""",
     ]
 
     for i, xml_string in enumerate(csxml_examples, 1):
@@ -658,37 +577,7 @@ This is my thinking about the task.
         print(xml_string)
         print("\nParsed result:")
         try:
-            result = CSXMLCodec.parse_method_call(xml_string)
-            print(f"  class_name: {result.class_name}")
-            print(f"  name: {result.name}")
-            print(f"  thinking: {repr(result.thinking)}")
-            print(f"  parameters: {result.parameters}")
+            result = CSXMLCodec.parse_response(xml_string)
+            print(result)
         except Exception as e:
             print(f"  ERROR: {e}")
-
-    # Test round-trip: construct -> parse_method_call
-    print("\n" + "=" * 80)
-    print("Testing round-trip (construct -> parse_method_call):")
-    print("=" * 80)
-
-    signature = Misc.parse_method_signature(resource.create)
-
-    print("\nKLXMLCodec round-trip:")
-    klxml_usage = KLXMLCodec._usage_example(signature)
-    print(f"Generated XML:\n{klxml_usage}")
-    parsed_kl = KLXMLCodec.parse_method_call(klxml_usage)
-    print("\nParsed result:")
-    print(f"  class_name: {parsed_kl.class_name}")
-    print(f"  name: {parsed_kl.name}")
-    print(f"  thinking: {repr(parsed_kl.thinking)}")
-    print(f"  parameters: {parsed_kl.parameters}")
-
-    print("\nCSXMLCodec round-trip:")
-    csxml_usage = CSXMLCodec._usage_example(signature)
-    print(f"Generated XML:\n{csxml_usage}")
-    parsed_cs = CSXMLCodec.parse_method_call(csxml_usage)
-    print("\nParsed result:")
-    print(f"  class_name: {parsed_cs.class_name}")
-    print(f"  name: {parsed_cs.name}")
-    print(f"  thinking: {repr(parsed_cs.thinking)}")
-    print(f"  parameters: {parsed_cs.parameters}")

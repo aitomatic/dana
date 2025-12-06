@@ -333,6 +333,38 @@ This is my thinking about the task.
         assert result.tool_calls[1].name == "myMethod"
         assert result.tool_calls[1].parameters == {"param1": "value1", "param2": "value2"}
 
+    def test_parse_response_with_multiple_invokes_in_single_function_call(self):
+        """Test parse_response with multiple invoke tags inside a single function_call block."""
+        xml_string = """<thinking>
+I will get connected nodes for multiple node IDs in parallel.
+</thinking>
+<function_call>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">1</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">3</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+<invoke name="ontology:get_connected_nodes">
+  <parameter name="node_id">8</parameter>
+  <parameter name="direction">both</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "I will get connected nodes for multiple node IDs in parallel."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 3
+        assert result.tool_calls[0].class_name == "ontology"
+        assert result.tool_calls[0].name == "get_connected_nodes"
+        assert result.tool_calls[0].parameters == {"node_id": "1", "direction": "both"}
+        assert result.tool_calls[1].parameters == {"node_id": "3", "direction": "both"}
+        assert result.tool_calls[2].parameters == {"node_id": "8", "direction": "both"}
+
     def test_parse_response_without_thinking_block(self):
         """Test parse_response without thinking block (should treat text before tool calls as thinking)."""
         xml_string = """<function_call>
@@ -620,6 +652,55 @@ This is my thinking about the task.
         assert result.tool_calls[0].name == "create"
         assert result.tool_calls[1].class_name == "MyResource"
         assert result.tool_calls[1].name == "myMethod"
+
+    def test_parse_response_with_many_parallel_tool_calls(self):
+        """Test parse_response with many parallel tool calls (6 calls)."""
+        xml_string = """<thinking>
+I will get connected nodes for multiple node IDs in parallel.
+</thinking>
+<ontology:get_connected_nodes>
+<node_id>1</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>
+<ontology:get_connected_nodes>
+<node_id>3</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>
+<ontology:get_connected_nodes>
+<node_id>8</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>
+<ontology:get_connected_nodes>
+<node_id>10</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>
+<ontology:get_connected_nodes>
+<node_id>7</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>
+<ontology:get_connected_nodes>
+<node_id>12</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "I will get connected nodes for multiple node IDs in parallel."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 6
+        # Verify all tool calls have correct class and method
+        for tool_call in result.tool_calls:
+            assert tool_call.class_name == "ontology"
+            assert tool_call.name == "get_connected_nodes"
+            assert tool_call.parameters["direction"] == "both"
+        # Verify each node_id is correct
+        assert result.tool_calls[0].parameters["node_id"] == "1"
+        assert result.tool_calls[1].parameters["node_id"] == "3"
+        assert result.tool_calls[2].parameters["node_id"] == "8"
+        assert result.tool_calls[3].parameters["node_id"] == "10"
+        assert result.tool_calls[4].parameters["node_id"] == "7"
+        assert result.tool_calls[5].parameters["node_id"] == "12"
 
     def test_parse_response_without_thinking_block(self):
         """Test parse_response without thinking block (should treat text before tool calls as thinking)."""
