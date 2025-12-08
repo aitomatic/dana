@@ -146,6 +146,76 @@ Rules:
 5. **Tool Loop Limit**: Maximum 15 iterations per request (complex operations may require multiple requests)
 6. **Question Generation**: Requires topics to exist in tree before generating questions
 
+#### Example
+
+**Input (API Request)**:
+```json
+{
+  "user_message": "Add a topic about sugar crystallization under Process Operations",
+  "kp_id": 42
+}
+```
+
+**Context (from file system and database)**:
+- Domain: "Sugar Manufacturing"
+- Role: "Process Operator"
+- Current tree has root "Sugar Manufacturing" with child "Process Operations"
+
+**Agent Processing (tool loop)**:
+
+*Iteration 1 - Explore current state:*
+```xml
+<thinking>
+Intent: User wants to add sugar crystallization topic under Process Operations
+Context: Need to verify Process Operations exists and check current structure
+Decision: explore_knowledge to view current tree state
+</thinking>
+
+<explore_knowledge>
+  <path>Process Operations</path>
+  <depth>2</depth>
+</explore_knowledge>
+```
+
+*Iteration 2 - Propose structure:*
+```xml
+<thinking>
+Intent: Process Operations exists, now propose crystallization structure
+Context: Topic doesn't exist yet, need comprehensive proposal
+Decision: propose_knowledge_structure to generate topic outline
+</thinking>
+
+<propose_knowledge_structure>
+  <topic>Sugar Crystallization</topic>
+  <domain>Sugar Manufacturing</domain>
+  <role>Process Operator</role>
+</propose_knowledge_structure>
+```
+
+*Iteration 3 - Ask for approval:*
+```xml
+<thinking>
+Intent: Show proposed structure and get user approval
+Context: Generated 5 subtopics for Sugar Crystallization
+Decision: ask_question to confirm before modifying tree
+</thinking>
+
+<ask_question>
+  <question>I've prepared a Sugar Crystallization structure with 5 subtopics: Supersaturation Control, Crystal Growth Monitoring, Seed Addition Procedures, Pan Temperature Management, and Crystal Size Distribution. Would you like me to add this to the tree?</question>
+  <options>["Yes, add this structure", "Modify the structure first", "Cancel"]</options>
+</ask_question>
+```
+
+**Output (API Response)**:
+```json
+{
+  "agent_response": "I've prepared a Sugar Crystallization structure with 5 subtopics: Supersaturation Control, Crystal Growth Monitoring, Seed Addition Procedures, Pan Temperature Management, and Crystal Size Distribution. Would you like me to add this to the tree?",
+  "internal_conversation": [...],
+  "is_tree_modified": false,
+  "require_user_input": true
+}
+```
+
 ---
 
 ### 2.2 TemplateModificationHandler
@@ -271,6 +341,108 @@ You create SEARCH patterns that match the current template and REPLACE patterns 
 5. **Conversation Filtering**: Filters out editor/auto mode messages (may lose some context)
 6. **Single File Focus**: Only modifies README.md (cannot modify other template files)
 
+#### Example
+
+**Input (API Request)**:
+```json
+{
+  "user_message": "Change question 2 in the Filtration topic to ask about common failure modes",
+  "template_id": 15,
+  "mode": "editor"
+}
+```
+
+**Context (current template content from view_template)**:
+```markdown
+### Filtration
+
+**Background**: Filtration is critical for product quality...
+
+**Opening Questions**:
+1. What filtration methods do you currently use?
+2. How do you monitor filter performance?
+3. What triggers a filter change decision?
+```
+
+**Agent Processing (tool loop)**:
+
+*Iteration 1 - Auto-view template (if not already viewed):*
+```xml
+<thinking>
+Intent: User wants to modify question 2 in Filtration topic
+Current state: Need to see template structure first
+Decision: view_template to get current content
+</thinking>
+
+<view_template>
+  <section>all</section>
+</view_template>
+```
+
+*Iteration 2 - Perform replacement:*
+```xml
+<thinking>
+Intent: Replace question 2 about monitoring with failure modes question
+Current state: Found Filtration section with 3 questions
+Changes needed: Replace line "2. How do you monitor filter performance?"
+Pattern strategy: Include topic header + Opening Questions marker + all 3 questions for uniqueness
+</thinking>
+
+<replace_in_template>
+<diff>
+-------- SEARCH
+### Filtration
+
+**Background**: Filtration is critical for product quality...
+
+**Opening Questions**:
+1. What filtration methods do you currently use?
+2. How do you monitor filter performance?
+3. What triggers a filter change decision?
+=======
+### Filtration
+
+**Background**: Filtration is critical for product quality...
+
+**Opening Questions**:
+1. What filtration methods do you currently use?
+2. What are the most common failure modes you encounter with your filtration systems?
+3. What triggers a filter change decision?
+++++++ REPLACE
+</diff>
+</replace_in_template>
+```
+
+*Iteration 3 - Confirm completion:*
+```xml
+<thinking>
+Intent: Replacement successful, confirm to user
+Decision: attempt_completion to summarize change
+</thinking>
+
+<attempt_completion>
+  <result>I've updated question 2 in the Filtration topic. It now asks "What are the most common failure modes you encounter with your filtration systems?" instead of the previous monitoring question.</result>
+</attempt_completion>
+```
+
+**Output (API Response)**:
+```json
+{
+  "agent_response": "I've updated question 2 in the Filtration topic. It now asks \"What are the most common failure modes you encounter with your filtration systems?\" instead of the previous monitoring question.",
+  "internal_conversation": [...],
+  "template_modified": true,
+  "template_diff": {
+    "sections": [
+      {
+        "old_lines": ["2. How do you monitor filter performance?"],
+        "new_lines": ["2. What are the most common failure modes you encounter with your filtration systems?"],
+        "line_start": 8
+      }
+    ]
+  }
+}
+```
+
 ---
 
 ### 2.3 DocumentExplorationHandler
@@ -395,6 +567,90 @@ Remember: You're helping elicit tacit knowledge, not just factual information. G
 4. **No Document Editing**: Read-only access (cannot modify document content)
 5. **RAG Dependency**: Requires RAG resource to be initialized (fails gracefully if documents unavailable)
 6. **Template Context**: Template content included but cannot be modified through this handler
+
+#### Example
+
+**Input (API Request)**:
+```json
+{
+  "user_message": "What safety procedures are mentioned in the operating manual?",
+  "template_id": 15,
+  "mode": "chat"
+}
+```
+
+**Context (from knowledge pack)**:
+- Domain: "Sugar Manufacturing"
+- Role: "Process Operator"
+- Associated documents: ["Operating_Manual_v3.pdf", "Safety_Guidelines.pdf"]
+- Document context: "2 documents available"
+
+**Agent Processing (tool loop)**:
+
+*Iteration 1 - Query documents:*
+```xml
+<thinking>
+What the user is asking for: Safety procedures from operating manual
+Which tool to use: read_documents with safety-focused query
+Parameters: query about safety procedures
+Expected outcome: Relevant chunks about safety from documents
+</thinking>
+
+<read_documents>
+  <query>What safety procedures and protocols are described in the operating manual?</query>
+</read_documents>
+```
+
+*Tool Result (RAG returns relevant chunks):*
+```
+Found 5 relevant chunks:
+
+[Chunk 1 - Operating_Manual_v3.pdf, Page 23]
+"Lockout/Tagout (LOTO) Procedure: Before any maintenance work, operators must:
+1. Notify supervisor and affected personnel
+2. Isolate energy sources (electrical, pneumatic, hydraulic)
+3. Apply personal locks and tags..."
+
+[Chunk 2 - Operating_Manual_v3.pdf, Page 45]
+"Emergency Shutdown Protocol: In case of equipment malfunction:
+1. Press emergency stop button (red mushroom)
+2. Clear personnel from affected area..."
+```
+
+*Iteration 2 - Provide answer:*
+```xml
+<thinking>
+What the user is asking for: Summary of safety procedures found
+Which tool to use: attempt_completion to deliver findings
+Expected outcome: User receives comprehensive answer about safety procedures
+</thinking>
+
+<attempt_completion>
+  <result>Based on the Operating Manual, I found several key safety procedures:
+
+**Lockout/Tagout (LOTO) Procedure** (Page 23):
+- Notify supervisor and affected personnel before maintenance
+- Isolate all energy sources (electrical, pneumatic, hydraulic)
+- Apply personal locks and tags to isolation points
+- Verify zero energy state before beginning work
+
+**Emergency Shutdown Protocol** (Page 45):
+- Press the red emergency stop button (mushroom type)
+- Clear all personnel from the affected area
+- Follow the evacuation route posted at each station
+
+Would you like me to explore any of these procedures in more detail, or search for other safety-related information?</result>
+</attempt_completion>
+```
+
+**Output (API Response)**:
+```json
+{
+  "agent_response": "Based on the Operating Manual, I found several key safety procedures:\n\n**Lockout/Tagout (LOTO) Procedure** (Page 23):\n- Notify supervisor and affected personnel before maintenance\n- Isolate all energy sources (electrical, pneumatic, hydraulic)\n- Apply personal locks and tags to isolation points\n- Verify zero energy state before beginning work\n\n**Emergency Shutdown Protocol** (Page 45):\n- Press the red emergency stop button (mushroom type)\n- Clear all personnel from the affected area\n- Follow the evacuation route posted at each station\n\nWould you like me to explore any of these procedures in more detail, or search for other safety-related information?",
+  "internal_conversation": [...],
+  "status": "success"
+}
+```
 
 ---
 
@@ -542,6 +798,98 @@ Rules:
 5. **Template Dependency**: Requires template content to be available (may fail if template file missing)
 6. **Single Question Limit**: Can only ask one question per iteration (may slow down interview progress)
 
+#### Example
+
+**Input (API Request)**:
+```json
+{
+  "user_message": "We typically run the centrifuges at 1200 RPM, but during high-brix campaigns we sometimes push to 1400 RPM to maintain throughput.",
+  "session_id": 28
+}
+```
+
+**Context (from interview note - read-only)**:
+```markdown
+## Interview Progress
+- Current Topic: Centrifuge_Operations
+- Status: In Progress
+- Questions Completed: 1/3
+
+## Topics to Cover
+
+### Centrifuge_Operations
+**Status**: In Progress
+
+**Questions**:
+1. [completed] What are the standard operating parameters for the centrifuges?
+2. [asking] How do you adjust operations during different campaign conditions?
+3. [not_asked] What are the common failure modes and how do you prevent them?
+```
+
+**Document Answer (precomputed, in message metadata)**:
+```
+"Standard centrifuge speed is 1200 RPM. Manual recommends not exceeding 1350 RPM to prevent bearing wear."
+```
+
+**Agent Processing (tool loop)**:
+
+*Iteration 1 - Analyze answer and decide next action:*
+```xml
+<thinking>
+Intent: User shared operational knowledge about centrifuge speeds
+Context: Current topic is Centrifuge_Operations, 2 topics total in note. Question 2 [asking] about campaign adjustments.
+Topic Count: 1 topic (Centrifuge_Operations) with 3 questions
+Question Status Check: Question 2 is [asking], not [completed] - valid to continue
+Decision: User mentioned 1400 RPM during high-brix, document says max 1350 RPM - significant difference, ask followup
+Understanding: User operates at 1200 RPM normally, increases to 1400 RPM for high-brix campaigns
+</thinking>
+
+<ask_question>
+  <preface>So you normally run at 1200 RPM but push to 1400 RPM during high-brix campaigns to maintain throughput. That's interesting because it exceeds the documented 1350 RPM limit - this suggests there's operational experience here that goes beyond the manual.</preface>
+  <question>When you run at 1400 RPM, have you noticed any impact on bearing life or maintenance frequency?</question>
+  <category>followup</category>
+  <workflow_phase>knowledge_capture</workflow_phase>
+</ask_question>
+```
+
+**Output (API Response)**:
+```json
+{
+  "agent_response": "So you normally run at 1200 RPM but push to 1400 RPM during high-brix campaigns to maintain throughput. That's interesting because it exceeds the documented 1350 RPM limit - this suggests there's operational experience here that goes beyond the manual.\n\nWhen you run at 1400 RPM, have you noticed any impact on bearing life or maintenance frequency?",
+  "internal_conversation": [...],
+  "workflow_completed": false,
+  "metadata": {
+    "question_category": "followup",
+    "current_topic": "Centrifuge_Operations",
+    "questions_completed": 1,
+    "questions_total": 3
+  }
+}
+```
+
+**Subsequent Turn - After user answers followup, continue with next template question:**
+
+*User Input*: "Yes, we do see about 15% more bearing replacements, but the throughput gain justifies it during peak season."
+
+*Agent Response (moves to question 3)*:
+```xml
+<thinking>
+Intent: User confirmed bearing impact but justified by throughput gain
+Context: Question 2 followup answered, should move to question 3 [not_asked]
+Topic Count: 1 topic, question 3 remaining
+Question Status Check: Question 3 is [not_asked] - valid to ask
+Decision: ask_question with category interview_note for question 3
+Understanding: 15% more bearing replacements accepted as trade-off for throughput
+</thinking>
+
+<ask_question>
+  <preface>That's a valuable trade-off insight - 15% more bearing replacements is a known cost for maintaining peak season throughput. We've captured the operating parameters and campaign adjustments for centrifuges.</preface>
+  <question>What are the common failure modes you encounter with the centrifuges, and what preventive measures do you take?</question>
+  <category>interview_note</category>
+  <workflow_phase>knowledge_capture</workflow_phase>
+</ask_question>
+```
+
 ---
 
 ### 2.5 KnowledgeGenerationTool
@@ -677,6 +1025,144 @@ Generate knowledge in the following format:
 6. **File System Dependency**: Direct file I/O operations (potential race conditions in concurrent access)
 7. **Memory Usage**: Loads entire tree structure and processes all leaves (may be memory-intensive for large trees)
 8. **Template Generation**: Template generation depends on summary quality (may produce poor templates if summaries incomplete)
+
+#### Example
+
+**Input (API Request)**:
+```json
+{
+  "kp_id": 42
+}
+```
+
+**Context (from task data and file system)**:
+- Knowledge Pack ID: 42
+- Storage Path: `/data/kp_42/knows/`
+- Domain Knowledge Path: `/data/kp_42/domain_knowledge.json`
+- Document Paths: ["/data/kp_42/docs/Operating_Manual.pdf", "/data/kp_42/docs/Safety_Guidelines.pdf"]
+- Domain: "Sugar Manufacturing"
+- Role: "Process Operator"
+
+**Tree Structure (domain_knowledge.json)**:
+```json
+{
+  "root": {
+    "topic": "Sugar Manufacturing",
+    "children": [
+      {
+        "topic": "Centrifuge Operations",
+        "children": [],
+        "status": "pending"
+      },
+      {
+        "topic": "Filtration Systems",
+        "children": [],
+        "status": "pending"
+      }
+    ]
+  }
+}
+```
+
+**Pre-existing knowledge.json (for Centrifuge Operations)**:
+```json
+{
+  "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"],
+  "knowledges": [
+    {"question": "What are the standard operating parameters for centrifuges?", "facts": [], "procedures": [], "heuristics": []},
+    {"question": "How do operators handle high-brix campaigns?", "facts": [], "procedures": [], "heuristics": []}
+  ]
+}
+```
+
+**Processing Flow**:
+
+1. **Extract Leaf Paths**:
+   - Found 2 leaves: `["Sugar Manufacturing", "Centrifuge Operations"]`, `["Sugar Manufacturing", "Filtration Systems"]`
+
+2. **Process Leaf 1 (Centrifuge Operations)**:
+   - Read `knows/Centrifuge_Operations/knowledge.json`
+   - Extract questions: 2 questions found
+   - Query RAG for relevant chunks (Operating Manual mentions centrifuge parameters)
+   - LLM generates knowledge:
+
+```markdown
+## Facts
+- [Chunk 1, Chunk 3] Standard centrifuge speed is 1200 RPM with max recommended 1350 RPM
+- [Chunk 2] Basket temperature should be maintained below 85°C
+
+## Procedures
+- Overview 1: [Chunk 4] Pre-startup inspection includes checking basket balance, seal integrity, and lubrication levels
+
+## Heuristics
+- [Chunk 5] During high-brix campaigns, experienced operators increase speed to 1400 RPM accepting 15% higher bearing wear for throughput gains
+```
+
+3. **Update knowledge.json**:
+```json
+{
+  "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"],
+  "knowledges": [
+    {
+      "question": "What are the standard operating parameters for centrifuges?",
+      "facts": [
+        {"content": "Standard centrifuge speed is 1200 RPM with max recommended 1350 RPM", "references": [{"source": "Operating_Manual.pdf", "page_number": 23}]},
+        {"content": "Basket temperature should be maintained below 85°C", "references": [{"source": "Operating_Manual.pdf", "page_number": 24}]}
+      ],
+      "procedures": [
+        {"content": "Pre-startup inspection includes checking basket balance, seal integrity, and lubrication levels", "references": [{"source": "Operating_Manual.pdf", "page_number": 25}]}
+      ],
+      "heuristics": []
+    },
+    {
+      "question": "How do operators handle high-brix campaigns?",
+      "facts": [],
+      "procedures": [],
+      "heuristics": [
+        {"content": "During high-brix campaigns, experienced operators increase speed to 1400 RPM accepting 15% higher bearing wear for throughput gains", "references": [{"source": "Operating_Manual.pdf", "page_number": 28}]}
+      ]
+    }
+  ]
+}
+```
+
+4. **Generate Summary** (added to knowledge.json):
+```markdown
+# Summary
+Centrifuge Operations covers the core operating parameters and campaign-specific adjustments for sugar centrifuges. Standard operation is at 1200 RPM with temperature limits of 85°C. During high-brix campaigns, operators trade bearing life for throughput by exceeding normal speed limits.
+
+# Key Concepts
+- Standard RPM: 1200
+- Max recommended RPM: 1350
+- High-brix campaign speed: 1400 RPM
+- Temperature limit: 85°C
+- Bearing wear trade-off
+
+# Referenced Documents
+- Operating_Manual.pdf
+```
+
+5. **Generate Master Interview Template** (after all leaves processed):
+   - Reads all summaries
+   - Creates `template/README.md` with opening questions for each topic
+
+**Output (WebSocket notifications during processing)**:
+```json
+{"tool_name": "generate_knowledge", "content": "Starting knowledge generation for 2 topics", "status": "in_progress", "progression": 0.0}
+{"tool_name": "generate_knowledge", "content": "Processing Centrifuge Operations (1/2)", "status": "in_progress", "progression": 0.25, "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"]}
+{"tool_name": "generate_question_bank", "content": "Completed Centrifuge Operations - 1/2 done", "status": "completed", "progression": 0.5, "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"]}
+{"tool_name": "generate_knowledge", "content": "Processing Filtration Systems (2/2)", "status": "in_progress", "progression": 0.75, "path_parts": ["Sugar Manufacturing", "Filtration Systems"]}
+{"tool_name": "generate_question_bank", "content": "Completed Filtration Systems - 2/2 done", "status": "completed", "progression": 1.0, "path_parts": ["Sugar Manufacturing", "Filtration Systems"]}
+```
+
+**Final Output (ToolResult)**:
+```json
+{
+  "name": "generate_knowledge",
+  "result": "I understand you want to generate comprehensive knowledge for all topics in the tree structure. This will create detailed facts, procedures, and heuristics to enhance the agent's capabilities.\n\n✅ Knowledge generation pipeline complete.",
+  "require_user": false
+}
+```
 
 ---
 
