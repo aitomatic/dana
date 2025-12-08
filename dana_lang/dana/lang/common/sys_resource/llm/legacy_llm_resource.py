@@ -126,7 +126,16 @@ class LegacyLLMResource(BaseSysResource):
 
     # Removed hardcoded DEFAULT_PREFERRED_MODELS, loaded from ConfigLoader now
 
-    def __init__(self, name: str = "system_llm", model: str | None = None, preferred_models: list[dict[str, Any]] | None = None, **kwargs):
+    def __init__(
+        self,
+        name: str = "system_llm",
+        model: str | None = None,
+        preferred_models: list[dict[str, Any]] | None = None,
+        max_retry_attempts: int = 5,
+        retry_backoff_base: float = 2.0,
+        request_timeout: float | None = 300.0,
+        **kwargs,
+    ):
         """Initializes the LLMResource.
 
         Loads base configuration using ConfigLoader, applies overrides from
@@ -138,6 +147,9 @@ class LegacyLLMResource(BaseSysResource):
             preferred_models: Overrides the preferred models list from the config file.
                               Used for automatic model selection if `model` is not set.
                               Format: `[{"name": "p:m", "required_env_vars": ["K"]}]`
+            max_retry_attempts: Maximum number of retry attempts for transient errors.
+            retry_backoff_base: Base for exponential backoff calculation (seconds).
+            request_timeout: Timeout for individual API requests in seconds (default: 300.0).
             **kwargs: Additional configuration parameters (e.g., temperature, max_tokens)
                       that override values from the config file.
         """
@@ -188,6 +200,9 @@ class LegacyLLMResource(BaseSysResource):
             model=self._model,
             query_strategy=self.get_query_strategy(),
             query_max_iterations=self.get_query_max_iterations(),
+            max_retry_attempts=max_retry_attempts,
+            retry_backoff_base=retry_backoff_base,
+            request_timeout=request_timeout,
         )
         # Initialize the LLM client
         self._client = None

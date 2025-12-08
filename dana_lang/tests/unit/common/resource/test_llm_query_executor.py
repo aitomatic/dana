@@ -4,7 +4,12 @@ import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana_lang.common.exceptions import LLMError
+from dana_lang.common.exceptions import (
+    LLMAuthenticationError,
+    LLMContextLengthError,
+    LLMError,
+    LLMRateLimitError,
+)
 from dana_lang.common.mixins.queryable import QueryStrategy
 from dana_lang.common.sys_resource.llm.llm_query_executor import LLMQueryExecutor
 from dana_lang.common.utils.misc import Misc
@@ -566,6 +571,279 @@ class TestLLMQueryExecutorAnthropicIntegration(unittest.TestCase):
         messages = result_params.get("messages", [])
         self.assertEqual(len(messages), 1)
         self.assertEqual(messages[0]["role"], "user")
+
+
+class TestLLMQueryExecutorRetryLogic(unittest.TestCase):
+    """Test retry logic in LLMQueryExecutor."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.query_executor = LLMQueryExecutor(max_retry_attempts=2, retry_backoff_base=2.0, retry_jitter=0.5)
+
+    def test_retry_initialization(self):
+        """Test retry parameters initialization."""
+        executor = LLMQueryExecutor(max_retry_attempts=3, retry_backoff_base=1.5, retry_jitter=0.2)
+        self.assertEqual(executor._max_retry_attempts, 3)
+        self.assertEqual(executor._retry_backoff_base, 1.5)
+        self.assertEqual(executor._retry_jitter, 0.2)
+
+        # Test defaults
+        default_executor = LLMQueryExecutor()
+        self.assertEqual(default_executor._max_retry_attempts, 2)
+        self.assertEqual(default_executor._retry_backoff_base, 2.0)
+        self.assertEqual(default_executor._retry_jitter, 0.5)
+
+    def test_is_retryable_error_rate_limit(self):
+        """Test _is_retryable_error with rate limit errors."""
+        # Test various rate limit error messages
+        rate_limit_errors = [
+            Exception("Rate limit exceeded"),
+            Exception("rate_limit error"),
+            Exception("HTTP 429 Too Many Requests"),
+            Exception("429 error occurred"),
+            Exception("Too many requests"),
+        ]
+
+        for error in rate_limit_errors:
+            self.assertTrue(
+                self.query_executor._is_retryable_error(error),
+                f"Should retry on: {error}",
+            )
+
+    def test_is_retryable_error_timeout(self):
+        """Test _is_retryable_error with timeout errors."""
+        timeout_errors = [
+            Exception("Request timeout"),
+            Exception("Timed out"),
+            Exception("Deadline exceeded"),
+            Exception("Connection timedout"),
+        ]
+
+        for error in timeout_errors:
+            self.assertTrue(
+                self.query_executor._is_retryable_error(error),
+                f"Should retry on: {error}",
+            )
+
+    def test_is_retryable_error_server_errors(self):
+        """Test _is_retryable_error with server errors."""
+        server_errors = [
+            Exception("HTTP 500 Internal Server Error"),
+            Exception("502 Bad Gateway"),
+            Exception("503 Service Unavailable"),
+            Exception("504 Gateway Timeout"),
+            Exception("Server error occurred"),
+            Exception("Internal error"),
+        ]
+
+        for error in server_errors:
+            self.assertTrue(
+                self.query_executor._is_retryable_error(error),
+                f"Should retry on: {error}",
+            )
+
+    def test_is_retryable_error_connection_errors(self):
+        """Test _is_retryable_error with connection errors."""
+        connection_errors = [
+            Exception("Connection refused"),
+            Exception("Network error"),
+            Exception("Connection reset"),
+            Exception("Unable to connect"),
+            Exception("Connection unreachable"),
+        ]
+
+        for error in connection_errors:
+            self.assertTrue(
+                self.query_executor._is_retryable_error(error),
+                f"Should retry on: {error}",
+            )
+
+    def test_is_retryable_error_non_retryable(self):
+        """Test _is_retryable_error with non-retryable errors."""
+        non_retryable_errors = [
+            Exception("Authentication failed"),
+            Exception("Invalid API key"),
+            Exception("Bad request"),
+            Exception("Not found"),
+            Exception("Permission denied"),
+            Exception("Some other error"),
+        ]
+
+        for error in non_retryable_errors:
+            self.assertFalse(
+                self.query_executor._is_retryable_error(error),
+                f"Should NOT retry on: {error}",
+            )
+
+    def test_raise_classified_error_rate_limit(self):
+        """Test _raise_classified_error with rate limit errors."""
+        error = Exception("Rate limit exceeded (429)")
+
+        with self.assertRaises(LLMRateLimitError) as context:
+            self.query_executor._raise_classified_error(error)
+
+        self.assertIn("rate limit", str(context.exception).lower())
+
+    def test_raise_classified_error_authentication(self):
+        """Test _raise_classified_error with authentication errors."""
+        error = Exception("Authentication failed (401)")
+
+        with self.assertRaises(LLMAuthenticationError) as context:
+            self.query_executor._raise_classified_error(error)
+
+        self.assertIn("authentication", str(context.exception).lower())
+
+    def test_raise_classified_error_context_length(self):
+        """Test _raise_classified_error with context length errors."""
+        error = Exception("Context length exceeded (400)")
+
+        with self.assertRaises(LLMContextLengthError) as context:
+            self.query_executor._raise_classified_error(error)
+
+        self.assertIn("context", str(context.exception).lower())
+
+    def test_raise_classified_error_generic(self):
+        """Test _raise_classified_error with generic errors."""
+        error = Exception("Some unknown error")
+
+        with self.assertRaises(LLMError):
+            self.query_executor._raise_classified_error(error)
+
+    def test_raise_classified_error_none(self):
+        """Test _raise_classified_error with None error."""
+        with self.assertRaises(LLMError) as context:
+            self.query_executor._raise_classified_error(None)
+
+        self.assertIn("Unknown error", str(context.exception))
+
+    @patch("asyncio.sleep")
+    @patch("asyncio.to_thread")
+    async def test_execute_with_retry_success_first_attempt(self, mock_to_thread, mock_sleep):
+        """Test _execute_with_retry succeeds on first attempt."""
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.model_dump.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "Success"}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            "model": "openai:gpt-4",
+        }
+
+        mock_client.chat.completions.create = MagicMock(return_value=mock_response)
+        self.query_executor._client = mock_client
+        self.query_executor.model = "openai:gpt-4"
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        result = await self.query_executor._execute_with_retry(request_params)
+
+        self.assertEqual(result["model"], "openai:gpt-4")
+        mock_to_thread.assert_called_once()
+        mock_sleep.assert_not_called()
+
+    @patch("asyncio.sleep")
+    @patch("asyncio.to_thread")
+    async def test_execute_with_retry_succeeds_after_retry(self, mock_to_thread, mock_sleep):
+        """Test _execute_with_retry succeeds after retry."""
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.model_dump.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "Success"}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            "model": "openai:gpt-4",
+        }
+
+        # First call fails with retryable error, second succeeds
+        mock_to_thread.side_effect = [
+            Exception("Rate limit exceeded"),
+            mock_response,
+        ]
+
+        self.query_executor._client = mock_client
+        self.query_executor.model = "openai:gpt-4"
+        self.query_executor._max_retry_attempts = 2
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        result = await self.query_executor._execute_with_retry(request_params)
+
+        self.assertEqual(result["model"], "openai:gpt-4")
+        self.assertEqual(mock_to_thread.call_count, 2)
+        mock_sleep.assert_called_once()
+
+    @patch("asyncio.sleep")
+    @patch("asyncio.to_thread")
+    async def test_execute_with_retry_exhausts_retries(self, mock_to_thread, mock_sleep):
+        """Test _execute_with_retry exhausts retries and raises error."""
+        mock_client = MagicMock()
+
+        # All attempts fail with retryable error
+        mock_to_thread.side_effect = Exception("Rate limit exceeded")
+
+        self.query_executor._client = mock_client
+        self.query_executor.model = "openai:gpt-4"
+        self.query_executor._max_retry_attempts = 2
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        with self.assertRaises(LLMRateLimitError):
+            await self.query_executor._execute_with_retry(request_params)
+
+        # Should attempt max_retry_attempts + 1 times (initial + retries)
+        self.assertEqual(mock_to_thread.call_count, 3)
+        # Should sleep max_retry_attempts times
+        self.assertEqual(mock_sleep.call_count, 2)
+
+    @patch("asyncio.sleep")
+    @patch("asyncio.to_thread")
+    async def test_execute_with_retry_non_retryable_error(self, mock_to_thread, mock_sleep):
+        """Test _execute_with_retry does not retry non-retryable errors."""
+        mock_client = MagicMock()
+
+        # Non-retryable error
+        mock_to_thread.side_effect = Exception("Authentication failed")
+
+        self.query_executor._client = mock_client
+        self.query_executor.model = "openai:gpt-4"
+        self.query_executor._max_retry_attempts = 2
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        with self.assertRaises(LLMAuthenticationError):
+            await self.query_executor._execute_with_retry(request_params)
+
+        # Should only attempt once (no retries for non-retryable errors)
+        self.assertEqual(mock_to_thread.call_count, 1)
+        mock_sleep.assert_not_called()
+
+    @patch("asyncio.sleep")
+    @patch("asyncio.to_thread")
+    async def test_execute_with_retry_no_client(self, mock_to_thread, mock_sleep):
+        """Test _execute_with_retry raises error when client is None."""
+        self.query_executor._client = None
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        with self.assertRaises(LLMError) as context:
+            await self.query_executor._execute_with_retry(request_params)
+
+        self.assertIn("not initialized", str(context.exception))
+        mock_to_thread.assert_not_called()
+        mock_sleep.assert_not_called()
 
 
 if __name__ == "__main__":

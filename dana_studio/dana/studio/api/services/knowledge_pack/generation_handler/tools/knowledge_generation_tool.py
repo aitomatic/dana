@@ -78,12 +78,10 @@ class KnowledgeNode(BaseModel):
 
 class KnowledgeGenerationTool(BaseTool):
     # Timeout constants (in seconds)
-    DEFAULT_LLM_CALL_TIMEOUT = 300  # 5 mins for LLM calls
+    # Note: LLM retry/timeout is handled by LegacyLLMResource/LLMQueryExecutor
     DEFAULT_RAG_QUERY_TIMEOUT = 60  # 1 minute for RAG queries
     DEFAULT_BATCH_TIMEOUT = 600  # 10 minutes for batch operations
     DEFAULT_LEAF_PROCESSING_TIMEOUT = 600  # 10 minutes per leaf
-    DEFAULT_RETRY_MAX_ATTEMPTS = 2  # Maximum retry attempts
-    DEFAULT_RETRY_BACKOFF_BASE = 2  # Exponential backoff base (seconds)
 
     def __init__(
         self,
@@ -99,11 +97,9 @@ class KnowledgeGenerationTool(BaseTool):
         question_batch_size: int = 1,
         allow_outside_document: bool = False,
         template_generation_prompt: str | None = None,  # KP override prompt
-        llm_call_timeout: int | None = None,  # Timeout for LLM calls
         rag_query_timeout: int | None = None,  # Timeout for RAG queries
         batch_timeout: int | None = None,  # Timeout for batch operations
         leaf_processing_timeout: int | None = None,  # Timeout per leaf processing
-        max_retry_attempts: int | None = None,  # Max retry attempts
     ):
         self.knowledge_id = knowledge_id
         self.knowledge_status_path = knowledge_status_path
@@ -122,17 +118,15 @@ class KnowledgeGenerationTool(BaseTool):
         self.question_batch_size = question_batch_size
 
         # Timeout configuration
-        self.llm_call_timeout = llm_call_timeout or self.DEFAULT_LLM_CALL_TIMEOUT
+        # Note: LLM retry/timeout is handled by LegacyLLMResource/LLMQueryExecutor
         self.rag_query_timeout = rag_query_timeout or self.DEFAULT_RAG_QUERY_TIMEOUT
         self.batch_timeout = batch_timeout or self.DEFAULT_BATCH_TIMEOUT
         self.leaf_processing_timeout = leaf_processing_timeout or self.DEFAULT_LEAF_PROCESSING_TIMEOUT
-        self.max_retry_attempts = max_retry_attempts or self.DEFAULT_RETRY_MAX_ATTEMPTS
 
         logger.info(
             f"Initialized KnowledgeGenerationTool with timeouts: "
-            f"LLM={self.llm_call_timeout}s, RAG={self.rag_query_timeout}s, "
-            f"Batch={self.batch_timeout}s, Leaf={self.leaf_processing_timeout}s, "
-            f"MaxRetries={self.max_retry_attempts}"
+            f"RAG={self.rag_query_timeout}s, "
+            f"Batch={self.batch_timeout}s, Leaf={self.leaf_processing_timeout}s"
         )
 
         # Initialize RAG resource if document paths are provided
@@ -547,13 +541,8 @@ class KnowledgeGenerationTool(BaseTool):
 
                 logger.info(f"[Summary {i}/{len(knowledge_files)}] Generating summary for '{topic_name}'")
                 try:
-                    await asyncio.wait_for(
-                        self._generate_knowledge_summary(file_path, topic_name),
-                        timeout=self.llm_call_timeout + 10,  # Add small buffer for file I/O
-                    )
+                    await self._generate_knowledge_summary(file_path, topic_name)
                     logger.info(f"[Summary {i}/{len(knowledge_files)}] ✅ Successfully generated summary for '{topic_name}'")
-                except TimeoutError:
-                    logger.error(f"[Summary {i}/{len(knowledge_files)}] ⏱️ Summary generation timed out for '{topic_name}'")
                 except Exception as e:
                     logger.error(f"[Summary {i}/{len(knowledge_files)}] ❌ Failed to generate summary for '{topic_name}': {e}")
 
@@ -594,18 +583,12 @@ RESPONSE FORMAT:
 ```
 """
 
-            # Generate summary using the reason function with timeout protection
-            logger.debug(f"Generating summary for '{topic_name}' with timeout={self.llm_call_timeout}s")
+            # Generate summary using the reason function
+            # Note: Retry and timeout logic is handled by LegacyLLMResource/LLMQueryExecutor
+            logger.debug(f"Generating summary for '{topic_name}'")
             try:
-                summary = await asyncio.wait_for(
-                    asyncio.to_thread(reason, summary_prompt),
-                    timeout=self.llm_call_timeout,
-                )
+                summary = await asyncio.to_thread(reason, summary_prompt)
                 logger.debug(f"Successfully generated summary for '{topic_name}' (length: {len(summary)} chars)")
-            except TimeoutError:
-                logger.error(f"Summary generation for '{topic_name}' timed out after {self.llm_call_timeout}s")
-                # Set a default summary indicating timeout
-                summary = f"# Summary\n\nSummary generation timed out for topic: {topic_name}\n\n# Key Concepts\n- (Summary generation incomplete)\n\n# Most Important Questions\n- (Summary generation incomplete)\n\n# Referenced Documents\n- (Summary generation incomplete)"
             except Exception as e:
                 logger.error(f"Summary generation for '{topic_name}' failed: {e}")
                 # Set a default summary indicating error
@@ -695,22 +678,12 @@ RESPONSE FORMAT:
             template_prompt = await self._get_template_generation_prompt(formatted_summaries)
             print("TEMPLATE PROMPT", template_prompt)
 
-            # Generate template using the reason function with timeout protection
-            logger.info(
-                f"Generating master interview template for {len(all_summaries_data)} topics with timeout={self.llm_call_timeout}s..."
-            )
+            # Generate template using the reason function
+            # Note: Retry and timeout logic is handled by LegacyLLMResource/LLMQueryExecutor
+            logger.info(f"Generating master interview template for {len(all_summaries_data)} topics...")
             try:
-                template_content = await asyncio.wait_for(
-                    asyncio.to_thread(reason, template_prompt),
-                    timeout=self.llm_call_timeout,
-                )
+                template_content = await asyncio.to_thread(reason, template_prompt)
                 logger.info(f"Successfully generated master interview template (length: {len(template_content)} chars)")
-            except TimeoutError:
-                logger.error(f"Master interview template generation timed out after {self.llm_call_timeout}s")
-                template_content = (
-                    f"# Master Interview Template: {self.domain} - {self.role}\n\n"
-                    f"⚠️ Template generation timed out. Please try again or generate templates individually.\n"
-                )
             except Exception as e:
                 logger.error(f"Master interview template generation failed: {e}")
                 template_content = f"# Master Interview Template: {self.domain} - {self.role}\n\n⚠️ Template generation failed: {str(e)}\n"
@@ -736,77 +709,42 @@ RESPONSE FORMAT:
                 output += f"### Chunk {i}\n\n{chunk.get_content()}\n---\n"
             return output
 
-        async def generate_knowledge_with_retry(
-            question: str, chunks: list[NodeWithScore], path_str: str, batch_index: int
-        ) -> RawFormatKnowledge:
-            """Generate knowledge with retry logic and timeout protection."""
+        async def generate_knowledge(question: str, chunks: list[NodeWithScore], path_str: str, batch_index: int) -> RawFormatKnowledge:
+            """Generate knowledge from question and chunks.
+
+            Note: Retry and timeout logic is handled by LegacyLLMResource/LLMQueryExecutor.
+            """
             logger.debug(f"[Batch {batch_index}] Starting knowledge generation for question: {question[:100]}...")
 
             from_doc = False  # Initialize to avoid unbound variable
-            for attempt in range(self.max_retry_attempts + 1):
-                try:
-                    if chunks:
-                        logger.debug(
-                            f"[Batch {batch_index}] Attempt {attempt + 1}/{self.max_retry_attempts + 1}: Extracting knowledge from documents"
-                        )
-                        res = await asyncio.wait_for(
-                            asyncio.to_thread(
-                                reason,
-                                KNOWLEDGE_EXTRACTION_PROMPT.format(path=path_str, question=question, chunks=_format_chunks(chunks)),
-                            ),
-                            timeout=self.llm_call_timeout,
-                        )
-                        from_doc = True
-                        logger.debug(f"[Batch {batch_index}] Successfully extracted knowledge from documents (length: {len(res)} chars)")
-                    elif self.allow_outside_document:
-                        logger.debug(
-                            f"[Batch {batch_index}] Attempt {attempt + 1}/{self.max_retry_attempts + 1}: Generating knowledge without documents"
-                        )
-                        res = await asyncio.wait_for(
-                            asyncio.to_thread(
-                                reason,
-                                KNOWLEDGE_GENERATION_PROMPT.format(path=path_str, question=question, role=self.role, domain=self.domain),
-                            ),
-                            timeout=self.llm_call_timeout,
-                        )
-                        from_doc = False
-                        logger.debug(f"[Batch {batch_index}] Successfully generated knowledge without documents (length: {len(res)} chars)")
-                    else:
-                        logger.debug(f"[Batch {batch_index}] No chunks and outside documents not allowed, returning empty knowledge")
-                        res = ""
-                        from_doc = False
-
-                    return RawFormatKnowledge(question=question, chunks=chunks, knowledge=res, from_doc=from_doc)
-
-                except TimeoutError:
-                    logger.warning(
-                        f"[Batch {batch_index}] Attempt {attempt + 1}/{self.max_retry_attempts + 1} timed out after {self.llm_call_timeout}s "
-                        f"for question: {question[:100]}..."
+            try:
+                if chunks:
+                    logger.debug(f"[Batch {batch_index}] Extracting knowledge from documents")
+                    res = await asyncio.to_thread(
+                        reason,
+                        KNOWLEDGE_EXTRACTION_PROMPT.format(path=path_str, question=question, chunks=_format_chunks(chunks)),
                     )
-                    if attempt < self.max_retry_attempts:
-                        wait_time = self.DEFAULT_RETRY_BACKOFF_BASE**attempt
-                        logger.info(f"[Batch {batch_index}] Retrying in {wait_time}s...")
-                        await asyncio.sleep(wait_time)
-                    else:
-                        logger.error(f"[Batch {batch_index}] All {self.max_retry_attempts + 1} attempts timed out")
-                        return RawFormatKnowledge(question=question, chunks=chunks, knowledge="", from_doc=from_doc)
-
-                except Exception as e:
-                    logger.error(
-                        f"[Batch {batch_index}] Attempt {attempt + 1}/{self.max_retry_attempts + 1} failed with error: {e} "
-                        f"for question: {question[:100]}..."
+                    from_doc = True
+                    logger.debug(f"[Batch {batch_index}] Successfully extracted knowledge from documents (length: {len(res)} chars)")
+                elif self.allow_outside_document:
+                    logger.debug(f"[Batch {batch_index}] Generating knowledge without documents")
+                    res = await asyncio.to_thread(
+                        reason,
+                        KNOWLEDGE_GENERATION_PROMPT.format(path=path_str, question=question, role=self.role, domain=self.domain),
                     )
-                    if attempt < self.max_retry_attempts:
-                        wait_time = self.DEFAULT_RETRY_BACKOFF_BASE**attempt
-                        logger.info(f"[Batch {batch_index}] Retrying in {wait_time}s...")
-                        await asyncio.sleep(wait_time)
-                    else:
-                        logger.error(f"[Batch {batch_index}] All {self.max_retry_attempts + 1} attempts failed")
-                        # Return empty knowledge instead of raising to ensure all code paths return
-                        return RawFormatKnowledge(question=question, chunks=chunks, knowledge="", from_doc=from_doc)
+                    from_doc = False
+                    logger.debug(f"[Batch {batch_index}] Successfully generated knowledge without documents (length: {len(res)} chars)")
+                else:
+                    logger.debug(f"[Batch {batch_index}] No chunks and outside documents not allowed, returning empty knowledge")
+                    res = ""
+                    from_doc = False
 
-            # Fallback return (should never reach here, but satisfies type checker)
-            return RawFormatKnowledge(question=question, chunks=chunks, knowledge="", from_doc=from_doc)
+                return RawFormatKnowledge(question=question, chunks=chunks, knowledge=res, from_doc=from_doc)
+
+            except Exception as e:
+                logger.error(f"[Batch {batch_index}] Knowledge generation failed with error: {e} " f"for question: {question[:100]}...")
+                # Return empty knowledge instead of raising to ensure all code paths return
+                return RawFormatKnowledge(question=question, chunks=chunks, knowledge="", from_doc=from_doc)
 
         # Extract questions from existing knowledges
         all_questions = []
@@ -897,7 +835,7 @@ RESPONSE FORMAT:
                 if not isinstance(chunks, list):
                     chunks = []
                 logger.debug(f"[Batch {batch_index}] Creating knowledge generation task with {len(chunks)} chunks")
-                async_tasks.append(generate_knowledge_with_retry(question_batch, chunks, path_str, batch_index))
+                async_tasks.append(generate_knowledge(question_batch, chunks, path_str, batch_index))
 
         logger.info(f"Starting knowledge generation for {len(async_tasks)} batches with timeout={self.batch_timeout}s")
         try:
@@ -1107,8 +1045,6 @@ For each topic, provide:
 
 
 if __name__ == "__main__":
-    import json
-
     with open("agents/domain_knowledge/domain_knowledge.json") as f:
         tree_structure = json.load(f)
 

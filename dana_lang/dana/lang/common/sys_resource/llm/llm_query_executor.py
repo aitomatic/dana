@@ -8,15 +8,16 @@ MIT License
 """
 
 import os
+import random
 from collections.abc import Awaitable, Callable
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 import aisuite as ai
-from openai import APIStatusError, AuthenticationError, RateLimitError
 from openai.types.chat import ChatCompletion
 
 from dana.lang.common.exceptions import (
     LLMAuthenticationError,
+    LLMContextLengthError,
     LLMError,
     LLMProviderError,
     LLMRateLimitError,
@@ -48,6 +49,10 @@ class LLMQueryExecutor(Loggable):
         model: str | None = None,
         query_strategy: QueryStrategy = QueryStrategy.ITERATIVE,
         query_max_iterations: int = 10,
+        max_retry_attempts: int = 5,
+        retry_backoff_base: float = 2.0,
+        retry_jitter: float = 0.5,
+        request_timeout: float | None = 300.0,
     ):
         """Initialize the query executor.
 
@@ -56,12 +61,20 @@ class LLMQueryExecutor(Loggable):
             model: Optional model name for queries
             query_strategy: Query strategy (ITERATIVE or ONCE)
             query_max_iterations: Maximum iterations for iterative queries
+            max_retry_attempts: Maximum number of retry attempts for transient errors
+            retry_backoff_base: Base for exponential backoff calculation (seconds)
+            retry_jitter: Random jitter range to add to backoff (seconds)
+            request_timeout: Timeout for individual API requests in seconds (default: 300.0)
         """
         super().__init__()
         self._client = client
         self._model = model
         self._query_strategy = query_strategy
         self._query_max_iterations = query_max_iterations
+        self._max_retry_attempts = max_retry_attempts
+        self._retry_backoff_base = retry_backoff_base
+        self._retry_jitter = retry_jitter
+        self._request_timeout = request_timeout
         self._mock_llm_call: bool | Callable[[dict[str, Any]], dict[str, Any]] | None = None
 
     @property
@@ -299,6 +312,171 @@ class LLMQueryExecutor(Loggable):
                 ),
             }
 
+    def _is_retryable_error(self, error: Exception) -> bool:
+        """Detect if an error is transient and retryable.
+
+        Args:
+            error: The exception to check
+
+        Returns:
+            bool: True if the error is retryable, False otherwise
+        """
+        error_msg = str(error).lower()
+        error_type = type(error).__name__.lower()
+
+        # Check for asyncio.TimeoutError type
+        if isinstance(error, asyncio.TimeoutError):
+            return True
+
+        # Rate limit indicators
+        if any(term in error_msg for term in ["rate limit", "rate_limit", "429", "too many requests"]):
+            return True
+
+        # Timeout indicators
+        if any(term in error_msg for term in ["timeout", "timed out", "deadline", "timedout"]):
+            return True
+
+        # Server errors (5xx)
+        if any(term in error_msg for term in ["500", "502", "503", "504", "server error", "internal error", "service unavailable"]):
+            return True
+
+        # Connection errors
+        if any(term in error_msg for term in ["connection", "connect", "network", "reset", "refused", "unreachable"]):
+            return True
+
+        # Check error type names
+        if any(term in error_type for term in ["timeout", "connection", "network"]):
+            return True
+
+        return False
+
+    def _raise_classified_error(self, error: Exception | None) -> NoReturn:
+        """Classify and raise appropriate Dana LLM error.
+
+        This method handles AISuite-wrapped errors by parsing error messages
+        and exception types to determine the appropriate Dana exception type.
+
+        Args:
+            error: The exception to classify
+
+        Raises:
+            LLMRateLimitError: For rate limit errors
+            LLMAuthenticationError: For authentication errors
+            LLMContextLengthError: For context length errors
+            LLMError: For other LLM errors
+        """
+        if error is None:
+            raise LLMError("Unknown error occurred during LLM query")
+
+        error_msg = str(error).lower()
+        provider = self.model.split(":", 1)[0] if self.model else "unknown"
+
+        # Try to extract status code from error message or exception
+        status_code = None
+        if hasattr(error, "status_code"):
+            status_code = error.status_code
+        elif hasattr(error, "code"):
+            status_code = error.code
+        else:
+            # Try to parse from error message
+            for code in ["429", "401", "400", "500", "502", "503", "504"]:
+                if code in error_msg:
+                    try:
+                        status_code = int(code)
+                        break
+                    except ValueError:
+                        pass
+
+        # Rate limit errors
+        if "rate limit" in error_msg or "429" in error_msg or "too many requests" in error_msg:
+            raise LLMRateLimitError(provider, status_code or 429, str(error)) from error
+
+        # Authentication errors
+        if any(term in error_msg for term in ["authentication", "api key", "401", "unauthorized", "invalid key"]):
+            raise LLMAuthenticationError(provider, status_code or 401, str(error)) from error
+
+        # Context length errors
+        if any(term in error_msg for term in ["context", "length", "token limit", "max tokens", "400"]):
+            if "context" in error_msg and "length" in error_msg:
+                raise LLMContextLengthError(provider, status_code or 400, str(error)) from error
+
+        # Generic provider error for API errors
+        if status_code and status_code >= 400:
+            raise LLMProviderError(provider, status_code, str(error)) from error
+
+        # Generic LLM error for everything else
+        raise LLMError(f"LLM error: {error}") from error
+
+    async def _execute_with_retry(self, request_params: dict[str, Any]) -> dict[str, Any]:
+        """Execute LLM call with retry logic for transient errors.
+
+        This method wraps the actual API call and implements exponential backoff
+        retry logic for transient errors. Non-retryable errors are immediately
+        re-raised after classification.
+
+        Args:
+            request_params: Dictionary containing request parameters for the LLM API call
+
+        Returns:
+            Dict[str, Any]: The LLM response converted to dictionary format
+
+        Raises:
+            LLMRateLimitError: For rate limit errors (after retries exhausted)
+            LLMAuthenticationError: For authentication errors (no retry)
+            LLMContextLengthError: For context length errors (no retry)
+            LLMProviderError: For other provider errors
+            LLMError: For other LLM errors
+        """
+        if not self._client:
+            raise LLMError("LLM client not initialized")
+
+        last_error: Exception | None = None
+        for attempt in range(self._max_retry_attempts + 1):
+            try:
+                model = request_params.get("model", "")
+                self.override_client_provider(model)
+
+                # Make the actual API call (aisuite is synchronous)
+                # Wrap with timeout if configured
+                api_call = asyncio.to_thread(
+                    self._client.chat.completions.create,
+                    **request_params,
+                )  # Calling to_thread is a workaround to avoid blocking the event loop
+
+                llm_response: ChatCompletion
+                if self._request_timeout:
+                    llm_response = await asyncio.wait_for(
+                        api_call,
+                        timeout=self._request_timeout,
+                    )
+                else:
+                    llm_response = await api_call
+
+                self.info("LLM query successful")
+                self._log_llm_response(llm_response)
+
+                # Convert AISuite response to dictionary format
+                # AISuite returns ChatCompletionResponse which doesn't have model_dump()
+                return self._convert_response_to_dict(llm_response)
+
+            except Exception as e:
+                last_error = e
+
+                # Check if we should retry
+                if attempt < self._max_retry_attempts and self._is_retryable_error(e):
+                    wait_time = (self._retry_backoff_base**attempt) + random.uniform(0, self._retry_jitter)
+                    self.warning(
+                        f"Attempt {attempt + 1}/{self._max_retry_attempts + 1} failed with retryable error: {e}. "
+                        f"Retrying in {wait_time:.2f}s..."
+                    )
+                    await asyncio.sleep(wait_time)
+                else:
+                    # Either max retries reached or non-retryable error
+                    break
+
+        # Re-raise the last error with proper classification
+        self._raise_classified_error(last_error)
+
     async def query_once(
         self, request: dict[str, Any], build_request_params: Callable[[dict[str, Any]], dict[str, Any]] | None = None
     ) -> dict[str, Any]:
@@ -365,44 +543,8 @@ class LLMQueryExecutor(Loggable):
         # Log the LLM request at INFO level
         self._log_llm_request(request_params)
 
-        # Make the API call
-        try:
-            model = request_params.get("model", "")
-
-            self.override_client_provider(model)
-
-            # Make the actual API call (aisuite is synchronous)
-            response: ChatCompletion = await asyncio.to_thread(
-                self._client.chat.completions.create,
-                **request_params,
-            )  # Calling to_thread is a workaround to avoid blocking the event loop
-            self.info("LLM query successful")
-            self._log_llm_response(response)
-
-            # Convert AISuite response to dictionary format
-            # AISuite returns ChatCompletionResponse which doesn't have model_dump()
-            return self._convert_response_to_dict(response)
-
-        except AuthenticationError as e:
-            provider = self.model.split(":", 1)[0] if self.model else "unknown"
-            self.error(f"LLM authentication failed for provider '{provider}': {e}")
-            raise LLMAuthenticationError(provider, e.status_code, str(e)) from e
-        except RateLimitError as e:
-            provider = self.model.split(":", 1)[0] if self.model else "unknown"
-            self.error(f"LLM rate limit exceeded for provider '{provider}': {e}")
-            raise LLMRateLimitError(provider, e.status_code, str(e)) from e
-        except APIStatusError as e:
-            provider = self.model.split(":", 1)[0] if self.model else "unknown"
-            self.error(f"LLM API error for provider '{provider}': {e.message}")
-            raise LLMProviderError(provider, e.status_code, str(e.message)) from e
-        except Exception as e:
-            error_msg = str(e)
-            if "connection" in error_msg.lower() or "connect" in error_msg.lower():
-                self.debug(f"LLM connection failed: {error_msg}")
-                raise LLMError(f"LLM connection failed: {error_msg}. Please check your API key configuration in .env file.") from e
-            else:
-                self.error(f"An unexpected error occurred during LLM query: {e}")
-                raise LLMError(f"An unexpected error occurred: {e}") from e
+        # Make the API call with retry logic
+        return await self._execute_with_retry(request_params)
 
     def override_client_provider(self, model: str):
         # Check that correct format is used
