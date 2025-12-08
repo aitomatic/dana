@@ -76,6 +76,47 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     return htmlTagCount > 3 && htmlTagCount >= markdownCount * 0.6;
   };
 
+  // Smart newline-to-HTML conversion that avoids double conversion and excessive breaks
+  const convertNewlinesToHTML = (text: string): string => {
+    // Block-level HTML elements that don't need <br> tags between them
+    const blockElements = [
+      'p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'pre', 'hr',
+      'table', 'thead', 'tbody', 'tr', 'td', 'th'
+    ];
+    
+    let htmlContent = text;
+    
+    // Step 1: Remove newlines that are already after <br> tags (avoid double conversion from backend)
+    // This handles cases where backend converted \n to <br>\n
+    htmlContent = htmlContent.replace(/<br\s*\/?>\s*\n+/gi, '<br>');
+    
+    // Step 2: Remove newlines between block-level HTML elements (they don't need <br> tags)
+    // Pattern: closing block tag, whitespace/newlines, opening block tag
+    const blockElementPattern = new RegExp(
+      `</(${blockElements.join('|')})>\\s*\\n+\\s*<(${blockElements.join('|')})`,
+      'gi'
+    );
+    htmlContent = htmlContent.replace(blockElementPattern, (match) => {
+      // Replace newlines with a single space between block elements
+      return match.replace(/\s*\n+\s*/g, ' ');
+    });
+    
+    // Step 3: Collapse multiple consecutive newlines (2+) into a single <br>
+    // This handles empty lines from backend spacing (response_parts.append(""))
+    htmlContent = htmlContent.replace(/\n{2,}/g, '<br>');
+    
+    // Step 4: Convert remaining single newlines to <br>
+    // These are intentional line breaks in the content
+    htmlContent = htmlContent.replace(/\n/g, '<br>');
+    
+    // Step 5: Clean up any excessive <br> tags (more than 2 consecutive)
+    // Allow up to 2 <br> tags for paragraph spacing, but collapse more
+    htmlContent = htmlContent.replace(/(<br\s*\/?>){3,}/gi, '<br><br>');
+    
+    return htmlContent;
+  };
+
   // Check if content should be rendered as HTML
   const shouldRenderAsHTML =
     forceHtml ||
@@ -83,8 +124,8 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     (containsHTML(normalizedContent) && isPrimarilyHTML(normalizedContent));
 
   if (shouldRenderAsHTML) {
-    // Convert newlines to <br> tags for HTML rendering
-    const htmlContent = normalizedContent.replace(/\n/g, '<br>');
+    // Convert newlines to <br> tags for HTML rendering using smart conversion
+    const htmlContent = convertNewlinesToHTML(normalizedContent);
     
     return (
       <HTMLRenderer

@@ -199,7 +199,8 @@ Generate the refined structure:"""
         html_content = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", html_content)
 
         # Convert line breaks to <br> tags for proper HTML formatting
-        html_content = html_content.replace("\n", "<br>\n")
+        # Note: Don't add trailing newline after <br> to avoid double conversion in frontend
+        html_content = html_content.replace("\n", "<br>")
 
         # Wrap the entire content in a div for proper structure
         return f"<div class='structure-content'>{html_content}</div>"
