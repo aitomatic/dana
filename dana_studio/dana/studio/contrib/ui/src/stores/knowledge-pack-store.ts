@@ -133,6 +133,10 @@ export interface KnowledgePackActions {
 
   // Clear error
   clearError: () => void;
+
+  // Navigation tracking
+  setNavigationSource: (source: { type: 'knowledge-pack', id: number } | null) => void;
+  clearNavigationSource: () => void;
 }
 
 export type KnowledgePackStore = KnowledgePackState & KnowledgePackActions;
@@ -174,9 +178,11 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
 
   // Dialog controls
   setKnowledgePackOpen: (isOpen: boolean) => {
+    console.log('🔍 Store - setKnowledgePackOpen called with:', isOpen);
     set({ isKnowledgePackOpen: isOpen });
     if (!isOpen) {
       // Reset on close
+      console.log('🔍 Store - Closing knowledge pack dialog, calling reset');
       get().reset();
     }
   },
@@ -647,8 +653,11 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
 
   // Reset store
   reset: () => {
+    const currentNavigationSource = get().navigationSource;
     console.log('🔄 Knowledge Pack: Resetting store');
+    console.log('🔍 Store - navigationSource before reset:', currentNavigationSource);
     set(initialState);
+    console.log('🔍 Store - navigationSource after reset:', get().navigationSource);
   },
 
   // Clear error

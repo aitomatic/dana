@@ -127,7 +127,7 @@ export default function KnowledgePackDetailPage() {
   }, [createdKnowledgePack?.id, fetchKnowledgePackTree]);
 
   const handleClose = () => {
-    navigate(-1); // Go back to previous page
+    navigate('/knowledge-center');
   };
 
   const handleDownloadKnows = async () => {
