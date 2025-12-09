@@ -138,6 +138,17 @@ export const useKnowledgePackWebSocket = (
           const data: WebSocketMessage = JSON.parse(event.data);
           console.log('📨 [KP WebSocket] Message received:', data);
 
+          // ✅ VALIDATION: Check if message is for this KP
+          const messageKpId = parseInt(data.knowledge_id);
+          if (messageKpId !== knowledgeId) {
+            console.warn('⚠️ [KP WebSocket] Ignoring message for different KP:', {
+              messageKpId,
+              subscribedKpId: knowledgeId,
+              messageType: data.type,
+            });
+            return; // Ignore messages for other KPs
+          }
+
           // Process messages with path_parts (both question_generation and knowledge_generation)
           if (data.message.path_parts) {
             const { tool_name, status, path_parts } = data.message;
@@ -155,10 +166,11 @@ export const useKnowledgePackWebSocket = (
               mappedStatus: nodeStatus,
               path_parts,
               convertedNodePath: nodePath,
+              kpId: knowledgeId,
             });
 
             if (nodeStatus && nodePath) {
-              console.log('✅ [KP WebSocket] Calling status update callback');
+              console.log('✅ [KP WebSocket] Calling status update callback for KP:', knowledgeId);
               onStatusUpdateRef.current(nodePath, nodeStatus, data.type);
             } else {
               console.warn('⚠️ [KP WebSocket] Skipping update:', {

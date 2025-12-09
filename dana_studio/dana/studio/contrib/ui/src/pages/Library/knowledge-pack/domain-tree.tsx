@@ -407,16 +407,28 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
 }) => {
   // Use knowledge pack store
   const {
-    domainKnowledge: domainTree,
-    isLoadingTree: initialLoading,
-    treeError: storeError,
-    knowledgeStatus: statusData,
+    getKnowledgePackData,
     fetchKnowledgeStatus,
     createdKnowledgePack,
     setGeneratingKnowledgePackId,
     setActiveGenerationType,
     updateNodeStatus,
   } = useKnowledgePackStore();
+
+  // Get KP-specific data
+  const kpId = knowledgePackId ? (typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : knowledgePackId) : null;
+  const kpData = kpId ? getKnowledgePackData(kpId) : {
+    domainKnowledge: null,
+    knowledgeStatus: null,
+    isLoadingTree: false,
+    treeError: null,
+    isLoadingStatus: false,
+    statusError: null,
+  };
+  const domainTree = kpData.domainKnowledge;
+  const initialLoading = kpData.isLoadingTree;
+  const storeError = kpData.treeError;
+  const statusData = kpData.knowledgeStatus;
 
   const generatingNodes = new Set<string>();
 
@@ -659,9 +671,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
       
       // Note: We don't clear generation type here because multiple nodes may be generating
       // The chat sidebar will determine when to show/hide the panel based on the type
+      
+      // Update node status with KP ID to ensure it updates the correct KP's data
+      updateNodeStatus(kpId, nodePath, status as KnowledgeTopicStatus['status']);
     }
-    
-    updateNodeStatus(nodePath, status as KnowledgeTopicStatus['status']);
     
     // Auto-expand the path to the updated node
     if (domainTree?.root) {

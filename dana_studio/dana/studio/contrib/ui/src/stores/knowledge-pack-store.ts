@@ -8,6 +8,16 @@ import type { KnowledgeStatusResponse } from '@/lib/api';
 // Processing status enum
 export type ProcessingStatus = 'idle' | 'processing' | 'success' | 'error';
 
+// PER-KP State (keyed by KP ID)
+export interface KnowledgePackStateData {
+  domainKnowledge: DomainKnowledgeResponse | null;
+  knowledgeStatus: KnowledgeStatusResponse | null;
+  isLoadingTree: boolean;
+  treeError: string | null;
+  isLoadingStatus: boolean;
+  statusError: string | null;
+}
+
 export interface KnowledgePackState {
   // Dialog state
   isKnowledgePackOpen: boolean;
@@ -53,22 +63,23 @@ export interface KnowledgePackState {
   // Error state
   error: string | null;
 
-  // Domain knowledge tree state
-  domainKnowledge: DomainKnowledgeResponse | null;
-  isLoadingTree: boolean;
-  treeError: string | null;
-
-  // Knowledge status state (NEW)
-  knowledgeStatus: KnowledgeStatusResponse | null;
-  isLoadingStatus: boolean;
-  statusError: string | null;
-  lastFetchedKpId: number | null; // Track which KP's status was last fetched
+  // PER-KP state (keyed by KP ID)
+  knowledgePackData: Record<number, KnowledgePackStateData>;
+  activeGenerationType: Record<number, 'question' | 'knowledge' | null>; // Track generation type per KP
+  hasClickedGenerate: Record<number, boolean>; // Track Generate button clicks per KP
 
   // Knowledge generation state
   generatingKnowledgePackId: number | null; // Track which knowledge pack ID is generating
-  
-  // Active generation type tracking (per knowledge pack)
-  activeGenerationType: Record<number, 'question' | 'knowledge' | null>; // Track generation type per KP
+
+  // DEPRECATED: Single-value state (kept for backward compatibility during migration)
+  // TODO: Remove after migration complete
+  domainKnowledge: DomainKnowledgeResponse | null;
+  isLoadingTree: boolean;
+  treeError: string | null;
+  knowledgeStatus: KnowledgeStatusResponse | null;
+  isLoadingStatus: boolean;
+  statusError: string | null;
+  lastFetchedKpId: number | null;
 }
 
 export interface KnowledgePackActions {
@@ -102,11 +113,17 @@ export interface KnowledgePackActions {
   // Knowledge status management (NEW)
   fetchKnowledgeStatus: (knowledgePackId: number, force?: boolean) => Promise<void>;
   clearKnowledgeStatus: () => void;
-  updateNodeStatus: (nodePath: string, status: string) => void;
+  updateNodeStatus: (kpId: number, nodePath: string, status: string) => void;
+
+  // KP-specific data accessors
+  getKnowledgePackData: (kpId: number) => KnowledgePackStateData;
+  setKnowledgePackData: (kpId: number, data: Partial<KnowledgePackStateData>) => void;
+  clearKnowledgePackData: (kpId: number) => void;
 
   // Knowledge generation management
   setGeneratingKnowledgePackId: (kpId: number | null) => void;
   setActiveGenerationType: (kpId: number, type: 'question' | 'knowledge' | null) => void;
+  setHasClickedGenerate: (kpId: number, value: boolean) => void;
 
   // Helper methods
   _extractStatusFromTree: (node: any, pathParts?: string[]) => any[];
@@ -138,6 +155,11 @@ const initialState: KnowledgePackState = {
   isParsingText: false,
   isCreatingPack: false,
   error: null,
+  knowledgePackData: {},
+  activeGenerationType: {},
+  hasClickedGenerate: {},
+  generatingKnowledgePackId: null,
+  // DEPRECATED: Single-value state (kept for backward compatibility)
   domainKnowledge: null,
   isLoadingTree: false,
   treeError: null,
@@ -145,8 +167,6 @@ const initialState: KnowledgePackState = {
   isLoadingStatus: false,
   statusError: null,
   lastFetchedKpId: null,
-  generatingKnowledgePackId: null,
-  activeGenerationType: {},
 };
 
 export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
@@ -397,7 +417,11 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
   // Fetch knowledge pack tree data (new - proper KP-specific method)
   fetchKnowledgePackTree: async (knowledgePackId: number) => {
     console.log('📡 [STORE] fetchKnowledgePackTree called for ID:', knowledgePackId);
-    set({ isLoadingTree: true, treeError: null });
+    const state = get();
+    state.setKnowledgePackData(knowledgePackId, {
+      isLoadingTree: true,
+      treeError: null,
+    });
 
     try {
       console.log('🌐 [STORE] Fetching from API...');
@@ -409,17 +433,26 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
         console.log('📦 [STORE] Received tree data with root:', treeData.root?.topic);
         
         // Extract status from tree nodes
-        const topics = treeData.root ? get()._extractStatusFromTree(treeData.root) : [];
+        const topics = treeData.root ? state._extractStatusFromTree(treeData.root) : [];
         console.log('📊 [STORE] Extracted', topics.length, 'topic statuses from tree');
         
         console.log('💾 [STORE] Updating store with new tree data - this will trigger domainTree useEffect');
-        set({
+        state.setKnowledgePackData(knowledgePackId, {
           domainKnowledge: treeData,
           knowledgeStatus: { topics }, // Set status immediately from tree
           isLoadingTree: false,
           treeError: null,
+        });
+        
+        // DEPRECATED: Also update legacy single-value state for backward compatibility
+        set({
+          domainKnowledge: treeData,
+          knowledgeStatus: { topics },
+          isLoadingTree: false,
+          treeError: null,
           lastFetchedKpId: knowledgePackId,
         });
+        
         console.log('✅ [STORE] Store updated with new tree data');
       } else {
         throw new Error(response.error || 'Failed to load knowledge pack tree');
@@ -427,6 +460,12 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to load knowledge pack tree';
       console.error('❌ [STORE] Failed to fetch tree:', error);
+      const currentState = get();
+      currentState.setKnowledgePackData(knowledgePackId, {
+        isLoadingTree: false,
+        treeError: errorMessage,
+      });
+      // DEPRECATED: Also update legacy state
       set({
         isLoadingTree: false,
         treeError: errorMessage,
@@ -445,27 +484,38 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     });
   },
 
-  // Fetch knowledge status (NEW)
+  // Fetch knowledge status (NEW) - NOW KP-SPECIFIC
   fetchKnowledgeStatus: async (knowledgePackId: number, force: boolean = false) => {
     const state = get();
+    const kpData = state.getKnowledgePackData(knowledgePackId);
 
     // Prevent duplicate calls: skip if already loading or already fetched for this KP
-    if (!force && state.isLoadingStatus) {
+    if (!force && kpData.isLoadingStatus) {
       console.log('⏭️ Knowledge Pack: Skipping status fetch (already loading)');
       return;
     }
 
-    if (!force && state.lastFetchedKpId === knowledgePackId && state.knowledgeStatus) {
+    if (!force && kpData.knowledgeStatus) {
       console.log('⏭️ Knowledge Pack: Skipping status fetch (already have data for this KP)');
       return;
     }
 
     console.log('📊 Knowledge Pack: Fetching knowledge status for ID:', knowledgePackId);
-    set({ isLoadingStatus: true, statusError: null });
+    state.setKnowledgePackData(knowledgePackId, {
+      isLoadingStatus: true,
+      statusError: null,
+    });
 
     try {
       const response = await apiService.getKnowledgePackStatus(knowledgePackId);
       console.log('✅ Knowledge Pack: Knowledge status loaded successfully');
+      state.setKnowledgePackData(knowledgePackId, {
+        knowledgeStatus: response,
+        isLoadingStatus: false,
+        statusError: null,
+      });
+      
+      // DEPRECATED: Also update legacy single-value state for backward compatibility
       set({
         knowledgeStatus: response,
         isLoadingStatus: false,
@@ -475,11 +525,17 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to load knowledge status';
       console.error('❌ Knowledge Pack: Failed to fetch knowledge status:', error);
-      set({
+      state.setKnowledgePackData(knowledgePackId, {
         knowledgeStatus: { topics: [] }, // Set empty status on error
         isLoadingStatus: false,
         statusError: errorMessage,
-        lastFetchedKpId: knowledgePackId, // Mark as attempted even on error
+      });
+      // DEPRECATED: Also update legacy state
+      set({
+        knowledgeStatus: { topics: [] },
+        isLoadingStatus: false,
+        statusError: errorMessage,
+        lastFetchedKpId: knowledgePackId,
       });
     }
   },
@@ -495,16 +551,18 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     });
   },
 
-  // Update individual node status (for WebSocket updates)
-  updateNodeStatus: (nodePath: string, status: string) => {
-    const currentStatus = get().knowledgeStatus;
+  // Update individual node status (for WebSocket updates) - NOW KP-SPECIFIC
+  updateNodeStatus: (kpId: number, nodePath: string, status: string) => {
+    const state = get();
+    const kpData = state.getKnowledgePackData(kpId);
+    const currentStatus = kpData.knowledgeStatus;
     
-    console.log('🔄 Knowledge Pack: Updating node status:', { nodePath, status, hasCurrentStatus: !!currentStatus });
+    console.log('🔄 Knowledge Pack: Updating node status:', { kpId, nodePath, status, hasCurrentStatus: !!currentStatus });
 
     // If no knowledge status loaded yet, create initial structure with this topic
     if (!currentStatus) {
       console.log('⚠️ Knowledge Pack: No knowledge status loaded, creating initial structure');
-      set({
+      state.setKnowledgePackData(kpId, {
         knowledgeStatus: {
           topics: [{
             id: nodePath.replace(/\s+/g, '_').toLowerCase(),
@@ -549,7 +607,7 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
       console.log('✅ Knowledge Pack: New topic added');
     }
 
-    set({
+    state.setKnowledgePackData(kpId, {
       knowledgeStatus: {
         ...currentStatus,
         topics: updatedTopics,
@@ -575,6 +633,18 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     });
   },
 
+  // Set hasClickedGenerate for a knowledge pack
+  setHasClickedGenerate: (kpId: number, value: boolean) => {
+    console.log('🔄 Knowledge Pack: Setting hasClickedGenerate for KP', kpId, 'to', value);
+    const state = get();
+    set({
+      hasClickedGenerate: {
+        ...state.hasClickedGenerate,
+        [kpId]: value,
+      },
+    });
+  },
+
   // Reset store
   reset: () => {
     console.log('🔄 Knowledge Pack: Resetting store');
@@ -585,4 +655,55 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
   clearError: () => {
     set({ error: null });
   },
+
+  // Get KP-specific data (returns defaults if not loaded)
+  getKnowledgePackData: (kpId: number): KnowledgePackStateData => {
+    const state = get();
+    const existingData = state.knowledgePackData[kpId];
+    
+    if (existingData) {
+      return existingData;
+    }
+    
+    // Return defaults if not loaded
+    return {
+      domainKnowledge: null,
+      knowledgeStatus: null,
+      isLoadingTree: false,
+      treeError: null,
+      isLoadingStatus: false,
+      statusError: null,
+    };
+  },
+
+  // Update KP-specific data
+  setKnowledgePackData: (kpId: number, data: Partial<KnowledgePackData>) => {
+    const state = get();
+    const existingData = state.knowledgePackData[kpId] || {
+      domainKnowledge: null,
+      knowledgeStatus: null,
+      isLoadingTree: false,
+      treeError: null,
+      isLoadingStatus: false,
+      statusError: null,
+    };
+    
+    set({
+      knowledgePackData: {
+        ...state.knowledgePackData,
+        [kpId]: {
+          ...existingData,
+          ...data,
+        },
+      },
+    });
+  },
+
+  // Clean up KP data when leaving page
+  clearKnowledgePackData: (kpId: number) => {
+    const state = get();
+    const { [kpId]: _, ...rest } = state.knowledgePackData;
+    set({ knowledgePackData: rest });
+  },
 }));
+

@@ -222,36 +222,39 @@ const SmartAgentChat: React.FC<{
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
-  const [hasClickedGenerate, setHasClickedGenerate] = useState(false);
 
   // Get knowledge generation status and created knowledge pack from store
   const { 
     generatingKnowledgePackId, 
     createdKnowledgePack, 
-    knowledgeStatus,
-    lastFetchedKpId,
+    getKnowledgePackData,
     activeGenerationType,
-    setGeneratingKnowledgePackId 
+    setGeneratingKnowledgePackId,
+    hasClickedGenerate,
+    setHasClickedGenerate
   } = useKnowledgePackStore();
+  
+  // Get KP-specific data
+  const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+  const kpData = getKnowledgePackData(kpId);
+  const knowledgeStatus = kpData.knowledgeStatus;
   
   // Check if the current knowledge pack is generating
   const isGeneratingKnowledge = useMemo(() => {
-    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
     return generatingKnowledgePackId === kpId;
-  }, [generatingKnowledgePackId, knowledgePackId]);
+  }, [generatingKnowledgePackId, kpId]);
   
   // Check if knowledgeStatus belongs to the current knowledge pack
+  // With Record-based state, data is already KP-specific, so this is always true if data exists
   const isStatusForCurrentPack = useMemo(() => {
-    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
-    return lastFetchedKpId === kpId;
-  }, [lastFetchedKpId, knowledgePackId]);
+    return !!knowledgeStatus;
+  }, [knowledgeStatus]);
   
   // Check if createdKnowledgePack belongs to the current knowledge pack
   const isCreatedPackForCurrentPack = useMemo(() => {
     if (!createdKnowledgePack?.id) return false;
-    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
     return createdKnowledgePack.id === kpId;
-  }, [createdKnowledgePack?.id, knowledgePackId]);
+  }, [createdKnowledgePack?.id, kpId]);
   
   console.log('📦 SmartAgentChat - createdKnowledgePack:', {
     id: createdKnowledgePack?.id,
@@ -283,10 +286,21 @@ const SmartAgentChat: React.FC<{
   const [hasLoadedConversation, setHasLoadedConversation] = useState(false);
   const hasAttemptedAutoMessageRef = useRef(false);
 
+  // Reset KP-specific states when switching knowledge packs
+  useEffect(() => {
+    setProcessingStatusHistory([]);
+    setHasLoadedConversation(false);
+    hasAttemptedAutoMessageRef.current = false;
+    setInput('');
+    setLoading(false);
+  }, [knowledgePackId]);
+
   // Check if generation has been started (either by clicking button or from elsewhere)
   const hasGenerationStarted = useMemo(() => {
-    // Check if user clicked button in this session
-    if (hasClickedGenerate) return true;
+    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+    
+    // Check if user clicked button for this specific KP
+    if (hasClickedGenerate[kpId]) return true;
     
     // Check if generation is currently running
     if (isGeneratingKnowledge) return true;
@@ -307,16 +321,14 @@ const SmartAgentChat: React.FC<{
     }
     
     return false;
-  }, [hasClickedGenerate, isGeneratingKnowledge, isCreatedPackForCurrentPack, createdKnowledgePack?.generation_task_id, knowledgeStatus, isStatusForCurrentPack]);
+  }, [hasClickedGenerate, knowledgePackId, isGeneratingKnowledge, isCreatedPackForCurrentPack, createdKnowledgePack?.generation_task_id, knowledgeStatus, isStatusForCurrentPack]);
 
   // Check if Generate Knowledge button should be shown
   const shouldShowGenerateButton = useMemo(() => {
     // Don't show if generation already started
     if (hasGenerationStarted) return false;
     
-    // Only use knowledgeStatus if it belongs to the current pack
-    if (!isStatusForCurrentPack) return false;
-    
+    // knowledgeStatus is already KP-specific, so no need to check isStatusForCurrentPack
     if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
       return false;
     }
@@ -325,13 +337,11 @@ const SmartAgentChat: React.FC<{
     return knowledgeStatus.topics.every((topic: any) => 
       topic.status === 'question_generated' || topic.status === 'failed'
     );
-  }, [knowledgeStatus, hasGenerationStarted, isStatusForCurrentPack]);
+  }, [knowledgeStatus, hasGenerationStarted]);
 
   // Check if generation is complete
   const isGenerationComplete = useMemo(() => {
-    // Only use knowledgeStatus if it belongs to the current pack
-    if (!isStatusForCurrentPack) return false;
-    
+    // knowledgeStatus is already KP-specific
     if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
       return false;
     }
@@ -340,14 +350,12 @@ const SmartAgentChat: React.FC<{
     return knowledgeStatus.topics.every((topic: any) => 
       topic.status === 'completed' || topic.status === 'success' || topic.status === 'failed'
     );
-  }, [knowledgeStatus, isStatusForCurrentPack]);
+  }, [knowledgeStatus]);
 
   // Check if knowledge content generation is in progress
   // Primary: Use websocket type tracking (most accurate)
   // Fallback: Use knowledgeStatus if websocket tracking not available
   const isKnowledgeGenerating = useMemo(() => {
-    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
-    
     // Primary: Check websocket-based generation type
     const generationType = activeGenerationType[kpId];
     if (generationType === 'knowledge') {
@@ -358,9 +366,7 @@ const SmartAgentChat: React.FC<{
     }
     
     // Fallback: Use knowledgeStatus if websocket tracking not available
-    // Only use knowledgeStatus if it belongs to the current pack
-    if (!isStatusForCurrentPack) return false;
-    
+    // knowledgeStatus is already KP-specific
     if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
       return false;
     }
@@ -375,7 +381,7 @@ const SmartAgentChat: React.FC<{
     
     // Only true if we have BOTH question_generated AND completed/success nodes (mixed state)
     return hasQuestionGenerated && hasCompleted;
-  }, [knowledgeStatus, isStatusForCurrentPack, activeGenerationType, knowledgePackId]);
+  }, [knowledgeStatus, activeGenerationType, kpId]);
 
   // Load conversation history from API on mount
   useEffect(() => {
@@ -558,11 +564,10 @@ const SmartAgentChat: React.FC<{
   const handleGenerateKnowledge = async () => {
     if (!knowledgePackId) return;
 
-    setHasClickedGenerate(true);
+    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+    setHasClickedGenerate(kpId, true);
     
     try {
-      const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
-      
       const response = await apiService.generateKnowledgePackKnowledge(kpId);
       
       if (response.success) {
@@ -707,10 +712,14 @@ const SmartAgentChat: React.FC<{
     setIsComposing(false);
   };
 
+  // Get current KP ID for button visibility check
+  const currentKpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+  const shouldShowGenerateButtonForCurrentKP = !hasClickedGenerate[currentKpId] && shouldShowGenerateButton;
+
   return (
     <div className="flex overflow-y-auto flex-col h-full group">
       {/* Generate Knowledge Button Section */}
-      {!hasClickedGenerate && shouldShowGenerateButton && (
+      {shouldShowGenerateButtonForCurrentKP && (
         <div className="px-3 py-4 bg-blue-50 border-b border-blue-200">
           <div className="flex flex-col gap-3">
             <div className="text-sm text-gray-700">
