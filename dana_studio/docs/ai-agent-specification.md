@@ -17,13 +17,13 @@
 
 The following table provides an overview of all AI agents/handlers used in Dana Studio's v2 endpoints:
 
-| Agent Name | Role | Main Purpose | Endpoint | Handler Class |
-|------------|------|--------------|----------|---------------|
-| **KPStructuringOrchestrator** | Knowledge Structure Builder | Helps users systematically build and refine domain knowledge tree structures through conversational interactions | `POST /api/v2/knowledge/structure/{id}/chat` | `KPStructuringOrchestrator` |
-| **TemplateModificationHandler** | Template Editor | Enables users to modify interview template files (README.md) through natural language search/replace operations | `POST /api/v2/knowledge/template/{id}/chat` (editor mode) | `TemplateModificationHandler` |
-| **DocumentExplorationHandler** | Document Analyst | Helps users explore and analyze knowledge pack documents to discover insights and refine interview questions | `POST /api/v2/knowledge/template/{id}/chat` (chat mode) | `DocumentExplorationHandler` |
-| **InterviewQuestionHandler** | Interview Conductor | Generates next interview questions based on conversation history and interview note state, guiding knowledge capture sessions | `POST /api/v2/knowledge/session/{id}/chat` | `InterviewQuestionHandler` |
-| **KnowledgeGenerationTool** | Knowledge Generator | Generates structured knowledge (facts, procedures, heuristics) from pre-generated questions using RAG and LLM | `POST /api/v2/knowledge/gen/{id}/generate-knowledge` | `KnowledgeGenerationTool` |
+| Agent Name | Role | Main Purpose | Endpoint | Handler Class | Phase |
+|------------|------|--------------|----------|---------------|-------|
+| **KPStructuringOrchestrator** | Knowledge Structure Builder | Helps users systematically build and refine domain knowledge tree structures through conversational interactions | `POST /api/v2/knowledge/structure/{id}/chat` | `KPStructuringOrchestrator` | Knowledge generation |
+| **KnowledgeGenerationTool** | Knowledge Generator | Generates structured knowledge (facts, procedures, heuristics) from pre-generated questions using RAG and LLM | `POST /api/v2/knowledge/gen/{id}/generate-knowledge` | `KnowledgeGenerationTool` | Knowledge generation |
+| **DocumentExplorationHandler** | Document Analyst | Helps users explore and analyze knowledge pack documents to discover insights and refine interview questions | `POST /api/v2/knowledge/template/{id}/chat` (chat mode) | `DocumentExplorationHandler` | Template finetuning |
+| **TemplateModificationHandler** | Template Editor | Enables users to modify interview template files (README.md) through natural language search/replace operations | `POST /api/v2/knowledge/template/{id}/chat` (editor mode) | `TemplateModificationHandler` | Template finetuning |
+| **InterviewQuestionHandler** | Interview Conductor | Generates next interview questions based on conversation history and interview note state, guiding knowledge capture sessions | `POST /api/v2/knowledge/session/{id}/chat` | `InterviewQuestionHandler` | Interview |
 
 ---
 
@@ -218,7 +218,490 @@ Decision: ask_question to confirm before modifying tree
 
 ---
 
-### 2.2 TemplateModificationHandler
+### 2.2 KnowledgeGenerationTool
+
+**Agent Role**: Knowledge Generator
+
+**Main Purpose**: Generates structured knowledge (facts, procedures, heuristics) from pre-generated questions stored in knowledge.json files. Processes all leaf nodes in the knowledge tree, uses RAG for document context, and creates knowledge summaries and master interview templates.
+
+#### Inputs
+
+| Input | Source | Format | Description |
+|-------|--------|--------|-------------|
+| Knowledge Pack ID | Task Data | Integer | Knowledge pack identifier |
+| Storage Path | Task Data | String | Path to `knows/` folder containing knowledge.json files |
+| Domain Knowledge Path | Task Data | String | Path to `domain_knowledge.json` tree structure |
+| Knowledge Status Path | Task Data | String | Path to `knowledge_status.json` for progress tracking |
+| Document Paths | Task Data | List[String] | File paths to associated documents for RAG |
+| Domain/Role/Tasks | Task Data | String/String/List[String] | Specialization information |
+| Template Generation Prompt | Task Data (optional) | String | Knowledge pack-specific prompt override for template generation |
+| Question Batch Size | Configuration | Integer | Number of questions to process per batch (default: 1) |
+| Allow Outside Document | Configuration | Boolean | Whether to generate knowledge without document context (default: False) |
+
+#### Outputs
+
+| Output | Consumer | Format | Description |
+|--------|----------|--------|-------------|
+| Knowledge JSON Files | File System | JSON | Updated `knowledge.json` files with generated facts, procedures, heuristics |
+| Knowledge Status | File System | JSON | Updated `knowledge_status.json` with generation progress |
+| Domain Knowledge Tree | File System | JSON | Updated `domain_knowledge.json` with node statuses |
+| Knowledge Summaries | File System | JSON | Summary field added to each `knowledge.json` file |
+| Master Interview Template | File System | Markdown | Generated `template/README.md` master interview template |
+| WebSocket Notifications | Frontend (real-time) | JSON message | Progress updates for each topic processed |
+
+#### Process Flow
+
+1. **Extract Leaf Paths**: Recursively extract all leaf node paths from domain knowledge tree
+2. **Process Each Leaf**:
+   - Read existing `knowledge.json` file
+   - Extract questions from knowledge entries
+   - Query RAG for relevant document chunks (if documents available)
+   - Generate knowledge from questions using LLM (with retry logic and timeout protection)
+   - Transform raw knowledge into structured format (facts, procedures, heuristics)
+   - Update `knowledge.json` file with generated content
+   - Update status manager and tree structure
+3. **Generate Summaries**: For each successfully processed topic, generate summary and add to `knowledge.json`
+4. **Generate Master Template**: Read all summaries, generate master interview template, save to `template/README.md`
+
+#### Allowed Tools
+
+| Tool Name | Description | Key Parameters |
+|-----------|------------|----------------|
+| RAG Resource (internal) | Query documents for relevant chunks | `query`, `num_results` |
+| LLM Resource (internal) | Generate knowledge from questions | `prompt`, `temperature`, `max_tokens` |
+| Knowledge Status Manager (internal) | Track generation progress | `path`, `status`, `file_path` |
+| File System I/O (internal) | Read/write knowledge.json files | File paths |
+
+#### Base Prompt (Knowledge Extraction)
+
+```
+[Knowledge Extraction Prompt - used when documents available]
+Based on the following document chunks and question, extract structured knowledge:
+
+Path: {path}
+Question: {question}
+Chunks:
+{chunks}
+
+Generate knowledge in the following format:
+## Facts
+- [Factual knowledge from documents]
+
+## Procedures
+- Overview 1: [Step-by-step procedure]
+- Overview 2: [Another procedure]
+
+## Heuristics
+- [Rule-of-thumb or judgment-based knowledge]
+
+Include chunk references [Chunk N] for facts/procedures/heuristics derived from specific chunks.
+```
+
+#### Base Prompt (Knowledge Generation - No Documents)
+
+```
+[Knowledge Generation Prompt - used when no documents or allow_outside_document=True]
+Based on your expertise as a {role} in {domain}, generate knowledge for:
+
+Path: {path}
+Question: {question}
+
+Generate knowledge in the following format:
+## Facts
+- [Factual knowledge]
+
+## Procedures
+- Overview 1: [Step-by-step procedure]
+- Overview 2: [Another procedure]
+
+## Heuristics
+- [Rule-of-thumb or judgment-based knowledge]
+```
+
+#### Behavior Guidelines
+
+1. **Resumable Processing**: Checks status manager to skip already-completed topics
+2. **Batch Processing**: Processes questions in batches (configurable batch size)
+3. **RAG Integration**: Queries RAG for document chunks before generating knowledge (if documents available)
+4. **Retry Logic**: Implements exponential backoff retry for failed LLM calls (max 2 retries)
+5. **Timeout Protection**: Uses configurable timeouts for LLM calls, RAG queries, and batch operations
+6. **Status Tracking**: Updates knowledge_status.json and domain_knowledge.json with progress
+7. **WebSocket Notifications**: Sends real-time progress updates via WebSocket
+8. **Error Handling**: Continues processing other topics if one fails (doesn't stop entire pipeline)
+9. **Summary Generation**: Generates summaries for all successfully processed topics
+10. **Template Generation**: Creates master interview template from all summaries using prompt hierarchy (KP override > Global default > Hardcoded fallback)
+
+#### Guardrails
+
+1. **Never skip questions**: Must process all questions found in knowledge.json files
+2. **Never overwrite without backup**: Preserves existing knowledge entries when updating files
+3. **Never proceed without questions**: Skips topics that don't have questions in knowledge.json
+4. **Never exceed timeouts**: Respects configured timeouts for LLM calls and RAG queries
+5. **Never modify tree structure**: Only updates node statuses, doesn't modify tree hierarchy
+6. **Never generate without approval**: Requires pre-generated questions (user must approve question generation first)
+7. **Never process same topic twice**: Checks status manager before processing (resumable)
+
+#### Known Limitations
+
+1. **Question Dependency**: Requires pre-generated questions in knowledge.json files (must run question bank generation first)
+2. **Document Dependency**: Knowledge quality depends on document availability and RAG quality
+3. **Timeout Constraints**: Long-running operations may timeout (configurable but may need adjustment)
+4. **Retry Limits**: Maximum 5 retry attempts per LLM call (may fail permanently if LLM consistently times out)
+5. **Batch Size**: Default batch size of 1, each batch contains 5 questions (may be slow for topics with many questions)
+6. **File System Dependency**: Direct file I/O operations (potential race conditions in concurrent access)
+7. **Memory Usage**: Loads entire tree structure and processes all leaves (may be memory-intensive for large trees)
+8. **Template Generation**: Template generation depends on summary quality (may produce poor templates if summaries incomplete)
+
+#### Example
+
+**Input (API Request)**:
+```json
+{
+  "kp_id": 42
+}
+```
+
+**Context (from task data and file system)**:
+- Knowledge Pack ID: 42
+- Storage Path: `/data/kp_42/knows/`
+- Domain Knowledge Path: `/data/kp_42/domain_knowledge.json`
+- Document Paths: ["/data/kp_42/docs/Operating_Manual.pdf", "/data/kp_42/docs/Safety_Guidelines.pdf"]
+- Domain: "Sugar Manufacturing"
+- Role: "Process Operator"
+
+**Tree Structure (domain_knowledge.json)**:
+```json
+{
+  "root": {
+    "topic": "Sugar Manufacturing",
+    "children": [
+      {
+        "topic": "Centrifuge Operations",
+        "children": [],
+        "status": "pending"
+      },
+      {
+        "topic": "Filtration Systems",
+        "children": [],
+        "status": "pending"
+      }
+    ]
+  }
+}
+```
+
+**Pre-existing knowledge.json (for Centrifuge Operations)**:
+```json
+{
+  "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"],
+  "knowledges": [
+    {"question": "What are the standard operating parameters for centrifuges?", "facts": [], "procedures": [], "heuristics": []},
+    {"question": "How do operators handle high-brix campaigns?", "facts": [], "procedures": [], "heuristics": []}
+  ]
+}
+```
+
+**Processing Flow**:
+
+1. **Extract Leaf Paths**:
+   - Found 2 leaves: `["Sugar Manufacturing", "Centrifuge Operations"]`, `["Sugar Manufacturing", "Filtration Systems"]`
+
+2. **Process Leaf 1 (Centrifuge Operations)**:
+   - Read `knows/Centrifuge_Operations/knowledge.json`
+   - Extract questions: 2 questions found
+   - Query RAG for relevant chunks (Operating Manual mentions centrifuge parameters)
+   - LLM generates knowledge:
+
+```markdown
+## Facts
+- [Chunk 1, Chunk 3] Standard centrifuge speed is 1200 RPM with max recommended 1350 RPM
+- [Chunk 2] Basket temperature should be maintained below 85°C
+
+## Procedures
+- Overview 1: [Chunk 4] Pre-startup inspection includes checking basket balance, seal integrity, and lubrication levels
+
+## Heuristics
+- [Chunk 5] During high-brix campaigns, experienced operators increase speed to 1400 RPM accepting 15% higher bearing wear for throughput gains
+```
+
+3. **Update knowledge.json**:
+```json
+{
+  "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"],
+  "knowledges": [
+    {
+      "question": "What are the standard operating parameters for centrifuges?",
+      "facts": [
+        {"content": "Standard centrifuge speed is 1200 RPM with max recommended 1350 RPM", "references": [{"source": "Operating_Manual.pdf", "page_number": 23}]},
+        {"content": "Basket temperature should be maintained below 85°C", "references": [{"source": "Operating_Manual.pdf", "page_number": 24}]}
+      ],
+      "procedures": [
+        {"content": "Pre-startup inspection includes checking basket balance, seal integrity, and lubrication levels", "references": [{"source": "Operating_Manual.pdf", "page_number": 25}]}
+      ],
+      "heuristics": []
+    },
+    {
+      "question": "How do operators handle high-brix campaigns?",
+      "facts": [],
+      "procedures": [],
+      "heuristics": [
+        {"content": "During high-brix campaigns, experienced operators increase speed to 1400 RPM accepting 15% higher bearing wear for throughput gains", "references": [{"source": "Operating_Manual.pdf", "page_number": 28}]}
+      ]
+    }
+  ]
+}
+```
+
+4. **Generate Summary** (added to knowledge.json):
+```markdown
+# Summary
+Centrifuge Operations covers the core operating parameters and campaign-specific adjustments for sugar centrifuges. Standard operation is at 1200 RPM with temperature limits of 85°C. During high-brix campaigns, operators trade bearing life for throughput by exceeding normal speed limits.
+
+# Key Concepts
+- Standard RPM: 1200
+- Max recommended RPM: 1350
+- High-brix campaign speed: 1400 RPM
+- Temperature limit: 85°C
+- Bearing wear trade-off
+
+# Referenced Documents
+- Operating_Manual.pdf
+```
+
+5. **Generate Master Interview Template** (after all leaves processed):
+   - Reads all summaries
+   - Creates `template/README.md` with opening questions for each topic
+
+**Output (WebSocket notifications during processing)**:
+```json
+{"tool_name": "generate_knowledge", "content": "Starting knowledge generation for 2 topics", "status": "in_progress", "progression": 0.0}
+{"tool_name": "generate_knowledge", "content": "Processing Centrifuge Operations (1/2)", "status": "in_progress", "progression": 0.25, "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"]}
+{"tool_name": "generate_question_bank", "content": "Completed Centrifuge Operations - 1/2 done", "status": "completed", "progression": 0.5, "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"]}
+{"tool_name": "generate_knowledge", "content": "Processing Filtration Systems (2/2)", "status": "in_progress", "progression": 0.75, "path_parts": ["Sugar Manufacturing", "Filtration Systems"]}
+{"tool_name": "generate_question_bank", "content": "Completed Filtration Systems - 2/2 done", "status": "completed", "progression": 1.0, "path_parts": ["Sugar Manufacturing", "Filtration Systems"]}
+```
+
+**Final Output (ToolResult)**:
+```json
+{
+  "name": "generate_knowledge",
+  "result": "I understand you want to generate comprehensive knowledge for all topics in the tree structure. This will create detailed facts, procedures, and heuristics to enhance the agent's capabilities.\n\n✅ Knowledge generation pipeline complete.",
+  "require_user": false
+}
+```
+
+---
+
+### 2.3 DocumentExplorationHandler
+
+**Agent Role**: Document Analyst
+
+**Main Purpose**: Helps users explore and analyze knowledge pack documents to discover insights, answer questions, and identify opportunities to refine interview questions. Uses RAG for document content retrieval.
+
+#### Inputs
+
+| Input | Source | Format | Description |
+|-------|--------|--------|-------------|
+| User Message | Frontend (via API) | `BaseMessage` (content: string) | Natural language query about documents |
+| Conversation History | Database (Conversation) | `IntentDetectionRequest` (chat_history: list[MessageData]) | Previous messages in conversation (last 4 messages used) |
+| Document Paths | Knowledge Pack Metadata | List[String] | File paths to associated documents |
+| Template Path | Template Metadata | String (optional) | Path to interview template README.md for context |
+| Domain/Role | Knowledge Pack Metadata | String/String | Domain and role for context |
+| Knowledge Pack ID | Template Metadata | Integer | Knowledge pack identifier |
+| Database Session | API Route | SQLAlchemy Session | Database session for document queries |
+| Custom System Prompt | Template Folder | String (optional) | Custom system prompt from `system_prompt.prompt` file |
+
+#### Outputs
+
+| Output | Consumer | Format | Description |
+|--------|----------|--------|-------------|
+| Agent Response | Frontend | `TemplateFinetuneChannelResponse` (agent_response: string) | Final message with document insights or answers |
+| Internal Conversation | Frontend | `HandlerConversation` (messages: list[HandlerMessage]) | Full conversation including tool calls and results |
+| Document List | Agent (internal) | List[Document] | List of documents associated with knowledge pack |
+
+#### Allowed Tools
+
+| Tool Name | Description | Key Parameters |
+|-----------|------------|----------------|
+| `read_documents` | Search and read document content using RAG | `query` (required), `document_id` (optional) |
+| `ask_question` | Ask user for clarification or gather more information | `question`, `context`, `options` |
+| `attempt_completion` | Provide summary of findings or answer user questions | `result`, `options` |
+
+#### Base Prompt
+
+```
+You are a knowledge-elicitation agent specialized in analyzing documents to understand and refine interview questions for {domain} - {role}.
+
+Your purpose is to:
+1. Help users explore and understand documents in the knowledge pack
+2. Answer questions about document content using RAG
+3. Identify opportunities to refine interview questions based on document insights
+4. Extract tacit operational knowledge and site-specific details
+
+Your Capabilities (Tools Available):
+{tools_str}
+
+{document_context}
+
+Workflow Guidelines:
+- Use read_documents with a query parameter to search for information in documents. Always provide a specific question or search term.
+- Use read_documents with both query and document_id to search within a specific document
+- Use ask_question to clarify user intent, gather more information, or get approval before proceeding
+- Use attempt_completion when:
+  * User's questions have been answered
+  * Document exploration is complete
+  * User asks about document status or structure
+  * Workflow has reached a natural conclusion
+- Focus on practical, experience-based insights from documents
+- Be conversational, helpful, and guide users toward valuable knowledge discovery
+- When querying documents, look for tacit knowledge like:
+  * Operator tricks and workarounds
+  * Common failure patterns
+  * Unofficial procedures and informal SOPs
+  * Site-specific control strategies
+  * Historical context and legacy constraints
+
+Context:
+- Domain: {domain}
+- Role: {role}
+
+Response Format:
+Always respond with TWO XML blocks in this order:
+
+1) Planning (thinking tag):
+<thinking>
+Explain your reasoning:
+- What the user is asking for
+- Which tool to use and why
+- What parameters to provide
+- What the expected outcome is
+</thinking>
+
+2) Tool call (use exact tool name and parameter tags as defined in tool schema):
+<tool_name>
+  <param1>value1</param1>
+  <param2>value2</param2>
+</tool_name>
+
+Remember: You're helping elicit tacit knowledge, not just factual information. Guide users to discover insights that reveal practical experience and operational wisdom.
+```
+
+#### Behavior Guidelines
+
+1. **RAG Initialization**: Lazy initialization of RAG resource when first needed (if document paths provided)
+2. **Document Context**: Builds document list context (shows IDs and names if ≤10 documents, otherwise instructs to use queries)
+3. **Template Integration**: Includes template content in system prompt if template_path provided
+4. **Custom Prompt Support**: Loads and prepends custom system prompt from `system_prompt.prompt` file if exists
+5. **Conversation Continuity**: Uses last 4 messages for context (shorter than other handlers)
+6. **Query-First Approach**: Encourages users to query documents rather than listing all documents
+7. **Tacit Knowledge Focus**: Emphasizes discovering practical experience, workarounds, and site-specific details
+
+#### Guardrails
+
+1. **Never list all documents if >10**: Refuse to list all documents if knowledge pack has more than 10 documents
+2. **Never proceed without query**: Always require a specific query when using `read_documents` tool
+3. **Never modify documents**: Read-only access to documents (cannot edit document content)
+4. **Never modify template**: Cannot modify interview template (that's TemplateModificationHandler's job)
+5. **Never exceed 15 iterations**: Tool loop terminates after 15 iterations
+6. **Never proceed without user input**: If `require_user=True`, stop and wait for response
+7. **Never access documents outside knowledge pack**: Only access documents associated with the knowledge pack
+
+#### Known Limitations
+
+1. **RAG Initialization**: RAG resource initialized on first use (may cause delay on first query)
+2. **Document Limit**: Refuses to list documents if >10 (may frustrate users with large document sets)
+3. **Conversation History**: Only uses last 4 messages (may lose context in longer conversations)
+4. **No Document Editing**: Read-only access (cannot modify document content)
+5. **RAG Dependency**: Requires RAG resource to be initialized (fails gracefully if documents unavailable)
+6. **Template Context**: Template content included but cannot be modified through this handler
+
+#### Example
+
+**Input (API Request)**:
+```json
+{
+  "user_message": "What safety procedures are mentioned in the operating manual?",
+  "template_id": 15,
+  "mode": "chat"
+}
+```
+
+**Context (from knowledge pack)**:
+- Domain: "Sugar Manufacturing"
+- Role: "Process Operator"
+- Associated documents: ["Operating_Manual_v3.pdf", "Safety_Guidelines.pdf"]
+- Document context: "2 documents available"
+
+**Agent Processing (tool loop)**:
+
+*Iteration 1 - Query documents:*
+```xml
+<thinking>
+What the user is asking for: Safety procedures from operating manual
+Which tool to use: read_documents with safety-focused query
+Parameters: query about safety procedures
+Expected outcome: Relevant chunks about safety from documents
+</thinking>
+
+<read_documents>
+  <query>What safety procedures and protocols are described in the operating manual?</query>
+</read_documents>
+```
+
+*Tool Result (RAG returns relevant chunks):*
+```
+Found 5 relevant chunks:
+
+[Chunk 1 - Operating_Manual_v3.pdf, Page 23]
+"Lockout/Tagout (LOTO) Procedure: Before any maintenance work, operators must:
+1. Notify supervisor and affected personnel
+2. Isolate energy sources (electrical, pneumatic, hydraulic)
+3. Apply personal locks and tags..."
+
+[Chunk 2 - Operating_Manual_v3.pdf, Page 45]
+"Emergency Shutdown Protocol: In case of equipment malfunction:
+1. Press emergency stop button (red mushroom)
+2. Clear personnel from affected area..."
+```
+
+*Iteration 2 - Provide answer:*
+```xml
+<thinking>
+What the user is asking for: Summary of safety procedures found
+Which tool to use: attempt_completion to deliver findings
+Expected outcome: User receives comprehensive answer about safety procedures
+</thinking>
+
+<attempt_completion>
+  <result>Based on the Operating Manual, I found several key safety procedures:
+
+**Lockout/Tagout (LOTO) Procedure** (Page 23):
+- Notify supervisor and affected personnel before maintenance
+- Isolate all energy sources (electrical, pneumatic, hydraulic)
+- Apply personal locks and tags to isolation points
+- Verify zero energy state before beginning work
+
+**Emergency Shutdown Protocol** (Page 45):
+- Press the red emergency stop button (mushroom type)
+- Clear all personnel from the affected area
+- Follow the evacuation route posted at each station
+
+Would you like me to explore any of these procedures in more detail, or search for other safety-related information?</result>
+</attempt_completion>
+```
+
+**Output (API Response)**:
+```json
+{
+  "agent_response": "Based on the Operating Manual, I found several key safety procedures:\n\n**Lockout/Tagout (LOTO) Procedure** (Page 23):\n- Notify supervisor and affected personnel before maintenance\n- Isolate all energy sources (electrical, pneumatic, hydraulic)\n- Apply personal locks and tags to isolation points\n- Verify zero energy state before beginning work\n\n**Emergency Shutdown Protocol** (Page 45):\n- Press the red emergency stop button (mushroom type)\n- Clear all personnel from the affected area\n- Follow the evacuation route posted at each station\n\nWould you like me to explore any of these procedures in more detail, or search for other safety-related information?",
+  "internal_conversation": [...],
+  "status": "success"
+}
+```
+
+---
+
+### 2.4 TemplateModificationHandler
 
 **Agent Role**: Template Editor
 
@@ -445,216 +928,9 @@ Decision: attempt_completion to summarize change
 
 ---
 
-### 2.3 DocumentExplorationHandler
 
-**Agent Role**: Document Analyst
 
-**Main Purpose**: Helps users explore and analyze knowledge pack documents to discover insights, answer questions, and identify opportunities to refine interview questions. Uses RAG for document content retrieval.
-
-#### Inputs
-
-| Input | Source | Format | Description |
-|-------|--------|--------|-------------|
-| User Message | Frontend (via API) | `BaseMessage` (content: string) | Natural language query about documents |
-| Conversation History | Database (Conversation) | `IntentDetectionRequest` (chat_history: list[MessageData]) | Previous messages in conversation (last 4 messages used) |
-| Document Paths | Knowledge Pack Metadata | List[String] | File paths to associated documents |
-| Template Path | Template Metadata | String (optional) | Path to interview template README.md for context |
-| Domain/Role | Knowledge Pack Metadata | String/String | Domain and role for context |
-| Knowledge Pack ID | Template Metadata | Integer | Knowledge pack identifier |
-| Database Session | API Route | SQLAlchemy Session | Database session for document queries |
-| Custom System Prompt | Template Folder | String (optional) | Custom system prompt from `system_prompt.prompt` file |
-
-#### Outputs
-
-| Output | Consumer | Format | Description |
-|--------|----------|--------|-------------|
-| Agent Response | Frontend | `TemplateFinetuneChannelResponse` (agent_response: string) | Final message with document insights or answers |
-| Internal Conversation | Frontend | `HandlerConversation` (messages: list[HandlerMessage]) | Full conversation including tool calls and results |
-| Document List | Agent (internal) | List[Document] | List of documents associated with knowledge pack |
-
-#### Allowed Tools
-
-| Tool Name | Description | Key Parameters |
-|-----------|------------|----------------|
-| `read_documents` | Search and read document content using RAG | `query` (required), `document_id` (optional) |
-| `ask_question` | Ask user for clarification or gather more information | `question`, `context`, `options` |
-| `attempt_completion` | Provide summary of findings or answer user questions | `result`, `options` |
-
-#### Base Prompt
-
-```
-You are a knowledge-elicitation agent specialized in analyzing documents to understand and refine interview questions for {domain} - {role}.
-
-Your purpose is to:
-1. Help users explore and understand documents in the knowledge pack
-2. Answer questions about document content using RAG
-3. Identify opportunities to refine interview questions based on document insights
-4. Extract tacit operational knowledge and site-specific details
-
-Your Capabilities (Tools Available):
-{tools_str}
-
-{document_context}
-
-Workflow Guidelines:
-- Use read_documents with a query parameter to search for information in documents. Always provide a specific question or search term.
-- Use read_documents with both query and document_id to search within a specific document
-- Use ask_question to clarify user intent, gather more information, or get approval before proceeding
-- Use attempt_completion when:
-  * User's questions have been answered
-  * Document exploration is complete
-  * User asks about document status or structure
-  * Workflow has reached a natural conclusion
-- Focus on practical, experience-based insights from documents
-- Be conversational, helpful, and guide users toward valuable knowledge discovery
-- When querying documents, look for tacit knowledge like:
-  * Operator tricks and workarounds
-  * Common failure patterns
-  * Unofficial procedures and informal SOPs
-  * Site-specific control strategies
-  * Historical context and legacy constraints
-
-Context:
-- Domain: {domain}
-- Role: {role}
-
-Response Format:
-Always respond with TWO XML blocks in this order:
-
-1) Planning (thinking tag):
-<thinking>
-Explain your reasoning:
-- What the user is asking for
-- Which tool to use and why
-- What parameters to provide
-- What the expected outcome is
-</thinking>
-
-2) Tool call (use exact tool name and parameter tags as defined in tool schema):
-<tool_name>
-  <param1>value1</param1>
-  <param2>value2</param2>
-</tool_name>
-
-Remember: You're helping elicit tacit knowledge, not just factual information. Guide users to discover insights that reveal practical experience and operational wisdom.
-```
-
-#### Behavior Guidelines
-
-1. **RAG Initialization**: Lazy initialization of RAG resource when first needed (if document paths provided)
-2. **Document Context**: Builds document list context (shows IDs and names if ≤10 documents, otherwise instructs to use queries)
-3. **Template Integration**: Includes template content in system prompt if template_path provided
-4. **Custom Prompt Support**: Loads and prepends custom system prompt from `system_prompt.prompt` file if exists
-5. **Conversation Continuity**: Uses last 4 messages for context (shorter than other handlers)
-6. **Query-First Approach**: Encourages users to query documents rather than listing all documents
-7. **Tacit Knowledge Focus**: Emphasizes discovering practical experience, workarounds, and site-specific details
-
-#### Guardrails
-
-1. **Never list all documents if >10**: Refuse to list all documents if knowledge pack has more than 10 documents
-2. **Never proceed without query**: Always require a specific query when using `read_documents` tool
-3. **Never modify documents**: Read-only access to documents (cannot edit document content)
-4. **Never modify template**: Cannot modify interview template (that's TemplateModificationHandler's job)
-5. **Never exceed 15 iterations**: Tool loop terminates after 15 iterations
-6. **Never proceed without user input**: If `require_user=True`, stop and wait for response
-7. **Never access documents outside knowledge pack**: Only access documents associated with the knowledge pack
-
-#### Known Limitations
-
-1. **RAG Initialization**: RAG resource initialized on first use (may cause delay on first query)
-2. **Document Limit**: Refuses to list documents if >10 (may frustrate users with large document sets)
-3. **Conversation History**: Only uses last 4 messages (may lose context in longer conversations)
-4. **No Document Editing**: Read-only access (cannot modify document content)
-5. **RAG Dependency**: Requires RAG resource to be initialized (fails gracefully if documents unavailable)
-6. **Template Context**: Template content included but cannot be modified through this handler
-
-#### Example
-
-**Input (API Request)**:
-```json
-{
-  "user_message": "What safety procedures are mentioned in the operating manual?",
-  "template_id": 15,
-  "mode": "chat"
-}
-```
-
-**Context (from knowledge pack)**:
-- Domain: "Sugar Manufacturing"
-- Role: "Process Operator"
-- Associated documents: ["Operating_Manual_v3.pdf", "Safety_Guidelines.pdf"]
-- Document context: "2 documents available"
-
-**Agent Processing (tool loop)**:
-
-*Iteration 1 - Query documents:*
-```xml
-<thinking>
-What the user is asking for: Safety procedures from operating manual
-Which tool to use: read_documents with safety-focused query
-Parameters: query about safety procedures
-Expected outcome: Relevant chunks about safety from documents
-</thinking>
-
-<read_documents>
-  <query>What safety procedures and protocols are described in the operating manual?</query>
-</read_documents>
-```
-
-*Tool Result (RAG returns relevant chunks):*
-```
-Found 5 relevant chunks:
-
-[Chunk 1 - Operating_Manual_v3.pdf, Page 23]
-"Lockout/Tagout (LOTO) Procedure: Before any maintenance work, operators must:
-1. Notify supervisor and affected personnel
-2. Isolate energy sources (electrical, pneumatic, hydraulic)
-3. Apply personal locks and tags..."
-
-[Chunk 2 - Operating_Manual_v3.pdf, Page 45]
-"Emergency Shutdown Protocol: In case of equipment malfunction:
-1. Press emergency stop button (red mushroom)
-2. Clear personnel from affected area..."
-```
-
-*Iteration 2 - Provide answer:*
-```xml
-<thinking>
-What the user is asking for: Summary of safety procedures found
-Which tool to use: attempt_completion to deliver findings
-Expected outcome: User receives comprehensive answer about safety procedures
-</thinking>
-
-<attempt_completion>
-  <result>Based on the Operating Manual, I found several key safety procedures:
-
-**Lockout/Tagout (LOTO) Procedure** (Page 23):
-- Notify supervisor and affected personnel before maintenance
-- Isolate all energy sources (electrical, pneumatic, hydraulic)
-- Apply personal locks and tags to isolation points
-- Verify zero energy state before beginning work
-
-**Emergency Shutdown Protocol** (Page 45):
-- Press the red emergency stop button (mushroom type)
-- Clear all personnel from the affected area
-- Follow the evacuation route posted at each station
-
-Would you like me to explore any of these procedures in more detail, or search for other safety-related information?</result>
-</attempt_completion>
-```
-
-**Output (API Response)**:
-```json
-{
-  "agent_response": "Based on the Operating Manual, I found several key safety procedures:\n\n**Lockout/Tagout (LOTO) Procedure** (Page 23):\n- Notify supervisor and affected personnel before maintenance\n- Isolate all energy sources (electrical, pneumatic, hydraulic)\n- Apply personal locks and tags to isolation points\n- Verify zero energy state before beginning work\n\n**Emergency Shutdown Protocol** (Page 45):\n- Press the red emergency stop button (mushroom type)\n- Clear all personnel from the affected area\n- Follow the evacuation route posted at each station\n\nWould you like me to explore any of these procedures in more detail, or search for other safety-related information?",
-  "internal_conversation": [...],
-  "status": "success"
-}
-```
-
----
-
-### 2.4 InterviewQuestionHandler
+### 2.5 InterviewQuestionHandler
 
 **Agent Role**: Interview Conductor
 
@@ -888,280 +1164,6 @@ Understanding: 15% more bearing replacements accepted as trade-off for throughpu
   <category>interview_note</category>
   <workflow_phase>knowledge_capture</workflow_phase>
 </ask_question>
-```
-
----
-
-### 2.5 KnowledgeGenerationTool
-
-**Agent Role**: Knowledge Generator
-
-**Main Purpose**: Generates structured knowledge (facts, procedures, heuristics) from pre-generated questions stored in knowledge.json files. Processes all leaf nodes in the knowledge tree, uses RAG for document context, and creates knowledge summaries and master interview templates.
-
-#### Inputs
-
-| Input | Source | Format | Description |
-|-------|--------|--------|-------------|
-| Knowledge Pack ID | Task Data | Integer | Knowledge pack identifier |
-| Storage Path | Task Data | String | Path to `knows/` folder containing knowledge.json files |
-| Domain Knowledge Path | Task Data | String | Path to `domain_knowledge.json` tree structure |
-| Knowledge Status Path | Task Data | String | Path to `knowledge_status.json` for progress tracking |
-| Document Paths | Task Data | List[String] | File paths to associated documents for RAG |
-| Domain/Role/Tasks | Task Data | String/String/List[String] | Specialization information |
-| Template Generation Prompt | Task Data (optional) | String | Knowledge pack-specific prompt override for template generation |
-| Question Batch Size | Configuration | Integer | Number of questions to process per batch (default: 1) |
-| Allow Outside Document | Configuration | Boolean | Whether to generate knowledge without document context (default: False) |
-
-#### Outputs
-
-| Output | Consumer | Format | Description |
-|--------|----------|--------|-------------|
-| Knowledge JSON Files | File System | JSON | Updated `knowledge.json` files with generated facts, procedures, heuristics |
-| Knowledge Status | File System | JSON | Updated `knowledge_status.json` with generation progress |
-| Domain Knowledge Tree | File System | JSON | Updated `domain_knowledge.json` with node statuses |
-| Knowledge Summaries | File System | JSON | Summary field added to each `knowledge.json` file |
-| Master Interview Template | File System | Markdown | Generated `template/README.md` master interview template |
-| WebSocket Notifications | Frontend (real-time) | JSON message | Progress updates for each topic processed |
-
-#### Process Flow
-
-1. **Extract Leaf Paths**: Recursively extract all leaf node paths from domain knowledge tree
-2. **Process Each Leaf**:
-   - Read existing `knowledge.json` file
-   - Extract questions from knowledge entries
-   - Query RAG for relevant document chunks (if documents available)
-   - Generate knowledge from questions using LLM (with retry logic and timeout protection)
-   - Transform raw knowledge into structured format (facts, procedures, heuristics)
-   - Update `knowledge.json` file with generated content
-   - Update status manager and tree structure
-3. **Generate Summaries**: For each successfully processed topic, generate summary and add to `knowledge.json`
-4. **Generate Master Template**: Read all summaries, generate master interview template, save to `template/README.md`
-
-#### Allowed Tools
-
-| Tool Name | Description | Key Parameters |
-|-----------|------------|----------------|
-| RAG Resource (internal) | Query documents for relevant chunks | `query`, `num_results` |
-| LLM Resource (internal) | Generate knowledge from questions | `prompt`, `temperature`, `max_tokens` |
-| Knowledge Status Manager (internal) | Track generation progress | `path`, `status`, `file_path` |
-| File System I/O (internal) | Read/write knowledge.json files | File paths |
-
-#### Base Prompt (Knowledge Extraction)
-
-```
-[Knowledge Extraction Prompt - used when documents available]
-Based on the following document chunks and question, extract structured knowledge:
-
-Path: {path}
-Question: {question}
-Chunks:
-{chunks}
-
-Generate knowledge in the following format:
-## Facts
-- [Factual knowledge from documents]
-
-## Procedures
-- Overview 1: [Step-by-step procedure]
-- Overview 2: [Another procedure]
-
-## Heuristics
-- [Rule-of-thumb or judgment-based knowledge]
-
-Include chunk references [Chunk N] for facts/procedures/heuristics derived from specific chunks.
-```
-
-#### Base Prompt (Knowledge Generation - No Documents)
-
-```
-[Knowledge Generation Prompt - used when no documents or allow_outside_document=True]
-Based on your expertise as a {role} in {domain}, generate knowledge for:
-
-Path: {path}
-Question: {question}
-
-Generate knowledge in the following format:
-## Facts
-- [Factual knowledge]
-
-## Procedures
-- Overview 1: [Step-by-step procedure]
-- Overview 2: [Another procedure]
-
-## Heuristics
-- [Rule-of-thumb or judgment-based knowledge]
-```
-
-#### Behavior Guidelines
-
-1. **Resumable Processing**: Checks status manager to skip already-completed topics
-2. **Batch Processing**: Processes questions in batches (configurable batch size)
-3. **RAG Integration**: Queries RAG for document chunks before generating knowledge (if documents available)
-4. **Retry Logic**: Implements exponential backoff retry for failed LLM calls (max 2 retries)
-5. **Timeout Protection**: Uses configurable timeouts for LLM calls, RAG queries, and batch operations
-6. **Status Tracking**: Updates knowledge_status.json and domain_knowledge.json with progress
-7. **WebSocket Notifications**: Sends real-time progress updates via WebSocket
-8. **Error Handling**: Continues processing other topics if one fails (doesn't stop entire pipeline)
-9. **Summary Generation**: Generates summaries for all successfully processed topics
-10. **Template Generation**: Creates master interview template from all summaries using prompt hierarchy (KP override > Global default > Hardcoded fallback)
-
-#### Guardrails
-
-1. **Never skip questions**: Must process all questions found in knowledge.json files
-2. **Never overwrite without backup**: Preserves existing knowledge entries when updating files
-3. **Never proceed without questions**: Skips topics that don't have questions in knowledge.json
-4. **Never exceed timeouts**: Respects configured timeouts for LLM calls and RAG queries
-5. **Never modify tree structure**: Only updates node statuses, doesn't modify tree hierarchy
-6. **Never generate without approval**: Requires pre-generated questions (user must approve question generation first)
-7. **Never process same topic twice**: Checks status manager before processing (resumable)
-
-#### Known Limitations
-
-1. **Question Dependency**: Requires pre-generated questions in knowledge.json files (must run question bank generation first)
-2. **Document Dependency**: Knowledge quality depends on document availability and RAG quality
-3. **Timeout Constraints**: Long-running operations may timeout (configurable but may need adjustment)
-4. **Retry Limits**: Maximum 2 retry attempts (may fail permanently if LLM consistently times out)
-5. **Batch Size**: Default batch size of 1 (may be slow for topics with many questions)
-6. **File System Dependency**: Direct file I/O operations (potential race conditions in concurrent access)
-7. **Memory Usage**: Loads entire tree structure and processes all leaves (may be memory-intensive for large trees)
-8. **Template Generation**: Template generation depends on summary quality (may produce poor templates if summaries incomplete)
-
-#### Example
-
-**Input (API Request)**:
-```json
-{
-  "kp_id": 42
-}
-```
-
-**Context (from task data and file system)**:
-- Knowledge Pack ID: 42
-- Storage Path: `/data/kp_42/knows/`
-- Domain Knowledge Path: `/data/kp_42/domain_knowledge.json`
-- Document Paths: ["/data/kp_42/docs/Operating_Manual.pdf", "/data/kp_42/docs/Safety_Guidelines.pdf"]
-- Domain: "Sugar Manufacturing"
-- Role: "Process Operator"
-
-**Tree Structure (domain_knowledge.json)**:
-```json
-{
-  "root": {
-    "topic": "Sugar Manufacturing",
-    "children": [
-      {
-        "topic": "Centrifuge Operations",
-        "children": [],
-        "status": "pending"
-      },
-      {
-        "topic": "Filtration Systems",
-        "children": [],
-        "status": "pending"
-      }
-    ]
-  }
-}
-```
-
-**Pre-existing knowledge.json (for Centrifuge Operations)**:
-```json
-{
-  "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"],
-  "knowledges": [
-    {"question": "What are the standard operating parameters for centrifuges?", "facts": [], "procedures": [], "heuristics": []},
-    {"question": "How do operators handle high-brix campaigns?", "facts": [], "procedures": [], "heuristics": []}
-  ]
-}
-```
-
-**Processing Flow**:
-
-1. **Extract Leaf Paths**:
-   - Found 2 leaves: `["Sugar Manufacturing", "Centrifuge Operations"]`, `["Sugar Manufacturing", "Filtration Systems"]`
-
-2. **Process Leaf 1 (Centrifuge Operations)**:
-   - Read `knows/Centrifuge_Operations/knowledge.json`
-   - Extract questions: 2 questions found
-   - Query RAG for relevant chunks (Operating Manual mentions centrifuge parameters)
-   - LLM generates knowledge:
-
-```markdown
-## Facts
-- [Chunk 1, Chunk 3] Standard centrifuge speed is 1200 RPM with max recommended 1350 RPM
-- [Chunk 2] Basket temperature should be maintained below 85°C
-
-## Procedures
-- Overview 1: [Chunk 4] Pre-startup inspection includes checking basket balance, seal integrity, and lubrication levels
-
-## Heuristics
-- [Chunk 5] During high-brix campaigns, experienced operators increase speed to 1400 RPM accepting 15% higher bearing wear for throughput gains
-```
-
-3. **Update knowledge.json**:
-```json
-{
-  "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"],
-  "knowledges": [
-    {
-      "question": "What are the standard operating parameters for centrifuges?",
-      "facts": [
-        {"content": "Standard centrifuge speed is 1200 RPM with max recommended 1350 RPM", "references": [{"source": "Operating_Manual.pdf", "page_number": 23}]},
-        {"content": "Basket temperature should be maintained below 85°C", "references": [{"source": "Operating_Manual.pdf", "page_number": 24}]}
-      ],
-      "procedures": [
-        {"content": "Pre-startup inspection includes checking basket balance, seal integrity, and lubrication levels", "references": [{"source": "Operating_Manual.pdf", "page_number": 25}]}
-      ],
-      "heuristics": []
-    },
-    {
-      "question": "How do operators handle high-brix campaigns?",
-      "facts": [],
-      "procedures": [],
-      "heuristics": [
-        {"content": "During high-brix campaigns, experienced operators increase speed to 1400 RPM accepting 15% higher bearing wear for throughput gains", "references": [{"source": "Operating_Manual.pdf", "page_number": 28}]}
-      ]
-    }
-  ]
-}
-```
-
-4. **Generate Summary** (added to knowledge.json):
-```markdown
-# Summary
-Centrifuge Operations covers the core operating parameters and campaign-specific adjustments for sugar centrifuges. Standard operation is at 1200 RPM with temperature limits of 85°C. During high-brix campaigns, operators trade bearing life for throughput by exceeding normal speed limits.
-
-# Key Concepts
-- Standard RPM: 1200
-- Max recommended RPM: 1350
-- High-brix campaign speed: 1400 RPM
-- Temperature limit: 85°C
-- Bearing wear trade-off
-
-# Referenced Documents
-- Operating_Manual.pdf
-```
-
-5. **Generate Master Interview Template** (after all leaves processed):
-   - Reads all summaries
-   - Creates `template/README.md` with opening questions for each topic
-
-**Output (WebSocket notifications during processing)**:
-```json
-{"tool_name": "generate_knowledge", "content": "Starting knowledge generation for 2 topics", "status": "in_progress", "progression": 0.0}
-{"tool_name": "generate_knowledge", "content": "Processing Centrifuge Operations (1/2)", "status": "in_progress", "progression": 0.25, "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"]}
-{"tool_name": "generate_question_bank", "content": "Completed Centrifuge Operations - 1/2 done", "status": "completed", "progression": 0.5, "path_parts": ["Sugar Manufacturing", "Centrifuge Operations"]}
-{"tool_name": "generate_knowledge", "content": "Processing Filtration Systems (2/2)", "status": "in_progress", "progression": 0.75, "path_parts": ["Sugar Manufacturing", "Filtration Systems"]}
-{"tool_name": "generate_question_bank", "content": "Completed Filtration Systems - 2/2 done", "status": "completed", "progression": 1.0, "path_parts": ["Sugar Manufacturing", "Filtration Systems"]}
-```
-
-**Final Output (ToolResult)**:
-```json
-{
-  "name": "generate_knowledge",
-  "result": "I understand you want to generate comprehensive knowledge for all topics in the tree structure. This will create detailed facts, procedures, and heuristics to enhance the agent's capabilities.\n\n✅ Knowledge generation pipeline complete.",
-  "require_user": false
-}
 ```
 
 ---
