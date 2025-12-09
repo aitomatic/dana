@@ -126,12 +126,16 @@ export const getContributionTemplateColumns = (
                 )}
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('Template/Session clicked:', { isClickable, templateItem, sessionItem, itemId: item.id });
                   if (isClickable) {
                     if (templateItem) {
+                      console.log('Calling handleTemplateClick with id:', item.id);
                       handleTemplateClick(item.id);
                     } else if (sessionItem) {
                       handleSessionClick(item.id);
                     }
+                  } else {
+                    console.log('Item is not clickable');
                   }
                 }}
               >

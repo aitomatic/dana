@@ -35,9 +35,9 @@ interface ExtendedLibraryItem {
   is_master?: boolean;
 }
 
-export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
+export function ContributionTemplatesTab({ knowledgePackId }: ContributionTemplatesTabProps) {
   const navigate = useNavigate();
-  const { createdKnowledgePack, setCreatedKnowledgePack } = useKnowledgePackStore();
+  const { createdKnowledgePack, setCreatedKnowledgePack, setNavigationSource } = useKnowledgePackStore();
   const { createTemplate } = useContributionStore();
   const [capturingKnowledge, setCapturingKnowledge] = useState<Set<number>>(new Set());
   
@@ -336,10 +336,20 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
   const tableData = transformTemplatesToTableData();
 
   const handleTemplateClick = (templateId: number) => {
+    console.log('🔍 handleTemplateClick called:', { templateId, knowledgePackId });
+    console.log('🔍 Setting navigation source before navigate');
+    // Set navigation source before navigating
+    setNavigationSource({ type: 'knowledge-pack', id: knowledgePackId });
+    console.log('🔍 Navigation source set, now navigating to:', `/capture-template/${templateId}`);
     navigate(`/capture-template/${templateId}`);
   };
 
   const handleSessionClick = (sessionId: number) => {
+    console.log('🔍 handleSessionClick called:', { sessionId, knowledgePackId });
+    console.log('🔍 Setting navigation source before navigate to capture-knowledge');
+    // Set navigation source before navigating
+    setNavigationSource({ type: 'knowledge-pack', id: knowledgePackId });
+    console.log('🔍 Navigation source set, now navigating to:', `/capture-knowledge/${sessionId}`);
     navigate(`/capture-knowledge/${sessionId}`);
   };
 
@@ -363,6 +373,10 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
       
       if (response.success && response.data) {
         toast.success('Capture Knowledge session created!');
+        
+        // Set navigation source before navigating
+        console.log('🔍 Setting navigation source before navigate to new capture-knowledge session');
+        setNavigationSource({ type: 'knowledge-pack', id: knowledgePackId });
         
         // Navigate to the Capture Knowledge page
         navigate(`/capture-knowledge/${response.data.id}`);
@@ -453,6 +467,8 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
 
       // Navigate to the newly created template
       if (createdTemplate?.id) {
+        // Set navigation source before navigating
+        setNavigationSource({ type: 'knowledge-pack', id: knowledgePackId });
         navigate(`/capture-template/${createdTemplate.id}`);
       }
 
@@ -498,6 +514,30 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
   // Function to get children for hierarchical display
   const getRowChildren = (row: ExtendedLibraryItem): ExtendedLibraryItem[] | undefined => {
     return row.children;
+  };
+
+  // Handle row click for DataTable
+  const handleRowClick = (row: any) => {
+    const item = row.original as ExtendedLibraryItem;
+    const isTemplate = item.type === 'file' && item.extension === 'template';
+    const isSession = item.type === 'file' && item.extension === 'ek';
+    
+    console.log('Row clicked:', { isTemplate, isSession, itemId: item.id, item });
+    
+    if (isTemplate) {
+      // Check if master template and if it's completed
+      const isMasterTemplate = item.is_master === true;
+      const isCompleted = item.template_metadata?.status === TEMPLATE_GENERATION_STATUS.COMPLETED;
+      const isClickable = isMasterTemplate ? isCompleted : true;
+      
+      console.log('Template click check:', { isMasterTemplate, isCompleted, isClickable });
+      
+      if (isClickable) {
+        handleTemplateClick(item.id);
+      }
+    } else if (isSession) {
+      handleSessionClick(item.id);
+    }
   };
 
   // Get column definitions
@@ -567,6 +607,7 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
           columns={columns}
           data={tableData}
           loading={isLoadingTemplates}
+          handleRowClick={handleRowClick}
           getRowChildren={getRowChildren}
           is_border={false}
         />

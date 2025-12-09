@@ -69,6 +69,9 @@ export interface KnowledgePackState {
   
   // Active generation type tracking (per knowledge pack)
   activeGenerationType: Record<number, 'question' | 'knowledge' | null>; // Track generation type per KP
+
+  // Navigation tracking
+  navigationSource: { type: 'knowledge-pack', id: number } | null;
 }
 
 export interface KnowledgePackActions {
@@ -116,6 +119,10 @@ export interface KnowledgePackActions {
 
   // Clear error
   clearError: () => void;
+
+  // Navigation tracking
+  setNavigationSource: (source: { type: 'knowledge-pack', id: number } | null) => void;
+  clearNavigationSource: () => void;
 }
 
 export type KnowledgePackStore = KnowledgePackState & KnowledgePackActions;
@@ -147,6 +154,7 @@ const initialState: KnowledgePackState = {
   lastFetchedKpId: null,
   generatingKnowledgePackId: null,
   activeGenerationType: {},
+  navigationSource: null,
 };
 
 export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
@@ -154,9 +162,11 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
 
   // Dialog controls
   setKnowledgePackOpen: (isOpen: boolean) => {
+    console.log('🔍 Store - setKnowledgePackOpen called with:', isOpen);
     set({ isKnowledgePackOpen: isOpen });
     if (!isOpen) {
       // Reset on close
+      console.log('🔍 Store - Closing knowledge pack dialog, calling reset');
       get().reset();
     }
   },
@@ -575,10 +585,25 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     });
   },
 
+  // Navigation tracking
+  setNavigationSource: (source: { type: 'knowledge-pack', id: number } | null) => {
+    console.log('🔍 Store - setNavigationSource called with:', source);
+    set({ navigationSource: source });
+    console.log('🔍 Store - navigationSource after set:', get().navigationSource);
+  },
+
+  clearNavigationSource: () => {
+    console.log('🔄 Knowledge Pack: Clearing navigation source');
+    set({ navigationSource: null });
+  },
+
   // Reset store
   reset: () => {
+    const currentNavigationSource = get().navigationSource;
     console.log('🔄 Knowledge Pack: Resetting store');
+    console.log('🔍 Store - navigationSource before reset:', currentNavigationSource);
     set(initialState);
+    console.log('🔍 Store - navigationSource after reset:', get().navigationSource);
   },
 
   // Clear error

@@ -9,6 +9,7 @@ import { Settings } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { useContributionStore } from '@/stores/contribution-store';
 import { useCaptureKnowledgeStore } from '@/stores/capture-knowledge-store';
+import { useKnowledgePackStore } from '@/stores';
 import { apiService } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -37,6 +38,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
     updateSession, 
     updateSessionStatus 
   } = useCaptureKnowledgeStore();
+  const { navigationSource, clearNavigationSource } = useKnowledgePackStore();
   const [prebuiltAgent, setPrebuiltAgent] = useState<any>(null);
   const [knowledgePack, setKnowledgePack] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -487,6 +489,11 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   const isChatPage = location.pathname.includes('/chat');
   const isContributionTemplatePage = location.pathname.includes('/capture-template');
 
+  // Monitor navigationSource changes for debugging
+  useEffect(() => {
+    console.log('🔍 Layout - navigationSource changed:', navigationSource);
+  }, [navigationSource]);
+
   if (hideLayout) {
     return <>{children}</>;
   }
@@ -502,9 +509,21 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
               {(isChatPage || isContributionTemplatePage || isCaptureKnowledgePage) && (
                 <button
                   onClick={() => {
+                    console.log('🔍 Back button clicked - navigationSource:', navigationSource);
+                    console.log('🔍 Back button clicked - isContributionTemplatePage:', isContributionTemplatePage);
+                    console.log('🔍 Back button clicked - isCaptureKnowledgePage:', isCaptureKnowledgePage);
                     if (isContributionTemplatePage || isCaptureKnowledgePage) {
-                      trackTabNavigation(isContributionTemplatePage ? 'back_to_knowledge_center' : 'back_to_knowledge_center_from_capture', 'main_page');
-                      navigate('/knowledge-center');
+                      // Check store for navigation source
+                      if (navigationSource?.type === 'knowledge-pack' && navigationSource.id) {
+                        console.log('✅ Navigating back to knowledge pack:', navigationSource.id);
+                        const kpId = navigationSource.id;
+                        clearNavigationSource(); // Clear after use
+                        navigate(`/knowledge-pack/${kpId}`);
+                      } else {
+                        console.log('❌ No navigation source found, going to knowledge-center');
+                        trackTabNavigation(isContributionTemplatePage ? 'back_to_knowledge_center' : 'back_to_knowledge_center_from_capture', 'main_page');
+                        navigate('/knowledge-center');
+                      }
                     } else {
                       trackTabNavigation('back_to_agents', 'main_page');
                       navigate(-1);
