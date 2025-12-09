@@ -30,6 +30,8 @@ from dana.lang.common.utils.misc import Misc
 from dana.lang.common.utils.token_management import TokenManagement
 from dana.lang.common.sys_resource.llm.provider import ProviderFactory as CustomProviderFactory
 import asyncio
+import logging
+import threading
 
 
 class LLMQueryExecutor(Loggable):
@@ -42,6 +44,75 @@ class LLMQueryExecutor(Loggable):
     - Error classification and handling
     - Token management and context window enforcement
     """
+
+    # Dictionary to store semaphores per event loop
+    # Key: event loop id (from id(loop)), Value: asyncio.Semaphore
+    # This allows multiple threads with their own event loops to work correctly
+    _semaphores_by_loop: dict[int, asyncio.Semaphore] = {}
+    _max_concurrent_requests: int = 10  # Default: 10 concurrent requests
+    _semaphore_lock = threading.Lock()  # Thread-safe access to dictionary
+
+    @classmethod
+    def _get_global_semaphore(cls) -> asyncio.Semaphore:
+        """Get or create the semaphore for the current event loop.
+
+        The semaphore limit can be configured via:
+        1. DANA_LLM_MAX_CONCURRENT_REQUESTS environment variable
+        2. Class-level _max_concurrent_requests attribute
+
+        Each event loop gets its own semaphore, allowing multiple threads
+        with their own event loops to work correctly.
+
+        Returns:
+            The semaphore instance for the current event loop
+        """
+        # Check environment variable (only need to check once)
+        if not cls._semaphores_by_loop:
+            env_limit = os.getenv("DANA_LLM_MAX_CONCURRENT_REQUESTS")
+            if env_limit:
+                try:
+                    cls._max_concurrent_requests = int(env_limit)
+                except ValueError:
+                    pass  # Use default if invalid
+
+        # Get the current event loop
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop - this shouldn't happen in normal async code
+            # but handle it gracefully by creating a temporary semaphore
+            logger = logging.getLogger(__name__)
+            logger.warning("No event loop found when accessing semaphore. " "Creating temporary semaphore.")
+            return asyncio.Semaphore(cls._max_concurrent_requests)
+
+        loop_id = id(loop)
+
+        # Thread-safe check and create
+        with cls._semaphore_lock:
+            if loop_id not in cls._semaphores_by_loop:
+                # Create new semaphore for this event loop
+                semaphore = asyncio.Semaphore(cls._max_concurrent_requests)
+                cls._semaphores_by_loop[loop_id] = semaphore
+
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Created semaphore for event loop {loop_id} " f"with limit: {cls._max_concurrent_requests}")
+
+            return cls._semaphores_by_loop[loop_id]
+
+    @classmethod
+    def set_max_concurrent_requests(cls, max_requests: int) -> None:
+        """Set the maximum number of concurrent LLM API requests globally.
+
+        This affects all instances of LLMQueryExecutor.
+        Existing semaphores will be recreated with new limit on next access.
+
+        Args:
+            max_requests: Maximum number of concurrent LLM API requests allowed
+        """
+        with cls._semaphore_lock:
+            cls._max_concurrent_requests = max_requests
+            # Clear all semaphores so they'll be recreated with new limit
+            cls._semaphores_by_loop.clear()
 
     def __init__(
         self,
@@ -430,52 +501,59 @@ class LLMQueryExecutor(Loggable):
         if not self._client:
             raise LLMError("LLM client not initialized")
 
-        last_error: Exception | None = None
-        for attempt in range(self._max_retry_attempts + 1):
-            try:
-                model = request_params.get("model", "")
-                self.override_client_provider(model)
+        # Use global semaphore to limit concurrent LLM API requests
+        semaphore = self._get_global_semaphore()
+        async with semaphore:
+            self.debug(f"Acquired LLM semaphore (limit: {self._max_concurrent_requests}), " f"executing API call...")
 
-                # Make the actual API call (aisuite is synchronous)
-                # Wrap with timeout if configured
-                api_call = asyncio.to_thread(
-                    self._client.chat.completions.create,
-                    **request_params,
-                )  # Calling to_thread is a workaround to avoid blocking the event loop
+            last_error: Exception | None = None
+            for attempt in range(self._max_retry_attempts + 1):
+                try:
+                    model = request_params.get("model", "")
+                    self.override_client_provider(model)
 
-                llm_response: ChatCompletion
-                if self._request_timeout:
-                    llm_response = await asyncio.wait_for(
-                        api_call,
-                        timeout=self._request_timeout,
-                    )
-                else:
-                    llm_response = await api_call
+                    # Make the actual API call (aisuite is synchronous)
+                    # Wrap with timeout if configured
+                    api_call = asyncio.to_thread(
+                        self._client.chat.completions.create,
+                        **request_params,
+                    )  # Calling to_thread is a workaround to avoid blocking the event loop
 
-                self.info("LLM query successful")
-                self._log_llm_response(llm_response)
+                    llm_response: ChatCompletion
+                    if self._request_timeout:
+                        llm_response = await asyncio.wait_for(
+                            api_call,
+                            timeout=self._request_timeout,
+                        )
+                    else:
+                        llm_response = await api_call
 
-                # Convert AISuite response to dictionary format
-                # AISuite returns ChatCompletionResponse which doesn't have model_dump()
-                return self._convert_response_to_dict(llm_response)
+                    self.info("LLM query successful")
+                    self._log_llm_response(llm_response)
 
-            except Exception as e:
-                last_error = e
+                    # Convert AISuite response to dictionary format
+                    # AISuite returns ChatCompletionResponse which doesn't have model_dump()
+                    return self._convert_response_to_dict(llm_response)
 
-                # Check if we should retry
-                if attempt < self._max_retry_attempts and self._is_retryable_error(e):
-                    wait_time = (self._retry_backoff_base**attempt) + random.uniform(0, self._retry_jitter)
-                    self.warning(
-                        f"Attempt {attempt + 1}/{self._max_retry_attempts + 1} failed with retryable error: {e}. "
-                        f"Retrying in {wait_time:.2f}s..."
-                    )
-                    await asyncio.sleep(wait_time)
-                else:
-                    # Either max retries reached or non-retryable error
-                    break
+                except Exception as e:
+                    last_error = e
 
-        # Re-raise the last error with proper classification
-        self._raise_classified_error(last_error)
+                    # Check if we should retry
+                    if attempt < self._max_retry_attempts and self._is_retryable_error(e):
+                        wait_time = (self._retry_backoff_base**attempt) + random.uniform(0, self._retry_jitter)
+                        error_msg = f"{type(e).__name__}: {str(e) or repr(e)}"
+                        self.warning(
+                            f"Attempt {attempt + 1}/{self._max_retry_attempts + 1} "
+                            f"failed with retryable error: {error_msg}. "
+                            f"Retrying in {wait_time:.2f}s..."
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        # Either max retries reached or non-retryable error
+                        break
+
+            # Re-raise the last error with proper classification
+            self._raise_classified_error(last_error)
 
     async def query_once(
         self, request: dict[str, Any], build_request_params: Callable[[dict[str, Any]], dict[str, Any]] | None = None

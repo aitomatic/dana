@@ -1,7 +1,10 @@
 """Test the LLMQueryExecutor class."""
 
+import asyncio
 import os
+import threading
 import unittest
+from threading import Thread
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from dana_lang.common.exceptions import (
@@ -844,6 +847,325 @@ class TestLLMQueryExecutorRetryLogic(unittest.TestCase):
         self.assertIn("not initialized", str(context.exception))
         mock_to_thread.assert_not_called()
         mock_sleep.assert_not_called()
+
+
+class TestLLMQueryExecutorSemaphore(unittest.IsolatedAsyncioTestCase):
+    """Test semaphore functionality in LLMQueryExecutor."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        # Reset semaphore state before each test
+        # Handle both old and new implementation
+        if hasattr(LLMQueryExecutor, "_global_llm_semaphore"):
+            LLMQueryExecutor._global_llm_semaphore = None
+        if hasattr(LLMQueryExecutor, "_semaphores_by_loop"):
+            LLMQueryExecutor._semaphores_by_loop = {}
+        LLMQueryExecutor._max_concurrent_requests = 3
+        # Clear environment variable if set
+        if "DANA_LLM_MAX_CONCURRENT_REQUESTS" in os.environ:
+            del os.environ["DANA_LLM_MAX_CONCURRENT_REQUESTS"]
+
+    def tearDown(self):
+        """Clean up after each test."""
+        # Reset semaphore state after each test
+        # Handle both old and new implementation
+        if hasattr(LLMQueryExecutor, "_global_llm_semaphore"):
+            LLMQueryExecutor._global_llm_semaphore = None
+        if hasattr(LLMQueryExecutor, "_semaphores_by_loop"):
+            LLMQueryExecutor._semaphores_by_loop = {}
+        LLMQueryExecutor._max_concurrent_requests = 3
+        # Clear environment variable if set
+        if "DANA_LLM_MAX_CONCURRENT_REQUESTS" in os.environ:
+            del os.environ["DANA_LLM_MAX_CONCURRENT_REQUESTS"]
+
+    def test_semaphore_initialization_default_limit(self):
+        """Test semaphore initialization with default limit."""
+        # Semaphore dictionary should be empty initially
+        if hasattr(LLMQueryExecutor, "_semaphores_by_loop"):
+            self.assertEqual(len(LLMQueryExecutor._semaphores_by_loop), 0)
+        elif hasattr(LLMQueryExecutor, "_global_llm_semaphore"):
+            self.assertIsNone(LLMQueryExecutor._global_llm_semaphore)
+        self.assertEqual(LLMQueryExecutor._max_concurrent_requests, 3)
+
+        # Access semaphore - should create it (but only works in async context)
+        # This test will need to be async or use asyncio.run()
+        async def test_async():
+            semaphore = LLMQueryExecutor._get_global_semaphore()
+            self.assertIsNotNone(semaphore)
+            self.assertIsInstance(semaphore, asyncio.Semaphore)
+            self.assertEqual(semaphore._value, 3)
+
+        asyncio.run(test_async())
+
+    async def test_semaphore_shared_across_instances(self):
+        """Test semaphore is shared for same event loop."""
+        # Both should get the same semaphore instance for same loop
+        semaphore1 = LLMQueryExecutor._get_global_semaphore()
+        semaphore2 = LLMQueryExecutor._get_global_semaphore()
+
+        self.assertIs(semaphore1, semaphore2)
+        # Check that it's stored in the dictionary
+        if hasattr(LLMQueryExecutor, "_semaphores_by_loop"):
+            loop_id = id(asyncio.get_running_loop())
+            self.assertIn(loop_id, LLMQueryExecutor._semaphores_by_loop)
+            self.assertIs(LLMQueryExecutor._semaphores_by_loop[loop_id], semaphore1)
+
+    @patch.dict(os.environ, {"DANA_LLM_MAX_CONCURRENT_REQUESTS": "5"})
+    async def test_semaphore_env_var_configuration(self):
+        """Test semaphore reads from environment variable."""
+        # Reset semaphore to pick up env var
+        if hasattr(LLMQueryExecutor, "_semaphores_by_loop"):
+            LLMQueryExecutor._semaphores_by_loop = {}
+        elif hasattr(LLMQueryExecutor, "_global_llm_semaphore"):
+            LLMQueryExecutor._global_llm_semaphore = None
+
+        semaphore = LLMQueryExecutor._get_global_semaphore()
+        self.assertEqual(semaphore._value, 5)
+        self.assertEqual(LLMQueryExecutor._max_concurrent_requests, 5)
+
+    @patch.dict(os.environ, {"DANA_LLM_MAX_CONCURRENT_REQUESTS": "invalid"})
+    async def test_semaphore_env_var_invalid_fallback(self):
+        """Test semaphore falls back to default on invalid env var."""
+        # Reset semaphore
+        if hasattr(LLMQueryExecutor, "_semaphores_by_loop"):
+            LLMQueryExecutor._semaphores_by_loop = {}
+        elif hasattr(LLMQueryExecutor, "_global_llm_semaphore"):
+            LLMQueryExecutor._global_llm_semaphore = None
+        LLMQueryExecutor._max_concurrent_requests = 3
+
+        semaphore = LLMQueryExecutor._get_global_semaphore()
+        # Should use default (3) when env var is invalid
+        self.assertEqual(semaphore._value, 3)
+
+    async def test_set_max_concurrent_requests(self):
+        """Test set_max_concurrent_requests class method."""
+        # Create initial semaphore with default limit
+        semaphore1 = LLMQueryExecutor._get_global_semaphore()
+        self.assertEqual(semaphore1._value, 3)
+
+        # Set new limit
+        LLMQueryExecutor.set_max_concurrent_requests(5)
+
+        # Semaphore should be recreated with new limit
+        semaphore2 = LLMQueryExecutor._get_global_semaphore()
+        self.assertIsNot(semaphore1, semaphore2)  # Should be new instance
+        self.assertEqual(semaphore2._value, 5)
+        self.assertEqual(LLMQueryExecutor._max_concurrent_requests, 5)
+
+    @patch("asyncio.to_thread")
+    async def test_semaphore_limits_concurrency(self, mock_to_thread):
+        """CRITICAL: Verify semaphore actually limits concurrent requests."""
+        # Set semaphore limit to 2
+        LLMQueryExecutor.set_max_concurrent_requests(2)
+
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.model_dump.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "Success"}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            "model": "openai:gpt-4",
+        }
+
+        # Track concurrent executions
+        concurrent_count = 0
+        max_concurrent = 0
+        execution_lock = asyncio.Lock()
+
+        async def delayed_response():
+            """Simulate API call with delay and tracking."""
+            nonlocal concurrent_count, max_concurrent
+            async with execution_lock:
+                concurrent_count += 1
+                max_concurrent = max(max_concurrent, concurrent_count)
+
+            # Simulate API delay
+            await asyncio.sleep(0.05)
+
+            async with execution_lock:
+                concurrent_count -= 1
+
+            return mock_response
+
+        mock_to_thread.return_value = delayed_response()
+
+        executor = LLMQueryExecutor()
+        executor._client = mock_client
+        executor.model = "openai:gpt-4"
+        executor._max_retry_attempts = 0  # No retries for this test
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        # Create 5 concurrent requests
+        tasks = [executor._execute_with_retry(request_params) for _ in range(5)]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Verify all requests completed successfully
+        self.assertEqual(len(results), 5)
+        for result in results:
+            self.assertNotIsInstance(result, Exception)
+
+        # CRITICAL: Verify semaphore limited concurrency to 2
+        # max_concurrent should be at most 2 (the semaphore limit)
+        msg = f"Semaphore should limit to 2 concurrent, but saw {max_concurrent}"
+        self.assertLessEqual(max_concurrent, 2, msg)
+
+    @patch("asyncio.sleep")
+    @patch("asyncio.to_thread")
+    async def test_semaphore_with_retry_logic(self, mock_to_thread, mock_sleep):
+        """Test semaphore is held during entire retry loop."""
+        LLMQueryExecutor.set_max_concurrent_requests(2)
+
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.model_dump.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "Success"}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            "model": "openai:gpt-4",
+        }
+
+        # Track concurrent executions during retries
+        concurrent_count = 0
+        max_concurrent = 0
+        execution_lock = asyncio.Lock()
+        call_count = 0
+
+        async def delayed_response_with_retry():
+            """Simulate API call that fails once then succeeds."""
+            nonlocal concurrent_count, max_concurrent, call_count
+            call_count += 1
+
+            async with execution_lock:
+                concurrent_count += 1
+                max_concurrent = max(max_concurrent, concurrent_count)
+
+            # First call fails, subsequent succeed
+            if call_count <= 1:
+                await asyncio.sleep(0.01)
+                async with execution_lock:
+                    concurrent_count -= 1
+                raise Exception("Rate limit exceeded")
+
+            await asyncio.sleep(0.01)
+            async with execution_lock:
+                concurrent_count -= 1
+
+            return mock_response
+
+        mock_to_thread.return_value = delayed_response_with_retry()
+
+        executor = LLMQueryExecutor()
+        executor._client = mock_client
+        executor.model = "openai:gpt-4"
+        executor._max_retry_attempts = 1
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        # Create 3 concurrent requests (limit is 2)
+        tasks = [executor._execute_with_retry(request_params) for _ in range(3)]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Verify requests completed (with retries)
+        self.assertEqual(len(results), 3)
+        # Verify semaphore limited concurrency during retries
+        # max_concurrent should be at most 2 (the semaphore limit)
+        msg = f"Semaphore should limit to 2 concurrent during retries, " f"but saw {max_concurrent}"
+        self.assertLessEqual(max_concurrent, 2, msg)
+
+    @patch("asyncio.to_thread")
+    async def test_semaphore_with_mock_llm_calls(self, mock_to_thread):
+        """Test semaphore behavior with mock LLM calls."""
+        LLMQueryExecutor.set_max_concurrent_requests(2)
+
+        executor = LLMQueryExecutor()
+        executor.set_mock_llm_call(True)
+
+        request = {"messages": [{"role": "user", "content": "test"}]}
+
+        # Mock calls should not go through semaphore (they bypass _execute_with_retry)
+        # But if they do, verify semaphore still works
+        results = await asyncio.gather(*[executor.query_once(request) for _ in range(3)], return_exceptions=True)
+
+        # All mock calls should succeed
+        self.assertEqual(len(results), 3)
+        for result in results:
+            self.assertNotIsInstance(result, Exception)
+            if isinstance(result, dict):
+                self.assertIn("choices", result)
+
+    @patch("asyncio.to_thread")
+    def test_semaphore_works_across_multiple_threads(self, mock_to_thread):
+        """CRITICAL: Test semaphore works when multiple threads create their own event loops."""
+        # Set semaphore limit
+        LLMQueryExecutor.set_max_concurrent_requests(3)
+
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.model_dump.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "Success"}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            "model": "openai:gpt-4",
+        }
+
+        mock_to_thread.return_value = mock_response
+
+        request_params = {
+            "model": "openai:gpt-4",
+            "messages": [{"role": "user", "content": "test"}],
+        }
+
+        results = []
+        errors = []
+        errors_lock = threading.Lock()
+
+        def worker_thread(thread_id: int):
+            """Worker thread that creates its own event loop."""
+
+            # This simulates what safe_asyncio_run does
+            async def run_query():
+                executor = LLMQueryExecutor()
+                executor._client = mock_client
+                executor.model = "openai:gpt-4"
+                executor._max_retry_attempts = 0  # No retries for this test
+                return await executor._execute_with_retry(request_params)
+
+            try:
+                # Create new event loop in this thread (simulates safe_asyncio_run)
+                result = asyncio.run(run_query())
+                results.append(result)
+            except Exception as e:
+                with errors_lock:
+                    errors.append((thread_id, str(e), type(e).__name__))
+
+        # Create 5 threads, each with its own event loop
+        threads = [Thread(target=worker_thread, args=(i,)) for i in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=10.0)  # Timeout to prevent hanging
+
+        # Verify no "bound to different event loop" errors
+        bound_to_different_loop_errors = [e for e in errors if "bound to a different event loop" in str(e[1])]
+        self.assertEqual(
+            len(bound_to_different_loop_errors),
+            0,
+            f"Found 'bound to different event loop' errors: {bound_to_different_loop_errors}",
+        )
+
+        # Verify all threads succeeded
+        self.assertEqual(len(results), 5, f"Expected 5 results, got {len(results)}. Errors: {errors}")
+
+        # Verify each result is valid
+        for result in results:
+            self.assertIn("choices", result)
+            self.assertEqual(result["model"], "openai:gpt-4")
 
 
 if __name__ == "__main__":
