@@ -413,7 +413,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
     knowledgeStatus: statusData,
     fetchKnowledgeStatus,
     createdKnowledgePack,
-    setIsGeneratingKnowledge,
+    setGeneratingKnowledgePackId,
+    setActiveGenerationType,
     updateNodeStatus,
   } = useKnowledgePackStore();
 
@@ -505,16 +506,16 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
         console.log('🔄 Task completed, refreshing knowledge status once...');
         await fetchKnowledgeStatusRef.current(kpId, true);
         // Reset generation flag when completed
-        setIsGeneratingKnowledge(false);
+        setGeneratingKnowledgePackId(null);
       } else if (taskStatus.status === 'failed') {
         console.log('❌ Task failed');
         toast.error(taskStatus.error || 'Knowledge generation failed');
         // Reset generation flag when failed
-        setIsGeneratingKnowledge(false);
+        setGeneratingKnowledgePackId(null);
       } else if (taskStatus.status === 'running' || taskStatus.status === 'pending') {
         console.log('ℹ️ Task is running/pending, setting generation flag');
         // Set generation flag if task is still running
-        setIsGeneratingKnowledge(true);
+        setGeneratingKnowledgePackId(kpId);
       } else {
         console.log('ℹ️ Task status:', taskStatus.status);
       }
@@ -549,7 +550,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
       hasCheckedTaskRef.current = false;
       lastCheckedTaskIdRef.current = null;
       // Reset generation flag if no task exists
-      setIsGeneratingKnowledge(false);
+      setGeneratingKnowledgePackId(null);
       return;
     }
 
@@ -639,8 +640,27 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
   }, [knowledgePackId]);
 
   // Stabilize the WebSocket callback to prevent reconnections on re-renders
-  const handleWebSocketStatusUpdate = useCallback((nodePath: string, status: string) => {
-    console.log('🔄 [DomainKnowledgeTree] WebSocket status update:', { nodePath, status });
+  const handleWebSocketStatusUpdate = useCallback((nodePath: string, status: string, type: string) => {
+    console.log('🔄 [DomainKnowledgeTree] WebSocket status update:', { nodePath, status, type });
+    
+    // Track generation type based on websocket message type
+    if (knowledgePackId) {
+      const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : knowledgePackId;
+      
+      // Set generation type based on websocket type
+      // Only 'question_generation' type indicates question generation
+      // All other types (like 'structuring') are treated as knowledge generation
+      if (type === 'question_generation') {
+        setActiveGenerationType(kpId, 'question');
+      } else {
+        // Any other type (e.g., 'structuring', 'knowledge_generation') indicates knowledge generation
+        setActiveGenerationType(kpId, 'knowledge');
+      }
+      
+      // Note: We don't clear generation type here because multiple nodes may be generating
+      // The chat sidebar will determine when to show/hide the panel based on the type
+    }
+    
     updateNodeStatus(nodePath, status as KnowledgeTopicStatus['status']);
     
     // Auto-expand the path to the updated node
@@ -674,7 +694,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
         // Note: Tree will regenerate automatically when statusData changes (from updateNodeStatus above)
       }
     }
-  }, [updateNodeStatus, domainTree, expandedNodes]);
+  }, [updateNodeStatus, domainTree, expandedNodes, knowledgePackId, setActiveGenerationType]);
 
   // Set up WebSocket connection for real-time status updates
   useKnowledgePackWebSocket(
@@ -1779,8 +1799,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
           });
         }
 
-        // Set generation flag in store to disable chat input
-        setIsGeneratingKnowledge(true);
+        // Set generation flag in store to disable chat input for this specific KP
+        const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : knowledgePackId;
+        setGeneratingKnowledgePackId(kpId);
 
         // Don't set isGenerating to false - keep button disabled
         return;

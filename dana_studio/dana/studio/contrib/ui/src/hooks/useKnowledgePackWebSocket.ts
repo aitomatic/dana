@@ -77,11 +77,11 @@ const mapWebSocketStatusToNodeStatus = (
  * Custom hook to manage WebSocket connection for knowledge pack status updates
  * 
  * @param knowledgePackId - The knowledge pack ID to subscribe to
- * @param onStatusUpdate - Callback when a node status is updated (nodePath, status)
+ * @param onStatusUpdate - Callback when a node status is updated (nodePath, status, type)
  */
 export const useKnowledgePackWebSocket = (
   knowledgePackId: number | null,
-  onStatusUpdate: (nodePath: string, status: string) => void
+  onStatusUpdate: (nodePath: string, status: string, type: string) => void
 ) => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,8 +138,8 @@ export const useKnowledgePackWebSocket = (
           const data: WebSocketMessage = JSON.parse(event.data);
           console.log('📨 [KP WebSocket] Message received:', data);
 
-          // Only process question_generation type messages
-          if (data.type === 'question_generation' && data.message.path_parts) {
+          // Process messages with path_parts (both question_generation and knowledge_generation)
+          if (data.message.path_parts) {
             const { tool_name, status, path_parts } = data.message;
 
             // Convert path_parts to nodePath
@@ -149,6 +149,7 @@ export const useKnowledgePackWebSocket = (
             const nodeStatus = mapWebSocketStatusToNodeStatus(tool_name, status);
 
             console.log('🔄 [KP WebSocket] Processing message:', {
+              type: data.type,
               tool_name,
               originalStatus: status,
               mappedStatus: nodeStatus,
@@ -158,7 +159,7 @@ export const useKnowledgePackWebSocket = (
 
             if (nodeStatus && nodePath) {
               console.log('✅ [KP WebSocket] Calling status update callback');
-              onStatusUpdateRef.current(nodePath, nodeStatus);
+              onStatusUpdateRef.current(nodePath, nodeStatus, data.type);
             } else {
               console.warn('⚠️ [KP WebSocket] Skipping update:', {
                 hasNodeStatus: !!nodeStatus,

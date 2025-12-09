@@ -65,7 +65,10 @@ export interface KnowledgePackState {
   lastFetchedKpId: number | null; // Track which KP's status was last fetched
 
   // Knowledge generation state
-  isGeneratingKnowledge: boolean; // Track if knowledge generation is in progress
+  generatingKnowledgePackId: number | null; // Track which knowledge pack ID is generating
+  
+  // Active generation type tracking (per knowledge pack)
+  activeGenerationType: Record<number, 'question' | 'knowledge' | null>; // Track generation type per KP
 }
 
 export interface KnowledgePackActions {
@@ -102,7 +105,8 @@ export interface KnowledgePackActions {
   updateNodeStatus: (nodePath: string, status: string) => void;
 
   // Knowledge generation management
-  setIsGeneratingKnowledge: (isGenerating: boolean) => void;
+  setGeneratingKnowledgePackId: (kpId: number | null) => void;
+  setActiveGenerationType: (kpId: number, type: 'question' | 'knowledge' | null) => void;
 
   // Helper methods
   _extractStatusFromTree: (node: any, pathParts?: string[]) => any[];
@@ -141,7 +145,8 @@ const initialState: KnowledgePackState = {
   isLoadingStatus: false,
   statusError: null,
   lastFetchedKpId: null,
-  isGeneratingKnowledge: false,
+  generatingKnowledgePackId: null,
+  activeGenerationType: {},
 };
 
 export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
@@ -553,9 +558,21 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
   },
 
   // Set knowledge generation status
-  setIsGeneratingKnowledge: (isGenerating: boolean) => {
-    console.log('🔄 Knowledge Pack: Setting isGeneratingKnowledge to', isGenerating);
-    set({ isGeneratingKnowledge: isGenerating });
+  setGeneratingKnowledgePackId: (kpId: number | null) => {
+    console.log('🔄 Knowledge Pack: Setting generatingKnowledgePackId to', kpId);
+    set({ generatingKnowledgePackId: kpId });
+  },
+
+  // Set active generation type for a knowledge pack
+  setActiveGenerationType: (kpId: number, type: 'question' | 'knowledge' | null) => {
+    console.log('🔄 Knowledge Pack: Setting activeGenerationType for KP', kpId, 'to', type);
+    const state = get();
+    set({
+      activeGenerationType: {
+        ...state.activeGenerationType,
+        [kpId]: type,
+      },
+    });
   },
 
   // Reset store

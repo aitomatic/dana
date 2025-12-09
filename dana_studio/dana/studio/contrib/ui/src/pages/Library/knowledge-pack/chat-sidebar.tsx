@@ -226,17 +226,40 @@ const SmartAgentChat: React.FC<{
 
   // Get knowledge generation status and created knowledge pack from store
   const { 
-    isGeneratingKnowledge, 
+    generatingKnowledgePackId, 
     createdKnowledgePack, 
     knowledgeStatus,
-    setIsGeneratingKnowledge 
+    lastFetchedKpId,
+    activeGenerationType,
+    setGeneratingKnowledgePackId 
   } = useKnowledgePackStore();
+  
+  // Check if the current knowledge pack is generating
+  const isGeneratingKnowledge = useMemo(() => {
+    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+    return generatingKnowledgePackId === kpId;
+  }, [generatingKnowledgePackId, knowledgePackId]);
+  
+  // Check if knowledgeStatus belongs to the current knowledge pack
+  const isStatusForCurrentPack = useMemo(() => {
+    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+    return lastFetchedKpId === kpId;
+  }, [lastFetchedKpId, knowledgePackId]);
+  
+  // Check if createdKnowledgePack belongs to the current knowledge pack
+  const isCreatedPackForCurrentPack = useMemo(() => {
+    if (!createdKnowledgePack?.id) return false;
+    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+    return createdKnowledgePack.id === kpId;
+  }, [createdKnowledgePack?.id, knowledgePackId]);
   
   console.log('📦 SmartAgentChat - createdKnowledgePack:', {
     id: createdKnowledgePack?.id,
     hasOriginalDescription: !!createdKnowledgePack?.originalDescription,
     originalDescription: createdKnowledgePack?.originalDescription?.substring(0, 100) + '...',
-    isGeneratingKnowledge
+    isGeneratingKnowledge,
+    generatingKnowledgePackId,
+    currentKpId: knowledgePackId
   });
 
   // Create knowledge pack specific chat store - since knowledgePackId is required, we can call this unconditionally
@@ -269,11 +292,13 @@ const SmartAgentChat: React.FC<{
     if (isGeneratingKnowledge) return true;
     
     // Check if there's a generation task ID (means generation was started)
-    if (createdKnowledgePack?.generation_task_id) return true;
+    // Only check if createdKnowledgePack belongs to the current pack
+    if (isCreatedPackForCurrentPack && createdKnowledgePack?.generation_task_id) return true;
     
     // Check if any node is in completed state (means Generate Knowledge was clicked)
     // Don't check for in_progress or generating - those are part of question generation
-    if (knowledgeStatus?.topics && knowledgeStatus.topics.length > 0) {
+    // Only check knowledgeStatus if it belongs to the current pack
+    if (isStatusForCurrentPack && knowledgeStatus?.topics && knowledgeStatus.topics.length > 0) {
       const hasCompletedOrBeyond = knowledgeStatus.topics.some((topic: any) => 
         topic.status === 'completed' || 
         topic.status === 'success'
@@ -282,12 +307,15 @@ const SmartAgentChat: React.FC<{
     }
     
     return false;
-  }, [hasClickedGenerate, isGeneratingKnowledge, createdKnowledgePack?.generation_task_id, knowledgeStatus]);
+  }, [hasClickedGenerate, isGeneratingKnowledge, isCreatedPackForCurrentPack, createdKnowledgePack?.generation_task_id, knowledgeStatus, isStatusForCurrentPack]);
 
   // Check if Generate Knowledge button should be shown
   const shouldShowGenerateButton = useMemo(() => {
     // Don't show if generation already started
     if (hasGenerationStarted) return false;
+    
+    // Only use knowledgeStatus if it belongs to the current pack
+    if (!isStatusForCurrentPack) return false;
     
     if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
       return false;
@@ -297,10 +325,13 @@ const SmartAgentChat: React.FC<{
     return knowledgeStatus.topics.every((topic: any) => 
       topic.status === 'question_generated' || topic.status === 'failed'
     );
-  }, [knowledgeStatus, hasGenerationStarted]);
+  }, [knowledgeStatus, hasGenerationStarted, isStatusForCurrentPack]);
 
   // Check if generation is complete
   const isGenerationComplete = useMemo(() => {
+    // Only use knowledgeStatus if it belongs to the current pack
+    if (!isStatusForCurrentPack) return false;
+    
     if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
       return false;
     }
@@ -309,11 +340,27 @@ const SmartAgentChat: React.FC<{
     return knowledgeStatus.topics.every((topic: any) => 
       topic.status === 'completed' || topic.status === 'success' || topic.status === 'failed'
     );
-  }, [knowledgeStatus]);
+  }, [knowledgeStatus, isStatusForCurrentPack]);
 
   // Check if knowledge content generation is in progress
-  // This is when we have a MIX of question_generated and completed/failed
+  // Primary: Use websocket type tracking (most accurate)
+  // Fallback: Use knowledgeStatus if websocket tracking not available
   const isKnowledgeGenerating = useMemo(() => {
+    const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+    
+    // Primary: Check websocket-based generation type
+    const generationType = activeGenerationType[kpId];
+    if (generationType === 'knowledge') {
+      return true;
+    }
+    if (generationType === 'question') {
+      return false; // Explicitly not knowledge generation
+    }
+    
+    // Fallback: Use knowledgeStatus if websocket tracking not available
+    // Only use knowledgeStatus if it belongs to the current pack
+    if (!isStatusForCurrentPack) return false;
+    
     if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
       return false;
     }
@@ -322,12 +369,13 @@ const SmartAgentChat: React.FC<{
       topic.status === 'question_generated'
     );
     const hasCompleted = knowledgeStatus.topics.some((topic: any) => 
-      topic.status === 'completed' || topic.status === 'success' || topic.status === 'failed'
+      topic.status === 'completed' || topic.status === 'success'
+      // Note: 'failed' removed - failed questions don't indicate knowledge generation
     );
     
-    // Only true if we have BOTH question_generated AND completed/failed nodes (mixed state)
+    // Only true if we have BOTH question_generated AND completed/success nodes (mixed state)
     return hasQuestionGenerated && hasCompleted;
-  }, [knowledgeStatus]);
+  }, [knowledgeStatus, isStatusForCurrentPack, activeGenerationType, knowledgePackId]);
 
   // Load conversation history from API on mount
   useEffect(() => {
@@ -523,8 +571,8 @@ const SmartAgentChat: React.FC<{
           { duration: 6000 }
         );
         
-        // Set flag in store to disable chat
-        setIsGeneratingKnowledge(true);
+        // Set knowledge pack ID in store to disable chat for this specific KP
+        setGeneratingKnowledgePackId(kpId);
       } else {
         toast.error(response.message || 'Failed to start knowledge generation');
       }
@@ -681,7 +729,7 @@ const SmartAgentChat: React.FC<{
         </div>
       )}
 
-      {/* Knowledge Generation Status - Show when generation is in progress */}
+      {/* Knowledge Generation Status - Show only when knowledge generation is in progress (not question generation) */}
       {(isGeneratingKnowledge || isKnowledgeGenerating) && !isGenerationComplete && (
         <div className="px-3 py-4 bg-blue-50 border-b border-blue-200">
           <div className="flex flex-col gap-3">
