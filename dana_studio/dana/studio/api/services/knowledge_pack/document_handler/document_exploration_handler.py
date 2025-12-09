@@ -22,9 +22,7 @@ from dana.studio.api.services.knowledge_pack.document_handler.prompts import DOC
 from dana.lang.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
 from dana.studio.api.repositories.domain_knowledge_repo import SQLDomainKnowledgeRepo
 from dana.studio.api.repositories.document_repo import SQLDocumentRepo
-import logging
-
-logger = logging.getLogger(__name__)
+from dana.studio.api.core.logger import log as logger
 
 
 class DocumentExplorationHandler(AbstractHandler):
@@ -113,9 +111,9 @@ class DocumentExplorationHandler(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
-            print("=" * 100)
-            print(tool_msg.content)
-            print("=" * 100)
+            logger.debug("=" * 100)
+            logger.debug(tool_msg.content)
+            logger.debug("=" * 100)
             conversation.append(tool_msg)
             init = False
             tool_name = None
@@ -133,6 +131,10 @@ class DocumentExplorationHandler(AbstractHandler):
                 if self.notifier and init and tool_name:
                     await self.notifier(tool_name, f"Error: {e}", "error", None)
                 continue
+
+            logger.debug("-" * 100)
+            logger.debug(tool_result_msg.content)
+            logger.debug("-" * 100)
 
             # Check if complete
             if isinstance(tool_msg, MessageData) and tool_msg.content.strip().lower() == "complete":
@@ -354,44 +356,46 @@ if __name__ == "__main__":
         role="Process Operator",
     )
 
-    print("🎯 Document Exploration Handler - Interactive Testing Environment")
-    print("=" * 70)
-    print("Commands:")
-    print("- Type any document exploration request to test the workflow")
-    print("- Type 'quit' or 'exit' to quit")
-    print("- Type 'reset' to clear conversation history")
-    print("- Type 'history' to view conversation")
-    print("- Type 'tools' to list available tools")
-    print("=" * 70)
+    logger.debug("🎯 Document Exploration Handler - Interactive Testing Environment")
+    logger.debug("=" * 70)
+    logger.debug("Commands:")
+    logger.debug("- Type any document exploration request to test the workflow")
+    logger.debug("- Type 'quit' or 'exit' to quit")
+    logger.debug("- Type 'reset' to clear conversation history")
+    logger.debug("- Type 'history' to view conversation")
+    logger.debug("- Type 'tools' to list available tools")
+    logger.debug("=" * 70)
 
     chat_history = []
 
-    print(handler.tool_str)
+    logger.debug(handler.tool_str)
 
     while True:
         try:
             user_message = input(f"\n💬 User ({len(chat_history) // 2 + 1}): ").strip()
 
             if user_message.lower() in ["quit", "exit"]:
-                print("👋 Goodbye!")
+                logger.debug("👋 Goodbye!")
                 break
             elif user_message.lower() == "reset":
                 chat_history = []
-                print("🗑️  Chat history cleared.")
+                logger.debug("🗑️  Chat history cleared.")
                 continue
             elif user_message.lower() == "history":
                 if not chat_history:
-                    print("📝 No conversation history yet.")
+                    logger.debug("📝 No conversation history yet.")
                 else:
-                    print(f"\n📝 Conversation History ({len(chat_history)} messages):")
+                    logger.debug(f"\n📝 Conversation History ({len(chat_history)} messages):")
                     for i, msg in enumerate(chat_history, 1):
                         role_emoji = "👤" if msg.role == "user" else "🤖"
-                        print(f"  {i:2}. {role_emoji} {msg.role.upper()}: {msg.content[:100]}{'...' if len(msg.content) > 100 else ''}")
+                        logger.debug(
+                            f"  {i:2}. {role_emoji} {msg.role.upper()}: {msg.content[:100]}{'...' if len(msg.content) > 100 else ''}"
+                        )
                 continue
             elif user_message.lower() == "tools":
-                print(f"\n🛠️  Available Tools ({len(handler.tools)}):")
+                logger.debug(f"\n🛠️  Available Tools ({len(handler.tools)}):")
                 for i, (name, tool) in enumerate(handler.tools.items(), 1):
-                    print(
+                    logger.debug(
                         f"  {i:2}. {name}: {tool.tool_information.description[:80]}{'...' if len(tool.tool_information.description) > 80 else ''}"
                     )
                 continue
@@ -403,27 +407,27 @@ if __name__ == "__main__":
             # Create request
             request = IntentDetectionRequest(user_message=user_message, chat_history=chat_history, current_domain_tree=None, agent_id=1)
 
-            print(f"\n{'⚡' * 3} PROCESSING REQUEST {'⚡' * 3}")
-            print(f"Request: {user_message}")
+            logger.debug(f"\n{'⚡' * 3} PROCESSING REQUEST {'⚡' * 3}")
+            logger.debug(f"Request: {user_message}")
 
             # Run handler
             result = asyncio.run(handler.handle(request))
 
             # Display results
-            print(f"\n{'📊' * 3} WORKFLOW RESULTS {'📊' * 3}")
-            print(f"Status: {result['status']}")
-            print(f"Message: {result['message']}")
+            logger.debug(f"\n{'📊' * 3} WORKFLOW RESULTS {'📊' * 3}")
+            logger.debug(f"Status: {result['status']}")
+            logger.debug(f"Message: {result['message']}")
 
             # Show conversation flow
             conversation = result["conversation"]
-            print(f"\n{'💭' * 3} CONVERSATION FLOW ({len(conversation)} messages) {'💭' * 3}")
+            logger.debug(f"\n{'💭' * 3} CONVERSATION FLOW ({len(conversation)} messages) {'💭' * 3}")
 
             for i, msg in enumerate(conversation, 1):
                 role_emoji = "👤" if msg.role == "user" else "🤖"
                 role_color = "\033[94m" if msg.role == "user" else "\033[92m"  # Blue for user, green for assistant
                 reset_color = "\033[0m"
 
-                print(f"\n{i:2}. {role_emoji} {role_color}{msg.role.upper()}{reset_color}:")
+                logger.debug(f"\n{i:2}. {role_emoji} {role_color}{msg.role.upper()}{reset_color}:")
 
                 # Handle tool calls vs regular messages
                 if msg.role == "assistant" and ("<" in msg.content and ">" in msg.content):
@@ -435,7 +439,7 @@ if __name__ == "__main__":
                         thinking_match = re.search(r"<thinking>(.*?)</thinking>", msg.content, re.DOTALL)
                         if thinking_match:
                             thinking = thinking_match.group(1).strip()
-                            print(f"    💭 Thinking: {thinking}")
+                            logger.debug(f"    💭 Thinking: {thinking}")
 
                     # Extract tool name and arguments (skip thinking tags)
                     import re
@@ -443,47 +447,47 @@ if __name__ == "__main__":
                     tool_match = re.search(r"<(?!thinking)(\w+)", msg.content)
                     if tool_match:
                         tool_name = tool_match.group(1)
-                        print(f"    🔧 Tool Call: {tool_name}")
+                        logger.debug(f"    🔧 Tool Call: {tool_name}")
 
                         # Extract and display tool arguments
                         try:
                             _, params, _ = handler._parse_xml_tool_call(msg.content)
                             if params:
-                                print("    📝 Arguments:")
+                                logger.debug("    📝 Arguments:")
                                 for key, value in params.items():
                                     if isinstance(value, list):
-                                        print(f"      {key}: {value}")
+                                        logger.debug(f"      {key}: {value}")
                                     elif isinstance(value, str) and len(value) > 100:
-                                        print(f"      {key}: {value[:100]}...")
+                                        logger.debug(f"      {key}: {value[:100]}...")
                                     else:
-                                        print(f"      {key}: {value}")
+                                        logger.debug(f"      {key}: {value}")
                         except Exception as e:
-                            print(f"    ⚠️ Could not parse arguments: {e}")
+                            logger.debug(f"    ⚠️ Could not parse arguments: {e}")
                 else:
                     # Regular message content
                     content_lines = msg.content.split("\n")
                     for line in content_lines[:5]:  # Show first 5 lines
                         if line.strip():
-                            print(f"    {line}")
+                            logger.debug(f"    {line}")
 
             # Update chat history for next iteration
             chat_history = conversation
 
             # Check if workflow is complete or needs user input
             if result["status"] == "user_input_required":
-                print(f"\n{'⏸️' * 3} WORKFLOW PAUSED - USER INPUT REQUIRED {'⏸️' * 3}")
-                print("The system is waiting for your response to continue.")
+                logger.debug(f"\n{'⏸️' * 3} WORKFLOW PAUSED - USER INPUT REQUIRED {'⏸️' * 3}")
+                logger.debug("The system is waiting for your response to continue.")
             elif result["status"] == "success":
-                print(f"\n{'✅' * 3} WORKFLOW COMPLETED SUCCESSFULLY {'✅' * 3}")
-                print("You can start a new document exploration request or type 'reset' to clear history.")
+                logger.debug(f"\n{'✅' * 3} WORKFLOW COMPLETED SUCCESSFULLY {'✅' * 3}")
+                logger.debug("You can start a new document exploration request or type 'reset' to clear history.")
 
         except KeyboardInterrupt:
-            print("\n\n👋 Interrupted. Goodbye!")
+            logger.debug("\n\n👋 Interrupted. Goodbye!")
             break
         except Exception as e:
-            print(f"\n❌ Error: {e}")
+            logger.debug(f"\n❌ Error: {e}")
             import traceback
 
-            print("Full traceback:")
+            logger.debug("Full traceback:")
             traceback.print_exc()
-            print("\n💡 Continuing... (you can type 'reset' to clear state)")
+            logger.debug("\n💡 Continuing... (you can type 'reset' to clear state)")

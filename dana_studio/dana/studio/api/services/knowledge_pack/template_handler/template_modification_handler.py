@@ -20,10 +20,8 @@ from dana.studio.api.services.knowledge_pack.template_handler.tools import (
     AskQuestionTool,
 )
 from dana.studio.api.services.knowledge_pack.template_handler.prompts import TEMPLATE_MODIFICATION_PROMPT
-import logging
+from dana.studio.api.core.logger import log as logger
 from pathlib import Path
-
-logger = logging.getLogger(__name__)
 
 
 class TemplateModificationHandler(AbstractHandler):
@@ -123,9 +121,9 @@ class TemplateModificationHandler(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
-            print("=" * 100)
-            print(tool_msg.content)
-            print("=" * 100)
+            logger.debug("=" * 100)
+            logger.debug(tool_msg.content)
+            logger.debug("=" * 100)
             conversation.append(tool_msg)
             init = False
             try:
@@ -142,6 +140,10 @@ class TemplateModificationHandler(AbstractHandler):
                 if self.notifier and init:
                     await self.notifier(tool_name, f"Error: {e}", "error", None)
                 continue
+
+            logger.debug("-" * 100)
+            logger.debug(tool_result_msg.content)
+            logger.debug("-" * 100)
 
             # Check if complete
             if isinstance(tool_msg, MessageData) and tool_msg.content.strip().lower() == "complete":

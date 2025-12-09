@@ -57,7 +57,6 @@ def _get_duckdb_lock() -> asyncio.Lock:
 
 def get_duckdb_connection(database_name: str, persist_dir: str, read_only: bool = False) -> duckdb.DuckDBPyConnection:
     full_path = os.path.join(persist_dir, database_name)
-    print(f"Getting duckdb connection for {full_path}")
     key = (full_path, read_only)
     if key in _conn:
         return _conn[key].cursor()
@@ -134,9 +133,6 @@ class RAGResourceV2(BaseSysResource):
             return []
 
     def _load_or_create_index(self, document_dict: dict[str, list[Document]]) -> None:
-        if self.debug:
-            print("[RAG._load_or_create_index] Starting load/create index...")
-
         def get_vector_store():
             if self.debug:
                 print(
@@ -144,17 +140,13 @@ class RAGResourceV2(BaseSysResource):
                 )
             return DuckDBVectorStore(database_name=self.get_table_name(), persist_dir=PERSIST_DIR, embed_dim=self.dimension)
 
-        if self.debug:
-            print("[RAG._load_or_create_index] Getting default embedding model...")
         self.embed_model = get_default_embedding_model(dimension_override=self.dimension)
         if hasattr(self.embed_model, "dimensions"):
             # override using dimension from embed_model
             self.dimension = self.embed_model.dimensions
             if self.debug:
-                print(f"[RAG._load_or_create_index] Embed model has dimensions attribute: {self.dimension}")
+                print(f"[RAG._load_or_create_index] Embed model dimension: {self.dimension}")
         else:
-            if self.debug:
-                print("[RAG._load_or_create_index] Embed model doesn't have dimensions, calculating from test embedding...")
             self.dimension = len(self.embed_model.get_text_embedding("test"))
             if self.debug:
                 print(f"[RAG._load_or_create_index] Calculated dimension: {self.dimension}")
@@ -168,11 +160,7 @@ class RAGResourceV2(BaseSysResource):
                 if self.debug:
                     print(f"[RAG._load_or_create_index] Loading index from {uri}")
                 vector_store = get_vector_store()
-                if self.debug:
-                    print("[RAG._load_or_create_index] Calling VectorStoreIndex.from_vector_store()...")
                 self.vector_index = VectorStoreIndex.from_vector_store(vector_store, embed_model=self.embed_model)
-                if self.debug:
-                    print("[RAG._load_or_create_index] Index loaded successfully")
             else:
                 if self.debug:
                     print(f"[RAG._load_or_create_index] Creating index from {uri}")
@@ -182,15 +170,10 @@ class RAGResourceV2(BaseSysResource):
                 for docs in document_dict.values():
                     documents.extend(docs)
                 if self.debug:
-                    print(f"[RAG._load_or_create_index] Prepared {len(documents)} documents, calling VectorStoreIndex.from_documents()...")
+                    print(f"[RAG._load_or_create_index] Indexing {len(documents)} documents")
                 self.vector_index = VectorStoreIndex.from_documents(
                     documents=documents, storage_context=storage_context, embed_model=self.embed_model
                 )
-                if self.debug:
-                    print("[RAG._load_or_create_index] Index created successfully")
-        else:
-            if self.debug:
-                print("[RAG._load_or_create_index] Vector index already exists, skipping load/create")
 
     def _get_danapath(self) -> str | None:
         # Use DANAPATH if set, otherwise default to .cache/rag
@@ -247,58 +230,32 @@ class RAGResourceV2(BaseSysResource):
 
     @property
     def is_available(self) -> bool:
-        if self.debug:
-            print(f"[RAG.is_available] Checking availability, _is_ready={self._is_ready}")
         if not self._is_ready:
-            if self.debug:
-                print("[RAG.is_available] Not ready, calling initialize() via safe_asyncio_run...")
             Misc.safe_asyncio_run(self.initialize)
-            if self.debug:
-                print("[RAG.is_available] initialize() completed")
         result = self._filenames is not None and any([fn != "system" for fn in self.filenames])
-        if self.debug:
-            print(f"[RAG.is_available] Availability check result: {result} (filenames={self._filenames})")
         return result
 
     async def initialize(self) -> None:
         """Initialize and preprocess sources."""
-        if self.debug:
-            print("[RAG.initialize] Starting initialization...")
-            print(f"[RAG.initialize] _is_ready={self._is_ready}, sources count={len(self.sources)}")
-
         if not self._is_ready:
-            if self.debug:
-                print("[RAG.initialize] Loading sources...")
             document_dict = await self.loader.load_sources(self.sources, group_by_fn=True)
             if self.debug:
-                print(f"[RAG.initialize] Sources loaded, got {len(document_dict)} document groups")
+                print(f"[RAG.initialize] Loaded {len(document_dict)} document groups from {len(self.sources)} sources")
 
-            if self.debug:
-                print("[RAG.initialize] Getting hashes from documents...")
             self.hashes = await self.get_hashes_from_documents(document_dict)
             if self.debug:
-                print(f"[RAG.initialize] Got {len(self.hashes)} hashes")
+                print(f"[RAG.initialize] Got {len(self.hashes)} file hashes")
 
-            if self.debug:
-                print("[RAG.initialize] Loading or creating index...")
             self._load_or_create_index(document_dict)
-            if self.debug:
-                print("[RAG.initialize] Index loaded/created")
 
             documents = document_dict
             self._filenames = [] if documents is None else list(documents.keys())
             if self.debug:
-                print(f"[RAG.initialize] Filenames set: {len(self._filenames)} files")
+                print(f"[RAG.initialize] Processing {len(self._filenames)} files")
 
-            if self.debug:
-                print("[RAG.initialize] Indexing documents...")
             await self._index_documents(documents)
-            if self.debug:
-                print("[RAG.initialize] Documents indexed")
 
             self._is_ready = True
-            if self.debug:
-                print("[RAG.initialize] Initialization completed, _is_ready=True")
 
     async def get_hashes_from_documents(self, documents: dict[str, list[Document]]) -> list[str]:
         mapping = []
@@ -308,24 +265,17 @@ class RAGResourceV2(BaseSysResource):
         return mapping
 
     async def _index_documents(self, documents: dict[str, list[Document]]) -> None:
-        if self.debug:
-            print("[RAG._index_documents] Starting document indexing...")
-
         if not self.vector_index:
             if self.debug:
                 print("[RAG._index_documents] ERROR: vector_index is not initialized")
             raise ValueError("Vector index is not initialized. Please call initialize() first.")
 
         if not documents:
-            if self.debug:
-                print("[RAG._index_documents] No documents to index, returning")
             return
 
-        if self.debug:
-            print("[RAG._index_documents] Getting existing hashes...")
         existing_hashes = self.get_existing_hashes()
         if self.debug:
-            print(f"[RAG._index_documents] Found {len(existing_hashes)} existing hashes")
+            print(f"[RAG._index_documents] Found {len(existing_hashes)} existing hashes in index")
 
         mapping = {}
         for filename, docs in documents.items():
@@ -334,20 +284,16 @@ class RAGResourceV2(BaseSysResource):
 
         doc_to_add = set(mapping.keys()).difference(set(existing_hashes))
 
-        if self.debug:
-            print(f"[RAG._index_documents] Adding {len(doc_to_add)} documents to the index")
-        else:
-            print(f"Adding {len(doc_to_add)} documents to the index")
+        if len(doc_to_add) > 0:
+            if self.debug:
+                print(f"[RAG._index_documents] Adding {len(doc_to_add)} new documents to the index")
+            else:
+                print(f"Adding {len(doc_to_add)} documents to the index")
 
-        if self.debug:
-            print("[RAG._index_documents] Creating insert tasks...")
         tasks = []
         for data in doc_to_add:
             docs = documents[mapping[data]]
             tasks.extend([self.vector_index.ainsert(doc) for doc in docs])
-
-        if self.debug:
-            print(f"[RAG._index_documents] Created {len(tasks)} insert tasks, executing with asyncio.gather()...")
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -360,14 +306,10 @@ class RAGResourceV2(BaseSysResource):
                 else:
                     print(f"Error inserting document: {result}")
 
-        if self.debug:
-            print(f"[RAG._index_documents] Insert tasks completed, {error_count} errors out of {len(results)} tasks")
+        if error_count > 0 and self.debug:
+            print(f"[RAG._index_documents] Completed with {error_count} errors out of {len(results)} tasks")
 
-        if self.debug:
-            print("[RAG._index_documents] Persisting storage context...")
         self.vector_index.storage_context.persist(persist_dir=PERSIST_DIR)
-        if self.debug:
-            print("[RAG._index_documents] Persistence completed")
 
     async def index_sources(self, sources: list[str]) -> None:
         document_dict = await self.loader.load_sources(sources, group_by_fn=True)
@@ -559,26 +501,13 @@ class RAGResourceV2(BaseSysResource):
             # This ensures that even if removal fails, new documents can still be added
 
     async def retrieve(self, query: str, num_results: int = 10) -> list[NodeWithScore]:
-        if self.debug:
-            print(f"[RAG.retrieve] Starting retrieve with query='{query}', num_results={num_results}")
-            print(f"[RAG.retrieve] _is_ready={self._is_ready}, vector_index exists={self.vector_index is not None}")
-
         if not self._is_ready:
-            if self.debug:
-                print("[RAG.retrieve] Not ready, calling initialize()...")
             await self.initialize()
-            if self.debug:
-                print("[RAG.retrieve] initialize() completed")
 
         if not self.vector_index:
             if self.debug:
                 print("[RAG.retrieve] ERROR: vector_index is not initialized")
             raise ValueError("Vector index is not initialized. Please call initialize() first.")
-
-        if self.debug:
-            print(f"[RAG.retrieve] Creating retriever with similarity_top_k={num_results}")
-            print(f"[RAG.retrieve] Hashes filter: {len(self.hashes)} hashes")
-            print(f"[RAG.retrieve] Embed model: {type(self.embed_model).__name__}")
 
         retriever = self.vector_index.as_retriever(
             similarity_top_k=num_results,
@@ -586,50 +515,31 @@ class RAGResourceV2(BaseSysResource):
             filters=MetadataFilters(filters=[MetadataFilter(key="file_hash", operator=FilterOperator.IN, value=self.hashes)]),
         )
 
-        if self.debug:
-            print("[RAG.retrieve] Retriever created, acquiring DuckDB lock...")
-
         # Acquire lock to prevent concurrent DuckDB access
         lock = _get_duckdb_lock()
         async with lock:
-            if self.debug:
-                print("[RAG.retrieve] Lock acquired, calling aretrieve()...")
-
             results = await retriever.aretrieve(query)
 
-            if self.debug:
-                print(f"[RAG.retrieve] aretrieve() completed, got {len(results)} results")
-
         if self.debug:
-            print("[RAG.retrieve] Lock released, returning results")
+            print(f"[RAG.retrieve] Retrieved {len(results)} results for query")
 
         return results
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str | list:
         """Retrieve relevant documents. Minimum number of results is 5"""
-        if self.debug:
-            print(f"[RAG.query] Starting query: '{query}' with num_results={num_results}")
-            print(f"[RAG.query] _is_ready={self._is_ready}, vector_index exists={self.vector_index is not None}")
-
         if not self._is_ready:
-            if self.debug:
-                print("[RAG.query] Not ready, calling initialize()...")
             await self.initialize()
-            if self.debug:
-                print("[RAG.query] initialize() completed")
 
-        if self.debug:
-            print("[RAG.query] Checking is_available...")
         if not self.is_available:
             if self.debug:
-                print("[RAG.query] is_available returned False, returning 'No relevant documents found'")
+                print("[RAG.query] No relevant documents found")
             return "No relevant documents found"
 
         num_results = max(num_results, self.num_results)
 
         if self.debug:
-            print(f"[RAG.query] Querying {num_results} results from {self.name} RAG with query: {query}")
+            print(f"[RAG.query] Querying '{query}' for {num_results} results")
 
         # Get initial results (more than needed for reranking)
         initial_num_results = num_results
@@ -639,37 +549,25 @@ class RAGResourceV2(BaseSysResource):
             if self.debug:
                 print(f"[RAG.query] Reranking enabled, retrieving {initial_num_results} results (multiplier: {self.initial_multiplier})")
 
-        if self.debug:
-            print(f"[RAG.query] Calling retrieve() with query='{query}', num_results={initial_num_results}...")
         results = await self.retrieve(query, initial_num_results)
-        if self.debug:
-            print(f"[RAG.query] retrieve() completed, got {len(results)} results")
 
         # Apply LLM reranking if enabled
         if self.reranking and self._llm_reranker and len(results) > 1:
             if self.debug:
-                print(f"[RAG.query] Starting LLM reranking with {len(results)} results...")
+                print(f"[RAG.query] Reranking {len(results)} results")
             results = await self._rerank_with_llm(query, results, num_results)
-            if self.debug:
-                print(f"[RAG.query] LLM reranking completed, got {len(results)} results")
         elif len(results) > num_results:
             # Truncate to requested number if no reranking
-            if self.debug:
-                print(f"[RAG.query] Truncating results from {len(results)} to {num_results}")
             results = results[:num_results]
 
-        if self.debug:
-            print(f"[RAG.query] Preparing final response, return_raw={self.return_raw}")
         if not self.return_raw:
-            if self.debug:
-                print("[RAG.query] Formatting results as string...")
             formatted = "\n\n".join([result.node.get_content(MetadataMode.LLM) for result in results])
             if self.debug:
-                print(f"[RAG.query] Formatting completed, result length={len(formatted)}")
+                print(f"[RAG.query] Returning formatted results, length={len(formatted)}")
             return formatted
         else:
             if self.debug:
-                print(f"[RAG.query] Returning raw results, count={len(results)}")
+                print(f"[RAG.query] Returning {len(results)} raw results")
             return results
 
     async def _rerank_with_llm(self, query: str, results: list, target_count: int) -> list:
@@ -681,20 +579,10 @@ class RAGResourceV2(BaseSysResource):
         3. Rank remaining documents by relevance
         4. Return at most target_count documents (may return fewer)
         """
-        if self.debug:
-            print(f"[RAG._rerank_with_llm] Starting reranking with {len(results)} results, target_count={target_count}")
-
         if not results:
-            if self.debug:
-                print("[RAG._rerank_with_llm] No results to rerank, returning empty list")
             return results
 
-        if self.debug:
-            print(f"[RAG._rerank_with_llm] LLM reranking: analyzing {len(results)} results (target {target_count} will be selected)")
-
         # Prepare documents for reranking
-        if self.debug:
-            print("[RAG._rerank_with_llm] Preparing documents for reranking...")
         documents = []
         for i, result in enumerate(results):
             content = result.node.get_content()
@@ -708,20 +596,11 @@ class RAGResourceV2(BaseSysResource):
                     "score": result.score if hasattr(result, "score") else 0.0,
                 }
             )
-        if self.debug:
-            print(f"[RAG._rerank_with_llm] Prepared {len(documents)} documents for reranking")
 
-        # Create reranking prompt
-        if self.debug:
-            print("[RAG._rerank_with_llm] Creating reranking prompt...")
         prompt = self._create_reranking_prompt(query, documents, target_count)
-        if self.debug:
-            print(f"[RAG._rerank_with_llm] Prompt created, length={len(prompt)}")
 
         try:
             # Query LLM for reranking
-            if self.debug:
-                print("[RAG._rerank_with_llm] Creating LLM request...")
             request = BaseRequest(
                 arguments={
                     "messages": [{"role": "user", "content": prompt}],
@@ -730,15 +609,9 @@ class RAGResourceV2(BaseSysResource):
                 }
             )
 
-            if self.debug:
-                print("[RAG._rerank_with_llm] Calling LLM reranker.query()...")
             response = await self._llm_reranker.query(request)
-            if self.debug:
-                print(f"[RAG._rerank_with_llm] LLM query completed, success={response.success}")
 
             if response.success:
-                if self.debug:
-                    print("[RAG._rerank_with_llm] Parsing LLM response...")
                 content = Misc.get_response_content(response)
                 # Parse the response to get ranked document IDs
                 ranked_ids = self._parse_reranking_response(content)
@@ -746,8 +619,6 @@ class RAGResourceV2(BaseSysResource):
                     print(f"[RAG._rerank_with_llm] Parsed {len(ranked_ids)} ranked IDs: {ranked_ids}")
 
                 # Reorder results based on LLM ranking (only include LLM-selected documents)
-                if self.debug:
-                    print("[RAG._rerank_with_llm] Reordering results based on LLM ranking...")
                 reranked_results = []
                 for doc_id in ranked_ids:
                     if 0 <= doc_id < len(results):
@@ -756,12 +627,10 @@ class RAGResourceV2(BaseSysResource):
                 if self.debug:
                     original_count = len(results)
                     filtered_count = len(reranked_results)
-                    print(f"[RAG._rerank_with_llm] LLM reranking successful: filtered {original_count} -> {filtered_count} results")
+                    print(f"[RAG._rerank_with_llm] Reranked: {original_count} -> {filtered_count} results")
 
                 # Return only LLM-selected results (may be fewer than target_count)
                 final_results = reranked_results[:target_count] if len(reranked_results) > target_count else reranked_results
-                if self.debug:
-                    print(f"[RAG._rerank_with_llm] Returning {len(final_results)} final results")
                 return final_results
             else:
                 if self.debug:
@@ -851,7 +720,4 @@ if __name__ == "__main__":
     )
     import asyncio
 
-    print(rag.is_available)
-    print(rag.filenames)
-
-    print(len(asyncio.run(rag.query("Procedure for monitoring sugar manufacturing process"), debug=True)))
+    asyncio.run(rag.query("Procedure for monitoring sugar manufacturing process"))

@@ -14,7 +14,7 @@ from dana.studio.api.core.schemas_v2 import DomainKnowledgeTreeV2 as DomainKnowl
 from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
 from pathlib import Path
 from dana.lang.common.utils.misc import Misc
-import logging
+from dana.studio.api.core.logger import log as logger
 from dana.studio.api.services.knowledge_pack.structuring_handler.prompts import TOOL_SELECTION_PROMPT
 from dana.lang.common.types import BaseRequest
 from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
@@ -26,8 +26,6 @@ from dana.studio.api.routers.v2.ws.domain_knowledge_ws import (
     kp_structuring_ws_notifier,
 )
 from dana.studio.api.repositories.config import KNOW_FOLDER_NAME
-
-logger = logging.getLogger(__name__)
 
 
 class KPStructuringOrchestrator(AbstractHandler):
@@ -207,9 +205,9 @@ class KPStructuringOrchestrator(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
-            print("=" * 100)
-            print(tool_msg.content)
-            print("=" * 100)
+            logger.debug("=" * 100)
+            logger.debug(tool_msg.content)
+            logger.debug("=" * 100)
             conversation.append(tool_msg)
             init = False
             try:
@@ -224,6 +222,10 @@ class KPStructuringOrchestrator(AbstractHandler):
                 if init:
                     await self._notify(tool_name, f"Error: {e}", "error", None)
                 continue
+
+            logger.debug("-" * 100)
+            logger.debug(tool_result_msg.content)
+            logger.debug("-" * 100)
 
             # Check if complete
             if isinstance(tool_msg, HandlerMessage) and tool_msg.content.strip().lower() == "complete":
@@ -407,4 +409,4 @@ User Message: You confirmed the structure is suitable, so I'll now add it to the
   ]</modify_tree>
 """
 
-    print(orchestrator._parse_xml_tool_call(xml_content=xml_content))
+    logger.debug(orchestrator._parse_xml_tool_call(xml_content=xml_content))

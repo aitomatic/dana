@@ -13,7 +13,6 @@ from dana.studio.api.core.schemas import IntentDetectionRequest, MessageData
 from dana.studio.api.core.schemas import SenderRole
 from dana.lang.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
 from typing import Any
-import logging
 
 from dana.studio.api.services.knowledge_pack.interview_question_handler.tools import (
     AskQuestionTool,
@@ -22,7 +21,7 @@ from dana.studio.api.services.knowledge_pack.interview_question_handler.tools im
 from dana.studio.api.services.knowledge_pack.interview_question_handler.prompts import INTERVIEW_QUESTION_GENERATION_PROMPT_V2
 import re
 
-logger = logging.getLogger(__name__)
+from dana.studio.api.core.logger import log as logger
 
 
 class InterviewQuestionHandler(AbstractHandler):
@@ -97,17 +96,21 @@ class InterviewQuestionHandler(AbstractHandler):
             tool_msg = await self._determine_next_tool(conversation, current_note_content, document_answer=document_answer)
             conversation.append(tool_msg)
 
-            print("=" * 100)
-            print(tool_msg.content)
+            logger.debug("=" * 100)
+            logger.debug(tool_msg.content)
 
             try:
                 tool_name, params, thinking_content = self._parse_xml_tool_call(tool_msg.content)
                 tool_result_msg = await self._execute_tool(tool_name, params, thinking_content)
-                print("-" * 100)
-                print(tool_result_msg.content)
+                logger.debug("-" * 100)
+                logger.debug(tool_result_msg.content)
             except Exception as e:
                 conversation.append(MessageData(role=SenderRole.USER, content=f"Error: {e}", treat_as_tool=True))
                 continue
+
+            logger.debug("-" * 100)
+            logger.debug(tool_result_msg.content)
+            logger.debug("-" * 100)
 
             # Check if complete
             if isinstance(tool_msg, MessageData) and tool_msg.content.strip().lower() == "complete":

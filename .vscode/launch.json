@@ -66,6 +66,15 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       }
+    },
+    {
+      "name": "Debug Dana Studio Frontend",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:4040",
+      "webRoot": "${workspaceFolder}/dana_studio/dana/studio/contrib/ui",
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }
