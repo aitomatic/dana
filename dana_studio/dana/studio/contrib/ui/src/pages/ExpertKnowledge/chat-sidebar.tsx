@@ -219,6 +219,13 @@ const CaptureKnowledgeSessionChat: React.FC<{
   const hasShownWelcomeMessageRef = useRef(false);
   const welcomeMessageTimeoutRef = useRef<number | null>(null);
 
+  // Debug refs to track previous values
+  const prevMessagesRef = useRef<any[]>([]);
+  const prevInputRef = useRef<string>('');
+  const prevContributionTemplateRef = useRef<any>(null);
+  const prevCurrentSessionRef = useRef<any>(null);
+  const renderCountRef = useRef<number>(0);
+
   // Create session-specific chat store
   const useSessionChatStore = useMemo(() => {
     return createSmartChatStore(`session-${sessionId}`);
@@ -240,6 +247,56 @@ const CaptureKnowledgeSessionChat: React.FC<{
 
   // Check if session is completed
   const isSessionCompleted = currentSession?.status === SESSION_STATUS.COMPLETED;
+
+  // Debug logging for component renders and state changes
+  useEffect(() => {
+    renderCountRef.current += 1;
+    const renderCount = renderCountRef.current;
+    
+    const messagesChanged = messages !== prevMessagesRef.current;
+    const messagesArrayChanged = messages.length !== prevMessagesRef.current.length || 
+      (messages.length > 0 && messages[0] !== prevMessagesRef.current[0]);
+    const inputChanged = input !== prevInputRef.current;
+    const templateChanged = contributionTemplate !== prevContributionTemplateRef.current;
+    const sessionChanged = currentSession !== prevCurrentSessionRef.current;
+    
+    console.log(`[ChatSidebar] Render #${renderCount}`, {
+      sessionId,
+      messagesChanged,
+      messagesArrayChanged,
+      messagesLength: messages.length,
+      prevMessagesLength: prevMessagesRef.current.length,
+      inputChanged,
+      templateChanged,
+      sessionChanged,
+      isSending,
+      isTyping,
+      isFocused,
+    });
+    
+    if (messagesChanged || messagesArrayChanged) {
+      console.log('[ChatSidebar] Messages array reference or content changed', {
+        sessionId,
+        prevLength: prevMessagesRef.current.length,
+        newLength: messages.length,
+        prevFirstMessageId: prevMessagesRef.current[0]?.id,
+        newFirstMessageId: messages[0]?.id,
+        messagesArrayReferenceChanged: messages !== prevMessagesRef.current,
+        messageObjectsChanged: messages.length > 0 && messages[0] !== prevMessagesRef.current[0],
+      });
+      prevMessagesRef.current = messages;
+    }
+    
+    if (inputChanged) {
+      prevInputRef.current = input;
+    }
+    if (templateChanged) {
+      prevContributionTemplateRef.current = contributionTemplate;
+    }
+    if (sessionChanged) {
+      prevCurrentSessionRef.current = currentSession;
+    }
+  }, [messages, input, contributionTemplate, currentSession, isSending, isTyping, isFocused, sessionId]);
 
   // Debug logging for template loading
   useEffect(() => {

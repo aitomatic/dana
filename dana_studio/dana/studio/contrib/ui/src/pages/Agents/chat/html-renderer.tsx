@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { cn } from '@/lib/utils';
 import './html-renderer.css';
 
@@ -12,7 +12,7 @@ interface HTMLRendererProps {
   hasActiveButtons?: boolean;
 }
 
-export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
+const HTMLRendererComponent: React.FC<HTMLRendererProps> = ({
   html,
   className = '',
   theme = 'light',
@@ -120,11 +120,30 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
     return tempDiv.innerHTML;
   };
 
-  const sanitizedHTML = sanitizeHTML(html);
+  // Refs to track previous values for debugging
+  const prevHtmlRef = useRef<string>('');
+  const prevHasActiveButtonsRef = useRef<boolean | undefined>(undefined);
+  const prevSanitizedHTMLRef = useRef<string>('');
+  const renderCountRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Track last clicked button to prevent duplicates
   const lastClickRef = useRef<{ text: string; timestamp: number } | null>(null);
+
+  // Memoize sanitized HTML to prevent unnecessary recalculations and DOM updates
+  const sanitizedHTML = useMemo(() => {
+    const result = sanitizeHTML(html);
+    console.log('[HTMLRenderer] sanitizedHTML recalculated', {
+      messageId,
+      htmlLength: html.length,
+      sanitizedLength: result.length,
+      hasActiveButtons,
+      htmlChanged: html !== prevHtmlRef.current,
+    });
+    prevHtmlRef.current = html;
+    prevHasActiveButtonsRef.current = hasActiveButtons;
+    return result;
+  }, [html, hasActiveButtons, messageId]);
 
   // Use provided messageId or generate a stable message ID that only changes when HTML content changes
   const currentMessageId = useMemo(() => {
@@ -325,6 +344,44 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
     }
   }, []); // Empty dependencies - uses refs and global functions
 
+  // Debug: Track component renders and prop changes
+  useEffect(() => {
+    renderCountRef.current += 1;
+    const renderCount = renderCountRef.current;
+    
+    const htmlChanged = html !== prevHtmlRef.current;
+    const hasActiveButtonsChanged = hasActiveButtons !== prevHasActiveButtonsRef.current;
+    const sanitizedHTMLChanged = sanitizedHTML !== prevSanitizedHTMLRef.current;
+    
+    console.log(`[HTMLRenderer] Render #${renderCount}`, {
+      messageId,
+      htmlChanged,
+      hasActiveButtonsChanged,
+      sanitizedHTMLChanged,
+      htmlLength: html.length,
+      sanitizedHTMLLength: sanitizedHTML.length,
+      hasActiveButtons,
+      prevHtmlLength: prevHtmlRef.current.length,
+      prevHasActiveButtons: prevHasActiveButtonsRef.current,
+    });
+    
+    if (sanitizedHTMLChanged) {
+      console.log('[HTMLRenderer] sanitizedHTML value changed - DOM will update', {
+        messageId,
+        prevLength: prevSanitizedHTMLRef.current.length,
+        newLength: sanitizedHTML.length,
+        prevPreview: prevSanitizedHTMLRef.current.substring(0, 50),
+        newPreview: sanitizedHTML.substring(0, 50),
+      });
+      prevSanitizedHTMLRef.current = sanitizedHTML;
+    } else {
+      console.log('[HTMLRenderer] sanitizedHTML unchanged - DOM should NOT update', {
+        messageId,
+        length: sanitizedHTML.length,
+      });
+    }
+  });
+
   // Set up event delegation for option button clicks
   useEffect(() => {
     const container = containerRef.current;
@@ -374,5 +431,18 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
     />
   );
 };
+
+// Memoize component to prevent re-renders when props haven't changed
+export const HTMLRenderer = memo(HTMLRendererComponent, (prevProps, nextProps) => {
+  // Custom comparison function - only re-render if these props change
+  return (
+    prevProps.html === nextProps.html &&
+    prevProps.messageId === nextProps.messageId &&
+    prevProps.hasActiveButtons === nextProps.hasActiveButtons &&
+    prevProps.backgroundContext === nextProps.backgroundContext &&
+    prevProps.theme === nextProps.theme &&
+    prevProps.className === nextProps.className
+  );
+});
 
 export default HTMLRenderer;

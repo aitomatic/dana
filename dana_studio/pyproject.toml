@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dana_studio"
-version = "0.6.0.1rc4"
+version = "0.7.0.8"
 description = "Dana Studio - A Web-based IDE for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"

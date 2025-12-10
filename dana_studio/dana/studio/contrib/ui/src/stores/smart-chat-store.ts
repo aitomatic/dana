@@ -65,31 +65,59 @@ export const createSmartChatStore = (_agentId: string) => {
 
     // Button state management methods
     setMessageButtonsActive: (messageId) =>
-      set((state) => ({
-        messages: state.messages.map((msg) => ({
-          ...msg,
-          hasActiveButtons: msg.id === messageId,
-        })),
-      })),
+      set((state) => {
+        // Only update messages where hasActiveButtons value actually changes
+        let hasChanges = false;
+        const updatedMessages = state.messages.map((msg) => {
+          const newHasActiveButtons = msg.id === messageId;
+          // Only create new object if the value actually changed
+          if (msg.hasActiveButtons !== newHasActiveButtons) {
+            hasChanges = true;
+            return { ...msg, hasActiveButtons: newHasActiveButtons };
+          }
+          // Return same object reference if no change
+          return msg;
+        });
+        // Only update state if there were actual changes
+        return hasChanges ? { messages: updatedMessages } : state;
+      }),
     deactivateAllButtons: () =>
-      set((state) => ({
-        messages: state.messages.map((msg) => ({
-          ...msg,
-          hasActiveButtons: false,
-        })),
-      })),
+      set((state) => {
+        // Only update messages that currently have hasActiveButtons: true
+        let hasChanges = false;
+        const updatedMessages = state.messages.map((msg) => {
+          // Only create new object if hasActiveButtons is currently true
+          if (msg.hasActiveButtons === true) {
+            hasChanges = true;
+            return { ...msg, hasActiveButtons: false };
+          }
+          // Return same object reference if already false
+          return msg;
+        });
+        // Only update state if there were actual changes
+        return hasChanges ? { messages: updatedMessages } : state;
+      }),
     deactivatePreviousButtons: () =>
       set((state) => {
         // Find the latest agent message with buttons
         const agentMessages = state.messages.filter((msg) => msg.sender === 'agent');
         const latestAgentMessage = agentMessages[agentMessages.length - 1];
+        const targetMessageId = latestAgentMessage?.id;
 
-        return {
-          messages: state.messages.map((msg) => ({
-            ...msg,
-            hasActiveButtons: msg.id === latestAgentMessage?.id && msg.sender === 'agent',
-          })),
-        };
+        // Only update messages where hasActiveButtons value actually changes
+        let hasChanges = false;
+        const updatedMessages = state.messages.map((msg) => {
+          const newHasActiveButtons = msg.id === targetMessageId && msg.sender === 'agent';
+          // Only create new object if the value actually changed
+          if (msg.hasActiveButtons !== newHasActiveButtons) {
+            hasChanges = true;
+            return { ...msg, hasActiveButtons: newHasActiveButtons };
+          }
+          // Return same object reference if no change
+          return msg;
+        });
+        // Only update state if there were actual changes
+        return hasChanges ? { messages: updatedMessages } : state;
       }),
   }));
 };
@@ -133,30 +161,58 @@ export const useSmartChatStore = create<SmartChatState>()((set, get) => ({
 
   // Button state management methods
   setMessageButtonsActive: (messageId) =>
-    set((state) => ({
-      messages: state.messages.map((msg) => ({
-        ...msg,
-        hasActiveButtons: msg.id === messageId,
-      })),
-    })),
+    set((state) => {
+      // Only update messages where hasActiveButtons value actually changes
+      let hasChanges = false;
+      const updatedMessages = state.messages.map((msg) => {
+        const newHasActiveButtons = msg.id === messageId;
+        // Only create new object if the value actually changed
+        if (msg.hasActiveButtons !== newHasActiveButtons) {
+          hasChanges = true;
+          return { ...msg, hasActiveButtons: newHasActiveButtons };
+        }
+        // Return same object reference if no change
+        return msg;
+      });
+      // Only update state if there were actual changes
+      return hasChanges ? { messages: updatedMessages } : state;
+    }),
   deactivateAllButtons: () =>
-    set((state) => ({
-      messages: state.messages.map((msg) => ({
-        ...msg,
-        hasActiveButtons: false,
-      })),
-    })),
+    set((state) => {
+      // Only update messages that currently have hasActiveButtons: true
+      let hasChanges = false;
+      const updatedMessages = state.messages.map((msg) => {
+        // Only create new object if hasActiveButtons is currently true
+        if (msg.hasActiveButtons === true) {
+          hasChanges = true;
+          return { ...msg, hasActiveButtons: false };
+        }
+        // Return same object reference if already false
+        return msg;
+      });
+      // Only update state if there were actual changes
+      return hasChanges ? { messages: updatedMessages } : state;
+    }),
   deactivatePreviousButtons: () =>
     set((state) => {
       // Find the latest agent message with buttons
       const agentMessages = state.messages.filter((msg) => msg.sender === 'agent');
       const latestAgentMessage = agentMessages[agentMessages.length - 1];
+      const targetMessageId = latestAgentMessage?.id;
 
-      return {
-        messages: state.messages.map((msg) => ({
-          ...msg,
-          hasActiveButtons: msg.id === latestAgentMessage?.id && msg.sender === 'agent',
-        })),
-      };
+      // Only update messages where hasActiveButtons value actually changes
+      let hasChanges = false;
+      const updatedMessages = state.messages.map((msg) => {
+        const newHasActiveButtons = msg.id === targetMessageId && msg.sender === 'agent';
+        // Only create new object if the value actually changed
+        if (msg.hasActiveButtons !== newHasActiveButtons) {
+          hasChanges = true;
+          return { ...msg, hasActiveButtons: newHasActiveButtons };
+        }
+        // Return same object reference if no change
+        return msg;
+      });
+      // Only update state if there were actual changes
+      return hasChanges ? { messages: updatedMessages } : state;
     }),
 }));

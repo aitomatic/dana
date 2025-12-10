@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useEffect, useRef, memo } from 'react';
 import { MarkdownViewerSmall } from './markdown-viewer';
 import { HTMLRenderer } from './html-renderer';
 
@@ -13,7 +13,7 @@ interface HybridRendererProps {
   hasActiveButtons?: boolean;
 }
 
-export const HybridRenderer: React.FC<HybridRendererProps> = ({
+const HybridRendererComponent: React.FC<HybridRendererProps> = ({
   content,
   className = '',
   useMath = true,
@@ -36,8 +36,28 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     return normalized;
   };
 
-  // Normalize content before processing
-  const normalizedContent = normalizeContent(content);
+  // Refs to track previous values for debugging
+  const prevContentRef = useRef<string>('');
+  const prevNormalizedContentRef = useRef<string>('');
+  const prevHtmlContentRef = useRef<string>('');
+  const renderCountRef = useRef<number>(0);
+
+  // Memoize normalized content to prevent unnecessary recalculations
+  const normalizedContent = useMemo(() => {
+    const result = normalizeContent(content);
+    const contentChanged = content !== prevContentRef.current;
+    console.log('[HybridRenderer] normalizedContent calculation', {
+      messageId,
+      contentChanged,
+      contentLength: content.length,
+      normalizedLength: result.length,
+      prevContentLength: prevContentRef.current.length,
+    });
+    if (contentChanged) {
+      prevContentRef.current = content;
+    }
+    return result;
+  }, [content, messageId]);
 
   // Detect if content contains HTML tags
   const containsHTML = (text: string): boolean => {
@@ -117,15 +137,61 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     return htmlContent;
   };
 
-  // Check if content should be rendered as HTML
-  const shouldRenderAsHTML =
-    forceHtml ||
-    isToolGeneratedHTML(normalizedContent) ||
-    (containsHTML(normalizedContent) && isPrimarilyHTML(normalizedContent));
+  // Memoize HTML detection to prevent unnecessary recalculations
+  const shouldRenderAsHTML = useMemo(
+    () =>
+      forceHtml ||
+      isToolGeneratedHTML(normalizedContent) ||
+      (containsHTML(normalizedContent) && isPrimarilyHTML(normalizedContent)),
+    [forceHtml, normalizedContent]
+  );
+
+  // Debug: Track component renders and prop changes
+  useEffect(() => {
+    renderCountRef.current += 1;
+    const renderCount = renderCountRef.current;
+    
+    const contentChanged = content !== prevContentRef.current;
+    const normalizedChanged = normalizedContent !== prevNormalizedContentRef.current;
+    
+    console.log(`[HybridRenderer] Render #${renderCount}`, {
+      messageId,
+      contentChanged,
+      normalizedChanged,
+      contentLength: content.length,
+      normalizedLength: normalizedContent.length,
+      shouldRenderAsHTML,
+      hasActiveButtons,
+      prevContentLength: prevContentRef.current.length,
+    });
+    
+    if (contentChanged) {
+      prevContentRef.current = content;
+    }
+    if (normalizedChanged) {
+      prevNormalizedContentRef.current = normalizedContent;
+    }
+  }, [content, normalizedContent, messageId, shouldRenderAsHTML, hasActiveButtons]);
 
   if (shouldRenderAsHTML) {
-    // Convert newlines to <br> tags for HTML rendering using smart conversion
-    const htmlContent = convertNewlinesToHTML(normalizedContent);
+    // Memoize HTML content conversion to prevent unnecessary recalculations
+    const htmlContent = useMemo(() => {
+      const result = convertNewlinesToHTML(normalizedContent);
+      const normalizedChanged = normalizedContent !== prevNormalizedContentRef.current;
+      console.log('[HybridRenderer] htmlContent calculation', {
+        messageId,
+        normalizedChanged,
+        normalizedLength: normalizedContent.length,
+        htmlContentLength: result.length,
+        prevHtmlContentLength: prevHtmlContentRef.current.length,
+        recalculated: normalizedChanged,
+      });
+      if (normalizedChanged) {
+        prevNormalizedContentRef.current = normalizedContent;
+        prevHtmlContentRef.current = result;
+      }
+      return result;
+    }, [normalizedContent, messageId]);
     
     return (
       <HTMLRenderer
@@ -151,5 +217,19 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     </MarkdownViewerSmall>
   );
 };
+
+// Memoize component to prevent re-renders when props haven't changed
+export const HybridRenderer = memo(HybridRendererComponent, (prevProps, nextProps) => {
+  // Custom comparison function - only re-render if these props change
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.messageId === nextProps.messageId &&
+    prevProps.hasActiveButtons === nextProps.hasActiveButtons &&
+    prevProps.backgroundContext === nextProps.backgroundContext &&
+    prevProps.theme === nextProps.theme &&
+    prevProps.forceHtml === nextProps.forceHtml &&
+    prevProps.className === nextProps.className
+  );
+});
 
 export default HybridRenderer;
