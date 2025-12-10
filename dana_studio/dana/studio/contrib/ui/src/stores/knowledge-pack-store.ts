@@ -71,6 +71,9 @@ export interface KnowledgePackState {
   // Knowledge generation state
   generatingKnowledgePackId: number | null; // Track which knowledge pack ID is generating
 
+  // Navigation tracking
+  navigationSource: { type: 'knowledge-pack', id: number } | null;
+
   // DEPRECATED: Single-value state (kept for backward compatibility during migration)
   // TODO: Remove after migration complete
   domainKnowledge: DomainKnowledgeResponse | null;
@@ -163,6 +166,7 @@ const initialState: KnowledgePackState = {
   activeGenerationType: {},
   hasClickedGenerate: {},
   generatingKnowledgePackId: null,
+  navigationSource: null,
   // DEPRECATED: Single-value state (kept for backward compatibility)
   domainKnowledge: null,
   isLoadingTree: false,
@@ -665,6 +669,15 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     set({ error: null });
   },
 
+  // Navigation tracking
+  setNavigationSource: (source: { type: 'knowledge-pack', id: number } | null) => {
+    set({ navigationSource: source });
+  },
+
+  clearNavigationSource: () => {
+    set({ navigationSource: null });
+  },
+
   // Get KP-specific data (returns defaults if not loaded)
   getKnowledgePackData: (kpId: number): KnowledgePackStateData => {
     const state = get();
@@ -686,7 +699,7 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
   },
 
   // Update KP-specific data
-  setKnowledgePackData: (kpId: number, data: Partial<KnowledgePackData>) => {
+  setKnowledgePackData: (kpId: number, data: Partial<KnowledgePackStateData>) => {
     const state = get();
     const existingData = state.knowledgePackData[kpId] || {
       domainKnowledge: null,
