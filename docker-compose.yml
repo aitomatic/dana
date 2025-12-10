@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  dana-british-sugar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: british-sugar-0-8
+        BRANCH: british-sugar-0-8
+    image: dana-studio:british-sugar-release-0-8
+    container_name: dana-studio-british-sugar-another-0-8
+    ports:
+      - "8204:8201"
+    volumes:
+      - ${PWD}/dana_studio:/app/dana_studio
+      - ${PWD}/data:/app/data
+      - ${PWD}/agents:/app/agents
+      - ${PWD}/knowledge_packs:/app/knowledge_packs
+      - ${PWD}/uploads:/app/uploads
+      - ${PWD}/tmp:/app/tmp
+      - ${PWD}/local.db:/app/local.db
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_API_URL=${AZURE_OPENAI_API_URL}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+    command: ["uv", "run", "dana-studio", "--host", "0.0.0.0", "--port", "8201"]
+    restart: unless-stopped
+
