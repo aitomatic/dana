@@ -190,6 +190,51 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
         return parameters
 
     @classmethod
+    def _extract_tag_content_without_closing(cls, xml_string: str, tag_name: str, next_tag_patterns: list[str] | None = None) -> str | None:
+        """
+        Extract content from a tag when the closing tag is missing.
+
+        Args:
+            xml_string: The XML string to search
+            tag_name: The tag name (e.g., "thinking", "response", "function_call")
+            next_tag_patterns: List of regex patterns for tags that should stop extraction
+
+        Returns:
+            The extracted content, or None if tag not found
+        """
+        # Find opening tag
+        opening_tag_pattern = f"<{tag_name}>"
+        opening_match = re.search(opening_tag_pattern, xml_string)
+        if not opening_match:
+            return None
+
+        start_pos = opening_match.end()
+
+        # Default patterns to stop at (for CSXMLCodec)
+        if next_tag_patterns is None:
+            next_tag_patterns = [
+                r"<response>",
+                r"<function_call>",
+                r"<thinking>",
+            ]
+
+        # Find the earliest next tag
+        earliest_end = len(xml_string)
+        for pattern in next_tag_patterns:
+            next_match = re.search(pattern, xml_string[start_pos:])
+            if next_match:
+                candidate_end = start_pos + next_match.start()
+                if candidate_end < earliest_end:
+                    earliest_end = candidate_end
+
+        # Extract content
+        content = xml_string[start_pos:earliest_end].strip()
+        if content:
+            # Remove XML comments
+            content = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL).strip()
+        return content if content else None
+
+    @classmethod
     def parse_response(cls, xml_string: str) -> ParsedCodecResponse:
         """
         Parse XML response string with thinking and multiple tool calls.
@@ -207,19 +252,35 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
             # Remove XML comments from thinking
             thinking = re.sub(r"<!--.*?-->", "", thinking, flags=re.DOTALL).strip()
         else:
-            # No <thinking> tag - extract everything before the first tool call as thinking
-            first_function_call_match = re.search(r"<function_call>", xml_string)
-            if first_function_call_match:
-                thinking = xml_string[: first_function_call_match.start()].strip()
-                # Remove XML comments from thinking
-                if thinking:
-                    thinking = re.sub(r"<!--.*?-->", "", thinking, flags=re.DOTALL).strip()
+            # Try fallback: extract thinking without closing tag
+            thinking_fallback = cls._extract_tag_content_without_closing(xml_string, "thinking", [r"<response>", r"<function_call>"])
+            if thinking_fallback:
+                thinking = thinking_fallback
             else:
-                thinking = ""
+                # No <thinking> tag - extract everything before the first tool call as thinking
+                first_function_call_match = re.search(r"<function_call>", xml_string)
+                if first_function_call_match:
+                    thinking = xml_string[: first_function_call_match.start()].strip()
+                    # Remove XML comments from thinking
+                    if thinking:
+                        thinking = re.sub(r"<!--.*?-->", "", thinking, flags=re.DOTALL).strip()
+                else:
+                    thinking = ""
 
         # Extract all function_call blocks
         function_call_pattern = r"<function_call>(.*?)</function_call>"
-        function_call_matches = re.finditer(function_call_pattern, xml_string, re.DOTALL)
+        function_call_matches = list(re.finditer(function_call_pattern, xml_string, re.DOTALL))
+
+        # Also check for function_call without closing tag
+        if not function_call_matches:
+            function_call_fallback = cls._extract_tag_content_without_closing(xml_string, "function_call", [r"<response>", r"<thinking>"])
+            if function_call_fallback:
+                # Create a fake match object for the fallback content
+                class FakeMatch:
+                    def __init__(self, content):
+                        self.group = lambda x: content
+
+                function_call_matches = [FakeMatch(function_call_fallback)]
 
         tool_calls = []
         for match in function_call_matches:
@@ -244,6 +305,11 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
             response = response_match.group(1).strip()
             # Remove XML comments from response
             response = re.sub(r"<!--.*?-->", "", response, flags=re.DOTALL).strip()
+        else:
+            # Try fallback: extract response without closing tag
+            response_fallback = cls._extract_tag_content_without_closing(xml_string, "response", [r"<function_call>", r"<thinking>"])
+            if response_fallback:
+                response = response_fallback
 
         # Fallback: if thinking is still empty, extract remaining content after removing function_call and response blocks
         if not thinking:
@@ -467,6 +533,51 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
         return parameters
 
     @classmethod
+    def _extract_tag_content_without_closing(cls, xml_string: str, tag_name: str, next_tag_patterns: list[str] | None = None) -> str | None:
+        """
+        Extract content from a tag when the closing tag is missing.
+
+        Args:
+            xml_string: The XML string to search
+            tag_name: The tag name (e.g., "thinking", "response")
+            next_tag_patterns: List of regex patterns for tags that should stop extraction
+
+        Returns:
+            The extracted content, or None if tag not found
+        """
+        # Find opening tag
+        opening_tag_pattern = f"<{tag_name}>"
+        opening_match = re.search(opening_tag_pattern, xml_string)
+        if not opening_match:
+            return None
+
+        start_pos = opening_match.end()
+
+        # Default patterns to stop at (for KLXMLCodec - tool calls are <ClassName:methodName>)
+        if next_tag_patterns is None:
+            next_tag_patterns = [
+                r"<response>",
+                r"<thinking>",
+                r"<[^:>]+:[^>]+>",  # Pattern for <ClassName:methodName>
+            ]
+
+        # Find the earliest next tag
+        earliest_end = len(xml_string)
+        for pattern in next_tag_patterns:
+            next_match = re.search(pattern, xml_string[start_pos:])
+            if next_match:
+                candidate_end = start_pos + next_match.start()
+                if candidate_end < earliest_end:
+                    earliest_end = candidate_end
+
+        # Extract content
+        content = xml_string[start_pos:earliest_end].strip()
+        if content:
+            # Remove XML comments
+            content = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL).strip()
+        return content if content else None
+
+    @classmethod
     def parse_response(cls, xml_string: str) -> ParsedCodecResponse:
         """
         Parse XML response string with thinking and multiple tool calls.
@@ -484,16 +595,21 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
             # Remove XML comments from thinking
             thinking = re.sub(r"<!--.*?-->", "", thinking, flags=re.DOTALL).strip()
         else:
-            # No <thinking> tag - extract everything before the first tool call as thinking
-            # Pattern to find first <ClassName:methodName> tag
-            first_tool_call_match = re.search(r"<([^:>]+):([^>]+)>", xml_string)
-            if first_tool_call_match:
-                thinking = xml_string[: first_tool_call_match.start()].strip()
-                # Remove XML comments from thinking
-                if thinking:
-                    thinking = re.sub(r"<!--.*?-->", "", thinking, flags=re.DOTALL).strip()
+            # Try fallback: extract thinking without closing tag
+            thinking_fallback = cls._extract_tag_content_without_closing(xml_string, "thinking", [r"<response>", r"<[^:>]+:[^>]+>"])
+            if thinking_fallback:
+                thinking = thinking_fallback
             else:
-                thinking = ""
+                # No <thinking> tag - extract everything before the first tool call as thinking
+                # Pattern to find first <ClassName:methodName> tag
+                first_tool_call_match = re.search(r"<([^:>]+):([^>]+)>", xml_string)
+                if first_tool_call_match:
+                    thinking = xml_string[: first_tool_call_match.start()].strip()
+                    # Remove XML comments from thinking
+                    if thinking:
+                        thinking = re.sub(r"<!--.*?-->", "", thinking, flags=re.DOTALL).strip()
+                else:
+                    thinking = ""
 
         # Extract all KLXML tool call blocks (<ClassName:methodName>...</ClassName:methodName>)
         # Pattern to match <ClassName:methodName>...</ClassName:methodName>
@@ -501,11 +617,45 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
         tool_call_matches = list(re.finditer(tool_call_pattern, xml_string, re.DOTALL))
 
         tool_calls = []
+        # First, parse tool calls with closing tags
         for match in tool_call_matches:
             # Get the full tag with content: <ClassName:methodName>...</ClassName:methodName>
             full_match = match.group(0)
             tool_call = cls.parse_method_call(full_match)
             tool_calls.append(tool_call)
+
+        # Also handle tool calls without closing tags
+        # Find all opening tool call tags (exclude closing tags that start with /)
+        tool_call_open_pattern = r"<([^/:>]+):([^>]+)>"
+        all_tool_call_opens = list(re.finditer(tool_call_open_pattern, xml_string))
+
+        # Filter out already captured tool calls
+        captured_starts = {match.start() for match in tool_call_matches}
+        for open_match in all_tool_call_opens:
+            if open_match.start() not in captured_starts:
+                # This tool call doesn't have a closing tag, try to parse it
+                class_name = open_match.group(1)
+                method_name = open_match.group(2)
+                start_pos = open_match.end()
+                # Find next tool call or end of string (exclude closing tags)
+                next_tool_call_match = re.search(tool_call_open_pattern, xml_string[start_pos:])
+                if next_tool_call_match:
+                    end_pos = start_pos + next_tool_call_match.start()
+                else:
+                    # Check for response or thinking tags
+                    next_response_match = re.search(r"<response>|<thinking>", xml_string[start_pos:])
+                    if next_response_match:
+                        end_pos = start_pos + next_response_match.start()
+                    else:
+                        end_pos = len(xml_string)
+                # Create a fake closing tag for parsing
+                tool_call_content = xml_string[start_pos:end_pos]
+                fake_xml = f"<{class_name}:{method_name}>{tool_call_content}</{class_name}:{method_name}>"
+                try:
+                    tool_call = cls.parse_method_call(fake_xml)
+                    tool_calls.append(tool_call)
+                except ValueError:
+                    continue
 
         # Extract response tag if it exists
         response_match = re.search(r"<response>(.*?)</response>", xml_string, re.DOTALL)
@@ -514,6 +664,11 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
             response = response_match.group(1).strip()
             # Remove XML comments from response
             response = re.sub(r"<!--.*?-->", "", response, flags=re.DOTALL).strip()
+        else:
+            # Try fallback: extract response without closing tag
+            response_fallback = cls._extract_tag_content_without_closing(xml_string, "response", [r"<[^:>]+:[^>]+>", r"<thinking>"])
+            if response_fallback:
+                response = response_fallback
 
         # Fallback: if thinking is still empty, extract remaining content after removing tool call and response blocks
         if not thinking:

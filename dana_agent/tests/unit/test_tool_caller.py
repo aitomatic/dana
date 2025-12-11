@@ -697,3 +697,287 @@ class TestCodecToolCallerWithObjectId:
         # Should still work with class_name format
         assert result["success"] is True
         assert result["type"] == "resource"
+
+
+class TestValidateAndCastMethodArguments:
+    """Test _validate_n_cast_method_arguments edge cases."""
+
+    @pytest.fixture
+    def mock_agent(self):
+        """Create a mock agent."""
+        agent = Mock(spec=STARAgent)
+        agent.agent_type = "test_agent"
+        agent.object_id = "test-agent-123"
+        agent.available_agents = []
+        agent.available_resources = []
+        agent.available_workflows = []
+        agent._registry = Mock()
+        agent._registry._items = {}
+        agent.ensure_registered = Mock()
+        return agent
+
+    @pytest.fixture
+    def codec_tool_caller(self, mock_agent):
+        """Create a CodecToolCaller instance."""
+        from dana.core.knowledge.prompts.codecs import CSXMLCodec
+
+        return CodecToolCaller(mock_agent, CSXMLCodec)
+
+    def test_cast_string_to_int(self, codec_tool_caller):
+        """Test basic string to int conversion."""
+
+        def test_method(value: int) -> int:
+            """Test method.
+
+            Args:
+                value: Integer value
+            """
+            return value
+
+        arguments = {"value": "42"}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+
+        assert result["value"] == 42
+        assert isinstance(result["value"], int)
+
+    def test_cast_string_to_float(self, codec_tool_caller):
+        """Test basic string to float conversion."""
+
+        def test_method(value: float) -> float:
+            """Test method.
+
+            Args:
+                value: Float value
+            """
+            return value
+
+        arguments = {"value": "3.14"}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+
+        assert result["value"] == 3.14
+        assert isinstance(result["value"], float)
+
+    def test_cast_string_bool_true_false(self, codec_tool_caller):
+        """Test string 'true'/'false' to bool conversion."""
+
+        def test_method(value: bool) -> bool:
+            """Test method.
+
+            Args:
+                value: Boolean value
+            """
+            return value
+
+        # Test "true" string
+        arguments = {"value": "true"}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        assert result["value"] is True
+        assert isinstance(result["value"], bool)
+
+        # Test "false" string
+        arguments = {"value": "false"}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        assert result["value"] is False
+        assert isinstance(result["value"], bool)
+
+    def test_cast_string_list_json(self, codec_tool_caller):
+        """Test JSON list string to list conversion."""
+
+        def test_method(items: list[str]) -> list[str]:
+            """Test method.
+
+            Args:
+                items: List of strings
+            """
+            return items
+
+        arguments = {"items": '["apple", "banana", "cherry"]'}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+
+        assert result["items"] == ["apple", "banana", "cherry"]
+        assert isinstance(result["items"], list)
+
+    def test_cast_string_dict_json(self, codec_tool_caller):
+        """Test JSON dict string to dict conversion."""
+
+        def test_method(data: dict[str, int]) -> dict[str, int]:
+            """Test method.
+
+            Args:
+                data: Dictionary mapping strings to integers
+            """
+            return data
+
+        arguments = {"data": '{"a": 1, "b": 2}'}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+
+        assert result["data"] == {"a": 1, "b": 2}
+        assert isinstance(result["data"], dict)
+
+    def test_already_correct_type_unchanged(self, codec_tool_caller):
+        """Test that already correct types are not modified."""
+
+        def test_method(value: int) -> int:
+            """Test method.
+
+            Args:
+                value: Integer value
+            """
+            return value
+
+        arguments = {"value": 42}  # Already an int
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+
+        assert result["value"] == 42
+        assert isinstance(result["value"], int)
+        # Should not have been converted unnecessarily
+
+    def test_optional_type_with_none(self, codec_tool_caller):
+        """Test Optional[int] handles NoneType in __args__ without crashing."""
+
+        def test_method(value: int | None) -> int | None:
+            """Test method.
+
+            Args:
+                value: Optional integer value
+            """
+            return value
+
+        # Test with None value
+        arguments = {"value": None}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        assert result["value"] is None
+
+        # Test with string that should convert to int
+        arguments = {"value": "42"}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        assert result["value"] == 42
+
+    def test_generic_list_type(self, codec_tool_caller):
+        """Test List[int] doesn't crash issubclass."""
+
+        def test_method(items: list[int]) -> list[int]:
+            """Test method.
+
+            Args:
+                items: List of integers
+            """
+            return items
+
+        arguments = {"items": "[1, 2, 3]"}
+        # Should not crash with TypeError from issubclass
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        # Should convert JSON string to list
+        assert isinstance(result["items"], list)
+
+    def test_pydantic_model_conversion(self, codec_tool_caller):
+        """Test BaseModel JSON conversion."""
+        from pydantic import BaseModel
+
+        class TestModel(BaseModel):
+            name: str
+            age: int
+
+        def test_method(model: TestModel) -> TestModel:
+            """Test method.
+
+            Args:
+                model: Test model instance
+            """
+            return model
+
+        arguments = {"model": '{"name": "Alice", "age": 30}'}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+
+        assert isinstance(result["model"], TestModel)
+        assert result["model"].name == "Alice"
+        assert result["model"].age == 30
+
+    def test_eval_injection_blocked(self, codec_tool_caller):
+        """Test that eval() is NOT used (security test)."""
+
+        def test_method(items: list[str]) -> list[str]:
+            """Test method.
+
+            Args:
+                items: List of strings
+            """
+            return items
+
+        # Try to inject malicious code - should NOT execute
+        malicious_input = "__import__('os').system('echo vulnerable')"
+        arguments = {"items": malicious_input}
+
+        # Should fail safely without executing code
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        # The malicious code should remain as a string (not executed)
+        # This is safe because we use json.loads() instead of eval()
+        # The string will fail JSON parsing and remain unchanged
+        assert isinstance(result.get("items"), str)
+        assert result.get("items") == malicious_input
+        # Verify it's still a string and wasn't executed as code
+
+    def test_bool_already_bool(self, codec_tool_caller):
+        """Test that bool values are not converted unnecessarily."""
+
+        def test_method(value: bool) -> bool:
+            """Test method.
+
+            Args:
+                value: Boolean value
+            """
+            return value
+
+        arguments = {"value": True}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        assert result["value"] is True
+        assert isinstance(result["value"], bool)
+
+    def test_list_already_list(self, codec_tool_caller):
+        """Test that list values are not converted unnecessarily."""
+
+        def test_method(items: list[str]) -> list[str]:
+            """Test method.
+
+            Args:
+                items: List of strings
+            """
+            return items
+
+        arguments = {"items": ["apple", "banana"]}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        assert result["items"] == ["apple", "banana"]
+        assert isinstance(result["items"], list)
+
+    def test_dict_already_dict(self, codec_tool_caller):
+        """Test that dict values are not converted unnecessarily."""
+
+        def test_method(data: dict[str, int]) -> dict[str, int]:
+            """Test method.
+
+            Args:
+                data: Dictionary mapping strings to integers
+            """
+            return data
+
+        arguments = {"data": {"a": 1, "b": 2}}
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        assert result["data"] == {"a": 1, "b": 2}
+        assert isinstance(result["data"], dict)
+
+    def test_invalid_json_handled_gracefully(self, codec_tool_caller):
+        """Test that invalid JSON strings are handled gracefully."""
+
+        def test_method(items: list[str]) -> list[str]:
+            """Test method.
+
+            Args:
+                items: List of strings
+            """
+            return items
+
+        arguments = {"items": "not valid json"}
+        # Should not crash, should handle error gracefully
+        result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
+        # Should either keep original value or handle error
+        assert "items" in result

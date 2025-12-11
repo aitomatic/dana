@@ -606,6 +606,137 @@ This is the response content without thinking or tool calls.
         assert result.thinking == ""  # No thinking tag
         assert result.tool_calls is None
 
+    def test_parse_response_missing_closing_response_tag(self):
+        """Test parse_response with missing </response> closing tag (edge case from user)."""
+        xml_string = """<thinking>
+
+The search returned 20 results for polymers with compositions of the form IS/Yp/[PAG monomer], where the PAG monomer is one of the provided alternatives (including Ben, Est, Sen, Den, etc.), and filtered by the specified polymerization conditions (radical_method: Free, temperature: 100±10°C, solvent: 2, sm_value: 3.5±0.5, reaction_time: 7h-and-1h). The results include several matches for IS/Yp/Ben, IS/Yp/Sen, and IS/Yp/Est, as well as other related compositions. I will present the results in a markdown table and summarize the findings.
+
+</thinking>
+
+<response>
+
+Here are the filtered search results for polymers with compositions IS/Yp/[PAG monomer] (where the PAG monomer shares the same anion as Ben), under the specified polymerization conditions:
+
+| LotNo   | Composition         | PolymerizationCondition                        |
+
+|---------|--------------------|-----------------------------------------------|
+
+| AB-4231 | M0684/M0037/M0901  | 127 Free@100 in Solvent2, SM3.0, 9h-and-1h    |
+
+| AB-4236 | M0557/M0013/M0757  | 127 Free@100 in Solvent2, SM3.2, 8h-and-1.5h  |
+
+| AB-5479 | IS/Yp/Ben          | 127 Free@100 in Solvent2, SM3.5, 7h-and-1h    |
+
+| AB-4065 | M0540/M0838/M0248  | 138 Free@106 in Solvent2, SM3.7, 8h-and-0h    |
+
+| AB-4280 | M0494/M0447/M0540  | 164 Free@100 in Solvent2, SM3.0, 6h-and-0h    |
+
+| AB-4106 | M0180/M0446/M0598  | 85 Free@92 in Solvent2, SM4.0, 5h-and-3h      |
+
+| AB-4161 | M0166/M0321/M0086  | 105 Free@110 in Solvent2, SM3.8, 9h-and-2h    |
+
+| AB-4199 | M0569/M0383/M0434  | 112 Free@98 in Solvent2, SM3.3, 7h-and-1h     |
+
+| AB-4126 | M0274/M0079/J4Z    | 153 Free@96 in Solvent2, SM3.6, 8h-and-2h     |
+
+| AB-4298 | M0676/M0621/M0454  | 168 Free@97 in Solvent2, SM3.6, 5h-and-0h     |
+
+| AB-4069 | M0072/M0522/M0163  | 141 Free@103 in Solvent2, SM3.1, 8h-and-0h    |
+
+| AB-4195 | M0370/M0194/M0886  | 113 Free@93 in Solvent2, SM3.2, 6h-and-2h     |
+
+| AB-5242 | IS/Yp/Sen          | 127 Free@100 in Solvent2, SM3.5, 7h-and-1h    |
+
+| AB-5075 | IS/Yp/Sen          | 127 Free@100 in Solvent2, SM3.5, 7h-and-1h    |
+
+| AB-3040 | IS/Yp/Sen          | 109 Free@105 in Solvent2, SM3.0, 7h-and-1h    |
+
+| AB-3667 | IS/Yp/Sen          | 73 Free@100 in Solvent2, SM4.0, 7h-and-1h     |
+
+| AB-5581 | IS/Yp/Sen          | 73 Free@100 in Solvent2, SM4.0, 7h-and-1h     |
+
+| AB-5505 | IS/Yp/Sen          | 127 Free@100 in Solvent2, SM3.5, 7h-and-1h    |
+
+| AB-5484 | IS/Yp/Sen          | 98 Free@105 in Solvent2, SM4.0, 7h-and-1h     |
+
+| AB-4518 | IS/Yp/Est          | 127 Free@100 in Solvent2, SM3.5, 7h-and-1h    |
+
+**Summary of findings:**
+
+- 20 results were found matching the specified compositions and polymerization conditions.
+
+- Lot numbers of interest include AB-5479 (IS/Yp/Ben), AB-4518 (IS/Yp/Est), and several for IS/Yp/Sen.
+
+- The search was filtered by: radical_method = Free, temperature = 100°C (±10°C), solvent = 2, sm_value = 3.5 (±0.5), reaction_time = 7h-and-1h.
+
+- Most results are for IS/Yp/Ben, IS/Yp/Est, and IS/Yp/Sen, with a few other related compositions.
+
+If you need more details on any specific lot or want to expand the search, let me know!
+
+"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "The search returned 20 results" in result.thinking
+        assert result.response is not None
+        assert "Here are the filtered search results" in result.response
+        assert "AB-5479" in result.response
+        assert "If you need more details" in result.response
+        assert result.tool_calls is None
+
+    def test_parse_response_missing_closing_thinking_tag(self):
+        """Test parse_response with missing </thinking> closing tag."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is my thinking about the task." in result.thinking
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+
+    def test_parse_response_missing_closing_function_call_tag(self):
+        """Test parse_response with missing </function_call> closing tag."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>
+<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is my thinking about the task." in result.thinking
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].class_name == "CreateFileResource"
+
+    def test_parse_response_missing_both_thinking_and_response_closing_tags(self):
+        """Test parse_response with both thinking and response missing closing tags."""
+        xml_string = """<thinking>
+This is my thinking.
+<response>
+This is the response content."""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is my thinking." in result.thinking
+        assert result.response is not None
+        assert "This is the response content." in result.response
+        assert result.tool_calls is None
+
 
 class TestKLXMLCodecParseResponse:
     """Test KLXMLCodec.parse_response functionality."""
@@ -903,4 +1034,67 @@ This is the response content without thinking or tool calls.
         assert isinstance(result, ParsedCodecResponse)
         assert result.response == "This is the response content without thinking or tool calls."
         assert result.thinking == ""  # No thinking tag
+        assert result.tool_calls is None
+
+    def test_parse_response_missing_closing_response_tag(self):
+        """Test parse_response with missing </response> closing tag."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>
+<response>
+This is the response content without closing tag."""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is my thinking about the task." in result.thinking
+        assert result.response is not None
+        assert "This is the response content without closing tag." in result.response
+        assert result.tool_calls is None
+
+    def test_parse_response_missing_closing_thinking_tag(self):
+        """Test parse_response with missing </thinking> closing tag."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+</CreateFileResource:create>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is my thinking about the task." in result.thinking
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+
+    def test_parse_response_missing_closing_tool_call_tag(self):
+        """Test parse_response with missing closing tag for tool call."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>
+<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is my thinking about the task." in result.thinking
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].class_name == "CreateFileResource"
+
+    def test_parse_response_missing_both_thinking_and_response_closing_tags(self):
+        """Test parse_response with both thinking and response missing closing tags."""
+        xml_string = """<thinking>
+This is my thinking.
+<response>
+This is the response content."""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is my thinking." in result.thinking
+        assert result.response is not None
+        assert "This is the response content." in result.response
         assert result.tool_calls is None

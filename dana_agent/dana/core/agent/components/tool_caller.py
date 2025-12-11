@@ -10,6 +10,7 @@ This component provides functionality for:
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 import json
 import re
 import traceback
@@ -1305,6 +1306,116 @@ class CodecToolCaller(WARCaller):
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [self._execute_single_call(call) for call in parsed_tool_calls]
 
+    def _validate_n_cast_method_arguments(self, method: Callable, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Validate the arguments of a method."""
+        import json
+        from typing import Union, get_origin
+
+        signature = Misc.parse_method_signature(method)
+        for param in signature.parameters:
+            if param.type_object and param.name in arguments:
+                # Get origin for generic types (e.g., List[int] -> list)
+                origin = get_origin(param.type_object)
+                if origin is None:
+                    origin = param.type_object
+
+                # Extract types from Union/Optional (handles __args__)
+                if hasattr(param.type_object, "__args__") and origin is Union:
+                    # For Union/Optional types, iterate through args
+                    hinted_types = param.type_object.__args__
+                else:
+                    # For non-Union types (including List, Dict), use origin
+                    hinted_types = [origin]
+
+                # Process each type in the union or the single type
+                for _type in hinted_types:
+                    # Skip NoneType in Optional types
+                    if _type is type(None):
+                        continue
+
+                    # Get origin for this type (handles nested generics)
+                    type_origin = get_origin(_type)
+                    if type_origin is None:
+                        type_origin = _type
+
+                    # Type short-circuit: if already correct type
+                    if isinstance(arguments[param.name], type_origin):
+                        break
+
+                    # Handle primitive types (str, int, float)
+                    if type_origin in (str, int, float):
+                        try:
+                            arguments[param.name] = type_origin(arguments[param.name])
+                            break
+                        except Exception:
+                            continue
+
+                    # Handle bool with safe string conversion
+                    elif type_origin is bool:
+                        val = arguments[param.name]
+                        if isinstance(val, bool):
+                            break
+                        elif isinstance(val, str):
+                            arguments[param.name] = val.lower() in (
+                                "true",
+                                "1",
+                                "yes",
+                                "on",
+                            )
+                            break
+                        else:
+                            try:
+                                arguments[param.name] = bool(val)
+                                break
+                            except Exception:
+                                continue
+
+                    # Handle list with safe JSON parsing
+                    elif type_origin is list:
+                        val = arguments[param.name]
+                        if isinstance(val, list):
+                            break
+                        elif isinstance(val, str):
+                            try:
+                                parsed = json.loads(val)
+                                if isinstance(parsed, list):
+                                    arguments[param.name] = parsed
+                                    break
+                            except (json.JSONDecodeError, ValueError):
+                                continue
+                        else:
+                            continue
+
+                    # Handle dict with safe JSON parsing
+                    elif type_origin is dict:
+                        val = arguments[param.name]
+                        if isinstance(val, dict):
+                            break
+                        elif isinstance(val, str):
+                            try:
+                                parsed = json.loads(val)
+                                if isinstance(parsed, dict):
+                                    arguments[param.name] = parsed
+                                    break
+                            except (json.JSONDecodeError, ValueError):
+                                continue
+                        else:
+                            continue
+
+                    # Handle Pydantic BaseModel with safe issubclass check
+                    elif isinstance(_type, type) and issubclass(_type, BaseModel):
+                        val = arguments[param.name]
+                        if isinstance(val, _type):
+                            break
+                        elif isinstance(val, str):
+                            try:
+                                arguments[param.name] = _type.model_validate_json(val)
+                                break
+                            except Exception:
+                                continue
+
+        return arguments
+
     @observable
     def _execute_single_call(self, tool_call: dict[str, Any]) -> dict[str, Any]:
         function_name = tool_call.get("function", "")
@@ -1333,32 +1444,7 @@ class CodecToolCaller(WARCaller):
         # Method signature validation and conversion to the expected type
         if hasattr(obj_info["object"], method_name):
             method = getattr(obj_info["object"], method_name)
-            signature = Misc.parse_method_signature(method)
-            for param in signature.parameters:
-                if param.type_object and param.name in arguments:
-                    if hasattr(param.type_object, "__args__"):
-                        hinted_types = param.type_object.__args__
-                    else:
-                        hinted_types = [param.type_object]
-                    for _type in hinted_types:
-                        if _type in (str, int, float):
-                            try:
-                                arguments[param.name] = _type(arguments[param.name])
-                                break
-                            except Exception:
-                                continue
-                        elif _type in (bool, list, dict):
-                            try:
-                                arguments[param.name] = eval(arguments[param.name])
-                                break
-                            except Exception:
-                                continue
-                        elif issubclass(_type, BaseModel):
-                            try:
-                                arguments[param.name] = _type.model_validate_json(arguments[param.name])
-                                break
-                            except Exception:
-                                continue
+            arguments = self._validate_n_cast_method_arguments(method, arguments)
 
             try:
                 # Set session_id for EventLog if it exists
