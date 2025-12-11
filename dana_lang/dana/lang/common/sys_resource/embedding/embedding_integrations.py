@@ -142,7 +142,7 @@ class LlamaIndexEmbeddingResource(Loggable):
             raise EmbeddingError("Install: pip install llama-index-embeddings-openai")
 
         api_key = self._resolve_env_var(provider_config.get("api_key", ""))
-        base_url = self._resolve_env_var(provider_config.get("base_url", DEFAULT_OPENAI_API_BASE))
+        base_url = self._resolve_env_var(provider_config.get("base_url", DEFAULT_OPENAI_API_BASE), default=DEFAULT_OPENAI_API_BASE)
 
         if not api_key:
             raise EmbeddingError("OpenAI API key not found")
