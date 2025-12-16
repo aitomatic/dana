@@ -12,12 +12,10 @@ from structlog import get_logger
 
 from dana.common.schemas import Event
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory, RepositoryType
-from dana.repositories.repository_protocol import EventRepositoryProtocol
 
 
 if TYPE_CHECKING:
     from dana.core.agent.base_agent import BaseAgent
-    from dana.core.knowledge.prompts.codecs import AbstractCodec
 from .observer import ObserverProtocol
 
 
@@ -28,14 +26,14 @@ class EventLogAPI:
     """
     API for managing observation events and timeline persistence.
     Simplified version of LocalPromptAPI pattern.
-    
+
     IMPORTANT: Events ONLY come from Observer. No other sources.
     - No action events
-    - No tool call events  
+    - No tool call events
     - No feedback events
     - ONLY observations from Observer.observe()
     """
-    
+
     def __init__(
         self,
         agent: "BaseAgent",
@@ -60,14 +58,14 @@ class EventLogAPI:
 
         # Create repository via factory
         self._repository = repository_factory.create(RepositoryType.EVENT, agent=agent)
-    
+
     def observe_and_record(self) -> Event | None:
         """
         Observe environment via Observer and create event.
-        
+
         This is the ONLY way events are created - from Observer.observe()
         No other sources (actions, tool calls, etc.) create events.
-        
+
         Returns:
             Event if observer returned data, None otherwise
         """
@@ -78,7 +76,7 @@ class EventLogAPI:
                 event = Event(
                     type="observation",  # Always "observation"
                     data=data,
-                    metadata={"source": "observer"}
+                    metadata={"source": "observer"},
                 )
                 event.agent_id = self._agent.object_id
                 event.session_id = self._current_session_id
@@ -88,7 +86,7 @@ class EventLogAPI:
             # Log but don't crash
             logger.warning(f"Observer failed: {e}")
         return None
-    
+
     def save(self, session_id: str) -> None:
         """
         Save events for a session.
@@ -109,7 +107,7 @@ class EventLogAPI:
         # Clear buffer after save
         self._event_buffer.clear()
         logger.info(f"Saved {num_events} events for session {session_id}")
-    
+
     def read_since(self, checkpoint: int) -> Iterator[Event]:
         """
         Read events since checkpoint for the current session.
@@ -146,4 +144,3 @@ class EventLogAPI:
         # Yield events from checkpoint onwards
         for i in range(checkpoint, len(all_events)):
             yield all_events[i]
-

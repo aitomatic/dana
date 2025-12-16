@@ -4,16 +4,14 @@ Unit tests for EventLogAPI with repository pattern.
 Tests EventLogAPI using LocalEventRepository.
 """
 
-from datetime import datetime
-import tempfile
 import shutil
+import tempfile
 from unittest.mock import Mock
 
 import pytest
 
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
-from dana.common.schemas import Event
 from dana.core.agent.components.event_log_api import EventLogAPI
 from dana.core.agent.components.observer import ObserverProtocol
 from dana.repositories import LocalEventRepository
@@ -21,6 +19,7 @@ from dana.repositories import LocalEventRepository
 
 class MockAgentForEventAPI(BaseAgent):
     """Mock agent for EventLogAPI testing."""
+
     def __init__(self, codec=None, storage_config=None, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         if codec is None:
@@ -37,6 +36,7 @@ class MockAgentForEventAPI(BaseAgent):
 
 class MockObserver(ObserverProtocol):
     """Mock observer for testing."""
+
     def __init__(self, return_data=None):
         self.return_data = return_data or {}
         self.observe_count = 0
@@ -230,7 +230,7 @@ class TestEventLogAPIWithRepository:
             codec=None,
             observer=observer,
         )
-        
+
         with pytest.raises(ValueError, match="agent has no _session_id"):
             list(event_log.read_since(checkpoint=0))
 
@@ -247,4 +247,3 @@ class TestEventLogAPIWithRepository:
 
         with pytest.raises(ValueError, match="repository is None"):
             event_log.save("test-session")
-

@@ -23,7 +23,7 @@ from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, Rep
 
 from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from .base_star_agent import BaseSTARAgent
-from .components import Communicator, Learner, LearnerProtocol, PromptEngineer, State, ToolCaller
+from .components import Communicator, LearnerProtocol, PromptEngineer, State, ToolCaller
 from .components.observer import ObserverProtocol
 from .components.tool_caller import CodecToolCaller
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
@@ -53,7 +53,7 @@ class STARAgent(BaseSTARAgent):
         registry=None,
         codec=None,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
-        prompt_api : PromptAPIProtocol | None = None,
+        prompt_api: PromptAPIProtocol | None = None,
         observer: ObserverProtocol | None = None,
         learner: LearnerProtocol | None = None,
         **kwargs,
@@ -88,7 +88,6 @@ class STARAgent(BaseSTARAgent):
             "model": model,
         }
 
-
         self._session_id = str(uuid4())
         # Conditional component initialization based on codec
         self._repository_factory = repository_factory
@@ -96,6 +95,7 @@ class STARAgent(BaseSTARAgent):
         if codec is not None:
             # Use new PromptEngineerManager and CodecToolCaller
             from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
+
             self._prompt_engineer = prompt_api or LocalPromptAPI(self, codec=codec, repository_factory=self._repository_factory)
             self._tool_caller = CodecToolCaller(self, codec=codec)
         else:
@@ -124,7 +124,7 @@ class STARAgent(BaseSTARAgent):
         # Events ONLY come from Observer - no observer = no EventLog
         if observer is not None:
             from dana.core.agent.components.event_log_api import EventLogAPI
-            
+
             self._event_log = EventLogAPI(
                 agent=self,
                 observer=observer,  # REQUIRED - EventLog only works with Observer
@@ -135,7 +135,6 @@ class STARAgent(BaseSTARAgent):
             self._event_log = None
 
         self.with_resources(ToDoResource(resource_id="todo-resource"))
-
 
     def set_session_id(self, session_id: str) -> None:
         """Set the session id for the agent."""
@@ -217,14 +216,12 @@ class STARAgent(BaseSTARAgent):
         """Get a summary of the agent's timeline."""
         return self._timeline.get_timeline_summary()
 
-
     def query(self, **kwargs) -> DictParams:
         # Generate session_id if not provided
         new_session_id = kwargs.get("session_id")
         if new_session_id is not None:
             self.set_session_id(new_session_id)
         session_id = self._session_id
-            
 
         # Set session_id for EventLog if it exists
         if hasattr(self, "_event_log") and self._event_log is not None:
@@ -237,16 +234,14 @@ class STARAgent(BaseSTARAgent):
             # Save events if EventLog exists
             if hasattr(self, "_event_log") and self._event_log is not None:
                 self._event_log.save(session_id)
-            
+
             # Save timeline (agent, codec, storage_config already set in __init__)
             if hasattr(self, "_timeline") and self._timeline is not None:
                 self._timeline.save(session_id)
 
-
-
     def converse(self, initial_message: str | None = None, session_id: str | None = None) -> None:
         """Interactive conversation loop with a human user.
-        
+
         Args:
             initial_message: Optional initial message to start the conversation
             session_id: Optional session identifier. If None, generates UUID.
@@ -344,8 +339,6 @@ class STARAgent(BaseSTARAgent):
             if "caller_message" not in trace_inputs:
                 trace_inputs["caller_message"] = caller_message
 
-        
-
         trace_inputs |= {"timeline": self._timeline}
 
         return super()._see(trace_inputs)
@@ -380,7 +373,9 @@ class STARAgent(BaseSTARAgent):
         response, reasoning, tool_calls = None, None, None
         failed_tool_calls = []
         for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
-            llm_response = self.llm_client.chat_response_sync(llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0)
+            llm_response = self.llm_client.chat_response_sync(
+                llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0
+            )
             response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 
             # Retry if both response and tool_calls are empty
@@ -390,6 +385,7 @@ class STARAgent(BaseSTARAgent):
                 break
             elif reasoning and "error" in reasoning.lower():
                 from dana.common.llm.types import LLMMessage
+
                 suggestion_message = LLMMessage(role="user", content=reasoning)
                 failed_tool_calls.append(llm_response.content)
                 if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
