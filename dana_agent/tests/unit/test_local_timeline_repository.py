@@ -12,8 +12,6 @@ import sys
 import tempfile
 from unittest.mock import MagicMock, Mock
 
-import pytest
-
 
 # Mock the problematic import before any dana imports
 sys.modules["dana.core.knowledge.prompts.agent_prompt_engineer"] = MagicMock()
@@ -29,6 +27,7 @@ from dana.repositories import LocalTimelineRepository
 
 class MockAgent(BaseAgent):
     """Mock agent for testing."""
+
     def __init__(self, codec=None, storage_config=None, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         # Mock codec
@@ -54,7 +53,7 @@ class TestLocalTimelineRepositoryInitialization:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             assert repository._codec is not None
             assert repository._codec.__qualname__ == "TestCodec"
         finally:
@@ -67,7 +66,7 @@ class TestLocalTimelineRepositoryInitialization:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             assert repository._storage_config == config
             assert repository._workspace_folder == Path(temp_dir)
         finally:
@@ -82,7 +81,7 @@ class TestLocalTimelineRepositoryInitialization:
             delattr(agent, "_storage_config")
             config = FileStorageConfig(workspace_folder=temp_dir)
             repository = LocalTimelineRepository(config, agent)
-            
+
             assert repository._storage_config is not None
             assert isinstance(repository._storage_config, FileStorageConfig)
         finally:
@@ -95,7 +94,7 @@ class TestLocalTimelineRepositoryInitialization:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             assert repository._codec_prefix == "TestCodec"
         finally:
             shutil.rmtree(temp_dir)
@@ -109,7 +108,7 @@ class TestLocalTimelineRepositoryInitialization:
             # Ensure codec is actually None
             agent._codec = None
             repository = LocalTimelineRepository(config, agent)
-            
+
             assert repository._codec_prefix == "default"
         finally:
             shutil.rmtree(temp_dir)
@@ -123,7 +122,7 @@ class TestLocalTimelineRepositoryInitialization:
             mock_codec.__qualname__ = "magic_codec"
             agent = MockAgent(storage_config=config, codec=mock_codec)
             repository = LocalTimelineRepository(config, agent)
-            
+
             assert repository._codec_prefix == "default"
         finally:
             shutil.rmtree(temp_dir)
@@ -135,7 +134,7 @@ class TestLocalTimelineRepositoryInitialization:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             # Path should be: {codec_prefix}/{agent.__class__.__qualname__}__{filename}/events
             # Check path structure (doesn't need to exist yet)
             path_str = str(repository._events_path)
@@ -157,7 +156,7 @@ class TestLocalTimelineRepositorySave:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             entries = [
                 TimelineEntry(
                     entry_type=TimelineEntryType.USER_MESSAGE,
@@ -165,10 +164,10 @@ class TestLocalTimelineRepositorySave:
                     timestamp=datetime.now(),
                 )
             ]
-            
+
             session_id = "test-session-001"
             repository.save(session_id, entries)
-            
+
             session_folder = repository._events_path / session_id
             assert session_folder.exists()
             assert session_folder.is_dir()
@@ -182,7 +181,7 @@ class TestLocalTimelineRepositorySave:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             timestamp = datetime(2024, 1, 15, 10, 30, 0)
             entries = [
                 TimelineEntry(
@@ -192,16 +191,16 @@ class TestLocalTimelineRepositorySave:
                     metadata={"key": "value"},
                 )
             ]
-            
+
             session_id = "test-session-001"
             repository.save(session_id, entries)
-            
+
             timeline_file = repository._events_path / session_id / "timeline.json"
             assert timeline_file.exists()
-            
+
             with open(timeline_file) as f:
                 timeline_data = json.load(f)
-            
+
             assert timeline_data["session_id"] == session_id
             assert timeline_data["agent_id"] == agent.object_id
             assert len(timeline_data["entries"]) == 1
@@ -218,12 +217,12 @@ class TestLocalTimelineRepositorySave:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             # Create a non-serializable object
             class NonSerializable:
                 def __init__(self):
                     self.value = "test"
-            
+
             non_serializable = NonSerializable()
             entries = [
                 TimelineEntry(
@@ -233,14 +232,14 @@ class TestLocalTimelineRepositorySave:
                     metadata={"obj": non_serializable},
                 )
             ]
-            
+
             session_id = "test-session-001"
             repository.save(session_id, entries)
-            
+
             timeline_file = repository._events_path / session_id / "timeline.json"
             with open(timeline_file) as f:
                 timeline_data = json.load(f)
-            
+
             # Metadata should be sanitized (converted to dict representation)
             metadata = timeline_data["entries"][0]["metadata"]
             assert "obj" in metadata
@@ -256,7 +255,7 @@ class TestLocalTimelineRepositorySave:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             entries = [
                 TimelineEntry(
                     entry_type=TimelineEntryType.USER_MESSAGE,
@@ -269,14 +268,14 @@ class TestLocalTimelineRepositorySave:
                     timestamp=datetime.now(),
                 ),
             ]
-            
+
             session_id = "test-session-001"
             repository.save(session_id, entries)
-            
+
             timeline_file = repository._events_path / session_id / "timeline.json"
             with open(timeline_file) as f:
                 timeline_data = json.load(f)
-            
+
             assert len(timeline_data["entries"]) == 2
         finally:
             shutil.rmtree(temp_dir)
@@ -292,7 +291,7 @@ class TestLocalTimelineRepositoryRead:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             timestamp = datetime(2024, 1, 15, 10, 30, 0)
             entries = [
                 TimelineEntry(
@@ -302,13 +301,13 @@ class TestLocalTimelineRepositoryRead:
                     metadata={"key": "value"},
                 )
             ]
-            
+
             session_id = "test-session-001"
             repository.save(session_id, entries)
-            
+
             # Read back
             read_entries = list(repository.read_session_entries(session_id))
-            
+
             assert len(read_entries) == 1
             assert read_entries[0].entry_type == TimelineEntryType.USER_MESSAGE
             assert read_entries[0].content == "Test message"
@@ -323,10 +322,10 @@ class TestLocalTimelineRepositoryRead:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             # Try to read non-existent session
             read_entries = list(repository.read_session_entries("non-existent-session"))
-            
+
             assert len(read_entries) == 0
         finally:
             shutil.rmtree(temp_dir)
@@ -338,13 +337,13 @@ class TestLocalTimelineRepositoryRead:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             # Create session folder but no timeline.json
             session_folder = repository._events_path / "test-session-001"
             session_folder.mkdir(parents=True, exist_ok=True)
-            
+
             read_entries = list(repository.read_session_entries("test-session-001"))
-            
+
             assert len(read_entries) == 0
         finally:
             shutil.rmtree(temp_dir)
@@ -356,16 +355,16 @@ class TestLocalTimelineRepositoryRead:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             # Create session folder with invalid JSON
             session_folder = repository._events_path / "test-session-001"
             session_folder.mkdir(parents=True, exist_ok=True)
             timeline_file = session_folder / "timeline.json"
             timeline_file.write_text("invalid json {")
-            
+
             # Should not raise exception, just return empty
             read_entries = list(repository.read_session_entries("test-session-001"))
-            
+
             # Should handle gracefully (either empty or log warning)
             assert isinstance(read_entries, list)
         finally:
@@ -378,7 +377,7 @@ class TestLocalTimelineRepositoryRead:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
-            
+
             entries = [
                 TimelineEntry(
                     entry_type=TimelineEntryType.USER_MESSAGE,
@@ -391,15 +390,14 @@ class TestLocalTimelineRepositoryRead:
                     timestamp=datetime.now(),
                 ),
             ]
-            
+
             session_id = "test-session-001"
             repository.save(session_id, entries)
-            
+
             read_entries = list(repository.read_session_entries(session_id))
-            
+
             assert len(read_entries) == 2
             assert read_entries[0].content == "Message 1"
             assert read_entries[1].content == "Response 1"
         finally:
             shutil.rmtree(temp_dir)
-

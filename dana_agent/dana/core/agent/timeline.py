@@ -19,7 +19,6 @@ from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, Rep
 
 if TYPE_CHECKING:
     from dana.core.agent.base_agent import BaseAgent
-    from dana.core.knowledge.prompts.codecs import AbstractCodec
 
 logger = get_logger()
 
@@ -163,13 +162,13 @@ def _sanitize_for_json(obj: Any) -> Any:
     """
     if obj is None:
         return None
-    elif isinstance(obj, (str, int, float, bool)):
+    elif isinstance(obj, str | int | float | bool):
         return obj
     elif isinstance(obj, datetime):
         return obj.isoformat()
     elif isinstance(obj, dict):
         return {key: _sanitize_for_json(value) for key, value in obj.items()}
-    elif isinstance(obj, (list, tuple)):
+    elif isinstance(obj, list | tuple):
         return [_sanitize_for_json(item) for item in obj]
     elif isinstance(obj, Enum):
         return obj.value
@@ -223,7 +222,7 @@ class Timeline:
         self.max_context_tokens = max_context_tokens
         self._agent = agent
         self.timeline: list[TimelineEntry] = []
-        
+
         # Create repository via factory
         self._repository = repository_factory.create(RepositoryType.TIMELINE, agent=agent)
 

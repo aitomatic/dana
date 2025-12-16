@@ -17,8 +17,9 @@ logger = structlog.get_logger()
 
 import time
 
-from .debug_logger import get_debug_logger
 from dana.common.observable import observable
+
+from .debug_logger import get_debug_logger
 
 
 debug_logger = get_debug_logger()

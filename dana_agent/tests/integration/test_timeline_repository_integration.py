@@ -5,11 +5,9 @@ Tests the full save/read cycle with LocalTimelineRepository.
 """
 
 from datetime import datetime
-import tempfile
 import shutil
+import tempfile
 from unittest.mock import Mock
-
-import pytest
 
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
@@ -19,6 +17,7 @@ from dana.repositories import LocalTimelineRepository
 
 class MockAgentForIntegration(BaseAgent):
     """Mock agent for integration testing."""
+
     def __init__(self, codec=None, storage_config=None, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         if codec is None:
@@ -43,7 +42,7 @@ class TestTimelineRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             timeline = Timeline(max_context_tokens=1000, agent=agent)
-            
+
             # Add entries
             entry1 = TimelineEntry(
                 entry_type=TimelineEntryType.USER_MESSAGE,
@@ -57,14 +56,14 @@ class TestTimelineRepositoryIntegration:
             )
             timeline.add_entry(entry1)
             timeline.add_entry(entry2)
-            
+
             # Save
             session_id = agent._session_id
             timeline.save(session_id)
-            
+
             # Read back (no session_id parameter needed)
             read_entries = list(timeline.read_since(checkpoint=0))
-            
+
             assert len(read_entries) == 2
             assert read_entries[0].content == "Message 1"
             assert read_entries[1].content == "Response 1"
@@ -78,7 +77,7 @@ class TestTimelineRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             timeline = Timeline(max_context_tokens=1000, agent=agent)
-            
+
             # Add multiple entries
             for i in range(5):
                 entry = TimelineEntry(
@@ -87,14 +86,14 @@ class TestTimelineRepositoryIntegration:
                     timestamp=datetime.now(),
                 )
                 timeline.add_entry(entry)
-            
+
             # Save
             session_id = agent._session_id
             timeline.save(session_id)
-            
+
             # Read from checkpoint 2 (no session_id parameter needed)
             read_entries = list(timeline.read_since(checkpoint=2))
-            
+
             assert len(read_entries) == 3
             assert read_entries[0].content == "Message 2"
             assert read_entries[1].content == "Message 3"
@@ -109,7 +108,7 @@ class TestTimelineRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             timeline = Timeline(max_context_tokens=1000, agent=agent)
-            
+
             # Add multiple entries
             for i in range(5):
                 entry = TimelineEntry(
@@ -118,14 +117,14 @@ class TestTimelineRepositoryIntegration:
                     timestamp=datetime.now(),
                 )
                 timeline.add_entry(entry)
-            
+
             # Save
             session_id = agent._session_id
             timeline.save(session_id)
-            
+
             # Read last 2 entries (negative checkpoint, no session_id parameter needed)
             read_entries = list(timeline.read_since(checkpoint=-2))
-            
+
             assert len(read_entries) == 2
             assert read_entries[0].content == "Message 3"
             assert read_entries[1].content == "Message 4"
@@ -140,11 +139,11 @@ class TestTimelineRepositoryIntegration:
             agent = MockAgentForIntegration(storage_config=config)
             # Create timeline with agent only (no repository)
             timeline = Timeline(max_context_tokens=1000, agent=agent)
-            
+
             # Should have repository
             assert timeline._repository is not None
             assert isinstance(timeline._repository, LocalTimelineRepository)
-            
+
             # Should work
             entry = TimelineEntry(
                 entry_type=TimelineEntryType.USER_MESSAGE,
@@ -154,11 +153,10 @@ class TestTimelineRepositoryIntegration:
             timeline.add_entry(entry)
             session_id = agent._session_id
             timeline.save(session_id)
-            
+
             # Read back (no session_id parameter needed)
             read_entries = list(timeline.read_since(checkpoint=0))
             assert len(read_entries) == 1
             assert read_entries[0].content == "Test message"
         finally:
             shutil.rmtree(temp_dir)
-

@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 from collections.abc import Iterator
 from datetime import datetime
-import inspect
 import json
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from structlog import get_logger
 
@@ -13,13 +14,12 @@ from dana.common.protocols.war import AgentProtocol, ResourceProtocol, WorkflowP
 from dana.common.schemas import Event, PromptVersionSnapshot
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent.base_agent import BaseAgent
-from typing import TYPE_CHECKING
 
 from .repository_protocol import EventRepositoryProtocol, LearningRepositoryProtocol, PromptRepositoryProtocol, TimelineRepositoryProtocol
 
 
 if TYPE_CHECKING:
-    from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+    from dana.core.agent.timeline import TimelineEntry
 
 logger = get_logger()
 
@@ -27,7 +27,7 @@ logger = get_logger()
 class LocalRepositoryMixin:
     """
     Mixin class providing shared functionality for local file-based repositories.
-    
+
     Provides common methods for codec extraction, codec prefix computation,
     and storage config extraction from agents.
     """
@@ -35,10 +35,10 @@ class LocalRepositoryMixin:
     def _extract_codec_from_agent(self, agent: BaseAgent):
         """
         Extract codec from agent.
-        
+
         Args:
             agent: Agent instance
-            
+
         Returns:
             Codec instance or None
         """
@@ -47,10 +47,10 @@ class LocalRepositoryMixin:
     def _extract_storage_config_from_agent(self, agent: BaseAgent) -> FileStorageConfig:
         """
         Extract storage_config from agent, or create default if not found.
-        
+
         Args:
             agent: Agent instance
-            
+
         Returns:
             FileStorageConfig instance
         """
@@ -62,13 +62,13 @@ class LocalRepositoryMixin:
     def _get_codec_prefix(self, agent: BaseAgent) -> str:
         """
         Compute codec prefix from agent's codec.
-        
+
         Returns "default" if codec is None or has "magic" in qualname,
         otherwise returns the codec's qualname.
-        
+
         Args:
             agent: Agent instance
-            
+
         Returns:
             Codec prefix string
         """
@@ -79,9 +79,7 @@ class LocalRepositoryMixin:
 
     def _get_relative_storage_path(self, agent: BaseAgent) -> str:
         _codec_str = self._get_codec_prefix(agent)
-        filepath = inspect.getfile(agent.__class__)
-        filename = Path(filepath).stem
-        return f"{_codec_str}/{agent.__class__.__qualname__}__{filename}"
+        return f"{_codec_str}/{agent.object_id}"
 
 
 class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
@@ -107,8 +105,16 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
             elif isinstance(self._component, WorkflowProtocol):
                 subfolder = "workflows"
             else:
-                raise ValueError(f"Invalid component type: {type(self._component)}. Only accepts instance of subclasses of {ResourceProtocol.__name__}, {AgentProtocol.__name__}, {WorkflowProtocol.__name__}")
-            target_path = Path(self._workspace_folder / self._get_relative_storage_path(self._agent) / "prompts" / subfolder / self._component.__class__.__qualname__)
+                raise ValueError(
+                    f"Invalid component type: {type(self._component)}. Only accepts instance of subclasses of {ResourceProtocol.__name__}, {AgentProtocol.__name__}, {WorkflowProtocol.__name__}"
+                )
+            target_path = Path(
+                self._workspace_folder
+                / self._get_relative_storage_path(self._agent)
+                / "prompts"
+                / subfolder
+                / str(self._component.object_id)
+            )
         target_path.mkdir(parents=True, exist_ok=True)
         return target_path
 
@@ -131,6 +137,7 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
     def list_versions(self) -> list[str]:
         def _filter(item: str) -> bool:
             return item.startswith("v") and item[1:].isdigit()
+
         versions_folder = self._prompt_path / "versions"
         if not versions_folder.exists():
             return []
@@ -142,16 +149,16 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
         versions_folder = self._prompt_path / "versions"
         versions_folder.mkdir(parents=True, exist_ok=True)
         content_file = versions_folder / f"{version}.prompt"
-        
+
         if not content_file.exists():
             if error_if_not_found:
                 raise ValueError(f"Version {version} not found")
             return None
-        
+
         created_at = os.path.getctime(content_file)
         updated_at = os.path.getmtime(content_file)
         content = content_file.read_text()
-        
+
         return PromptVersionSnapshot(
             version=version,
             content=content,
@@ -176,23 +183,23 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
             version = f"v{new_version_number}"
         except ValueError:
             version = "v1"
-        
+
         versions_folder = self._prompt_path / "versions"
         versions_folder.mkdir(parents=True, exist_ok=True)
         content_file = versions_folder / f"{version}.prompt"
-        
+
         provenances = self._load_provenances()
         provenances[version] = provenance
         metrics_dict = self._load_metrics()
         metrics_dict[version] = metrics
-        
+
         content_file.write_text(content)
-        
+
         provenance_file = self._prompt_path / "provenance.json"
         metrics_file = self._prompt_path / "metrics.json"
         provenance_file.write_text(json.dumps(provenances, indent=4))
         metrics_file.write_text(json.dumps(metrics_dict, indent=4))
-        
+
         return PromptVersionSnapshot(
             version=version,
             content=content,
@@ -201,7 +208,7 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
             provenance=provenance,
             metrics=metrics,
         )
-    
+
     def _load_provenances(self) -> dict:
         provenance_file = self._prompt_path / "provenance.json"
         if provenance_file.exists():
@@ -225,9 +232,6 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
         if versions:
             return versions[-1]
         raise ValueError("No versions found")
-
-
-
 
 
 class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
@@ -264,6 +268,7 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
             entries: List of TimelineEntry objects to save
         """
         from dana.core.agent.timeline import _sanitize_for_json
+
         # Create session folder
         session_folder = self._events_path / session_id
         session_folder.mkdir(parents=True, exist_ok=True)

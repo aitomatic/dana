@@ -1,5 +1,7 @@
+from datetime import UTC, datetime
+
 from pydantic import BaseModel, Field
-from datetime import datetime, UTC
+
 
 class PromptVersionSnapshot(BaseModel):
     version: str

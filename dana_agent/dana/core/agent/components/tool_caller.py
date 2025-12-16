@@ -6,8 +6,11 @@ This component provides functionality for:
 - Tool call result processing
 - Tool call error handling
 """
+
 from __future__ import annotations
+
 import asyncio
+from collections.abc import Callable
 import json
 import re
 import traceback
@@ -30,7 +33,7 @@ if TYPE_CHECKING:
 class WARCaller:
     """Unified caller for Workflows, Agents, and Resources with consistent behavior."""
 
-    def __init__(self, agent: "STARAgent", tool_caller: ToolCaller | None = None):
+    def __init__(self, agent: STARAgent, tool_caller: ToolCaller | None = None):
         """Initialize with agent reference."""
         self._agent = agent
         self._llm = agent.llm_client  # TODO: maintain our own LLM (maybe local?)
@@ -249,7 +252,7 @@ class WARCaller:
 class ToolCaller(WARCaller):
     """Component providing tool call execution and orchestration capabilities."""
 
-    def __init__(self, agent: "STARAgent"):
+    def __init__(self, agent: STARAgent):
         """
         Initialize the component with a reference to the agent.
 
@@ -1193,7 +1196,7 @@ Please provide the canonical XML format:
 
 
 class CodecToolCaller(WARCaller):
-    def __init__(self, agent: "STARAgent", codec: type[AbstractCodec]):
+    def __init__(self, agent: STARAgent, codec: type[AbstractCodec]):
         super().__init__(agent, self)
         self._agent = agent
         self._codec = codec
@@ -1257,13 +1260,10 @@ class CodecToolCaller(WARCaller):
 
         # Parse using codec's parse_response method
         parsed_response = self._codec.parse_response(content)
-        
+
         # Extract thinking as reasoning
         response_reasoning = parsed_response.thinking if parsed_response.thinking else None
         response_text = parsed_response.response if parsed_response.response else None
-
-
-
 
         if response_reasoning and not (parsed_response.tool_calls or response_text):
             suggestion_message = f"[Error] invalid format, please follow the following instruction.\n{self._codec.get_instruction()}"
@@ -1275,19 +1275,15 @@ class CodecToolCaller(WARCaller):
 
         if not response_reasoning:
             print(f"Response reasoning: {response_reasoning}")
-        
+
         # Convert tool calls to DictParams format
         if parsed_response.tool_calls:
             for tool_call in parsed_response.tool_calls:
                 function_name = f"{tool_call.class_name}:{tool_call.name}"
-                result_tool_calls.append({
-                    "function": function_name,
-                    "arguments": tool_call.parameters
-                })
-            return "No response generated", response_reasoning , result_tool_calls
+                result_tool_calls.append({"function": function_name, "arguments": tool_call.parameters})
+            return "No response generated", response_reasoning, result_tool_calls
         else:
-            return response_text, response_reasoning , result_tool_calls
-
+            return response_text, response_reasoning, result_tool_calls
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
         """Convert structured function calls to our internal format."""
@@ -1310,59 +1306,146 @@ class CodecToolCaller(WARCaller):
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [self._execute_single_call(call) for call in parsed_tool_calls]
 
+    def _validate_n_cast_method_arguments(self, method: Callable, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Validate the arguments of a method."""
+        import json
+        from typing import Union, get_origin
+
+        signature = Misc.parse_method_signature(method)
+        for param in signature.parameters:
+            if param.type_object and param.name in arguments:
+                # Get origin for generic types (e.g., List[int] -> list)
+                origin = get_origin(param.type_object)
+                if origin is None:
+                    origin = param.type_object
+
+                # Extract types from Union/Optional (handles __args__)
+                if hasattr(param.type_object, "__args__") and origin is Union:
+                    # For Union/Optional types, iterate through args
+                    hinted_types = param.type_object.__args__
+                else:
+                    # For non-Union types (including List, Dict), use origin
+                    hinted_types = [origin]
+
+                # Process each type in the union or the single type
+                for _type in hinted_types:
+                    # Skip NoneType in Optional types
+                    if _type is type(None):
+                        continue
+
+                    # Get origin for this type (handles nested generics)
+                    type_origin = get_origin(_type)
+                    if type_origin is None:
+                        type_origin = _type
+
+                    # Type short-circuit: if already correct type
+                    if isinstance(arguments[param.name], type_origin):
+                        break
+
+                    # Handle primitive types (str, int, float)
+                    if type_origin in (str, int, float):
+                        try:
+                            arguments[param.name] = type_origin(arguments[param.name])
+                            break
+                        except Exception:
+                            continue
+
+                    # Handle bool with safe string conversion
+                    elif type_origin is bool:
+                        val = arguments[param.name]
+                        if isinstance(val, bool):
+                            break
+                        elif isinstance(val, str):
+                            arguments[param.name] = val.lower() in (
+                                "true",
+                                "1",
+                                "yes",
+                                "on",
+                            )
+                            break
+                        else:
+                            try:
+                                arguments[param.name] = bool(val)
+                                break
+                            except Exception:
+                                continue
+
+                    # Handle list with safe JSON parsing
+                    elif type_origin is list:
+                        val = arguments[param.name]
+                        if isinstance(val, list):
+                            break
+                        elif isinstance(val, str):
+                            try:
+                                parsed = json.loads(val)
+                                if isinstance(parsed, list):
+                                    arguments[param.name] = parsed
+                                    break
+                            except (json.JSONDecodeError, ValueError):
+                                continue
+                        else:
+                            continue
+
+                    # Handle dict with safe JSON parsing
+                    elif type_origin is dict:
+                        val = arguments[param.name]
+                        if isinstance(val, dict):
+                            break
+                        elif isinstance(val, str):
+                            try:
+                                parsed = json.loads(val)
+                                if isinstance(parsed, dict):
+                                    arguments[param.name] = parsed
+                                    break
+                            except (json.JSONDecodeError, ValueError):
+                                continue
+                        else:
+                            continue
+
+                    # Handle Pydantic BaseModel with safe issubclass check
+                    elif isinstance(_type, type) and issubclass(_type, BaseModel):
+                        val = arguments[param.name]
+                        if isinstance(val, _type):
+                            break
+                        elif isinstance(val, str):
+                            try:
+                                arguments[param.name] = _type.model_validate_json(val)
+                                break
+                            except Exception:
+                                continue
+
+        return arguments
+
     @observable
     def _execute_single_call(self, tool_call: dict[str, Any]) -> dict[str, Any]:
         function_name = tool_call.get("function", "")
         arguments = tool_call.get("arguments", {})
         if ":" not in function_name:
-            return self._create_tool_error(
-                "codec_format", function_name, "Expected ClassName:methodName format"
-            )
-        
+            return self._create_tool_error("codec_format", function_name, "Expected ClassName:methodName format")
+
         parts = function_name.split(":", 1)
-        class_name = parts[0]
+        identifier = parts[0]
         method_name = parts[1]
 
-        obj_info = self._find_object_by_class_name(class_name)
+        # Try object_id lookup first, then fallback to class_name lookup
+        obj_info = self._find_object_by_id(identifier)
+        if not obj_info:
+            obj_info = self._find_object_by_class_name(identifier)
+
         if not obj_info:
             available_classes = self._get_available_class_names()
             return self._create_tool_error(
                 "class_not_found",
-                class_name,
-                f"Class '{class_name}' not found in available agents/resources/workflows. "
-                f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}"
+                identifier,
+                f"Object '{identifier}' not found by object_id or class_name in available agents/resources/workflows. "
+                f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}",
             )
 
         # Method signature validation and conversion to the expected type
         if hasattr(obj_info["object"], method_name):
             method = getattr(obj_info["object"], method_name)
-            signature = Misc.parse_method_signature(method)
-            for param in signature.parameters:
-                if param.type_object and param.name in arguments:
-                    if hasattr(param.type_object, "__args__"):
-                        hinted_types = param.type_object.__args__
-                    else:
-                        hinted_types = [param.type_object]
-                    for _type in hinted_types:
-                        if _type in (str, int, float):
-                            try:
-                                arguments[param.name] = _type(arguments[param.name])
-                                break
-                            except Exception:
-                                continue
-                        elif _type in (bool, list, dict):
-                            try:
-                                arguments[param.name] = eval(arguments[param.name])
-                                break
-                            except Exception:
-                                continue
-                        elif issubclass(_type, BaseModel):
-                            try:
-                                arguments[param.name] = _type.model_validate_json(arguments[param.name])
-                                break
-                            except Exception:
-                                continue
-                            
+            arguments = self._validate_n_cast_method_arguments(method, arguments)
+
             try:
                 # Set session_id for EventLog if it exists
                 if obj_info["type"] == "agent":
@@ -1374,19 +1457,53 @@ class CodecToolCaller(WARCaller):
                     result = Misc.safe_asyncio_run(method, **arguments)
                 else:
                     result = method(**arguments)
-                return self._create_tool_success(obj_info["type"], f"{class_name}.{method_name}", result)
+                return self._create_tool_success(obj_info["type"], f"{identifier}.{method_name}", result)
             except Exception as e:
                 return self._create_tool_error(
                     "execution_error",
-                    f"{class_name}.{method_name}",
-                    f"Error executing call {class_name}.{method_name}: {str(e)}\n{traceback.format_exc()}"
+                    f"{identifier}.{method_name}",
+                    f"Error executing call {identifier}.{method_name}: {str(e)}\n{traceback.format_exc()}",
                 )
         else:
             return self._create_tool_error(
                 "method_not_found",
-                f"{class_name}.{method_name}",
-                f"Method '{method_name}' not found in class '{class_name}'\n{traceback.format_exc()}"
+                f"{identifier}.{method_name}",
+                f"Method '{method_name}' not found in object '{identifier}'\n{traceback.format_exc()}",
             )
+
+    def _find_object_by_id(self, object_id: str) -> dict[str, Any] | None:
+        """
+        Find an object by its object_id in available agents, resources, and workflows.
+
+        Args:
+            object_id: The object_id to search for
+
+        Returns:
+            Dictionary with "type" and "object" keys, or None if not found
+        """
+        # Search in resources (check both object_id and resource_id)
+        for resource in self._agent.available_resources:
+            if (hasattr(resource, "object_id") and resource.object_id == object_id) or (
+                hasattr(resource, "resource_id") and resource.resource_id == object_id
+            ):
+                return {"type": "resource", "object": resource}
+
+        # Search in workflows (check both object_id and workflow_id)
+        for workflow in self._agent.available_workflows:
+            if (hasattr(workflow, "object_id") and workflow.object_id == object_id) or (
+                hasattr(workflow, "workflow_id") and workflow.workflow_id == object_id
+            ):
+                return {"type": "workflow", "object": workflow}
+
+        # Search in agents (check object_id via registry)
+        self._agent.ensure_registered()
+        registry = self._agent._registry
+        if registry and object_id in registry._items:
+            agent = registry.get(object_id)
+            if agent:
+                return {"type": "agent", "object": agent}
+
+        return None
 
     def _find_object_by_class_name(self, class_name: str) -> dict[str, Any] | None:
         """
@@ -1405,17 +1522,17 @@ class CodecToolCaller(WARCaller):
         for agent in self._agent.available_agents:
             if agent.__class__.__name__ == class_name:
                 return {"type": "agent", "object": agent}
-        
+
         # Search in resources
         for resource in self._agent.available_resources:
             if resource.__class__.__name__ == class_name:
                 return {"type": "resource", "object": resource}
-        
+
         # Search in workflows
         for workflow in self._agent.available_workflows:
             if workflow.__class__.__name__ == class_name:
                 return {"type": "workflow", "object": workflow}
-        
+
         return None
 
     def _get_available_class_names(self) -> list[str]:

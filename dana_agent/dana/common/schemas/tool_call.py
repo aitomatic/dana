@@ -2,6 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+
 class ParsedArgKwargsResults(BaseModel):
     matched_args: list[Any]
     matched_kwargs: dict[str, Any]
@@ -37,6 +38,7 @@ class ParameterInfo(BaseModel):
 class MethodSignature(BaseModel):
     """Structured information about a method signature."""
     class_name: str | None = None
+    object_id: str | None = None
     name: str
     description: str
     parameters: list[ParameterInfo]
@@ -53,8 +55,10 @@ class MethodSignature(BaseModel):
         """Support 'in' operator for backward compatibility."""
         return hasattr(self, key)
 
+
 class ToolCall(BaseModel):
     class_name: str | None = None
+    object_id: str | None = None
     name: str
     parameters: dict[str, Any]
 
