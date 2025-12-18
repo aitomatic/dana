@@ -1,0 +1,1 @@
+touch local.db && docker-compose up -d --build

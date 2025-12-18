@@ -19,12 +19,15 @@ services:
       - ${PWD}/knowledge_packs:/app/knowledge_packs
       - ${PWD}/uploads:/app/uploads
       - ${PWD}/tmp:/app/tmp
+      - ${PWD}/log:/app/log
+      # Note: local.db must exist as a file (not directory) before mounting
+      # Run: touch local.db if the file doesn't exist
       - ${PWD}/local.db:/app/local.db
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
       - AZURE_OPENAI_API_URL=${AZURE_OPENAI_API_URL}
       - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
     command: ["uv", "run", "dana-studio", "--host", "0.0.0.0", "--port", "8201"]
+    # command: ["sleep", "infinity"]
     restart: unless-stopped
 

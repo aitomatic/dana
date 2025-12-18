@@ -25,6 +25,8 @@ jobs:
           - macos-latest
           - windows-latest
         python: ["3.12"]
+        # package: ["dana_studio", "dana_agent", "dana_lang"]
+        package: ["dana_studio", "dana_agent"]
 
     defaults:
       run:
@@ -72,15 +74,16 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev --python ${{ matrix.python }}
 
-      - name: Run tests
+      - name: Run tests for ${{ matrix.package }}
         env:
           DANA_MOCK_LLM: "true"
           DANA_USE_REAL_LLM: "false"
           PYTHONIOENCODING: "utf-8"
           PYTHONPATH: ${{ github.workspace }}
         run: |
+          cd ${{ matrix.package }}
           if [ "$RUNNER_OS" = "Windows" ]; then
-            uv run python -X utf8 -m pytest -q --maxfail=1
+            uv run python -X utf8 -m pytest -q --maxfail=1 -m "not live and not deep"
           else
-            uv run -m pytest -q --maxfail=1
+            uv run pytest -q --maxfail=1 -m "not live and not deep"
           fi

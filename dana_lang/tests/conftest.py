@@ -10,7 +10,7 @@ import pytest
 pytest_plugins = ["pytest_asyncio"]
 
 
-from dana_lang.core.lang.dana_sandbox import DanaSandbox
+from dana.lang import DanaSandbox
 
 
 def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):

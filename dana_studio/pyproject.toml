@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dana_studio"
-version = "0.7.0.8"
+version = "0.8.0.8"
 description = "Dana Studio - A Web-based IDE for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -316,6 +316,33 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = "dana.core.lang.interpreter.*"
 disallow_untyped_defs = true
+
+# =============================================================================
+# Pytest Configuration
+# =============================================================================
+
+[tool.pytest.ini_options]
+# Only discover tests in the tests/ directory
+testpaths = ["tests"]
+# Test file patterns
+python_files = ["test_*.py", "*_test.py"]
+# Exclude router directories from test discovery (they contain FastAPI route handlers, not tests)
+norecursedirs = [
+    "dana/studio/api/routers",
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    "*.egg-info",
+]
+# Configure pytest-asyncio
+asyncio_mode = "auto"
+# Register custom markers
+markers = [
+    "live: marks tests as requiring live LLM/API connections (deselect with '-m \"not live\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
 
 # Database Migration Tool FOR DANA STUDIO
 [tool.alembic]

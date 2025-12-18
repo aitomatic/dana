@@ -37,6 +37,7 @@ def pytest_configure(config):
 def pytest_addoption(parser):
     """Add custom command line options."""
     parser.addoption("--live", action="store_true", default=False, help="Run live tests that involve live resources (LLMs)")
+    parser.addoption("--with-api-keys", action="store_true", default=False, help="Run tests that require API keys")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -53,3 +54,10 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "live" not in item.keywords:
                 item.add_marker(skip_non_live)
+    
+    # Skip tests that require API keys unless --with-api-keys flag is provided
+    if not config.getoption("--with-api-keys"):
+        skip_api_keys = pytest.mark.skip(reason="Tests requiring API keys are skipped. Use --with-api-keys to run them.")
+        for item in items:
+            if "requires_api_keys" in item.keywords:
+                item.add_marker(skip_api_keys)

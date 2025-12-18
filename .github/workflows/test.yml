@@ -2,7 +2,7 @@
 # - Runs weekly and on manual trigger only
 # - Primary testing is handled by test-parallel.yml (faster)
 # - Provides thorough sequential testing for edge case detection
-# - Tests Dana implementation comprehensively with mock LLM
+# - Tests all Dana packages: dana_studio, dana_agent, and dana_lang
 # - For regular CI/CD, use test-parallel.yml instead
 # - For full test coverage, run locally with: uv run pytest -m "not live" tests/
 
@@ -36,42 +36,30 @@ jobs:
           uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
-    - name: Test Dana core (comprehensive)
+    - name: Test Dana Studio (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/unit/core/ -v --tb=short
-    - name: Test Dana frameworks (comprehensive)
+      run: |
+        cd dana_studio
+        uv run pytest tests/ -v --tb=short
+    - name: Test Dana Agent (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/unit/frameworks/ -v --tb=short
-    - name: Test Dana functional tests (comprehensive)
+      run: |
+        cd dana_agent
+        uv run pytest tests/ -v --tb=short
+    - name: Test Dana Lang (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/functional/ -v --tb=short
-    - name: Test Dana integration tests (comprehensive)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/integration/ -v --tb=short
-    - name: Test Dana regression tests (comprehensive)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/regression/ -v --tb=short
-    - name: Test with pytest (fast tests only)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest -m "not live and not deep" tests/ --tb=short -v
+      run: |
+        cd dana_lang
+        uv run pytest tests/ -v --tb=short
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: failure()

@@ -126,26 +126,32 @@ async def _initialize_interview_session(session_id: int, template_path: str, ses
         prompt = f"""You are an expert interview coordinator. Based on the provided interview template, create a structured interview note that will guide the knowledge-capture session.
 
 CRITICAL FILTERING RULES (MUST FOLLOW):
-1. ONLY include topics that have explicit numbered questions (e.g., "1. Question text", "2. Another question")
+1. ONLY include topics that have explicit questions in ANY of these formats:
+   - Numbered questions (e.g., "1. Question text", "2. Another question")
+   - Bullet point questions (e.g., "- Question text", "• Question text")
+   - Questions under "Opening Questions", "Tacit Knowledge Prompts", "Key Questions", or similar section headers
 2. EXCLUDE any topic that:
    - Has "[No specific opening questions provided...]" or similar placeholder text
-   - Has only background information without numbered questions
-   - Has empty or missing "Opening Questions" sections
+   - Has only background information without any questions
+   - Has empty or missing question sections
    - Contains text like "[No specific opening questions provided in the template—prepare to probe based on background and relationship prompts.]"
-3. You MUST verify each topic has at least ONE numbered question before including it
-4. If a topic section has "Opening Questions:" followed by placeholder text or no actual numbered questions, EXCLUDE that topic entirely
+3. You MUST verify each topic has at least ONE question (numbered or bullet point) before including it
+4. If a topic section has question headers (like "Opening Questions:", "Tacit Knowledge Prompts:", etc.) followed by placeholder text or no actual questions, EXCLUDE that topic entirely
 
 INTERVIEW TEMPLATE:
 {template_content}
 
-STEP 1: First, identify which topics have explicit numbered questions.
-For each topic in the template, check if it has numbered questions (format: "1. Question", "2. Question", etc.).
+STEP 1: First, identify which topics have explicit questions.
+For each topic in the template, check if it has questions in ANY format:
+- Numbered questions (format: "1. Question", "2. Question", etc.)
+- Bullet point questions (format: "- Question", "• Question", etc.)
+- Questions under section headers like "Opening Questions", "Tacit Knowledge Prompts", "Key Questions", etc.
 List your findings here:
 - [Topic name 1]: [Number of questions found] - [INCLUDE/EXCLUDE with reason]
 - [Topic name 2]: [Number of questions found] - [INCLUDE/EXCLUDE with reason]
 ...
 
-STEP 2: Create the structured interview note for ONLY the topics you identified as having explicit numbered questions in STEP 1.
+STEP 2: Create the structured interview note for ONLY the topics you identified as having explicit questions in STEP 1.
 
 Create a markdown interview note with the following structure:
 
@@ -157,16 +163,16 @@ Create a markdown interview note with the following structure:
 [Extract and summarize the goal from the template]
 
 ## Topics to Cover
-[ONLY include topics that have explicit numbered questions. DO NOT include topics with placeholder text or no questions.]
+[ONLY include topics that have explicit questions (numbered or bullet points). DO NOT include topics with placeholder text or no questions.]
 
 ### [Topic Name that contains questions]
 **Background**: [Topic background from template]
 **Status**: Not started
 **Key Questions**: 
-1. [First opening question from template]
-2. [Second opening question from template]
-3. [Third opening question from template]
-[Continue with numbered list format for all questions from the template]
+1. [First question from template - MUST include the "1. " prefix]
+2. [Second question from template - MUST include the "2. " prefix]
+3. [Third question from template - MUST include the "3. " prefix]
+[Continue with numbered list format for all questions - each MUST start with number and period]
 
 **Listen for connections to**: [Connections from template]
 
@@ -200,18 +206,43 @@ Create a markdown interview note with the following structure:
 ```
 
 CRITICAL FORMATTING REQUIREMENTS:
-1. For **Key Questions** sections, ALWAYS use numbered list format: "1. Question text"
-2. Each question must be on its own line starting with a number and period
-3. Preserve the interview approach and style from the template
-4. Create a comprehensive but organized note structure
-5. Use the exact wording from the template where appropriate
-6. DO NOT create placeholder questions - only use actual questions from the template
+1. For **Key Questions** sections, ALWAYS format questions EXACTLY as numbered list:
+   **Key Questions**:
+   1. First question text here?
+   2. Second question text here?
+   3. Third question text here?
+   
+   - Each question MUST start with a number followed by a period and space (e.g., "1. ", "2. ", "3. ")
+   - The number prefix is REQUIRED - do not omit it or format without numbers
+   - If the template uses bullet points (- or •), convert them to numbered format (1., 2., 3., etc.)
+   - If the template already uses numbered format, preserve the numbers
+   - Number all questions sequentially starting from 1
+   - Each question must be on its own line
+
+2. Example of CORRECT format:
+   **Key Questions**:
+   1. First question about the topic?
+   2. Second question to explore further?
+   3. Third question to understand details?
+
+3. Example of INCORRECT format (DO NOT DO THIS):
+   **Key Questions**:
+   First question about the topic?
+   Second question to explore further?
+   Third question to understand details?
+
+4. Preserve the interview approach and style from the template
+5. Create a comprehensive but organized note structure
+6. Use the exact wording from the template where appropriate
+7. DO NOT create placeholder questions - only use actual questions from the template
+8. Questions can come from sections titled "Opening Questions", "Tacit Knowledge Prompts", "Key Questions", or any similar section header
 
 FINAL VERIFICATION:
 Before returning your answer, confirm:
-- Every topic under "## Topics to Cover" has at least one numbered question
+- Every topic under "## Topics to Cover" has at least one question (converted to numbered format)
 - No topics with placeholder text like "[No specific opening questions provided...]" are included
 - No topics with empty or missing questions are included
+- All questions are in numbered format (1., 2., 3., etc.) regardless of original format
 - If unsure about a topic, EXCLUDE it (better to have fewer topics than topics without questions)
 """
 

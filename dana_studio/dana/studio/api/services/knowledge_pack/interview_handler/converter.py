@@ -280,19 +280,19 @@ class InterviewNoteProcessor:
         if questions_match:
             questions_text = questions_match.group(1).strip()
             # Try numbered list format with optional status bracket: "1. [status] Question text?" or "1. Question text?"
-            question_items = re.findall(r"\d+\.\s*(?:\[(\w+)\]\s*)?(.+?)(?=\n\d+\.|\Z)", questions_text, re.DOTALL)
+            question_items = re.findall(r"\d+\.\s*(?:\[(\w+)\]\s*)?(.+?)(?=\n\d+\.|\n---|\Z)", questions_text, re.DOTALL)
             if question_items:
                 topic["key_questions"] = [
-                    {"text": q.strip(), "status": status.strip() if status else QuestionStatus.NOT_ASKED.value}
+                    {"text": q.strip().rstrip("\n---").strip(), "status": status.strip() if status else QuestionStatus.NOT_ASKED.value}
                     for status, q in question_items
                     if q.strip()
                 ]
             else:
                 # Try bullet points with optional status
-                question_items = re.findall(r"^[-*]\s*(?:\[(\w+)\]\s*)?(.+?)$", questions_text, re.MULTILINE)
+                question_items = re.findall(r"^[-*]\s*(?:\[(\w+)\]\s*)?(.+?)(?=\n[-*]|\n---|$)", questions_text, re.MULTILINE)
                 if question_items:
                     topic["key_questions"] = [
-                        {"text": q.strip(), "status": status.strip() if status else QuestionStatus.NOT_ASKED.value}
+                        {"text": q.strip().rstrip("\n---").strip(), "status": status.strip() if status else QuestionStatus.NOT_ASKED.value}
                         for status, q in question_items
                         if q.strip()
                     ]

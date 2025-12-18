@@ -732,7 +732,7 @@ class TestQuestionStatus:
             from dana.studio.api.services.knowledge_pack.interview_handler.converter import QuestionStatus
 
             with pytest.raises(ValueError, match="Question not found"):
-                converter.update_question_status("Non-existent question?", QuestionStatus.ASKING, temp_path)
+                converter.update_question_status("Some random Non-existent question?", QuestionStatus.ASKING, temp_path)
         finally:
             Path(temp_path).unlink()
 

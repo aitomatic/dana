@@ -232,7 +232,11 @@ disallow_untyped_defs = true
 [tool.pytest.ini_options]
 markers = [
     "windows_console: marks tests that require Windows console features (deselect with '-m \"not windows_console\"')",
+    "requires_api_keys: marks tests as requiring API keys (skip in CI without keys)",
 ]
+testpaths = ["tests"]
+# Tests requiring API keys are skipped by default (see conftest.py)
+# Use --with-api-keys flag to run them, or use -m "requires_api_keys" to run only those tests
 
 [dependency-groups]
 dev = [
