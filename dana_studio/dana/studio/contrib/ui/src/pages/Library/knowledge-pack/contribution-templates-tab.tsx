@@ -55,7 +55,9 @@ export function ContributionTemplatesTab({ knowledgePackId }: ContributionTempla
   const [isDeleting, setIsDeleting] = useState(false);
   
   // Track deleted items to filter them out from display
-  const [deletedItemIds, setDeletedItemIds] = useState<Set<number>>(new Set());
+  // Separate sets for templates and sessions to avoid ID collision issues
+  const [deletedTemplateIds, setDeletedTemplateIds] = useState<Set<number>>(new Set());
+  const [deletedSessionIds, setDeletedSessionIds] = useState<Set<number>>(new Set());
   
   // Polling state for knowledge pack status
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -138,6 +140,7 @@ export function ContributionTemplatesTab({ knowledgePackId }: ContributionTempla
         
         try {
           const response = await apiService.listInterviewTemplates(createdKnowledgePack.id!);
+          
           if (response.success && response.data) {
             // Fetch sessions for each template
             const templatesWithSessions = await Promise.all(
@@ -148,6 +151,7 @@ export function ContributionTemplatesTab({ knowledgePackId }: ContributionTempla
                     0,
                     100,
                   );
+                  
                   console.log(
                     `🎓 Fetched sessions for template ${template.id}:`,
                     sessionsResponse,
@@ -297,10 +301,14 @@ export function ContributionTemplatesTab({ knowledgePackId }: ContributionTempla
 
   // Transform templates data to table format
   const transformTemplatesToTableData = (): ExtendedLibraryItem[] => {
-    return templates
-      .filter((template: any) => !deletedItemIds.has(template.id)) // Filter out deleted templates
-      .map((template: any) => {
+    // Filter out deleted templates using deletedTemplateIds (not deletedSessionIds)
+    const filtered = templates
+      .filter((template: any) => !deletedTemplateIds.has(template.id));
+    
+    return filtered.map((template: any) => {
         const sessions = template.interview_sessions || [];
+        // Filter sessions using deletedSessionIds (not deletedTemplateIds)
+        const filteredSessions = sessions.filter((session: any) => !deletedSessionIds.has(session.id));
         
         // Create template item
         const templateItem: ExtendedLibraryItem = {
@@ -313,9 +321,7 @@ export function ContributionTemplatesTab({ knowledgePackId }: ContributionTempla
           template_metadata: template.template_metadata,
           interview_sessions: sessions,
           is_master: template.is_master,
-          children: sessions
-            .filter((session: any) => !deletedItemIds.has(session.id)) // Filter out deleted sessions
-            .map((session: any) => ({
+          children: filteredSessions.map((session: any) => ({
               id: session.id,
               name: session.session_name || `Session ${session.id}`,
               type: 'file' as const,
@@ -416,7 +422,12 @@ export function ContributionTemplatesTab({ knowledgePackId }: ContributionTempla
       }
       
       // Immediately hide the deleted item from the UI
-      setDeletedItemIds(prev => new Set(prev).add(itemToDelete.id));
+      // Use separate sets for templates and sessions to avoid ID collision
+      if (itemToDelete.type === 'template') {
+        setDeletedTemplateIds(prev => new Set(prev).add(itemToDelete.id));
+      } else {
+        setDeletedSessionIds(prev => new Set(prev).add(itemToDelete.id));
+      }
       
       // Refresh data by calling the global refresh function if available
       if (window.refreshKnowledgePackTree) {
