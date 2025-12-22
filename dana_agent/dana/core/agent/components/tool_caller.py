@@ -1309,6 +1309,7 @@ class CodecToolCaller(WARCaller):
     def _validate_n_cast_method_arguments(self, method: Callable, arguments: dict[str, Any]) -> dict[str, Any]:
         """Validate the arguments of a method."""
         import json
+        import types
         from typing import Union, get_origin
 
         signature = Misc.parse_method_signature(method)
@@ -1320,7 +1321,9 @@ class CodecToolCaller(WARCaller):
                     origin = param.type_object
 
                 # Extract types from Union/Optional (handles __args__)
-                if hasattr(param.type_object, "__args__") and origin is Union:
+                # Support both typing.Union and types.UnionType (Python 3.10+)
+                is_union_type = hasattr(param.type_object, "__args__") and (origin is Union or origin is types.UnionType)
+                if is_union_type:
                     # For Union/Optional types, iterate through args
                     hinted_types = param.type_object.__args__
                 else:
