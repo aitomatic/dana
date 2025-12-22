@@ -8,6 +8,8 @@ Tests the 4-class architecture:
 - WorkflowCaller (workflow execution)
 """
 
+import ast
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -20,6 +22,11 @@ from dana.core.agent.components.tool_caller import (
 )
 from dana.core.agent.star_agent import STARAgent
 from dana.core.knowledge.prompts.codecs import CSXMLCodec
+
+
+COMPLEX_INPUT = """
+{'function': 'ontology-crud-resources:create_relationship', 'arguments': {'property_name': 'occursOn', 'domain_class': 'rca:Symptom', 'range_class': 'rca:Equipment', 'property_type': 'ObjectProperty', 'attributes': '{\\n            \"label\": \"occurs on\",\\n            \"comment\": \"Links a Symptom to the specific Equipment entity where the symptom, alarm, or parameter deviation is observed. Use this relationship to provide physical context for symptoms, supporting root cause analysis, escalation, and handover documentation. Example: A \\'Chamber Pressure High\\' symptom occursOn \\'Chamber 2\\'. Related concepts: Equipment, Alarm, EquipmentFailure, SensorReading, LogFile.\"\\n        }'}}
+"""
 
 
 class TestToolCallerArchitecture:
@@ -981,3 +988,73 @@ class TestValidateAndCastMethodArguments:
         result = codec_tool_caller._validate_n_cast_method_arguments(test_method, arguments)
         # Should either keep original value or handle error
         assert "items" in result
+
+    def test_complex_input_with_nested_json_and_literal_eval(self, codec_tool_caller):
+        """Test parsing complex input with nested JSON using literal_eval."""
+        # Parse the input string using literal_eval to convert to dict
+        parsed_input = ast.literal_eval(COMPLEX_INPUT.strip())
+
+        # Extract function name and arguments
+        function_name = parsed_input["function"]
+        arguments = parsed_input["arguments"]
+
+        # Verify the input structure
+        assert function_name == "ontology-crud-resources:create_relationship"
+        assert "property_name" in arguments
+        assert "attributes" in arguments
+        # Should be a JSON string
+        assert isinstance(arguments["attributes"], str)
+
+        # Create a mock resource with create_relationship method
+        def create_relationship(
+            self,
+            property_name: str,
+            domain_class: str,
+            range_class: str | None = None,
+            range_datatype: str | None = None,
+            property_type: str = "ObjectProperty",
+            attributes: dict[str, Any] | None = None,
+        ) -> str:
+            """Create relationship method.
+
+            Args:
+                property_name: Name of the property
+                domain_class: Domain class
+                range_class: Range class (optional)
+                range_datatype: Range datatype (optional)
+                property_type: Type of property
+                attributes: Attributes dictionary (optional)
+            """
+            return f"Created relationship: {property_name}"
+
+        # Test that arguments are correctly cast
+        # Debug: Check what the attributes value is before validation
+        assert isinstance(arguments["attributes"], str)
+        import json
+
+        # Verify the JSON string can be parsed
+        test_parse = json.loads(arguments["attributes"])
+        assert isinstance(test_parse, dict)
+
+        validated_args = codec_tool_caller._validate_n_cast_method_arguments(create_relationship, arguments)
+
+        # Verify all arguments are correctly typed
+        assert isinstance(validated_args["property_name"], str)
+        assert validated_args["property_name"] == "occursOn"
+
+        assert isinstance(validated_args["domain_class"], str)
+        assert validated_args["domain_class"] == "rca:Symptom"
+
+        assert isinstance(validated_args["range_class"], str)
+        assert validated_args["range_class"] == "rca:Equipment"
+
+        assert isinstance(validated_args["property_type"], str)
+        assert validated_args["property_type"] == "ObjectProperty"
+
+        # Most importantly: attributes should be converted from JSON
+        # string to dict
+        assert isinstance(validated_args["attributes"], dict)
+        assert "label" in validated_args["attributes"]
+        assert validated_args["attributes"]["label"] == "occurs on"
+        assert "comment" in validated_args["attributes"]
+        assert "Chamber Pressure High" in validated_args["attributes"]["comment"]
