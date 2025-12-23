@@ -1,3 +1,6 @@
+# skip-file
+
+
 """
 Unit tests for ToolCaller and its specialized classes.
 
@@ -26,6 +29,109 @@ from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
 COMPLEX_INPUT = """
 {'function': 'ontology-crud-resources:create_relationship', 'arguments': {'property_name': 'occursOn', 'domain_class': 'rca:Symptom', 'range_class': 'rca:Equipment', 'property_type': 'ObjectProperty', 'attributes': '{\\n            \"label\": \"occurs on\",\\n            \"comment\": \"Links a Symptom to the specific Equipment entity where the symptom, alarm, or parameter deviation is observed. Use this relationship to provide physical context for symptoms, supporting root cause analysis, escalation, and handover documentation. Example: A \\'Chamber Pressure High\\' symptom occursOn \\'Chamber 2\\'. Related concepts: Equipment, Alarm, EquipmentFailure, SensorReading, LogFile.\"\\n        }'}}
+"""
+
+MULTIPLE_COMPLEX_TOOL_CALLS = """
+<thinking>
+/* Now that "Observation" and "Investigation" exist, I will:
+1. Create the required specialized subclasses: PressureFluctuationObservation, AlarmEvent, ParameterDeviationObservation (under Observation), and CVD12_TempUniformity_2025_12_17_Investigation (under Investigation).
+2. Retry creation of the relationships: partOfInvestigation (domain: ["Symptom", "Cause", "Observation", "DataSource"], range: Investigation), and documentedBy (domain: ["Symptom", "Cause", "Observation"], range: DataSource).
+3. Once schema is complete, proceed to instance creation and linking.
+All schema operations will be executed in parallel.
+*/
+</thinking>
+<function_call>
+<invoke name="ontology-crud-resources:create_subclass">
+  <parameter name="parent_class">Observation</parameter>
+  <parameter name="subclass">PressureFluctuationObservation</parameter>
+  <parameter name="attributes">{
+    "label": "Pressure Fluctuation Observation",
+    "comment": "An observation of micro-fluctuations or instability in chamber/process pressure, not necessarily triggering alarms but indicating underlying disturbances. Use for cases like CVD-12, where pressure bounces by 0.1-0.2 mTorr every 90 seconds, possibly correlated with external factors such as chiller cycling."
+  }</parameter>
+</invoke>
+<invoke name="ontology-crud-resources:create_subclass">
+  <parameter name="parent_class">Observation</parameter>
+  <parameter name="subclass">AlarmEvent</parameter>
+  <parameter name="attributes">{
+    "label": "Alarm Event",
+    "comment": "An event where a process or equipment alarm is triggered, such as TEMP-205 (Chamber Temperature High Warning) in CVD-12. Use for capturing alarm code, description, occurrence time, and actions taken. Useful for linking symptoms to specific alarm events."
+  }</parameter>
+</invoke>
+<invoke name="ontology-crud-resources:create_subclass">
+  <parameter name="parent_class">Observation</parameter>
+  <parameter name="subclass">ParameterDeviationObservation</parameter>
+  <parameter name="attributes">{
+    "label": "Parameter Deviation Observation",
+    "comment": "An observation where a process parameter deviates from its baseline or specification, such as temperature, uniformity, RF power, or pressure. Use for structured reporting of parameter values, baselines, deviations, and trends. Example: CVD-12 chamber temperature +8°C over baseline, uniformity +0.6% over spec."
+  }</parameter>
+</invoke>
+<invoke name="ontology-crud-resources:create_subclass">
+  <parameter name="parent_class">Investigation</parameter>
+  <parameter name="subclass">CVD12_TempUniformity_2025_12_17_Investigation</parameter>
+  <parameter name="attributes">{
+    "label": "CVD-12 Temperature and Uniformity Investigation (2025-12-17)",
+    "comment": "Investigation grouping all symptoms, causes, observations, and data sources related to the CVD-12 temperature and uniformity issues observed on December 17, 2025. Use to aggregate all related entities for root cause analysis, action tracking, and knowledge sharing."
+  }</parameter>
+</invoke>
+<invoke name="ontology-crud-resources:create_relationship">
+  <parameter name="property_name">partOfInvestigation</parameter>
+  <parameter name="domain_classes">["Symptom", "Cause", "Observation", "DataSource"]</parameter>
+  <parameter name="range_class">Investigation</parameter>
+  <parameter name="property_type">ObjectProperty</parameter>
+  <parameter name="attributes">{
+    "label": "part of investigation",
+    "comment": "Links symptoms, causes, observations, and data sources to the investigation they are part of. Use to group all related entities under a single investigation for comprehensive analysis and traceability. Example: All CVD-12 temperature and uniformity issue entities are partOfInvestigation CVD-12 Temperature and Uniformity Investigation (2025-12-17)."
+  }</parameter>
+</invoke>
+<invoke name="ontology-crud-resources:create_relationship">
+  <parameter name="property_name">documentedBy</parameter>
+  <parameter name="domain_classes">["Symptom", "Cause", "Observation"]</parameter>
+  <parameter name="range_class">DataSource</parameter>
+  <parameter name="property_type">ObjectProperty</parameter>
+  <parameter name="attributes">{
+    "label": "documented by",
+    "comment": "Links symptoms, causes, and observations to the data sources (logs, charts, photos, notes) that document or provide evidence for them. Use to trace the provenance of each entity and support auditability. Example: TemperatureSymptom documentedBy CVD12_Temp_Trend_72hr_2025-12-17.png."
+  }</parameter>
+</invoke>
+</function_call>
+"""
+
+MULTIPLE_COMPLEX_TOOL_CALLS_2 = """
+<thinking>
+/* The user wants to encapsulate escalation criteria, recommendations, impact assessments, parts required, related incidents, and contact information as attributes (datatype properties) on the relevant instances, rather than as separate instances and relationships. This means I will add new attributes to the main investigation instance and, where appropriate, to symptom or cause instances. I will use clear, descriptive attribute names and include the relevant information as string, numeric, or list values. I will update the existing investigation instance (and possibly others) using set_instance_property in parallel for all new attributes. */
+</thinking>
+<function_call>
+<invoke name="ontology-instance-resources:set_instance_property">
+  <parameter name="instance_id">CVD12_TempUniformity_2025_12_17_Investigation</parameter>
+  <parameter name="property_name">escalationCriteria</parameter>
+  <parameter name="value">STOP production if uniformity ≥±3.5%; monitor uniformity closely; escalate if symptoms worsen</parameter>
+</invoke>
+<invoke name="ontology-instance-resources:set_instance_property">
+  <parameter name="instance_id">CVD12_TempUniformity_2025_12_17_Investigation</parameter>
+  <parameter name="property_name">recommendations</parameter>
+  <parameter name="value">1. Schedule early PM to replace RF coil before Dec 28; 2. Facilities team to check Chiller-B logs; 3. Review electrical logs for voltage fluctuations; 4. Inspect RF coil for arcing/degradation; 5. Calibrate chamber pressure control loop</parameter>
+</invoke>
+<invoke name="ontology-instance-resources:set_instance_property">
+  <parameter name="instance_id">CVD12_TempUniformity_2025_12_17_Investigation</parameter>
+  <parameter name="property_name">impactAssessment</parameter>
+  <parameter name="value">High risk of catastrophic RF coil failure within 48-72 hours; potential yield impact; emergency unscheduled downtime (3+ days); possible impact on CVD-11 and CVD-09 if Chiller-B is root cause</parameter>
+</invoke>
+<invoke name="ontology-instance-resources:set_instance_property">
+  <parameter name="instance_id">CVD12_TempUniformity_2025_12_17_Investigation</parameter>
+  <parameter name="property_name">partsRequired</parameter>
+  <parameter name="value">RF Coil Assembly (PN: AMAT-CVD-RF-COIL-5000); RF Matching Network Components (PN: AMAT-CVD-MATCH-NET); Chiller-B Compressor Service Kit</parameter>
+</invoke>
+<invoke name="ontology-instance-resources:set_instance_property">
+  <parameter name="instance_id">CVD12_TempUniformity_2025_12_17_Investigation</parameter>
+  <parameter name="property_name">relatedIncidents</parameter>
+  <parameter name="value">INC-2025-07-15-CVD11: RF coil failure with identical symptom progression; PM-2025-11-28-CVD12: Last preventive maintenance (19 days ago)</parameter>
+</invoke>
+<invoke name="ontology-instance-resources:set_instance_property">
+  <parameter name="instance_id">CVD12_TempUniformity_2025_12_17_Investigation</parameter>
+  <parameter name="property_name">contactInformation</parameter>
+  <parameter name="value">Primary: Chen Wei-Ming (ENG_1247), Mobile: XXX-XXX-XXXX, Email: chen.weiming@company.com; Secondary: Night Shift Lead Engineer, Phone: XXX-XXX-XXXX</parameter>
+</invoke>
+</function_call>
 """
 
 
@@ -1058,3 +1164,421 @@ class TestValidateAndCastMethodArguments:
         assert validated_args["attributes"]["label"] == "occurs on"
         assert "comment" in validated_args["attributes"]
         assert "Chamber Pressure High" in validated_args["attributes"]["comment"]
+
+
+class TestMultipleComplexToolCallsParsing:
+    """Test parsing and validation of MULTIPLE_COMPLEX_TOOL_CALLS XML input."""
+
+    @pytest.fixture
+    def mock_agent(self):
+        """Create a mock agent."""
+        agent = Mock(spec=STARAgent)
+        agent.agent_type = "test_agent"
+        agent.object_id = "test-agent-123"
+        agent.available_agents = []
+        agent.available_workflows = []
+        agent.available_resources = []
+        agent._registry = Mock()
+        agent._registry._items = {}
+        agent.ensure_registered = Mock()
+        return agent
+
+    @pytest.fixture
+    def codec_tool_caller(self, mock_agent):
+        """Create a CodecToolCaller instance."""
+        return CodecToolCaller(mock_agent, CSXMLCodec)
+
+    def test_parse_multiple_complex_tool_calls_count(self, codec_tool_caller):
+        """Verify all 6 tool calls are extracted from XML."""
+        # Parse the XML using codec's parse_response method
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS)
+
+        # Verify we got tool calls
+        assert parsed_response.tool_calls is not None
+        assert len(parsed_response.tool_calls) == 6
+
+        # Verify we have 4 create_subclass calls and 2 create_relationship calls
+        create_subclass_calls = [tc for tc in parsed_response.tool_calls if tc.name == "create_subclass"]
+        create_relationship_calls = [tc for tc in parsed_response.tool_calls if tc.name == "create_relationship"]
+
+        assert len(create_subclass_calls) == 4
+        assert len(create_relationship_calls) == 2
+
+    def test_parse_parameters_as_strings(self, codec_tool_caller):
+        """Verify parameters are extracted as strings before validation."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS)
+
+        # Check first create_subclass call
+        create_subclass_call = next(tc for tc in parsed_response.tool_calls if tc.name == "create_subclass")
+        params = create_subclass_call.parameters
+
+        # Before validation, attributes should be a JSON string
+        assert "attributes" in params
+        assert isinstance(params["attributes"], str)
+        # Verify it's valid JSON
+        import json
+
+        attributes_dict = json.loads(params["attributes"])
+        assert isinstance(attributes_dict, dict)
+        assert "label" in attributes_dict
+
+        # Check first create_relationship call
+        create_relationship_call = next(tc for tc in parsed_response.tool_calls if tc.name == "create_relationship")
+        params = create_relationship_call.parameters
+
+        # domain_classes should be a JSON array string
+        assert "domain_classes" in params
+        assert isinstance(params["domain_classes"], str)
+        # Verify it's valid JSON array
+        domain_classes_list = json.loads(params["domain_classes"])
+        assert isinstance(domain_classes_list, list)
+
+        # attributes should be a JSON string
+        assert "attributes" in params
+        assert isinstance(params["attributes"], str)
+
+    def test_validate_create_subclass_attributes_conversion(self, codec_tool_caller):
+        """Verify _validate_n_cast_method_arguments converts attributes JSON to dict."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS)
+
+        # Get first create_subclass call
+        create_subclass_call = next(tc for tc in parsed_response.tool_calls if tc.name == "create_subclass")
+        params = create_subclass_call.parameters
+
+        # Verify attributes is a string before validation
+        assert isinstance(params["attributes"], str)
+
+        # Create mock method matching actual signature
+        def create_subclass(self, parent_class: str, subclass: str, attributes: dict[str, Any]) -> str:
+            """Mock method matching actual signature."""
+            return f"Created subclass: {subclass}"
+
+        # Validate and cast arguments
+        validated_args = codec_tool_caller._validate_n_cast_method_arguments(create_subclass, params)
+
+        # Verify attributes is now a dict
+        assert isinstance(validated_args["attributes"], dict)
+        assert "label" in validated_args["attributes"]
+        assert "comment" in validated_args["attributes"]
+        assert validated_args["attributes"]["label"] == "Pressure Fluctuation Observation"
+
+        # Verify other parameters remain strings
+        assert isinstance(validated_args["parent_class"], str)
+        assert validated_args["parent_class"] == "Observation"
+        assert isinstance(validated_args["subclass"], str)
+        assert validated_args["subclass"] == "PressureFluctuationObservation"
+
+    def test_validate_create_relationship_domain_classes_conversion(self, codec_tool_caller):
+        """Verify _validate_n_cast_method_arguments converts domain_classes JSON to list."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS)
+
+        # Get first create_relationship call
+        create_relationship_call = next(tc for tc in parsed_response.tool_calls if tc.name == "create_relationship")
+        params = create_relationship_call.parameters
+
+        # Verify domain_classes is a string before validation
+        assert isinstance(params["domain_classes"], str)
+
+        # Create mock method matching actual signature
+        def create_relationship(
+            self,
+            property_name: str,
+            domain_class: str | None = None,
+            domain_classes: list[str] | None = None,
+            range_class: str | None = None,
+            range_datatype: str | None = None,
+            property_type: str = "ObjectProperty",
+            attributes: dict[str, Any] = {},
+        ) -> str:
+            """Mock method matching actual signature."""
+            return f"Created relationship: {property_name}"
+
+        # Validate and cast arguments
+        validated_args = codec_tool_caller._validate_n_cast_method_arguments(create_relationship, params)
+
+        # Verify domain_classes is now a list
+        assert isinstance(validated_args["domain_classes"], list)
+        assert validated_args["domain_classes"] == ["Symptom", "Cause", "Observation", "DataSource"]
+        assert all(isinstance(item, str) for item in validated_args["domain_classes"])
+
+        # Verify other parameters
+        assert isinstance(validated_args["property_name"], str)
+        assert validated_args["property_name"] == "partOfInvestigation"
+        assert isinstance(validated_args["range_class"], str)
+        assert validated_args["range_class"] == "Investigation"
+        assert isinstance(validated_args["property_type"], str)
+        assert validated_args["property_type"] == "ObjectProperty"
+
+    def test_validate_create_relationship_attributes_conversion(self, codec_tool_caller):
+        """Verify _validate_n_cast_method_arguments converts attributes JSON to dict."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS)
+
+        # Get first create_relationship call
+        create_relationship_call = next(tc for tc in parsed_response.tool_calls if tc.name == "create_relationship")
+        params = create_relationship_call.parameters
+
+        # Verify attributes is a string before validation
+        assert isinstance(params["attributes"], str)
+
+        # Create mock method matching actual signature
+        def create_relationship(
+            self,
+            property_name: str,
+            domain_class: str | None = None,
+            domain_classes: list[str] | None = None,
+            range_class: str | None = None,
+            range_datatype: str | None = None,
+            property_type: str = "ObjectProperty",
+            attributes: dict[str, Any] = {},
+        ) -> str:
+            """Mock method matching actual signature."""
+            return f"Created relationship: {property_name}"
+
+        # Validate and cast arguments
+        validated_args = codec_tool_caller._validate_n_cast_method_arguments(create_relationship, params)
+
+        # Verify attributes is now a dict
+        assert isinstance(validated_args["attributes"], dict)
+        assert "label" in validated_args["attributes"]
+        assert "comment" in validated_args["attributes"]
+        assert validated_args["attributes"]["label"] == "part of investigation"
+
+    def test_validate_optional_parameters_handling(self, codec_tool_caller):
+        """Verify optional parameters (domain_class, range_class) are handled correctly."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS)
+
+        # Get first create_relationship call (has domain_classes, not domain_class)
+        create_relationship_call = next(tc for tc in parsed_response.tool_calls if tc.name == "create_relationship")
+        params = create_relationship_call.parameters
+
+        # Create mock method matching actual signature
+        def create_relationship(
+            self,
+            property_name: str,
+            domain_class: str | None = None,
+            domain_classes: list[str] | None = None,
+            range_class: str | None = None,
+            range_datatype: str | None = None,
+            property_type: str = "ObjectProperty",
+            attributes: dict[str, Any] = {},
+        ) -> str:
+            """Mock method matching actual signature."""
+            return f"Created relationship: {property_name}"
+
+        # Validate and cast arguments
+        validated_args = codec_tool_caller._validate_n_cast_method_arguments(create_relationship, params)
+
+        # domain_class should not be in params (we have domain_classes instead)
+        # But if it were, it should handle None correctly
+        # range_class should be a string
+        assert "range_class" in validated_args
+        assert isinstance(validated_args["range_class"], str)
+        assert validated_args["range_class"] == "Investigation"
+
+        # range_datatype should not be present (optional, not provided)
+        # property_type should have default value
+        assert validated_args["property_type"] == "ObjectProperty"
+
+    def test_end_to_end_parsing_and_validation(self, codec_tool_caller):
+        """Test complete flow: parse XML → validate/cast → verify types for all calls."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS)
+
+        # Create mock methods
+        def create_subclass(self, parent_class: str, subclass: str, attributes: dict[str, Any]) -> str:
+            """Mock method matching actual signature."""
+            return f"Created subclass: {subclass}"
+
+        def create_relationship(
+            self,
+            property_name: str,
+            domain_class: str | None = None,
+            domain_classes: list[str] | None = None,
+            range_class: str | None = None,
+            range_datatype: str | None = None,
+            property_type: str = "ObjectProperty",
+            attributes: dict[str, Any] = {},
+        ) -> str:
+            """Mock method matching actual signature."""
+            return f"Created relationship: {property_name}"
+
+        # Test all create_subclass calls
+        create_subclass_calls = [tc for tc in parsed_response.tool_calls if tc.name == "create_subclass"]
+        assert len(create_subclass_calls) == 4
+
+        for call in create_subclass_calls:
+            validated_args = codec_tool_caller._validate_n_cast_method_arguments(create_subclass, call.parameters)
+
+            # Verify all required parameters are present and correctly typed
+            assert isinstance(validated_args["parent_class"], str)
+            assert isinstance(validated_args["subclass"], str)
+            assert isinstance(validated_args["attributes"], dict)
+            assert "label" in validated_args["attributes"]
+            assert "comment" in validated_args["attributes"]
+
+        # Test all create_relationship calls
+        create_relationship_calls = [tc for tc in parsed_response.tool_calls if tc.name == "create_relationship"]
+        assert len(create_relationship_calls) == 2
+
+        for call in create_relationship_calls:
+            validated_args = codec_tool_caller._validate_n_cast_method_arguments(create_relationship, call.parameters)
+
+            # Verify all required parameters are present and correctly typed
+            assert isinstance(validated_args["property_name"], str)
+            assert isinstance(validated_args["domain_classes"], list)
+            assert all(isinstance(item, str) for item in validated_args["domain_classes"])
+            assert isinstance(validated_args["range_class"], str)
+            assert isinstance(validated_args["property_type"], str)
+            assert isinstance(validated_args["attributes"], dict)
+            assert "label" in validated_args["attributes"]
+            assert "comment" in validated_args["attributes"]
+
+
+class TestMultipleComplexToolCallsParsing2:
+    """Test parsing and validation of MULTIPLE_COMPLEX_TOOL_CALLS_2 XML input."""
+
+    @pytest.fixture
+    def mock_agent(self):
+        """Create a mock agent."""
+        agent = Mock(spec=STARAgent)
+        agent.agent_type = "test_agent"
+        agent.object_id = "test-agent-123"
+        agent.available_agents = []
+        agent.available_workflows = []
+        agent.available_resources = []
+        agent._registry = Mock()
+        agent._registry._items = {}
+        agent.ensure_registered = Mock()
+        return agent
+
+    @pytest.fixture
+    def codec_tool_caller(self, mock_agent):
+        """Create a CodecToolCaller instance."""
+        return CodecToolCaller(mock_agent, CSXMLCodec)
+
+    def test_parse_multiple_complex_tool_calls_2_count(self, codec_tool_caller):
+        """Verify all 6 tool calls are extracted from XML."""
+        # Parse the XML using codec's parse_response method
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS_2)
+
+        # Verify we got tool calls
+        assert parsed_response.tool_calls is not None
+        assert len(parsed_response.tool_calls) == 6
+
+        # Verify all calls are set_instance_property
+        set_property_calls = [tc for tc in parsed_response.tool_calls if tc.name == "set_instance_property"]
+        assert len(set_property_calls) == 6
+
+    def test_parse_parameters_as_strings_2(self, codec_tool_caller):
+        """Verify parameters are extracted as strings before validation."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS_2)
+
+        # Check first set_instance_property call
+        set_property_call = parsed_response.tool_calls[0]
+        params = set_property_call.parameters
+
+        # Before validation, all parameters should be strings
+        assert "instance_id" in params
+        assert isinstance(params["instance_id"], str)
+        assert params["instance_id"] == "CVD12_TempUniformity_2025_12_17_Investigation"
+
+        assert "property_name" in params
+        assert isinstance(params["property_name"], str)
+        assert params["property_name"] == "escalationCriteria"
+
+        assert "value" in params
+        assert isinstance(params["value"], str)
+        assert "STOP production" in params["value"]
+
+    def test_validate_set_instance_property_value_conversion(self, codec_tool_caller):
+        """Verify _validate_n_cast_method_arguments handles value: Any correctly."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS_2)
+
+        # Get first set_instance_property call
+        set_property_call = parsed_response.tool_calls[0]
+        params = set_property_call.parameters
+
+        # Verify value is a string before validation
+        assert isinstance(params["value"], str)
+
+        # Create mock method matching actual signature
+        def set_instance_property(self, instance_id: str, property_name: str, value: Any) -> str:
+            """Mock method matching actual signature."""
+            return f"Set property {property_name} on {instance_id}"
+
+        # Validate and cast arguments
+        validated_args = codec_tool_caller._validate_n_cast_method_arguments(set_instance_property, params)
+
+        # Since value is typed as Any, it should accept the string as-is
+        assert isinstance(validated_args["value"], str)
+        assert "STOP production" in validated_args["value"]
+
+        # Verify other parameters remain strings
+        assert isinstance(validated_args["instance_id"], str)
+        assert validated_args["instance_id"] == "CVD12_TempUniformity_2025_12_17_Investigation"
+        assert isinstance(validated_args["property_name"], str)
+        assert validated_args["property_name"] == "escalationCriteria"
+
+    def test_validate_all_set_instance_property_calls(self, codec_tool_caller):
+        """Verify all set_instance_property calls are correctly parsed and validated."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS_2)
+
+        # Create mock method matching actual signature
+        def set_instance_property(self, instance_id: str, property_name: str, value: Any) -> str:
+            """Mock method matching actual signature."""
+            return f"Set property {property_name} on {instance_id}"
+
+        # Expected property names
+        expected_properties = [
+            "escalationCriteria",
+            "recommendations",
+            "impactAssessment",
+            "partsRequired",
+            "relatedIncidents",
+            "contactInformation",
+        ]
+
+        # Test all calls
+        assert len(parsed_response.tool_calls) == 6
+
+        for i, call in enumerate(parsed_response.tool_calls):
+            # Validate and cast arguments
+            validated_args = codec_tool_caller._validate_n_cast_method_arguments(set_instance_property, call.parameters)
+
+            # Verify all required parameters are present and correctly typed
+            assert isinstance(validated_args["instance_id"], str)
+            assert validated_args["instance_id"] == "CVD12_TempUniformity_2025_12_17_Investigation"
+
+            assert isinstance(validated_args["property_name"], str)
+            assert validated_args["property_name"] == expected_properties[i]
+
+            assert isinstance(validated_args["value"], str)
+            # Verify value contains expected content
+            assert len(validated_args["value"]) > 0
+
+    def test_end_to_end_parsing_and_validation_2(self, codec_tool_caller):
+        """Test complete flow: parse XML → validate/cast → verify types for all calls."""
+        parsed_response = codec_tool_caller._codec.parse_response(MULTIPLE_COMPLEX_TOOL_CALLS_2)
+
+        # Create mock method matching actual signature
+        def set_instance_property(self, instance_id: str, property_name: str, value: Any) -> str:
+            """Mock method matching actual signature."""
+            return f"Set property {property_name} on {instance_id}"
+
+        # Verify all 6 calls
+        assert len(parsed_response.tool_calls) == 6
+
+        for call in parsed_response.tool_calls:
+            # Verify call structure
+            assert call.name == "set_instance_property"
+            assert call.object_id == "ontology-instance-resources"
+
+            # Validate and cast arguments
+            validated_args = codec_tool_caller._validate_n_cast_method_arguments(set_instance_property, call.parameters)
+
+            # Verify all parameters are correctly typed
+            assert isinstance(validated_args["instance_id"], str)
+            assert isinstance(validated_args["property_name"], str)
+            assert isinstance(validated_args["value"], str)
+
+            # Verify instance_id is consistent across all calls
+            assert validated_args["instance_id"] == "CVD12_TempUniformity_2025_12_17_Investigation"

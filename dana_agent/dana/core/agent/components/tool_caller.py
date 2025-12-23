@@ -1310,11 +1310,15 @@ class CodecToolCaller(WARCaller):
         """Validate the arguments of a method."""
         import json
         import types
-        from typing import Union, get_origin
+        from typing import Union, get_origin, Any as TypingAny
 
         signature = Misc.parse_method_signature(method)
         for param in signature.parameters:
             if param.type_object and param.name in arguments:
+                # Skip validation for typing.Any - accept any value as-is
+                if param.type_object is TypingAny:
+                    continue
+
                 # Get origin for generic types (e.g., List[int] -> list)
                 origin = get_origin(param.type_object)
                 if origin is None:
@@ -1336,13 +1340,18 @@ class CodecToolCaller(WARCaller):
                     if _type is type(None):
                         continue
 
+                    # Skip typing.Any in Union types
+                    if _type is TypingAny:
+                        break
+
                     # Get origin for this type (handles nested generics)
                     type_origin = get_origin(_type)
                     if type_origin is None:
                         type_origin = _type
 
                     # Type short-circuit: if already correct type
-                    if isinstance(arguments[param.name], type_origin):
+                    # Skip isinstance check for typing.Any
+                    if type_origin is not TypingAny and isinstance(arguments[param.name], type_origin):
                         break
 
                     # Handle primitive types (str, int, float)
