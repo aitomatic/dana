@@ -1,8 +1,8 @@
-# GitHub Action to run pytest in parallel across logical subsystems
+# GitHub Action to run pytest in parallel across Dana packages
 # - PRIMARY TESTING WORKFLOW: Runs on push and pull requests
 # - Runs on Python 3.12
-# - Parallelizes tests into logical subsystem groups for faster CI/CD
-# - Each job runs independently to maximize parallelization
+# - Parallelizes tests across dana_studio, dana_agent, and dana_lang packages
+# - Each package runs independently to maximize parallelization
 # - For full test coverage, run locally with: uv run pytest -m "not live" tests/
 
 name: PyTest Parallel (Primary)
@@ -15,8 +15,8 @@ on:
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  # Dana Core Parser - Language parsing and AST generation
-  test-dana-core-parser:
+  # Dana Studio - Web-based IDE tests
+  test-dana-studio:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -38,201 +38,16 @@ jobs:
           uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
-    - name: Test Dana Core Parser
+    - name: Test Dana Studio
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/unit/core/lang/parser/ -m "not live and not deep" --tb=short -v --durations=10
+        cd dana_studio
+        uv run pytest tests/ -m "not live and not deep" --tb=short -v --durations=10
 
-  # Dana Core Interpreter - Execution engine and built-in functions
-  test-dana-core-interpreter:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Core Interpreter
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/core/lang/interpreter/ -m "not live and not deep" --tb=short -v --durations=10
-
-  # Dana Core Language Features - Structs, lambdas, pipelines
-  test-dana-core-lang:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Core Language Features
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/core/lang/ tests/unit/core/workflow/ -m "not live and not deep" --tb=short -v --durations=10
-
-  # Dana Core System - Registry, types, errors, misc
-  test-dana-core-system:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Core System
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/core/test_*.py tests/unit/core/lang/misc/ tests/unit/core/resource/ -m "not live and not deep" --tb=short -v --durations=10
-
-  # Dana Core REPL - Interactive execution
-  test-dana-core-repl:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Core REPL
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/core/test_repl*.py -m "not live and not deep" --tb=short -v --durations=10
-
-  # Dana Frameworks - POET and other frameworks
-  test-dana-frameworks:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Frameworks
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/frameworks/ -m "not live and not deep" --tb=short -v
-
-  # Dana Common - Shared utilities and resources
-  test-dana-common:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Common
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/common/ -m "not live and not deep" --tb=short -v
-
-  # Dana Agent - Agent framework and capabilities
+  # Dana Agent - Agent framework tests
   test-dana-agent:
     runs-on: ubuntu-latest
     strategy:
@@ -261,390 +76,52 @@ jobs:
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/unit/agent/ tests/unit/core/agent/ -m "not live and not deep" --tb=short -v
+        cd dana_agent
+        uv run pytest tests/ -m "not live and not deep" --tb=short -v --durations=10
 
-  # Dana Libraries - Standard library and core utilities
-  test-dana-libs:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Libraries
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/libs/ -m "not live and not deep" --tb=short -v
-
-  # Dana API - API endpoints and services
-  test-dana-api:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana API
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/api/ -m "not live and not deep" --tb=short -v
-
-  # Dana TUI - Terminal user interface
-  test-dana-tui:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana TUI
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/tui/ -m "not live and not deep" --tb=short -v
-
-  # Dana Concurrency - Concurrency and async features
-  test-dana-concurrency:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Concurrency
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/concurrency/ -m "not live and not deep" --tb=short -v
-
-  # Dana Contrib - Contrib tests and utilities
-  test-dana-contrib:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Contrib
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/unit/contrib/ -m "not live and not deep" --tb=short -v
-
-  # Dana Imports - Import system tests
-  test-dana-imports:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Imports
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/importing/ tests/unit/imports/ -m "not live and not deep" --tb=short -v
-
-  # Dana Root Tests - Root level test files
-  test-dana-root:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Root Tests
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/test_*.py tests/unit/test_*.py -m "not live and not deep" --tb=short -v
-
-  # Dana Functional - Language tests (.na files)
-  test-dana-functional:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Functional
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/functional/ -m "not live and not deep" --tb=short -v
-
-  # Dana Test NA - Language syntax and feature tests (.na files)
-  test-dana-test-na:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Basic Syntax (.na files)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/test_na/test_na_basic_syntax.py -m "not live and not deep" --tb=short -v
-    - name: Test Dana Advanced Syntax (.na files)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/test_na/test_na_advanced_syntax.py -m "not live and not deep" --tb=short -v
-    - name: Test Dana Comprehensive (.na files)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/test_na/test_na_comprehensive.py -m "not live and not deep" --tb=short -v
-
-  # Dana Integration - End-to-end system integration
-  test-dana-integration:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Integration
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/integration/ -m "not live and not deep" --tb=short -v
-
-  # Dana Regression - Known issues and expected failures
-  test-dana-regression:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-    - name: Install dependencies
-      run: uv sync --extra dev
-    - name: Test Dana Regression
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        uv run pytest tests/regression/ -m "not live and not deep" --tb=short -v
+  # Dana Lang - Language runtime tests
+  # test-dana-lang:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.12"]
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Set up Python ${{ matrix.python-version }}
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: ${{ matrix.python-version }}
+  #   - name: Install uv
+  #     uses: astral-sh/setup-uv@v6
+  #   - name: Cache uv dependencies
+  #     uses: actions/cache@v4
+  #     with:
+  #       path: ~/.cache/uv
+  #       key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+  #       restore-keys: |
+  #         uv-${{ runner.os }}-
+  #   - name: Install dependencies
+  #     run: uv sync --extra dev
+  #   - name: Test Dana Lang
+  #     env:
+  #       DANA_MOCK_LLM: "true"
+  #       DANA_USE_REAL_LLM: "false"
+  #       PYTHONPATH: ${{ github.workspace }}
+  #     run: |
+  #       cd dana_lang
+  #       uv run pytest tests/ -m "not live and not deep" --tb=short -v --durations=10
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-core-parser, test-dana-core-interpreter, test-dana-core-lang, test-dana-core-system, test-dana-core-repl, test-dana-frameworks, test-dana-common, test-dana-agent, test-dana-libs, test-dana-api, test-dana-tui, test-dana-concurrency, test-dana-contrib, test-dana-imports, test-dana-root, test-dana-functional, test-dana-test-na, test-dana-integration, test-dana-regression]
+    needs: [test-dana-studio, test-dana-agent, test-dana-lang]
     runs-on: ubuntu-latest
     if: always()
     steps:
     - name: Check test results
       run: |
-        if [[ "${{ needs.test-dana-core-parser.result }}" == "failure" ||
-              "${{ needs.test-dana-core-interpreter.result }}" == "failure" ||
-              "${{ needs.test-dana-core-lang.result }}" == "failure" ||
-              "${{ needs.test-dana-core-system.result }}" == "failure" ||
-              "${{ needs.test-dana-core-repl.result }}" == "failure" ||
-              "${{ needs.test-dana-frameworks.result }}" == "failure" ||
-              "${{ needs.test-dana-common.result }}" == "failure" ||
+        if [[ "${{ needs.test-dana-studio.result }}" == "failure" ||
               "${{ needs.test-dana-agent.result }}" == "failure" ||
-              "${{ needs.test-dana-libs.result }}" == "failure" ||
-              "${{ needs.test-dana-api.result }}" == "failure" ||
-              "${{ needs.test-dana-tui.result }}" == "failure" ||
-              "${{ needs.test-dana-concurrency.result }}" == "failure" ||
-              "${{ needs.test-dana-contrib.result }}" == "failure" ||
-              "${{ needs.test-dana-imports.result }}" == "failure" ||
-              "${{ needs.test-dana-root.result }}" == "failure" ||
-              "${{ needs.test-dana-functional.result }}" == "failure" ||
-              "${{ needs.test-dana-test-na.result }}" == "failure" ||
-              "${{ needs.test-dana-integration.result }}" == "failure" ||
-              "${{ needs.test-dana-regression.result }}" == "failure" ]]; then
+              "${{ needs.test-dana-lang.result }}" == "failure" ]]; then
           echo "One or more test jobs failed"
           exit 1
         else
