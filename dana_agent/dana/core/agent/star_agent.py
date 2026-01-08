@@ -9,6 +9,7 @@ and conversational agent functionality using composable components.
 from collections.abc import Sequence
 from datetime import datetime
 import json
+import threading
 from typing import Any
 from uuid import uuid4
 
@@ -590,6 +591,244 @@ class STARAgent(BaseSTARAgent):
             )
 
         return super()._reflect(trace_learning)
+
+    # ============================================================================
+    # ASYNC STAR METHODS
+    # ============================================================================
+
+    @observable
+    async def _think_async(self, trace_percepts: DictParams) -> DictParams:
+        """
+        THINK (async): Async version of _think with native async LLM calls.
+
+        Args:
+            trace_percepts (DictParams): the percepts produced by this SEE phase.
+              - timeline (Timeline): Timeline of the agent.
+
+        Returns:
+            - trace_thoughts (DictParams): the thoughts produced by this THINK phase.
+              - response (str): Response from the LLM
+              - tool_calls (list[DictParams]): Tool calls from the LLM
+        """
+
+        # Input parameter checking
+        trace_percepts = trace_percepts or {}
+        if self._do_exit_star_loop(trace_percepts) or not trace_percepts:
+            return {"trace_thoughts": self._mark_star_loop_exit(trace_percepts)}
+
+        timeline: Timeline = trace_percepts.get("timeline", self._timeline)
+        trace_percepts.pop("timeline", None)
+
+        # Build LLM messages using PromptEngineer
+        llm_messages = self._prompt_engineer.build_llm_request(timeline)
+
+        # Query LLM with retry logic for empty responses (async)
+        response, reasoning, tool_calls = None, None, None
+        failed_tool_calls = []
+        for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
+            # Native async LLM call instead of chat_response_sync
+            llm_response = await self.llm_client.chat_response(
+                llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0
+            )
+            response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
+
+            # Retry if both response and tool_calls are empty
+            has_content = response and response.strip()
+            has_tool_calls = tool_calls and len(tool_calls) > 0
+            if has_content or has_tool_calls:
+                break
+            elif reasoning and "error" in reasoning.lower():
+                from dana.common.llm.types import LLMMessage
+
+                suggestion_message = LLMMessage(role="user", content=reasoning)
+                failed_tool_calls.append(llm_response.content)
+                if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
+                    # Replace old suggestion message in case of consecutive errors
+                    llm_messages[-1] = suggestion_message
+                else:
+                    # Add new suggestion message
+                    llm_messages.append(suggestion_message)
+            if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
+                logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
+
+        if failed_tool_calls:
+            timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.FAILED_TOOL_CALL,
+                    content=json.dumps(failed_tool_calls),
+                )
+            )
+
+        if not tool_calls or len(tool_calls) == 0:
+            response = response if (response and len(response) > 0) else "No response generated"
+            timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.AGENT_RESPONSE,
+                    content=response,
+                )
+            )
+        else:
+            if reasoning and len(reasoning) > 0:
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                        content=reasoning,
+                    )
+                )
+
+            if response and len(response) > 0:
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                        content=response,
+                    )
+                )
+
+            for tool_call in tool_calls:
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.TOOL_CALL,
+                        content=str(tool_call),
+                    )
+                )
+
+        # Output parameter checking
+        assert isinstance(response, str)
+        assert isinstance(tool_calls, list)
+        trace_percepts |= {
+            "response": response,
+            "reasoning": reasoning,
+            "tool_calls": tool_calls,
+        }
+
+        if tool_calls is None or len(tool_calls) == 0:
+            trace_percepts = self._mark_star_loop_exit(trace_percepts)
+
+        # Call parent's base implementation (sync is fine, just data manipulation)
+        result = {"trace_thoughts": trace_percepts}
+        self.broadcast(result)
+        return result
+
+    @observable
+    async def _act_async(self, trace_thoughts: DictParams) -> DictParams:
+        """
+        ACT (async): Async version of _act with native async tool execution.
+
+        Args:
+            trace_thoughts (DictParams): the thoughts produced by this THINK phase.
+              - response (str): Response from the LLM from the THINK phase.
+              - tool_calls (list[DictParams]): Tool calls from the THINK phase.
+              - caller_message (str): Caller message (may be user or another agent)
+              - caller_type (str): Type of caller (agent or human)
+              - caller_id (str): ID of the caller (agent.object_id or user) for conversation tracking.
+
+        Returns:
+            - trace_outputs (DictParams): the outputs produced by this ACT phase.
+              - response (str): Response from the LLM from the THINK phase.
+              - tool_calls (list[DictParams]): Tool calls from the THINK phase.
+              - tool_results: list[DictParams]: Tool results from the ACT phase if there are tool calls
+              - caller_message (str): Caller message (may be user or another agent)
+              - caller_type (str): Type of caller (agent or human)
+              - caller_id (str): ID of the caller (agent.object_id or user) for conversation tracking.
+        """
+
+        # Input parameter checking
+        trace_thoughts = trace_thoughts or {}
+        if not trace_thoughts or self._do_exit_star_loop(trace_thoughts):
+            return {"trace_outputs": self._mark_star_loop_exit(trace_thoughts)}
+
+        tool_calls: list[DictParams] = trace_thoughts.get("tool_calls")
+
+        # Execute tool calls using async ToolCaller (parallel execution)
+        tool_results = await self._tool_caller.async_execute_tool_calls(tool_calls)
+
+        # Add tool results to timeline
+        if isinstance(tool_results, list):
+            for tool_result in tool_results:
+                if isinstance(tool_result, dict):
+                    # Determine entry type based on tool type
+                    tool_type = tool_result.get("type")
+                    if tool_type == "agent":
+                        entry_type = TimelineEntryType.SUB_AGENT_RESPONSE
+                    elif tool_type == "resource":
+                        entry_type = TimelineEntryType.RESOURCE_RESULT
+                    elif tool_type == "workflow":
+                        entry_type = TimelineEntryType.WORKFLOW_RESULT
+                    else:  # unknown
+                        entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
+
+                    self._timeline.add_entry(
+                        TimelineEntry(
+                            entry_type=entry_type,
+                            content=tool_result.get("result", "Unknown tool result"),
+                        )
+                    )
+
+        # Output parameter checking
+        assert isinstance(tool_results, list)
+        trace_thoughts |= {"tool_results": tool_results}
+
+        # Call parent's base implementation (sync is fine, just data manipulation)
+        result = {"trace_outputs": trace_thoughts}
+        self.broadcast(result)
+        return result
+
+    async def async_query(self, **kwargs) -> DictParams:
+        """
+        Async version of query that uses async STAR methods.
+
+        Args:
+            **kwargs: Query parameters including message, caller info, etc.
+
+        Returns:
+            - DictParams: Query result with response and metadata.
+        """
+
+        @observable(name=f"Dana {self.agent_type}-agent-async-query")
+        async def _do_query_async(trace_inputs: DictParams) -> DictParams:
+            trace_outputs: DictParams = {}
+
+            MAX_ITERATIONS = 10
+            for _ in range(MAX_ITERATIONS):
+                try:
+                    # _see is sync (no async ops needed)
+                    trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
+                    # _think_async uses native async LLM call
+                    trace_thoughts = await self._think_async(trace_percepts.get("trace_percepts", {}))
+                    # _act_async uses native async tool execution
+                    trace_outputs = await self._act_async(trace_thoughts.get("trace_thoughts", {}))
+
+                    # Trigger acquisitive learning asynchronously at end of each STAR loop
+                    if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
+                        # Prepare acquisitive learning input (async, non-blocking)
+                        acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
+                        acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
+
+                        # Run asynchronously to not block STAR loop
+                        def run_reflect(acq_input):
+                            return self._reflect(acq_input)
+
+                        threading.Thread(target=run_reflect, args=(acquisitive_input,), daemon=True).start()
+
+                    if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
+                        break
+
+                except Exception as e:
+                    print(f"Error in async_query: {e}")
+                    trace_outputs = {"trace_outputs": {"error": e}}
+                    break
+
+            return trace_outputs
+
+        try:
+            result = await _do_query_async(trace_inputs={"trace_inputs": kwargs})
+            result = result.get("trace_outputs", {}) if result else {}
+
+        except Exception as e:
+            print(f"Error in async_query: {e}")
+            result = {"error": e}
+
+        return result
 
     # ============================================================================
     # DISCOVERY INTERFACE (Override from BaseSTARAgent)

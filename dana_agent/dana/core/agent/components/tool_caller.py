@@ -1306,11 +1306,72 @@ class CodecToolCaller(WARCaller):
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [self._execute_single_call(call) for call in parsed_tool_calls]
 
+    async def async_execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Execute tool calls with native async support and parallel execution."""
+        return list(await asyncio.gather(*[self._execute_single_call_async(call) for call in parsed_tool_calls]))
+
+    async def _execute_single_call_async(self, tool_call: dict[str, Any]) -> dict[str, Any]:
+        """Async version of _execute_single_call with native await for async methods."""
+        function_name = tool_call.get("function", "")
+        arguments = tool_call.get("arguments", {})
+        if ":" not in function_name:
+            return self._create_tool_error("codec_format", function_name, "Expected ClassName:methodName format")
+
+        parts = function_name.split(":", 1)
+        identifier = parts[0]
+        method_name = parts[1]
+
+        # Try object_id lookup first, then fallback to class_name lookup
+        obj_info = self._find_object_by_id(identifier)
+        if not obj_info:
+            obj_info = self._find_object_by_class_name(identifier)
+
+        if not obj_info:
+            available_classes = self._get_available_class_names()
+            return self._create_tool_error(
+                "class_not_found",
+                identifier,
+                f"Object '{identifier}' not found by object_id or class_name in available agents/resources/workflows. "
+                f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}",
+            )
+
+        # Method signature validation and conversion to the expected type
+        if hasattr(obj_info["object"], method_name):
+            method = getattr(obj_info["object"], method_name)
+            arguments = self._validate_n_cast_method_arguments(method, arguments)
+
+            try:
+                # Set session_id for EventLog if it exists
+                if obj_info["type"] == "agent":
+                    if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
+                        session_id = self._agent._event_log._current_session_id
+                        if session_id is not None:
+                            arguments["session_id"] = session_id
+                # Native async execution instead of Misc.safe_asyncio_run
+                if asyncio.iscoroutinefunction(method):
+                    result = await method(**arguments)
+                else:
+                    result = method(**arguments)
+                return self._create_tool_success(obj_info["type"], f"{identifier}.{method_name}", result)
+            except Exception as e:
+                return self._create_tool_error(
+                    "execution_error",
+                    f"{identifier}.{method_name}",
+                    f"Error executing call {identifier}.{method_name}: {str(e)}\n{traceback.format_exc()}",
+                )
+        else:
+            return self._create_tool_error(
+                "method_not_found",
+                f"{identifier}.{method_name}",
+                f"Method '{method_name}' not found in object '{identifier}'\n{traceback.format_exc()}",
+            )
+
     def _validate_n_cast_method_arguments(self, method: Callable, arguments: dict[str, Any]) -> dict[str, Any]:
         """Validate the arguments of a method."""
         import json
         import types
-        from typing import Union, get_origin, Any as TypingAny
+        from typing import Any as TypingAny
+        from typing import Union, get_origin
 
         signature = Misc.parse_method_signature(method)
         for param in signature.parameters:
