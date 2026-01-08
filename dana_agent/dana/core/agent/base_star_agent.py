@@ -247,7 +247,7 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
         return result
 
     @abstractmethod
-    async def async_query(self, **kwargs) -> DictParams:
+    async def aquery(self, **kwargs) -> DictParams:
         """
         Async version of query that uses async STAR methods.
 

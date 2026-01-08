@@ -149,7 +149,7 @@ class STARAgentProtococol(AgentProtocol):
         """
         ...
 
-    async def async_query(self, **kwargs) -> DictParams:
+    async def aquery(self, **kwargs) -> DictParams:
         """Async version of query that uses async STAR methods.
         Args:
             **kwargs: Query parameters including message, caller info, etc.
