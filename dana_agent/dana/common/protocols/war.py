@@ -2,7 +2,7 @@
 Protocols for WAR (Workflow, Agent, Resource) framework.
 """
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Protocol
 
 from .types import DictParams
@@ -156,5 +156,19 @@ class STARAgentProtococol(AgentProtocol):
 
         Returns:
             - DictParams: Query result with response and metadata.
+        """
+        ...
+
+    async def aconverse(
+        self,
+        initial_message: str | None = None,
+        session_id: str | None = None,
+        input_handler: Callable[[], Awaitable[str]] | None = None,
+    ) -> None:
+        """Async interactive conversation loop with pluggable input handler.
+        Args:
+            initial_message: Optional initial message to start the conversation
+            session_id: Optional session identifier. If None, generates UUID.
+            input_handler: Async callable that returns user input string.
         """
         ...

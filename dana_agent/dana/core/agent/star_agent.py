@@ -6,7 +6,7 @@ It provides a cleaner, more maintainable architecture for the STAR (See-Think-Ac
 and conversational agent functionality using composable components.
 """
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from datetime import datetime
 import json
 import threading
@@ -248,6 +248,26 @@ class STARAgent(BaseSTARAgent):
             session_id: Optional session identifier. If None, generates UUID.
         """
         self._communicator.converse(initial_message=initial_message, session_id=session_id)
+
+    async def aconverse(
+        self,
+        initial_message: str | None = None,
+        session_id: str | None = None,
+        input_handler: Callable[[], Awaitable[str]] | None = None,
+    ) -> None:
+        """Async interactive conversation loop with pluggable input handler.
+
+        Args:
+            initial_message: Optional initial message to start the conversation
+            session_id: Optional session identifier. If None, generates UUID.
+            input_handler: Async callable that returns user input string.
+                          If None, uses default blocking input() wrapped in executor.
+        """
+        await self._communicator.aconverse(
+            initial_message=initial_message,
+            session_id=session_id,
+            input_handler=input_handler,
+        )
 
     def __getattr__(self, name: str):
         """
@@ -773,7 +793,7 @@ class STARAgent(BaseSTARAgent):
         self.broadcast(result)
         return result
 
-    async def async_query(self, **kwargs) -> DictParams:
+    async def aquery(self, **kwargs) -> DictParams:
         """
         Async version of query that uses async STAR methods.
 
