@@ -1306,10 +1306,12 @@ class CodecToolCaller(WARCaller):
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [self._execute_single_call(call) for call in parsed_tool_calls]
 
+    @observable
     async def async_execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Execute tool calls with native async support and parallel execution."""
         return list(await asyncio.gather(*[self._execute_single_call_async(call) for call in parsed_tool_calls]))
 
+    @observable
     async def _execute_single_call_async(self, tool_call: dict[str, Any]) -> dict[str, Any]:
         """Async version of _execute_single_call with native await for async methods."""
         function_name = tool_call.get("function", "")
