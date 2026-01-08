@@ -10,6 +10,7 @@ variable to 'false' (default). Set to 'true', '1', or 'yes' to enable tracking.
 
 from collections.abc import Callable
 import functools
+import inspect
 import os
 
 from langfuse import Langfuse
@@ -77,16 +78,31 @@ def observable(*args, **kwargs) -> Callable:
         else:
             execute_function = func
 
-        @functools.wraps(func)
-        def wrapper(*wrapper_args, **wrapper_kwargs):
-            # Execute the observed function
-            result = execute_function(*wrapper_args, **wrapper_kwargs)
-            # Flush after execution
-            if OBSERVER:
-                OBSERVER.flush()
-            return result
+        # Handle async functions
+        if inspect.iscoroutinefunction(func):
 
-        return wrapper
+            @functools.wraps(func)
+            async def async_wrapper(*wrapper_args, **wrapper_kwargs):
+                # Execute the observed function
+                result = await execute_function(*wrapper_args, **wrapper_kwargs)
+                # Flush after execution
+                if OBSERVER:
+                    OBSERVER.flush()
+                return result
+
+            return async_wrapper
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*wrapper_args, **wrapper_kwargs):
+                # Execute the observed function
+                result = execute_function(*wrapper_args, **wrapper_kwargs)
+                # Flush after execution
+                if OBSERVER:
+                    OBSERVER.flush()
+                return result
+
+            return wrapper
 
     # Handle both @observable and @observable() syntax
     if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
@@ -98,16 +114,31 @@ def observable(*args, **kwargs) -> Callable:
         else:
             execute_function = func
 
-        @functools.wraps(func)
-        def wrapper(*wrapper_args, **wrapper_kwargs):
-            # Execute the observed function
-            result = execute_function(*wrapper_args, **wrapper_kwargs)
-            # Flush after execution
-            if OBSERVER:
-                OBSERVER.flush()
-            return result
+        # Handle async functions
+        if inspect.iscoroutinefunction(func):
 
-        return wrapper
+            @functools.wraps(func)
+            async def async_wrapper(*wrapper_args, **wrapper_kwargs):
+                # Execute the observed function
+                result = await execute_function(*wrapper_args, **wrapper_kwargs)
+                # Flush after execution
+                if OBSERVER:
+                    OBSERVER.flush()
+                return result
+
+            return async_wrapper
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*wrapper_args, **wrapper_kwargs):
+                # Execute the observed function
+                result = execute_function(*wrapper_args, **wrapper_kwargs)
+                # Flush after execution
+                if OBSERVER:
+                    OBSERVER.flush()
+                return result
+
+            return wrapper
     else:
         # Called as @observable() or @observable(...) (with parentheses/parameters)
         return decorator

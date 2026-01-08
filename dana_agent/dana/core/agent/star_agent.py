@@ -9,7 +9,6 @@ and conversational agent functionality using composable components.
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import datetime
 import json
-import threading
 from typing import Any
 from uuid import uuid4
 
@@ -230,6 +229,29 @@ class STARAgent(BaseSTARAgent):
 
         try:
             result = super().query(**kwargs)
+            return result
+        finally:
+            # Save events if EventLog exists
+            if hasattr(self, "_event_log") and self._event_log is not None:
+                self._event_log.save(session_id)
+
+            # Save timeline (agent, codec, storage_config already set in __init__)
+            if hasattr(self, "_timeline") and self._timeline is not None:
+                self._timeline.save(session_id)
+
+    async def aquery(self, **kwargs) -> DictParams:
+        # Generate session_id if not provided
+        new_session_id = kwargs.get("session_id")
+        if new_session_id is not None:
+            self.set_session_id(new_session_id)
+        session_id = self._session_id
+
+        # Set session_id for EventLog if it exists
+        if hasattr(self, "_event_log") and self._event_log is not None:
+            self._event_log._current_session_id = session_id
+
+        try:
+            result = await super().aquery(**kwargs)
             return result
         finally:
             # Save events if EventLog exists
@@ -791,63 +813,6 @@ class STARAgent(BaseSTARAgent):
         # Call parent's base implementation (sync is fine, just data manipulation)
         result = {"trace_outputs": trace_thoughts}
         self.broadcast(result)
-        return result
-
-    async def aquery(self, **kwargs) -> DictParams:
-        """
-        Async version of query that uses async STAR methods.
-
-        Args:
-            **kwargs: Query parameters including message, caller info, etc.
-
-        Returns:
-            - DictParams: Query result with response and metadata.
-        """
-
-        @observable(name=f"Dana {self.agent_type}-agent-async-query")
-        async def _do_query_async(trace_inputs: DictParams) -> DictParams:
-            trace_outputs: DictParams = {}
-
-            MAX_ITERATIONS = 10
-            for _ in range(MAX_ITERATIONS):
-                try:
-                    # _see is sync (no async ops needed)
-                    trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
-                    # _think_async uses native async LLM call
-                    trace_thoughts = await self._think_async(trace_percepts.get("trace_percepts", {}))
-                    # _act_async uses native async tool execution
-                    trace_outputs = await self._act_async(trace_thoughts.get("trace_thoughts", {}))
-
-                    # Trigger acquisitive learning asynchronously at end of each STAR loop
-                    if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
-                        # Prepare acquisitive learning input (async, non-blocking)
-                        acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
-                        acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
-
-                        # Run asynchronously to not block STAR loop
-                        def run_reflect(acq_input):
-                            return self._reflect(acq_input)
-
-                        threading.Thread(target=run_reflect, args=(acquisitive_input,), daemon=True).start()
-
-                    if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
-                        break
-
-                except Exception as e:
-                    print(f"Error in async_query: {e}")
-                    trace_outputs = {"trace_outputs": {"error": e}}
-                    break
-
-            return trace_outputs
-
-        try:
-            result = await _do_query_async(trace_inputs={"trace_inputs": kwargs})
-            result = result.get("trace_outputs", {}) if result else {}
-
-        except Exception as e:
-            print(f"Error in async_query: {e}")
-            result = {"error": e}
-
         return result
 
     # ============================================================================
