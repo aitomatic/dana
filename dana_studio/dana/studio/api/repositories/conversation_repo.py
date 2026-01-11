@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from dana.studio.api.core.models import Conversation, Message
 from dana.studio.api.core.schemas import (
     ConversationWithMessages,
@@ -65,6 +66,12 @@ class AbstractConversationRepo(ABC):
     @abstractmethod
     async def get_conversation_by_session(cls, session_id: int, **kwargs) -> ConversationWithMessages | None:
         """Get conversation for an interview session."""
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def update_message_metadata(cls, message_id: int, metadata: dict, **kwargs) -> bool:
+        """Update a message's metadata by ID. Returns True if successful."""
         pass
 
 
@@ -374,6 +381,36 @@ class SQLConversationRepo(AbstractConversationRepo):
             updated_at=conversation.updated_at,
             messages=message_reads,
         )
+
+    @classmethod
+    async def update_message_metadata(cls, message_id: int, metadata: dict, **kwargs) -> bool:
+        """
+        Update a message's metadata by ID.
+
+        Args:
+            message_id: The ID of the message to update
+            metadata: The new metadata dict (will be merged with existing)
+            **kwargs: Must include 'db' session
+
+        Returns:
+            True if successful, False if message not found
+        """
+        db = cls._get_db(**kwargs)
+        message = db.query(Message).filter(Message.id == message_id).first()
+
+        if not message:
+            return False
+
+        # Merge new metadata with existing
+        existing_metadata = message.msg_metadata or {}
+        merged_metadata = {**existing_metadata, **metadata}
+        message.msg_metadata = merged_metadata
+
+        # Flag the JSON column as modified so SQLAlchemy detects the change
+        flag_modified(message, "msg_metadata")
+
+        db.commit()
+        return True
 
 
 if __name__ == "__main__":

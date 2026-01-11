@@ -822,20 +822,24 @@ async def template_finetune_chat(
         logger.debug(f"Specialization: domain={spec.domain}, role={spec.role}")
 
         # Build chat history for handler (convert from conversation messages to MessageData)
+        # Include message IDs in metadata for updating after compaction
         previous_mode = None
         chat_history = []
         for message in conversation.messages:
             if message.require_user or not message.treat_as_tool:
+                # Merge existing metadata with message ID for tracking
+                msg_metadata = message.metadata if hasattr(message, "metadata") and message.metadata else {}
+                msg_metadata = {**msg_metadata, "_message_id": message.id}
                 chat_history.append(
                     MessageData(
                         role=message.sender,
                         content=message.content,
                         require_user=message.require_user,
                         treat_as_tool=message.treat_as_tool,
-                        metadata=message.metadata if hasattr(message, "metadata") else {},
+                        metadata=msg_metadata,
                     )
                 )
-            previous_mode = message.metadata.get("mode", ChatMode.CHAT)
+            previous_mode = message.metadata.get("mode", ChatMode.CHAT) if message.metadata else ChatMode.CHAT
 
         logger.debug(f"Built chat history with {len(chat_history)} messages")
 
@@ -928,6 +932,22 @@ async def template_finetune_chat(
             # Extract new messages from result and add to conversation
             internal_conversation = result.get("conversation", [])
             logger.debug(f"DocumentExplorationHandler returned {len(internal_conversation)} messages")
+
+        # Persist compacted context if compaction occurred
+        # The compaction attaches summary to the first preserved message's metadata
+        if internal_conversation:
+            for msg in internal_conversation:
+                compacted_context = msg.metadata.get("compacted_context")
+                message_id = msg.metadata.get("_message_id")
+                if compacted_context and message_id:
+                    # Update the message's metadata in DB to persist the compacted context
+                    logger.info(f"📦 Persisting compacted context to message {message_id}")
+                    await conv_repo.update_message_metadata(
+                        message_id=message_id,
+                        metadata={"compacted_context": compacted_context},
+                        db=db,
+                    )
+                    break  # Only the first message should have compacted_context
 
         # Convert handler messages to MessageCreate format and add to conversation
         # Implement deduplication logic similar to knowledge_structuring_chat

@@ -19,6 +19,7 @@ from dana.studio.api.services.knowledge_pack.document_handler.tools import (
     ReadDocumentsTool,
 )
 from dana.studio.api.services.knowledge_pack.document_handler.prompts import DOCUMENT_EXPLORATION_PROMPT
+from dana.studio.api.services.context_auto_compact import ContextAutoCompactor, inject_compacted_context_to_content
 from dana.lang.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
 from dana.studio.api.repositories.domain_knowledge_repo import SQLDomainKnowledgeRepo
 from dana.studio.api.repositories.document_repo import SQLDocumentRepo
@@ -56,6 +57,7 @@ class DocumentExplorationHandler(AbstractHandler):
         self.tools = {}
         self.rag_docs = None
         self.db = None  # Database session set by API route
+        self.context_compactor = ContextAutoCompactor(llm=self.llm)
         self._initialize_tools()
 
     async def _initialize_rag(self) -> None:
@@ -102,10 +104,20 @@ class DocumentExplorationHandler(AbstractHandler):
             self._initialize_tools()
 
         # Initialize conversation with user request
-        conversation = request.chat_history
+        raw_conversation = request.chat_history
 
-        if len(conversation) >= 4:  # FOR NOW, ONLY USE LAST 4 MESSAGES
-            conversation = conversation[-4:]
+        # Apply intelligent compaction instead of hard truncation
+        compaction_result = await self.context_compactor.compact_if_needed(
+            conversation=raw_conversation,
+            model=getattr(self.llm, "model", None),
+        )
+        conversation = compaction_result.compacted_conversation
+
+        if compaction_result.summary_created:
+            logger.info(
+                f"Conversation compacted: {compaction_result.messages_compacted} messages summarized, "
+                f"{compaction_result.messages_preserved} preserved"
+            )
 
         # Tool loop - max 15 iterations
         for _ in range(15):
@@ -227,12 +239,18 @@ Do NOT attempt to list all documents - use read_documents with a query to help t
 
         Returns MessageData with tool call XML or "complete"
         """
-        # Convert conversation to string
+        # Convert conversation to string, injecting compacted context if present
         llm_conversation = []
-        for message in conversation:
-            if message.role == "agent":
-                message.role = "assistant"
-            llm_conversation.append({"role": message.role, "content": message.content})
+        for i, message in enumerate(conversation):
+            role = "assistant" if message.role == "agent" else message.role
+
+            # Inject compacted context from first message's metadata
+            if i == 0:
+                content = inject_compacted_context_to_content(message)
+            else:
+                content = message.content
+
+            llm_conversation.append({"role": role, "content": content})
 
         tool_str = self.tool_str
 

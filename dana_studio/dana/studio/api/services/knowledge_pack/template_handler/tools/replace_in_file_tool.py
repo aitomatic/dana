@@ -155,7 +155,13 @@ The tool automatically preserves the template markdown structure and formatting.
 
         # Generate result message
         if changes_made:
-            return f"✅ Successfully applied {changes_made} change(s) to '{file_path}'"
+            return (
+                f"✅ TEMPLATE FILE UPDATED - {changes_made} change(s) applied\n"
+                f"The actual template file on disk has been modified.\n"
+                f"The right-side preview pane now reflects these changes.\n"
+                f"Any <current_template_file> or <current_topic_content> from earlier in this "
+                f"conversation is now OUTDATED - use view_template to see the new state if needed."
+            )
         else:
             return f"⚠️ No changes were applied to '{file_path}' (search patterns not found)"
 
@@ -357,9 +363,7 @@ The tool automatically preserves the template markdown structure and formatting.
         logger.info(f"Successfully parsed {len(blocks)} diff block(s) using new parser")
         return blocks
 
-    def _create_ambiguity_suggestion(
-        self, content: str, search_pattern: str, replace_content: str, occurrences: int
-    ) -> dict:
+    def _create_ambiguity_suggestion(self, content: str, search_pattern: str, replace_content: str, occurrences: int) -> dict:
         """
         Create suggestion for more specific search pattern.
 

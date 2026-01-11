@@ -20,6 +20,7 @@ from dana.studio.api.services.knowledge_pack.template_handler.tools import (
     AskQuestionTool,
 )
 from dana.studio.api.services.knowledge_pack.template_handler.prompts import TEMPLATE_MODIFICATION_PROMPT
+from dana.studio.api.services.context_auto_compact import ContextAutoCompactor, inject_compacted_context_to_content
 from dana.studio.api.core.logger import log as logger
 from pathlib import Path
 
@@ -54,6 +55,7 @@ class TemplateModificationHandler(AbstractHandler):
         self.notifier = notifier
         self.tools = {}
         self.db = None  # Database session set by API route
+        self.context_compactor = ContextAutoCompactor(llm=self.llm)
         self._initialize_tools()
 
     def _initialize_tools(self):
@@ -82,7 +84,8 @@ class TemplateModificationHandler(AbstractHandler):
         # Initialize conversation with user request
         raw_conversation = request.chat_history
 
-        conversation = []
+        # Filter out editor mode messages (keep existing filtering logic)
+        filtered_conversation = []
         is_in_editor_mode = False
         for message in raw_conversation[::-1]:
             if message.metadata.get("mode") == "editor":
@@ -91,10 +94,21 @@ class TemplateModificationHandler(AbstractHandler):
             elif message.metadata.get("mode") == "auto" and is_in_editor_mode:
                 is_in_editor_mode = False
                 continue
-            conversation.append(message)
-            if len(conversation) >= 10:
-                break
-        conversation = conversation[::-1]
+            filtered_conversation.append(message)
+        filtered_conversation = filtered_conversation[::-1]
+
+        # Apply intelligent compaction instead of hard truncation
+        compaction_result = await self.context_compactor.compact_if_needed(
+            conversation=filtered_conversation,
+            model=getattr(self.llm, "model", None),
+        )
+        conversation = compaction_result.compacted_conversation
+
+        if compaction_result.summary_created:
+            logger.info(
+                f"Conversation compacted: {compaction_result.messages_compacted} messages summarized, "
+                f"{compaction_result.messages_preserved} preserved"
+            )
 
         # Check if view_template was already called
         has_view_template = any("<view_template>" in msg.content for msg in conversation)
@@ -106,7 +120,12 @@ class TemplateModificationHandler(AbstractHandler):
             # Create assistant message with tool call XML
             thinking_msg = MessageData(
                 role=SenderRole.ASSISTANT,
-                content="<thinking>Starting template modification. First, I need to view the current template to understand its structure and content.</thinking>\n\n<view_template>\n  <section>all</section>\n</view_template>",
+                content=(
+                    "<thinking>Starting template modification. I'll first view the ACTUAL CURRENT template file "
+                    "(saved on disk, shown on right side of UI). Any changes I propose in this chat are NOT "
+                    "applied until I successfully execute replace_in_template.</thinking>\n\n"
+                    "<view_template>\n  <section>all</section>\n</view_template>"
+                ),
                 treat_as_tool=True,
             )
 
@@ -192,12 +211,18 @@ class TemplateModificationHandler(AbstractHandler):
 
         Returns MessageData with tool call XML or "complete"
         """
-        # Convert conversation to string
+        # Convert conversation to string, injecting compacted context if present
         llm_conversation = []
-        for message in conversation:
-            if message.role == "agent":
-                message.role = "assistant"
-            llm_conversation.append({"role": message.role, "content": message.content})
+        for i, message in enumerate(conversation):
+            role = "assistant" if message.role == "agent" else message.role
+
+            # Inject compacted context from first message's metadata
+            if i == 0:
+                content = inject_compacted_context_to_content(message)
+            else:
+                content = message.content
+
+            llm_conversation.append({"role": role, "content": content})
 
         tool_str = "\n\n".join([f"{tool}" for tool in self.tools.values()])
 

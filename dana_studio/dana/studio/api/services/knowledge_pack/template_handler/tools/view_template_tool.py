@@ -46,7 +46,13 @@ class ViewTemplateTool(BaseTool):
             template_data = parse_template(self.template_path)
 
             if section == "all":
-                content = f'<template>\n{template_data["raw_content"]}\n</template>'
+                content = (
+                    f'<current_template_file state="saved_on_disk">\n'
+                    f'<!-- THIS IS THE ACTUAL TEMPLATE FILE CONTENT -->\n'
+                    f'<!-- Changes proposed in chat are NOT applied until replace_in_template succeeds -->\n'
+                    f'{template_data["raw_content"]}\n'
+                    f'</current_template_file>'
+                )
             elif section == "relationship_prompts":
                 content = template_data["relationship_prompts"]
             elif section == "followup_framework":
@@ -77,7 +83,11 @@ class ViewTemplateTool(BaseTool):
         if not topic:
             return message  # Error or suggestions
 
-        return topic["raw_content"]
+        return (
+            f'<current_topic_content topic="{topic["name"]}" state="saved_on_disk">\n'
+            f'{topic["raw_content"]}\n'
+            f'</current_topic_content>'
+        )
 
 
 if __name__ == "__main__":

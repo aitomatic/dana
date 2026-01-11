@@ -100,3 +100,5 @@ dana_studio/dana/studio/api_backup
 
 .output
 knowledge_packs
+log/
+test.py
