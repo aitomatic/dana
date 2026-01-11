@@ -9,6 +9,7 @@ import os
 import re
 import logging
 from pathlib import Path
+from difflib import SequenceMatcher
 from dana.studio.api.services.knowledge_pack.template_handler.utils import normalize_template_separators
 
 logger = logging.getLogger(__name__)
@@ -135,9 +136,12 @@ The tool automatically preserves the template markdown structure and formatting.
 
         # Parse and apply the diff
         try:
-            new_content, changes_made = self._apply_diff(content, diff)
+            new_content, changes_made, fuzzy_matches = self._apply_diff(content, diff)
         except AmbiguousSearchPatternError as e:
             # Return the suggestion message
+            return str(e)
+        except ValueError as e:
+            # Atomic abort - return the error message directly
             return str(e)
         except Exception as e:
             return f"❌ Error applying diff: {e}"
@@ -153,90 +157,155 @@ The tool automatically preserves the template markdown structure and formatting.
         except Exception as e:
             return f"❌ Error writing file '{file_path}': {e}"
 
-        # Generate result message
+        # Generate result message with fuzzy match transparency
         if changes_made:
-            return (
+            msg = (
                 f"✅ TEMPLATE FILE UPDATED - {changes_made} change(s) applied\n"
                 f"The actual template file on disk has been modified.\n"
                 f"The right-side preview pane now reflects these changes.\n"
                 f"Any <current_template_file> or <current_topic_content> from earlier in this "
                 f"conversation is now OUTDATED - use view_template to see the new state if needed."
             )
+            if fuzzy_matches:
+                msg += f"\n\n⚡ Note: {len(fuzzy_matches)} block(s) used fuzzy matching:\n"
+                for block_num, similarity in fuzzy_matches:
+                    msg += f"  - Block {block_num}: {similarity:.1%} similarity\n"
+            return msg
         else:
             return f"⚠️ No changes were applied to '{file_path}' (search patterns not found)"
 
-    def _apply_diff(self, content: str, diff: str) -> tuple[str, int]:
+    def _apply_diff(self, content: str, diff: str) -> tuple[str, int, list[tuple[int, float]]]:
         """
         Apply search and replace operations to content.
+        Uses two-phase validation with fuzzy matching for atomic all-or-nothing behavior.
+
+        Phase 1: Validate ALL blocks first (no changes to content)
+        Phase 2: Apply all blocks only if validation passed
 
         Args:
             content: Original file content
             diff: Search and replace blocks
 
         Returns:
-            Tuple of (new_content, number_of_changes_made)
-        """
-        new_content = content
-        changes_made = 0
-        suggestions = []
+            Tuple of (new_content, changes_made, fuzzy_matches)
+            - new_content: The modified content
+            - changes_made: Number of successful replacements
+            - fuzzy_matches: List of (block_number, similarity) for blocks that used fuzzy matching
 
+        Raises:
+            AmbiguousSearchPatternError: If a pattern matches multiple locations
+            ValueError: If any pattern is not found (atomic abort)
+        """
         # Split diff into blocks
         blocks = self._parse_diff_blocks_new(diff)
 
-        for block in blocks:
+        # ========== PHASE 1: VALIDATE ALL BLOCKS ==========
+        validation_errors = []
+        ambiguous_suggestions = []
+        validated_blocks = []  # Store validated (search, replace, actual_match, fuzzy, similarity) dicts
+
+        for i, block in enumerate(blocks, 1):
             search_content = block["search"]
             replace_content = block["replace"]
-
-            # Exact string replacement
-            occurrences = new_content.count(search_content)
+            occurrences = content.count(search_content)
 
             if occurrences > 1:
-                # Multiple matches found - create suggestion
-                suggestion = self._create_ambiguity_suggestion(new_content, search_content, replace_content, occurrences)
-                suggestions.append(suggestion)
-                logger.warning(f"Ambiguous search pattern found {occurrences} times: {search_content[:50]}...")
-                continue  # Skip this block, don't apply changes
+                # Ambiguous exact match
+                suggestion = self._create_ambiguity_suggestion(content, search_content, replace_content, occurrences)
+                ambiguous_suggestions.append(suggestion)
+                logger.warning(f"Block {i}: Ambiguous pattern found {occurrences} times: {search_content[:50]}...")
+                continue
 
             if occurrences == 1:
-                # Single match - safe to replace
-                # Smart newline handling: if replacing with empty string and match is followed by newline,
-                # include the newline in replacement to avoid orphan newlines
-                if replace_content == "":
-                    match_pos = new_content.find(search_content)
-                    match_end = match_pos + len(search_content)
+                # Exact match found
+                validated_blocks.append(
+                    {
+                        "search": search_content,
+                        "replace": replace_content,
+                        "actual_match": search_content,
+                        "fuzzy": False,
+                        "similarity": 1.0,
+                        "block_num": i,
+                    }
+                )
+                logger.debug(f"Block {i}: Exact match found")
+                continue
 
-                    # Check if this match is followed by a newline
-                    if match_end < len(new_content) and new_content[match_end] == "\n":
-                        # Check if this is NOT in the middle of a line (i.e., it's a complete line or at end)
-                        # by checking if the match starts at beginning of line or IS the whole content
-                        is_line_start = match_pos == 0 or new_content[match_pos - 1] == "\n"
+            # occurrences == 0: Try fuzzy matching
+            matched_text, similarity, candidates = self._find_fuzzy_match(content, search_content, threshold=0.90)
 
-                        if is_line_start:
-                            # This is a complete line deletion - include the trailing newline
-                            search_content_with_newline = search_content + "\n"
-                            new_content = new_content.replace(search_content_with_newline, replace_content, 1)
-                            logger.info("Replaced 1 occurrence (complete line) - removed trailing newline")
-                        else:
-                            # Partial line deletion - don't touch the newline
-                            new_content = new_content.replace(search_content, replace_content, 1)
-                            logger.info("Replaced 1 occurrence (partial line)")
-                    else:
-                        # No trailing newline or at end of content
-                        new_content = new_content.replace(search_content, replace_content, 1)
-                        logger.info("Replaced 1 occurrence (no trailing newline)")
-                else:
-                    # Normal replacement
-                    new_content = new_content.replace(search_content, replace_content, 1)
-                    logger.info("Replaced 1 occurrence of search pattern")
-                changes_made += 1
+            if matched_text is None:
+                # No fuzzy match found either
+                preview = search_content[:100] + ("..." if len(search_content) > 100 else "")
+                validation_errors.append(f"Block {i}: Search pattern not found (even with 90% fuzzy matching):\n" f"  '{preview}'")
+                logger.warning(f"Block {i}: Pattern not found, no fuzzy match: {search_content[:50]}...")
+            elif len(candidates) > 1 and abs(candidates[0][1] - candidates[1][1]) < 0.01:
+                # Multiple equally-good fuzzy matches - ambiguous
+                ambiguous_suggestions.append(
+                    {
+                        "pattern": search_content,
+                        "count": len(candidates),
+                        "specific_patterns": [
+                            {"search": c[0], "replace": replace_content, "location": f"~{c[1]:.0%} match"}
+                            for c in candidates[:3]  # Show top 3
+                        ],
+                    }
+                )
+                logger.warning(f"Block {i}: Multiple equally-good fuzzy matches found")
             else:
-                logger.warning(f"Search pattern not found in content: {search_content[:100]}...")
+                # Single best fuzzy match found
+                validated_blocks.append(
+                    {
+                        "search": search_content,
+                        "replace": replace_content,
+                        "actual_match": matched_text,
+                        "fuzzy": True,
+                        "similarity": similarity,
+                        "block_num": i,
+                    }
+                )
+                logger.info(f"Block {i}: Using fuzzy match ({similarity:.1%} similarity)")
 
-        # If suggestions exist, raise exception with helpful message
-        if suggestions:
-            raise AmbiguousSearchPatternError(suggestions)
+        # If ANY validation errors, abort entire operation
+        if ambiguous_suggestions:
+            raise AmbiguousSearchPatternError(ambiguous_suggestions)
 
-        return new_content, changes_made
+        if validation_errors:
+            error_msg = (
+                f"❌ ATOMIC OPERATION ABORTED - {len(validation_errors)} pattern(s) not found\n\n"
+                f"No changes were made to the template. All {len(blocks)} block(s) must match "
+                "for the operation to proceed.\n\n"
+                "Errors:\n" + "\n".join(validation_errors) + "\n\n"
+                "💡 Tip: Use view_template to see the current template content and verify "
+                "your search patterns match exactly."
+            )
+            raise ValueError(error_msg)
+
+        # ========== PHASE 2: APPLY ALL BLOCKS ==========
+        # At this point, all blocks are validated (exact or fuzzy match found)
+        new_content = content
+        changes_made = 0
+        fuzzy_matches = []  # Track which blocks used fuzzy matching
+
+        for block in validated_blocks:
+            actual_match = block["actual_match"]  # Use the ACTUAL text found in content
+            replace_content = block["replace"]
+            block_num = block["block_num"]
+
+            # Apply the smart newline handling for empty replacements
+            if replace_content == "":
+                new_content = self._apply_empty_replacement(new_content, actual_match)
+            else:
+                new_content = new_content.replace(actual_match, replace_content, 1)
+
+            changes_made += 1
+
+            if block["fuzzy"]:
+                fuzzy_matches.append((block_num, block["similarity"]))
+
+            logger.info(f"Applied block {changes_made}/{len(validated_blocks)}")
+
+        return new_content, changes_made, fuzzy_matches
 
     def _parse_diff_blocks(self, diff: str) -> list[dict[str, str]]:
         """
@@ -435,6 +504,75 @@ The tool automatically preserves the template markdown structure and formatting.
             specific_patterns.append({"search": specific_search, "replace": specific_replace, "location": f"Line {line_num}"})
 
         return {"pattern": search_pattern, "count": occurrences, "specific_patterns": specific_patterns}
+
+    def _find_fuzzy_match(
+        self, content: str, search_pattern: str, threshold: float = 0.90
+    ) -> tuple[str | None, float, list[tuple[str, float]]]:
+        """
+        Find fuzzy match for search pattern in content.
+
+        Args:
+            content: The full content to search in
+            search_pattern: The pattern to find
+            threshold: Minimum similarity ratio (0.0 to 1.0), default 0.90
+
+        Returns:
+            Tuple of (matched_text, similarity, all_candidates):
+            - matched_text: The actual text from content that matched (or None)
+            - similarity: The similarity ratio (0.0 to 1.0)
+            - all_candidates: List of (text, similarity) for candidates above threshold
+        """
+        # Split content into potential matching segments
+        # Use lines as natural boundaries, with context windows
+        lines = content.split("\n")
+        search_lines = search_pattern.split("\n")
+        search_line_count = len(search_lines)
+
+        candidates = []
+
+        # Slide a window of search_line_count lines through content
+        for i in range(len(lines) - search_line_count + 1):
+            window = "\n".join(lines[i : i + search_line_count])
+            ratio = SequenceMatcher(None, search_pattern, window).ratio()
+
+            if ratio >= threshold:
+                candidates.append((window, ratio))
+
+        if not candidates:
+            return None, 0.0, []
+
+        # Sort by similarity (highest first)
+        candidates.sort(key=lambda x: x[1], reverse=True)
+
+        # Return the best match
+        best_match, best_ratio = candidates[0]
+        return best_match, best_ratio, candidates
+
+    def _apply_empty_replacement(self, content: str, search_content: str) -> str:
+        """
+        Handle empty replacement with smart newline handling.
+
+        When deleting content (replacing with empty string), this method
+        intelligently handles trailing newlines to avoid orphan blank lines.
+
+        Args:
+            content: The full content
+            search_content: The text to remove
+
+        Returns:
+            Content with the search_content removed
+        """
+        match_pos = content.find(search_content)
+        match_end = match_pos + len(search_content)
+
+        # Check if this match is followed by a newline
+        if match_end < len(content) and content[match_end] == "\n":
+            is_line_start = match_pos == 0 or content[match_pos - 1] == "\n"
+            if is_line_start:
+                # Complete line deletion - include trailing newline
+                return content.replace(search_content + "\n", "", 1)
+
+        return content.replace(search_content, "", 1)
 
 
 if __name__ == "__main__":
