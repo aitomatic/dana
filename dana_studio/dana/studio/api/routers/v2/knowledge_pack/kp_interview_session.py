@@ -567,6 +567,75 @@ def _find_relevant_messages(conversation_messages: list):
     return conversation_messages
 
 
+def _count_followups_since_last_opener(messages: list) -> int:
+    """
+    Count follow-up questions since the last interview_note question.
+
+    Iterates backwards through messages to find the last interview_note question,
+    counting how many followup category questions came after it.
+
+    Args:
+        messages: List of conversation message objects
+
+    Returns:
+        Number of follow-up questions since the last opener
+    """
+    followup_count = 0
+
+    for msg in reversed(messages):
+        if msg.sender == "assistant" and msg.require_user:
+            question_info = _extract_question_info(msg.content)
+            if question_info:
+                category = question_info.get("category", "")
+                if category == "interview_note":
+                    break  # Found the opener, stop counting
+                elif category == "followup":
+                    followup_count += 1
+
+    return followup_count
+
+
+async def _get_interview_agent_settings(db: Session, applies_to: str = "global") -> dict:
+    """
+    Fetch all interview_agent settings in one query, filtered by applies_to.
+
+    Args:
+        db: Database session
+        applies_to: Filter settings by applies_to field (default "global")
+
+    Returns:
+        Dict with parsed settings:
+        {
+            "max_followups_per_opener": 2,
+            "user_preference": "..."
+        }
+    """
+    from dana.studio.api.repositories import get_application_settings_repo
+
+    settings_repo = get_application_settings_repo()
+    all_settings = await settings_repo.get_settings_by_category("interview_agent", db)
+
+    # Filter by applies_to and build result dict
+    result = {}
+    for setting in all_settings:
+        # Check applies_to filter (default "global" matches all)
+        setting_applies_to = setting.applies_to or "global"
+        if setting_applies_to != applies_to and setting_applies_to != "global":
+            continue
+
+        # Parse value based on key
+        if setting.key == "max_followups_per_opener":
+            result["max_followups_per_opener"] = int(setting.value or "2")
+        elif setting.key == "user_preference":
+            result["user_preference"] = setting.value or ""
+
+    # Set defaults for missing settings
+    result.setdefault("max_followups_per_opener", 2)
+    result.setdefault("user_preference", "")
+
+    return result
+
+
 def _enhance_progress_data_with_converter_statuses(progress_data: InterviewProgressData, note_path: str) -> InterviewProgressData:
     """
     Enhance InterviewProgressData with question statuses from InterviewNoteProcessor.
@@ -1076,6 +1145,13 @@ async def session_chat(
         domain = template.template_metadata.get("domain", "General")
         role = template.template_metadata.get("role", "Expert")
 
+        # Fetch interview agent settings and count follow-ups
+        interview_settings = await _get_interview_agent_settings(db, applies_to="global")
+        followup_count = _count_followups_since_last_opener(conversation.messages)
+        logger.debug(
+            f"Interview settings: max_followups={interview_settings['max_followups_per_opener']}, current_followups={followup_count}"
+        )
+
         question_handler = InterviewQuestionHandler(
             kp_id=template.kp_id,
             template_path=str(template_path),
@@ -1083,6 +1159,9 @@ async def session_chat(
             llm=llm,
             domain=domain,
             role=role,
+            max_followups=interview_settings["max_followups_per_opener"],
+            followup_count=followup_count,
+            user_preference=interview_settings["user_preference"],
         )
         # Set database session for ReadDocumentsTool
         question_handler.db = db

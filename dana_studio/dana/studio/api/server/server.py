@@ -89,6 +89,13 @@ async def lifespan(app: FastAPI):
         # Create base tables first
         Base.metadata.create_all(bind=engine)
 
+    # Initialize default prompt settings
+    from sqlalchemy.orm import Session
+    from dana.studio.api.shared.prompt_defaults import initialize_default_prompts
+
+    with Session(engine) as db:
+        await initialize_default_prompts(db)
+
     await broadcast_engine.connect()
     get_task_manager()  # INIT
     yield

@@ -19,6 +19,7 @@ from dana.studio.api.services.knowledge_pack.interview_question_handler.tools im
     AttemptCompletionTool,
 )
 from dana.studio.api.services.knowledge_pack.interview_question_handler.prompts import INTERVIEW_QUESTION_GENERATION_PROMPT_V2
+from dana.studio.api.services.context_auto_compact import ContextAutoCompactor, inject_compacted_context_to_content
 import re
 
 from dana.studio.api.core.logger import log as logger
@@ -42,6 +43,9 @@ class InterviewQuestionHandler(AbstractHandler):
         llm: LLMResource | None = None,
         domain: str = "General",
         role: str = "Domain Expert",
+        max_followups: int = 2,
+        followup_count: int = 0,
+        user_preference: str = "",
     ):
         self.kp_id = kp_id
         self.template_path = template_path
@@ -52,12 +56,60 @@ class InterviewQuestionHandler(AbstractHandler):
         self.tools = {}
         self.db = None  # Database session set by API route
 
+        # Follow-up limiter settings
+        self.max_followups = max_followups
+        self.followup_count = followup_count
+        self.user_preference_guidance = user_preference
+
+        # Context auto-compaction for long conversations
+        self.context_compactor = ContextAutoCompactor(llm=self.llm)
+
         self._initialize_tools()
 
     def _initialize_tools(self):
         """Initialize question generation tools."""
         self.tools.update(AskQuestionTool().as_dict())
         self.tools.update(AttemptCompletionTool().as_dict())
+
+    def _build_settings_context(self) -> str:
+        """
+        Build settings context to inject into LLM prompt.
+
+        Includes follow-up limit status and expert guidance.
+
+        Returns:
+            Formatted settings context string
+        """
+        parts = []
+
+        # Follow-up limit status with decision guidance
+        remaining = self.max_followups - self.followup_count
+        if remaining <= 0:
+            parts.append(
+                f"⚠️ FOLLOW-UP LIMIT REACHED ({self.followup_count}/{self.max_followups}). "
+                "You MUST transition to the next interview question now.\n"
+                "Reflect on the conversation: Did you gather sufficient insight from the user's answers? "
+                "If yes, summarize the key takeaways. If important gaps remain due to the limit, briefly note them."
+            )
+        elif remaining == 1:
+            parts.append(
+                f"⚠️ LAST FOLLOW-UP AVAILABLE ({self.followup_count}/{self.max_followups}).\n"
+                "Decide: Have you gathered enough insight to move on, or is there a critical gap worth clarifying?\n"
+                "- If sufficient: Transition to the next interview question (no follow-up needed).\n"
+                "- If critical gap exists: Ask ONE targeted follow-up about the most important ambiguity."
+            )
+        else:
+            parts.append(
+                f"Follow-up status: {self.followup_count}/{self.max_followups} used.\n"
+                "Decide based on the user's answer: Is more clarification needed, or do you have enough insight to proceed?"
+            )
+
+        # Append expert guidance if provided
+        if self.user_preference_guidance:
+            parts.append(f"\n--- User Preference Guidance ---\n{self.user_preference_guidance}")
+
+        settings_context = "\n".join(parts)
+        return f"<system-reminder>\n{settings_context}\n</system-reminder>"
 
     async def handle(
         self,
@@ -84,8 +136,18 @@ class InterviewQuestionHandler(AbstractHandler):
         # Initialize conversation with user request
         conversation = request.chat_history
 
-        if len(conversation) >= 4:  # FOR NOW, ONLY USE LAST 4 MESSAGES
-            conversation = conversation[-4:]
+        # Apply intelligent context compaction instead of hard truncation
+        compaction_result = await self.context_compactor.compact_if_needed(
+            conversation=conversation,
+            model=getattr(self.llm, "model", None),
+        )
+        conversation = compaction_result.compacted_conversation
+
+        if compaction_result.summary_created:
+            logger.info(
+                f"Interview conversation compacted: {compaction_result.messages_compacted} messages summarized, "
+                f"{compaction_result.messages_preserved} preserved"
+            )
 
         # Track if workflow was completed
         workflow_completed = False
@@ -155,6 +217,58 @@ class InterviewQuestionHandler(AbstractHandler):
 
         return result
 
+    def _build_interview_guidance(self, document_answer: str, conversation: list[MessageData]) -> str:
+        """
+        Build interview guidance prompt with document answer and handling instructions.
+
+        Args:
+            document_answer: Precomputed answer from documents
+            conversation: Conversation history
+
+        Returns:
+            Formatted guidance prompt string
+        """
+        # Extract the original question from conversation
+        previous_question = None
+        for msg in reversed(conversation):
+            if msg.role in ("assistant", "agent") and hasattr(msg, "require_user") and msg.require_user:
+                question_match = re.search(r"<strong>(.*?)</strong>", msg.content, re.DOTALL)
+                if question_match:
+                    previous_question = question_match.group(1).strip()
+                elif "<question>" in msg.content.lower():
+                    question_match = re.search(r"<question>(.*?)</question>", msg.content, re.DOTALL)
+                    if question_match:
+                        previous_question = question_match.group(1).strip()
+                break
+
+        question_text = previous_question or "the current interview question"
+
+        return f"""<interview_guidance>
+You are facilitating an interview. Review the conversation above for the expert's previous answers.
+
+<original_question>{question_text}</original_question>
+<document_answer>{document_answer}</document_answer>
+
+A <system-reminder> with follow-up limits will appear next, followed by the expert's latest message.
+
+Based on the expert's response, use the appropriate tool:
+
+1. If they ANSWER the question:
+   → Combine their answer with previous answers from conversation
+   → Compare combined answer with document_answer, identify gaps/differences
+   → Use ask_question with category: followup to clarify differences
+
+2. If they ASK for the answer or clarification:
+   → Provide relevant info from document_answer
+   → Use ask_question with category: normal to respond
+
+3. If they want to SKIP or move on:
+   → Use ask_question with category: interview_note to proceed to next question
+
+4. If they REQUEST something else:
+   → Handle their request appropriately using category: normal
+</interview_guidance>"""
+
     async def _determine_next_tool(
         self,
         conversation: list[MessageData],
@@ -165,6 +279,14 @@ class InterviewQuestionHandler(AbstractHandler):
         LLM decides next tool based purely on conversation history.
         Note content is injected into LLM messages but not conversation history.
 
+        Message order (user's last message at END so LLM responds to it):
+        1. System prompt
+        2. Note content
+        3. Conversation history (EXCLUDING last user message)
+        4. <interview_guidance> (if document_answer exists)
+        5. <system-reminder> (follow-up limits + expert guidance)
+        6. User's LAST message (at the END)
+
         Args:
             conversation: Conversation history
             current_note_content: Current interview note content
@@ -172,22 +294,30 @@ class InterviewQuestionHandler(AbstractHandler):
 
         Returns MessageData with tool call XML or "complete"
         """
-        # Convert conversation to string
+        # Separate last user message from conversation history
+        last_user_message = None
+        conversation_without_last = list(conversation)
+
+        # Find and extract the last user message (non-tool)
+        for i in range(len(conversation_without_last) - 1, -1, -1):
+            if conversation_without_last[i].role == "user" and not conversation_without_last[i].treat_as_tool:
+                last_user_message = conversation_without_last.pop(i)
+                break
+
+        # Convert conversation (without last user message) to LLM format
         llm_conversation = []
-        for message in conversation:
-            if message.role == "agent":
-                message.role = "assistant"
-            llm_conversation.append({"role": message.role, "content": message.content})
+        for i, message in enumerate(conversation_without_last):
+            role = "assistant" if message.role == "agent" else message.role
+
+            # Inject compacted context from first message's metadata (if summary was created)
+            if i == 0:
+                content = inject_compacted_context_to_content(message)
+            else:
+                content = message.content
+
+            llm_conversation.append({"role": role, "content": content})
 
         tool_str = "\n\n".join([f"{tool}" for tool in self.tools.values()])
-
-        # Read template content for system prompt
-        template_content = ""
-        try:
-            with open(self.template_path, encoding="utf-8") as f:
-                template_content = f.read()
-        except Exception as e:
-            logger.warning(f"Could not read template content: {e}")
 
         # Build base system prompt
         system_prompt = INTERVIEW_QUESTION_GENERATION_PROMPT_V2.format(tools_str=tool_str, domain=self.domain, role=self.role)
@@ -195,70 +325,26 @@ class InterviewQuestionHandler(AbstractHandler):
         # Build messages array starting with system prompt
         messages = [{"role": "system", "content": system_prompt}]
 
-        # Add template content as separate user message if template_path is available
-        if template_content:
-            template_message = (
-                f"Here is the current interview template, read and understand it : <template>\n{template_content}\n</template>"
-            )
-            messages.append({"role": "user", "content": template_message})
-
-        # Add note content as separate user message
+        # 1. Add note content as separate user message
         note_message = f"Here is the current interview note state (read-only): <note>\n{current_note_content}\n</note>"
         messages.append({"role": "user", "content": note_message})
 
-        # Add document answer if provided (for comparison)
-        if document_answer:
-            # Extract user's last answer from conversation
-            user_answer_text = None
-            previous_question = None
-
-            # Find the last user message (their answer)
-            for msg in reversed(conversation):
-                if msg.role == "user" and not msg.treat_as_tool:
-                    user_answer_text = msg.content
-                    break
-
-            # Find the previous question (last assistant message that requires user input)
-            for msg in reversed(conversation):
-                if msg.role in ("assistant", "agent") and hasattr(msg, "require_user") and msg.require_user:
-                    # Try to extract question from the message content
-                    question_match = re.search(r"<strong>(.*?)</strong>", msg.content, re.DOTALL)
-                    if question_match:
-                        previous_question = question_match.group(1).strip()
-                    elif "<question>" in msg.content.lower():
-                        question_match = re.search(r"<question>(.*?)</question>", msg.content, re.DOTALL)
-                        if question_match:
-                            previous_question = question_match.group(1).strip()
-                    break
-
-            # Build comparison message
-            comparison_parts = []
-
-            if previous_question:
-                comparison_parts.append(f"The previous question was: {previous_question}\n")
-
-            comparison_parts.append(
-                f"Here is what the DOCUMENTS say about this question:\n<document_answer>\n{document_answer}\n</document_answer>\n"
-            )
-
-            if user_answer_text:
-                comparison_parts.append(f"Here is what the USER said in their answer:\n<user_answer>\n{user_answer_text}\n</user_answer>\n")
-
-            comparison_parts.append(
-                "\nCRITICAL COMPARISON TASK:\n"
-                "Compare what the DOCUMENTS say (above) with what the USER said (from conversation).\n"
-                "- If documents assume certain equipment/processes exist but user says they don't → Ask about how process works without them\n"
-                "- If documents describe verification steps but user's answer doesn't mention them → Ask about the difference\n"
-                "- Focus on the SPECIFIC difference between document answer and user answer\n"
-                "- DO NOT compare user's answer with the original question - that's not relevant\n"
-                "- If there are significant differences, ask a followup question (category: followup) that addresses the difference between what documents say and what the user said."
-            )
-
-            document_answer_message = "\n".join(comparison_parts)
-            messages.append({"role": "user", "content": document_answer_message})
-
-        # Add conversation history
+        # 2. Add conversation history (WITHOUT last user message)
         messages.extend(llm_conversation)
+
+        # 3. Add interview guidance (if document_answer exists)
+        if document_answer:
+            guidance = self._build_interview_guidance(document_answer, conversation)
+            messages.append({"role": "user", "content": guidance})
+
+        # 4. Add settings context as <system-reminder>
+        settings_context = self._build_settings_context()
+        if settings_context:
+            messages.append({"role": "user", "content": settings_context})
+
+        # 5. Add user's LAST message at the END (LLM responds to this)
+        if last_user_message:
+            messages.append({"role": "user", "content": last_user_message.content})
 
         llm_request = BaseRequest(
             arguments={

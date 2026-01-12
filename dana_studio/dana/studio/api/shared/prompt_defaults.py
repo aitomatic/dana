@@ -57,15 +57,29 @@ For each topic, provide:
 """,
         }
     },
-    # Add more categories as needed in the future
-    # "interview_system": {
-    #     "capture_note": {
-    #         "name": "Interview Note Capture System Prompt",
-    #         "description": "System prompt for the interview note capture handler",
-    #         "placeholders": ["{role}", "{domain}", "{note_path}", "{tools_str}"],
-    #         "default_value": None  # Will be loaded from prompts.py
-    #     },
-    # },
+    "interview_agent": {
+        "max_followups_per_opener": {
+            "name": "Max Follow-ups Per Opener",
+            "description": "Maximum follow-up questions allowed per opening question before auto-transitioning (hard limit)",
+            "default_value": "2",
+        },
+        "user_preference": {
+            "name": "User Preference",
+            "description": "Customize interview tone and focus. Use this to guide how the agent interacts and what knowledge it prioritizes.",
+            "default_value": """INTERVIEW TONE:
+- Reduce "gotcha" tone when document answers and SME responses differ - treat discrepancies as opportunities to learn, not to correct
+- Frame follow-ups as curiosity ("That's interesting - the docs mention X, can you help me understand...") rather than challenges
+- Respect SME expertise - they may have context or updates not in the documents
+
+TACIT KNOWLEDGE FOCUS:
+- Prioritize capturing expertise: shortcuts, workarounds, and "tricks of the trade"
+- Ask about edge cases, exceptions, and "what they don't teach you" scenarios
+- Explore the "why" behind decisions - what experience taught them that formal training didn't
+- Capture warning signs, red flags, and intuition-based judgments that come from years of practice
+- Focus on knowledge that would be lost if this expert left tomorrow
+- the expert who do the interview doesn't have access to the document provided to you. So don't assume that they know what inside the document. In fact, things in the document might be outdated compared to what is in the expert mind""",
+        },
+    },
 }
 
 

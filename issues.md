@@ -1,3 +1,9 @@
+# Prompt
+- I want you to read and understand the content of `dana_studio/dana/studio/api/routers/v2/knowledge_pack/kp_interview_session.py`, focus on `session_chat`. This API   will be served  
+  in the UI with these components : left side is the chat box and right side will show the progression. At the moment, i receive the following feedback from the end user `[Pasted      
+  text #2 +86 lines]`. Read the files and its lower level component to understand the logic, then list out some potential causes the the above problems 
+
+# Interview template issues
 ---                                                                                                                                                                                   
   Potential Root Causes for Template Editing Issues                                                                                                                                     
                                                                                                                                                                                         
@@ -155,3 +161,68 @@
   │ 🟠 Lower  │ Role assignment                │ Standardize tool result roles                     │                                                                                    
   └───────────┴────────────────────────────────┴───────────────────────────────────────────────────┘                                                                                    
   Would you like me to explore any of these issues in more detail or propose specific code changes? 
+
+# Interview session issues
+
+⏺ Prioritized Issues by Critical Level                                                                                                                                                  
+                                                                                                                                                                                        
+  🔴 CRITICAL (P0) - Follow-Up Limiter Not Enforced                                                                                                                                     
+                                                                                                                                                                                        
+  Impact: Major blocker - directly causes the "rabbit hole" problem                                                                                                                     
+  - Occurred 3 times in a single 57-minute session                                                                                                                                      
+  - System asked 6-8+ follow-ups instead of max 2                                                                                                                                       
+  - Root cause: No counter exists at orchestration layer - entirely reliant on LLM judgment                                                                                             
+  - Fix complexity: Medium - requires adding counter logic to session_chat                                                                                                              
+                                                                                                                                                                                        
+  Why P0: This is the core issue. Without a hard limit, the other issues cascade from it.                                                                                               
+                                                                                                                                                                                        
+  ---                                                                                                                                                                                   
+  🟠 HIGH (P1) - "Move On" Command Unreliable                                                                                                                                           
+                                                                                                                                                                                        
+  Impact: User cannot escape rabbit holes even when explicitly requesting                                                                                                               
+  - Required multiple attempts to work                                                                                                                                                  
+  - Sometimes didn't work at all                                                                                                                                                        
+  - Root cause: No explicit "move on" intent handler in prompts                                                                                                                         
+  - Fix complexity: Low-Medium - add intent pattern + force topic transition logic                                                                                                      
+                                                                                                                                                                                        
+  Why P1: This is the escape valve. Even if follow-ups exceed limit, user should be able to manually escape. Currently broken.                                                          
+                                                                                                                                                                                        
+  ---                                                                                                                                                                                   
+  🟡 MEDIUM (P2) - Document Misinterpretation Spiral                                                                                                                                    
+                                                                                                                                                                                        
+  Impact: Causes accusatory tone, wastes time on definitional mismatches                                                                                                                
+  - Triggered safety compliance spiral in one instance                                                                                                                                  
+  - System drilled into "verification" when terminology was misaligned                                                                                                                  
+  - Root cause: No definition alignment step before deep drilling                                                                                                                       
+  - Fix complexity: Medium - modify comparison logic in prompts + add clarification pattern                                                                                             
+                                                                                                                                                                                        
+  Why P2: Important for interview quality and user experience, but less frequent than P0/P1. Can be mitigated by P0+P1 fixes in the interim.                                            
+                                                                                                                                                                                        
+  ---                                                                                                                                                                                   
+  🟢 LOW (P3) - Category Classification Bypass                                                                                                                                          
+                                                                                                                                                                                        
+  Impact: Follow-up questions escape counter by being classified as new openers                                                                                                         
+  - LLM may classify subsequent questions as interview_note instead of followup                                                                                                         
+  - Root cause: Counter relies on LLM category, not API-layer tracking                                                                                                                  
+  - Fix complexity: Low - track at API layer regardless of LLM category                                                                                                                 
+                                                                                                                                                                                        
+  Why P3: This is a secondary reinforcement to P0. If P0 is fixed properly (counting at API layer), this becomes a non-issue.                                                           
+                                                                                                                                                                                        
+  ---                                                                                                                                                                                   
+  Recommended Fix Order                                                                                                                                                                 
+  ┌──────────┬──────────────────────┬────────────┬─────────────────────┐                                                                                                                
+  │ Priority │        Issue         │   Effort   │     Dependency      │                                                                                                                
+  ├──────────┼──────────────────────┼────────────┼─────────────────────┤                                                                                                                
+  │ P0       │ Follow-up limiter    │ Medium     │ None - core fix     │                                                                                                                
+  ├──────────┼──────────────────────┼────────────┼─────────────────────┤                                                                                                                
+  │ P1       │ "Move on" command    │ Low-Medium │ None - independent  │                                                                                                                
+  ├──────────┼──────────────────────┼────────────┼─────────────────────┤                                                                                                                
+  │ P2       │ Definition alignment │ Medium     │ Benefits from P0/P1 │                                                                                                                
+  ├──────────┼──────────────────────┼────────────┼─────────────────────┤                                                                                                                
+  │ P3       │ Category bypass      │ Low        │ Solved by P0        │                                                                                                                
+  └──────────┴──────────────────────┴────────────┴─────────────────────┘                                                                                                                
+  ---                                                                                                                                                                                   
+  Would you like me to create a detailed implementation plan for fixing these issues? If so, which ones should I prioritize?                                                            
+  - Option A: Fix P0 + P1 (the two blockers)                                                                                                                                            
+  - Option B: Fix all (P0 + P1 + P2 + P3)                                                                                                                                               
+  - Option C: Fix P0 only first (smallest scope, highest impact)  
