@@ -52,33 +52,33 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
           <Brain className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-gray-600'}`} />
         </div>
       ),
-      'Resources': (
-        <div className="flex justify-center items-center w-12 h-12 bg-green-100 rounded-full">
-          <OpenBook className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-green-600'}`} />
+      Resources: (
+        <div className="flex justify-center items-center w-12 h-12 bg-success-100 rounded-full">
+          <OpenBook className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-success-500'}`} />
         </div>
       ),
       'Domain Knowledge': (
-        <div className="flex justify-center items-center w-12 h-12 bg-orange-100 rounded-full">
-          <Book className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-orange-600'}`} />
+        <div className="flex justify-center items-center w-12 h-12 bg-warning-100 rounded-full">
+          <Book className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-warning-500'}`} />
         </div>
       ),
       Documents: (
-        <div className="flex justify-center items-center w-12 h-12 bg-blue-100 rounded-full">
+        <div className="flex justify-center items-center w-12 h-12 bg-info-100 rounded-full">
           <MultiplePagesEmpty
-            className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-blue-600'}`}
+            className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-info-500'}`}
           />
         </div>
       ),
       Workflows: (
-        <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full">
+        <div className="flex justify-center items-center w-12 h-12 bg-purple-100 rounded-full">
           <NetworkReverse
-            className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-purple-600'}`}
+            className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-purple-500'}`}
           />
         </div>
       ),
       Tools: (
-        <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full">
-          <Tools className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-orange-600'}`} />
+        <div className="flex justify-center items-center w-12 h-12 bg-warning-100 rounded-full">
+          <Tools className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-warning-500'}`} />
         </div>
       ),
     };

@@ -14,6 +14,7 @@ import {
   Loader2,
   RefreshCw,
 } from 'lucide-react';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface CodeValidationProps {
   code: string;
@@ -34,6 +35,9 @@ export const CodeValidation = ({
   const [isValidating, setIsValidating] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
   const [lastValidatedCode, setLastValidatedCode] = useState('');
+
+  // Analytics
+  const { trackError, trackCodeGeneration } = useDanaAnalytics();
 
   // Auto-validate when code changes
   useEffect(() => {
@@ -71,6 +75,7 @@ export const CodeValidation = ({
     } catch (error) {
       console.error('Validation failed:', error);
       toast.error('Failed to validate code');
+      trackError('code_validation_failed', (error as Error).message, 'code_validation');
     } finally {
       setIsValidating(false);
     }
@@ -92,16 +97,21 @@ export const CodeValidation = ({
         onCodeChange(result.fixed_code);
         toast.success(`Fixed ${result.applied_fixes.length} issue(s)`);
 
+        // Track successful code generation/fixing
+        trackCodeGeneration('code_validation', result.applied_fixes.length * 1000); // Estimate duration
+
         // Re-validate the fixed code
         setTimeout(() => {
           validateCode();
         }, 500);
       } else {
         toast.error('Failed to fix code automatically');
+        trackError('code_fix_failed', 'Auto-fix returned unsuccessful result', 'code_validation');
       }
     } catch (error) {
       console.error('Auto-fix failed:', error);
       toast.error('Failed to fix code automatically');
+      trackError('code_fix_failed', (error as Error).message, 'code_validation');
     } finally {
       setIsFixing(false);
     }

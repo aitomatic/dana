@@ -81,9 +81,10 @@ def py_use(
         return resource
 
     elif function_name.lower() == "rag":
-        from dana.common.sys_resource.rag.rag_resource import RAGResource
+        from dana.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
 
-        resource = RAGResource(*args, name=_name, **kwargs)
+        resource = RAGResourceV2(*args, name=_name, **kwargs)
+
         context.set_resource(_name, resource)
         return resource
 

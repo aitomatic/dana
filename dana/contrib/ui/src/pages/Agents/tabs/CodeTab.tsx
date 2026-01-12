@@ -3,6 +3,7 @@ import { AgentEditor } from '@/components/agent-editor';
 import { IconFileText, IconRefresh, IconCheck } from '@tabler/icons-react';
 import { apiService } from '@/lib/api';
 import { useAgentStore } from '@/stores/agent-store';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface AgentFile {
   id: string;
@@ -23,6 +24,7 @@ const CodeTab: React.FC = () => {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [saveSuccessTimeout, setSaveSuccessTimeout] = useState<number | null>(null);
   const [showBadgeTimeout, setShowBadgeTimeout] = useState<number | null>(null);
+  const { trackError } = useDanaAnalytics();
 
   const selectedFile = files.find((f) => f.id === selectedFileId) || files[0];
 
@@ -95,6 +97,11 @@ const CodeTab: React.FC = () => {
     } catch (err) {
       console.error('Failed to load agent files:', err);
       setError(err instanceof Error ? err.message : 'Failed to load files');
+      trackError(
+        'agent_files_load_failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        `agent_${selectedAgent?.id}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -114,7 +121,7 @@ const CodeTab: React.FC = () => {
     // Save to backend
     try {
       await apiService.updateAgentFileContent(selectedAgent.id, file.path, value);
-      
+
       // Clear any existing timeouts
       if (saveSuccessTimeout) {
         clearTimeout(saveSuccessTimeout);
@@ -122,23 +129,27 @@ const CodeTab: React.FC = () => {
       if (showBadgeTimeout) {
         clearTimeout(showBadgeTimeout);
       }
-      
+
       // Show success badge after 500ms delay
       const showTimeout = setTimeout(() => {
         setShowSaveSuccess(true);
-        
+
         // Auto-hide the badge after 4 seconds
         const hideTimeout = setTimeout(() => {
           setShowSaveSuccess(false);
         }, 4000);
-        
+
         setSaveSuccessTimeout(hideTimeout);
       }, 500);
-      
+
       setShowBadgeTimeout(showTimeout);
     } catch (err) {
       console.error('Failed to save file:', err);
-      // Optionally show an error toast
+      trackError(
+        'agent_file_save_failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        `agent_${selectedAgent?.id}_${file.name}`,
+      );
     }
   };
 

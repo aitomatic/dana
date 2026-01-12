@@ -7,11 +7,7 @@ import {
   DialogTitle,
   DialogClose,
 } from '@/components/ui/dialog';
-import {
-  IconX,
-  IconChevronLeft,
-  IconChevronRight
-} from '@tabler/icons-react';
+import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { Menu, ZoomIn, ZoomOut } from 'iconoir-react';
 
 // Configure PDF.js worker - use a minimal approach

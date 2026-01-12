@@ -18,6 +18,7 @@ import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '.
 import { DataTablePagination } from './data-table-pagination';
 import { IconLoader } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
+import { useScreenHeight } from '@/hooks/useScreenHeight';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -36,13 +37,22 @@ export function DataTable<TData, TValue>({
   is_border = true,
   defaultSorting = [],
 }: DataTableProps<TData, TValue>) {
+  const { pageSize } = useScreenHeight();
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10, // Set to 10 to ensure pagination shows with 14 items
+    pageSize: pageSize,
   });
+
+  // Update pagination when pageSize changes
+  React.useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      pageSize: pageSize,
+    }));
+  }, [pageSize]);
 
   const table = useReactTable({
     data,
@@ -68,10 +78,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="flex flex-col  max-h-full rounded-lg border">
       <div
-        className={cn(
-          'flex flex-1 overflow-auto  scrollbar-hide rounded-t-lg',
-          is_border && '',
-        )}
+        className={cn('flex flex-1 overflow-auto  scrollbar-hide rounded-t-lg', is_border && '')}
       >
         <Table>
           <TableHeader className="sticky top-0 bg-gray-50 rounded-t-lg z-10">
@@ -80,8 +87,8 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   const columnMeta = header.column.columnDef.meta as any;
                   return (
-                    <TableHead 
-                      key={header.id} 
+                    <TableHead
+                      key={header.id}
                       colSpan={header.colSpan}
                       className={columnMeta?.className}
                       style={columnMeta?.style}
@@ -117,8 +124,8 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map((cell) => {
                     const columnMeta = cell.column.columnDef.meta as any;
                     return (
-                      <TableCell 
-                        key={cell.id} 
+                      <TableCell
+                        key={cell.id}
                         onClick={() => handleRowClick && handleRowClick(row)}
                         className={columnMeta?.className}
                         style={columnMeta?.style}

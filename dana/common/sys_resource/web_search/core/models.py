@@ -6,7 +6,7 @@ These models define the standardized data structures used across all domains and
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Literal
 
@@ -51,10 +51,11 @@ class SearchRequest:
     """Standardized input for search services."""
 
     query: str
+    supporting_query: str = ""
     search_depth: SearchDepth = SearchDepth.STANDARD
     domain: str = ""
     with_full_content: bool = False
-    target_sites: list[str] = None
+    target_sites: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -95,14 +96,12 @@ class DomainResult:
     success: bool
     data: dict[str, Any]  # Domain-specific structured data
     confidence: Literal["high", "medium", "low"] = "medium"
-    sources: list[str] = None  # no-qa
+    sources: list[str] = field(default_factory=list)
     reasoning: str = ""
     error_message: str = ""
 
     def __post_init__(self):
         """Initialize sources if None and validate."""
-        if self.sources is None:
-            self.sources = []
 
         if self.success and not self.data:
             raise ValueError("successful result must have data")

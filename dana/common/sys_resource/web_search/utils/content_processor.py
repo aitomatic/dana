@@ -1,22 +1,15 @@
 """Content processing with query-focused summarization."""
 
-import logging
+from loguru import logger
 
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.common.types import BaseRequest
-from dana.common.utils.misc import Misc
-
-logger = logging.getLogger(__name__)
+from dana.common.sys_resource.web_search.utils.reasoning import AzureReasoning
 
 
 class ContentProcessor:
     """Process content with query-focused extraction and summarization."""
 
     def __init__(self):
-        self._llm_resource = LegacyLLMResource(
-            name="web_search_content_processor",
-            temperature=0.1,
-        )
+        self._llm_resource = AzureReasoning()
 
     async def process_content(self, content: str, query: str) -> str:
         """
@@ -47,7 +40,7 @@ class ContentProcessor:
                     "You are a helpful assistant that extracts query-relevant information. "
                     "Focus ONLY on information directly relevant to the user's query. "
                     "Keep all technical specs, numbers, and specific details. "
-                    "Remove unrelated sections completely. Be concise but complete."
+                    "Remove unrelated sections completely. Be concise but complete. If no relevant information exists, say 'No relevant information found', nothing else"
                 ),
             }
 
@@ -63,31 +56,24 @@ Instructions:
 - Keep all technical specs, numbers, and specific details
 - Remove unrelated sections completely
 - Be concise but complete for the query topic
-- If no relevant information exists, say "No relevant information found"
-
-Relevant information:""",
+- If no relevant information exists, say "No relevant information found", nothing else.
+""",
             }
 
-            request = BaseRequest(
-                arguments={
-                    "messages": [system_message, user_message],
-                    "max_tokens": 2000,
-                }
+            summary = await self._llm_resource.reason(
+                messages=[system_message, user_message],
+                max_tokens=2000,
+                temperature=0.1,
             )
 
-            response = await self._llm_resource.query(request)
-
-            if response.success and response.content:
-                summary = Misc.get_response_content(response)
-
-                if summary and "no relevant information" not in summary.lower():
-                    logger.info(f"Summarized {len(content)} -> {len(summary)} chars")
-                    return summary.strip()
-                else:
-                    logger.warning(f"No relevant content found for query: {query}")
-                    return summary
+            if summary and "no relevant information" not in summary.lower():
+                logger.info(f"Summarized {len(content)} -> {len(summary)} chars")
+                return summary.strip()
+            elif summary:
+                logger.warning(f"No relevant content found for query: {query}")
+                return summary
             else:
-                logger.error(f"LLM query failed: {response.error}")
+                logger.error("LLM query failed or returned no content")
                 return content[:1000] + "... [truncated - LLM query failed]"
 
         except Exception as e:

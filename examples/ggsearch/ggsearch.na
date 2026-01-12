@@ -1,0 +1,19 @@
+from time.py import time
+
+def __main__() -> str:
+    start_time = time()
+    query = "HS-Code for following product Manufacturer PANDUIT, part number CDPP8RG-S, description INDUSTRIALNET, 8-PORT DIN RAIL"
+    # supporting_query = "Find HS code for product with part number XNO-6080R, description WISENET X IP IR OUT VANDAL"
+    supporting_query = "Find HS code for product with  part number CDPP8RG-S,description INDUSTRIALNET, 8-PORT DIN RAIL"
+    search_depth = "basic"
+    websearch = use("websearch", service_type="google")
+    data = websearch.search(query, supporting_query=supporting_query, search_depth=search_depth)
+    sources = data.sources
+    print(f"Sources found: {len(sources)}")
+    for source in sources:
+        print(f"Source: {source.url}")
+        print(f"Content: {source.content}")
+        print(f"--------------------------------")
+    return sources
+    end_time = time()
+    print(f"Time taken: {end_time - start_time} seconds")

@@ -33,6 +33,7 @@ class TestKnowledgeOpsHandlerParseXmlToolCall:
         # Create a mock handler with some test tools
         import os
         import tempfile
+
         # Use a cross-platform temporary file path for the domain knowledge file
         temp_dir = tempfile.gettempdir()
         domain_knowledge_path = os.path.join(temp_dir, "test_domain_knowledge.json")
@@ -64,6 +65,15 @@ class TestKnowledgeOpsHandlerParseXmlToolCall:
                     BaseArgument(name="options", type="list", description="Generation options", example="['option1', 'option2']"),
                 ],
                 required=["topic"],
+            ),
+            "modify_tree": MockTool(
+                name="modify_tree",
+                arguments=[
+                    BaseArgument(name="user_message", type="string", description="User message"),
+                    BaseArgument(name="operation", type="string", description="Operation to perform"),
+                    BaseArgument(name="bulk_operations", type="list", description="Bulk operations to perform"),
+                ],
+                required=["operation", "bulk_operations"],
             ),
         }
 
@@ -688,3 +698,160 @@ and carriage return</question>
             "context": "Context with \u200e\u200f\u202a\u202b\u202c\u202d\u202e\u202f",
         }
         assert thinking_content == ""
+
+    def test_parse_modification_tool_call_with_missing_required_parameters(self):
+        xml_content = """
+<modify_tree>
+<user_message>I will now add the comprehensive beet sugar processing structure to the knowledge base, organizing all the key process areas and subtopics as outlined.</user_message>
+<operation>bulk</operation>
+<bulk_operations>[
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Sugar Beet Receiving and Inspection
+Procedures"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Storage and Preservation of Sugar
+Beets"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Beet Cleaning and Washing
+Techniques"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Slicing and Preparation for Extraction"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Handling of Foreign Matter and
+Contaminants"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Monitoring and Managing Beet Quality
+Parameters"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Diffusion Process Fundamentals and Equipment"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Optimization of Extraction Yield"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Temperature and Flow Control in Extraction"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Maintenance and Troubleshooting of Diffusers"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Handling and Utilization of Pulp Residues"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Lime Addition and Carbonation Process"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Removal of Non-Sugars and Impurities"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Filtration and Sedimentation Techniques"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Monitoring and Adjusting pH Levels"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Troubleshooting Purification Process Issues"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Waste Management from Purification"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Evaporation and Concentration of Juice"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Seeding and Growth of Sugar Crystals"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Centrifugation and Separation of Crystals"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Optimization of Crystal Size and Purity"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Reprocessing of Mother Liquors (Magma, Molasses)"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Troubleshooting Crystallization Problems"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Sugar Drying Equipment and Operation"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Prevention of Sugar Caking and Lumping"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Packaging Methods and Material Selection"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Storage Conditions for Finished Sugar"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Handling and Transportation of Bulk Sugar"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Hygiene and Contamination Prevention in
+Packaging"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Pulp Processing and Utilization (Animal
+Feed, Pellets)"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Molasses Recovery and Applications"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Lime Mud and Carbonation Sludge
+Disposal"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Wastewater Treatment and Recycling"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Energy Recovery from By-Products"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Environmental Compliance and
+Reporting"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Sampling and Analytical Testing
+Procedures"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Monitoring Sugar Purity and Color"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Detection and Correction of Process
+Deviations"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Root Cause Analysis of Product Defects"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Compliance with Food Safety Standards"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Documentation and Traceability Practices"]}
+]</modify_tree>
+"""
+        tool_name, params, thinking_content = self.handler._parse_xml_tool_call(xml_content)
+        assert tool_name == "modify_tree"
+        assert (
+            params["user_message"]
+            == "I will now add the comprehensive beet sugar processing structure to the knowledge base, organizing all the key process areas and subtopics as outlined."
+        )
+        assert params["operation"] == "bulk"
+        assert len(params["bulk_operations"]) == 48
+
+    def test_parse_modification_tool_call(self):
+        xml_content = """
+<modify_tree>
+<user_message>I will now add the comprehensive beet sugar processing structure to the knowledge base, organizing all the key process areas and subtopics as outlined.</user_message>
+<operation>bulk</operation>
+<bulk_operations>[
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Sugar Beet Receiving and Inspection
+Procedures"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Storage and Preservation of Sugar
+Beets"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Beet Cleaning and Washing
+Techniques"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Slicing and Preparation for Extraction"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Handling of Foreign Matter and
+Contaminants"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Raw Material Handling and Preparation", "Monitoring and Managing Beet Quality
+Parameters"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Diffusion Process Fundamentals and Equipment"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Optimization of Extraction Yield"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Temperature and Flow Control in Extraction"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Maintenance and Troubleshooting of Diffusers"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Extraction", "Handling and Utilization of Pulp Residues"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Lime Addition and Carbonation Process"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Removal of Non-Sugars and Impurities"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Filtration and Sedimentation Techniques"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Monitoring and Adjusting pH Levels"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Troubleshooting Purification Process Issues"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Juice Purification and Clarification", "Waste Management from Purification"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Evaporation and Concentration of Juice"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Seeding and Growth of Sugar Crystals"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Centrifugation and Separation of Crystals"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Optimization of Crystal Size and Purity"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Reprocessing of Mother Liquors (Magma, Molasses)"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Crystallization and Sugar Recovery", "Troubleshooting Crystallization Problems"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Sugar Drying Equipment and Operation"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Prevention of Sugar Caking and Lumping"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Packaging Methods and Material Selection"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Storage Conditions for Finished Sugar"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Handling and Transportation of Bulk Sugar"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Drying, Packaging, and Storage", "Hygiene and Contamination Prevention in
+Packaging"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Pulp Processing and Utilization (Animal
+Feed, Pellets)"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Molasses Recovery and Applications"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Lime Mud and Carbonation Sludge
+Disposal"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Wastewater Treatment and Recycling"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Energy Recovery from By-Products"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "By-Products Management and Utilization", "Environmental Compliance and
+Reporting"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Sampling and Analytical Testing
+Procedures"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Monitoring Sugar Purity and Color"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Detection and Correction of Process
+Deviations"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Root Cause Analysis of Product Defects"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Compliance with Food Safety Standards"]},
+{"action": "create", "paths": ["Beet Sugar Processing", "Quality Control and Troubleshooting", "Documentation and Traceability Practices"]}]
+</bulk_operations>
+</modify_tree>
+"""
+        tool_name, params, thinking_content = self.handler._parse_xml_tool_call(xml_content)
+        assert tool_name == "modify_tree"
+        assert (
+            params["user_message"]
+            == "I will now add the comprehensive beet sugar processing structure to the knowledge base, organizing all the key process areas and subtopics as outlined."
+        )
+        assert params["operation"] == "bulk"
+        assert len(params["bulk_operations"]) == 48
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

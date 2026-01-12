@@ -4,22 +4,21 @@ from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource a
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from dana.api.core.schemas import DomainKnowledgeTree, IntentDetectionRequest, DomainNode, MessageData
-from typing import Any
+from typing import Any, Literal, Awaitable, Callable
 from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_ops_tools import (
     AskQuestionTool,
     ExploreKnowledgeTool,
-    GenerateKnowledgeTool,
     ModifyTreeTool,
     AttemptCompletionTool,
     ProposeKnowledgeStructureTool,
     RefineKnowledgeStructureTool,
     PreviewKnowledgeTopicTool,
+    GenerateKnowledgeFromDocTool,
 )
 from dana.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
 import logging
 import re
 from pathlib import Path
-from collections.abc import Callable
 import os
 
 logger = logging.getLogger(__name__)
@@ -44,7 +43,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
         knowledge_status_path: str | None = None,
-        notifier: Callable[[str], None] | None = None,
+        notifier: Callable[[str, str, Literal["init", "in_progress", "finish", "error"], float | None], Awaitable[None]] | None = None,
     ):
         from pathlib import Path
 
@@ -55,6 +54,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         self.knowledge_status_path = knowledge_status_path or os.path.join(str(base_path), "knowledge_status.json")
         # Derive storage path from domain_knowledge_path parent directory
         self.storage_path = os.path.join(str(base_path), "knows")
+        self.document_path = os.path.join(str(base_path), "docs")
         self.domain = domain
         self.role = role
         self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
@@ -96,8 +96,7 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         # Generation tool (unified) with persistence
         self.tools.update(
-            GenerateKnowledgeTool(
-                llm=self.llm,
+            GenerateKnowledgeFromDocTool(
                 knowledge_status_path=self.knowledge_status_path,
                 storage_path=self.storage_path,
                 tree_structure=self.tree_structure,
@@ -105,6 +104,7 @@ class KnowledgeOpsHandler(AbstractHandler):
                 role=self.role,
                 tasks=self.tasks,
                 notifier=self.notifier,
+                document_path=self.document_path,
             ).as_dict()
         )
 
@@ -146,6 +146,7 @@ class KnowledgeOpsHandler(AbstractHandler):
                 domain=self.domain,
                 role=self.role,
                 tasks=self.tasks,
+                notifier=self.notifier,
             ).as_dict()
         )
 
@@ -168,6 +169,9 @@ class KnowledgeOpsHandler(AbstractHandler):
         """
         # Initialize conversation with user request
         conversation = request.chat_history  # TODO : IMPROVE MANAGING CONVERSATION HISTORY
+
+        if len(conversation) >= 10:  # FOR NOW, ONLY USE LAST 10 MESSAGES
+            conversation = conversation[-10:]
 
         # Track if tree was modified
         tree_modified = False
@@ -200,13 +204,14 @@ class KnowledgeOpsHandler(AbstractHandler):
             if isinstance(tool_msg, MessageData) and tool_msg.content.strip().lower() == "complete":
                 break
 
-            # Add tool call to conversation
-            conversation.append(tool_msg)
-
             # Check if this was a tree modification
             if "modify_tree" in tool_msg.content:
                 tree_modified = True
 
+            # Add result to conversation
+            conversation.append(tool_result_msg)
+
+            # Check if user input is required
             if tool_result_msg.require_user:
                 return {
                     "status": "user_input_required",
@@ -216,9 +221,6 @@ class KnowledgeOpsHandler(AbstractHandler):
                     "tree_modified": tree_modified,
                     "updated_tree": self.tree_structure if tree_modified else None,
                 }
-
-            # Add result to conversation
-            conversation.append(tool_result_msg)
 
             # Check if workflow completed after tool execution
             if "attempt_completion" in tool_msg.content:
@@ -254,7 +256,7 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         tool_str = "\n\n".join([f"{tool}" for tool in self.tools.values()])
 
-        system_prompt = TOOL_SELECTION_PROMPT.format(tools_str=tool_str)
+        system_prompt = TOOL_SELECTION_PROMPT.format(tools_str=tool_str, domain=self.domain, role=self.role, tasks=self.tasks)
 
         llm_request = BaseRequest(
             arguments={

@@ -62,6 +62,7 @@ class WebContentExtractor:
         self._client: httpx.AsyncClient | None = None
         self.pdf_service = PDFService(timeout=config.content_timeout)
         self.content_processor = content_processor
+        self._cache: dict[str, str] = {}  # URL -> raw content cache (HTML or PDF text)
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -77,6 +78,7 @@ class WebContentExtractor:
         """Async context manager exit."""
         if self._client:
             await self._client.aclose()
+        self._cache.clear()
 
     async def extract_content(self, url: str) -> ContentResult:
         """
@@ -98,17 +100,49 @@ class WebContentExtractor:
             if url.lower().endswith(".pdf"):
                 return await self._extract_pdf_content(url)
             else:
-                return await self._extract_html_content(url)
+                result = await self._extract_html_content(url)
+
+                # Validate content length
+                if result.success and len(result.content) < 50:
+                    logger.warning(f"⚠️ Content too short ({len(result.content)} chars) for {url}")
+                    return ContentResult(
+                        url=url, content="", full_content="", success=False, error_message="Content too short (likely blocked or empty)"
+                    )
+                return result
 
         except Exception as e:
             logger.error(f"❌ Content extraction failed for {url}: {e}")
             return ContentResult(url=url, content="", full_content="", success=False, error_message=str(e))
 
+    async def _fetch_pdf(self, url: str) -> str:
+        """
+        Fetch PDF content from URL with caching.
+
+        Args:
+            url: URL to fetch PDF from
+
+        Returns:
+            Extracted PDF text
+        """
+        # Check cache first
+        if url in self._cache:
+            logger.debug(f"🧠 Cache hit for {url}")
+            return self._cache[url]
+
+        # Fetch and extract PDF text
+        pdf_text = await self.pdf_service.extract_text_from_pdf_url(url)
+
+        # Cache the result
+        if pdf_text:
+            self._cache[url] = pdf_text
+
+        return pdf_text
+
     async def _extract_pdf_content(self, url: str) -> ContentResult:
         """Extract content from PDF URL."""
         logger.info(f"📄 Processing PDF: {url}")
 
-        pdf_text = await self.pdf_service.extract_text_from_pdf_url(url)
+        pdf_text = await self._fetch_pdf(url)
 
         if not pdf_text:
             return ContentResult(
@@ -179,6 +213,11 @@ class WebContentExtractor:
         Raises:
             ContentExtractionError: If fetching fails
         """
+        # Check cache first
+        if url in self._cache:
+            logger.debug(f"🧠 Cache hit for {url}")
+            return self._cache[url]
+
         try:
             response = await self._client.get(url)
             response.raise_for_status()
@@ -188,7 +227,12 @@ class WebContentExtractor:
             if "text/html" not in content_type:
                 logger.warning(f"⚠️ Non-HTML content type: {content_type}")
 
-            return response.text
+            html_content = response.text
+
+            # Update cache
+            self._cache[url] = html_content
+
+            return html_content
 
         except httpx.HTTPStatusError as e:
             raise ContentExtractionError(f"HTTP {e.response.status_code}: {e.response.reason_phrase}")
@@ -237,7 +281,7 @@ class WebContentExtractor:
         """Remove unwanted HTML elements from soup."""
 
         # Remove script and style elements
-        for element in soup(["script", "style"]):
+        for element in soup(["script", "style", "noscript", "iframe", "svg"]):
             element.decompose()
 
         # Remove navigation, header, footer elements
@@ -249,22 +293,58 @@ class WebContentExtractor:
             comment.extract()
 
         # Remove elements by class/id (common unwanted content)
+        # Refined to avoid matching body/html or main content wrappers
         unwanted_selectors = [
-            "[class*='nav']",
-            "[class*='menu']",
-            "[class*='sidebar']",
-            "[class*='advertisement']",
-            "[class*='ad-']",
-            "[class*='cookie']",
-            "[id*='nav']",
-            "[id*='menu']",
-            "[id*='sidebar']",
-            "[id*='ad']",
+            ".nav",
+            ".navigation",
+            ".navbar",
+            ".menu",
+            ".main-menu",
+            ".sub-menu",
+            ".sidebar",
+            ".aside",
+            ".advertisement",
+            ".ad-container",
+            ".ad-wrapper",
+            ".cookie-banner",
+            ".cookie-consent",
+            "#nav",
+            "#navigation",
+            "#navbar",
+            "#menu",
+            "#sidebar",
+            "#ad",
+            "#advertisement",
         ]
 
         for selector in unwanted_selectors:
             for element in soup.select(selector):
+                # Double check we're not removing a critical container
+                if element.name in ["html", "body", "main", "article"]:
+                    continue
+
+                # For divs, be extra careful - only remove if it really looks like a UI component
+                # and not a main wrapper. This is hard to guarantee, but exact class matches
+                # in the selector list above helps.
+
                 element.decompose()
+
+        # Also remove elements with "ad-" or "banner" in class/id but use regex for safer matching
+        # avoiding *='...' which matches substrings anywhere
+        import re
+
+        ad_pattern = re.compile(r"(^|\s)(ad-|banner-|popup|newsletter)(?!\w)", re.I)
+
+        for tag in soup.find_all(attrs={"class": True}):
+            if tag.name in ["html", "body", "main", "article"]:
+                continue
+
+            classes = tag.get("class")
+            if isinstance(classes, list):
+                classes = " ".join(classes)
+
+            if ad_pattern.search(classes):
+                tag.decompose()
 
     def _clean_text(self, text: str) -> str:
         """Clean extracted text content."""
@@ -366,7 +446,7 @@ class WebContentExtractor:
         try:
             # Check if it's a PDF URL - PDFs don't have HTML
             if url.lower().endswith(".pdf"):
-                pdf_text = await self.pdf_service.extract_text_from_pdf_url(url)
+                pdf_text = await self._fetch_pdf(url)
                 return ContentWithHtml(
                     url=url,
                     html="",  # PDFs don't have HTML

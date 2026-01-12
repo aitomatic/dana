@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Settings, Play, MoreVert, Trash, Plus } from 'iconoir-react';
+import { Settings, Play, MoreVert, Trash, Plus, Search } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import { toast } from 'sonner';
@@ -46,8 +46,9 @@ export const MyAgentTab: React.FC<{
   navigate: (url: string) => void;
   handleCreateAgent: () => Promise<void>;
   creating: boolean;
-}> = ({ agents, navigate, handleCreateAgent, creating }) => {
-  const { deleteAgent, isDeleting } = useAgentStore();
+  onSwitchToPretrained?: () => void;
+}> = ({ agents, navigate, handleCreateAgent, creating, onSwitchToPretrained }) => {
+  const { isDeleting, startAgentDeletion, completeAgentDeletion, deletingAgents } = useAgentStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState<any>(null);
 
@@ -60,11 +61,23 @@ export const MyAgentTab: React.FC<{
   const handleConfirmDelete = async () => {
     if (agentToDelete) {
       try {
-        await deleteAgent(agentToDelete.id);
+        // Start the deletion animation
+        startAgentDeletion(agentToDelete.id);
         setDeleteDialogOpen(false);
-        setAgentToDelete(null);
+        
+        // Wait for animation to complete (400ms) then actually delete
+        setTimeout(async () => {
+          try {
+            await completeAgentDeletion(agentToDelete.id);
+            setAgentToDelete(null);
+          } catch (error) {
+            console.error('Error deleting agent:', error);
+            // If deletion fails, we should remove from deletingAgents
+            // This is handled in the store's error handling
+          }
+        }, 400);
       } catch (error) {
-        console.error('Error deleting agent:', error);
+        console.error('Error starting agent deletion:', error);
       }
     }
   };
@@ -78,9 +91,9 @@ export const MyAgentTab: React.FC<{
       </div>,
       {
         style: {
-          background: '#f0fdf4',
-          color: '#166534',
-          border: '1px solid #bbf7d0',
+          background: '#101828',
+          color: '#ffffff',
+          border: '1px solid #101828',
           borderRadius: '8px',
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           fontSize: '14px',
@@ -113,7 +126,9 @@ export const MyAgentTab: React.FC<{
             .map((agent) => (
               <div
                 key={agent.id}
-                className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow hover:shadow-md"
+                className={`flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow hover:shadow-md ${
+                  deletingAgents.has(agent.id) ? 'agent-deleting' : ''
+                }`}
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-2 justify-between">
@@ -145,7 +160,7 @@ export const MyAgentTab: React.FC<{
                             className="p-0 transform translate-x-4 -translate-y-2"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVert className="text-gray-700 size-4" strokeWidth={2} />
+                            <MoreVert className="text-gray-700 size-4" strokeWidth={3} />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
@@ -225,17 +240,29 @@ export const MyAgentTab: React.FC<{
                 You haven't created any agents yet.
               </div>
               <div className="text-sm text-gray-700">
-              Train New Agent with support from <b>Dana</b>, our training expert.
+                Train new agent with support from <b>Dana Agent Maker</b>.
               </div>
-              <Button
-                variant="outline"
-                className="w-[200px] px-4 py-1 mt-2 font-semibold"
-                onClick={handleCreateAgent}
-                disabled={creating}
-              >
-                <Plus style={{ width: '20', height: '20' }} />
-              Train New Agent
-              </Button>
+              <div className="flex gap-2 mt-4">
+                {onSwitchToPretrained && (
+                  <Button
+                    variant="default"
+                    className="px-4 py-1 font-semibold"
+                    onClick={onSwitchToPretrained}
+                  >
+                    <Search style={{ width: '20', height: '20' }} />
+                    Browse Pre-trained Agents
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  className="px-2 py-1 font-semibold"
+                  onClick={handleCreateAgent}
+                  disabled={creating}
+                >
+                  <Plus style={{ width: '20', height: '20' }} />
+                  Create Agent
+                </Button>
+              </div>
             </div>
           </div>
         )}

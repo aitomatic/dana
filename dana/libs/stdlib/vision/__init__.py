@@ -1,4 +1,4 @@
-# Add local aicapture to Python path
+# Add local ai_capture to Python path
 import os
 import sys
 from pathlib import Path
@@ -9,7 +9,7 @@ try:
 except Exception:
     vision_dir = Path(os.path.dirname(__file__))
 
-aicapture_path = str(vision_dir / "aicapture")
+aicapture_path = str(vision_dir / "ai_capture")
 
 # Add to Python path if not already there
 if str(vision_dir) not in sys.path:

@@ -13,6 +13,7 @@ import logging
 import os
 import shutil
 import json
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,14 @@ class ModifyTreeTool(BaseTool):
         domain: str = "General",
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
+        notifier: Callable[[str, str, str, float | None], None] | None = None,
     ):
         self.domain = domain
         self.role = role
         self.tasks = tasks or []
         self.storage_path = storage_path
         self.knowledge_status_path = knowledge_status_path
+        self.notifier = notifier
 
         tool_info = BaseToolInformation(
             name="modify_tree",
@@ -101,6 +104,8 @@ class ModifyTreeTool(BaseTool):
             else:
                 content = f"❌ Invalid operation '{operation}'. Supported: init, bulk"
                 content = self._build_structured_response(user_message, operation, content)
+            if self.notifier:
+                await self.notifier("modify_tree", f"Tree is modified", "in_progress", 0.0)
 
             return ToolResult(name="modify_tree", result=content, require_user=False)
 
@@ -609,9 +614,9 @@ Return as JSON with this exact structure:
             return self._build_success_response(operation_results, operations_performed)
 
         except json.JSONDecodeError as e:
-            return f"❌ Error: Invalid JSON in bulk_operations: {str(e)}"
+            return f"Error: Invalid JSON in bulk_operations: {str(e)}"
         except Exception as e:
-            return f"❌ Error executing bulk operations: {str(e)}"
+            return f"Error executing bulk operations: {str(e)}"
 
     def _build_error_response(self, failed_result: dict, operation_number: int, all_results: list) -> str:
         """Build comprehensive error response with context and suggestions."""
@@ -623,9 +628,9 @@ Return as JSON with this exact structure:
         # Get successful operations before the failure
         successful_ops = [r for r in all_results[:-1] if r["success"]]
 
-        content = f"""❌ Tree Operation Failed
+        content = f"""Tree Operation Failed
 
-🚫 **Operation {operation_number} Failed**: {operation.title()} operation on "{path}"
+**Operation {operation_number} Failed**: {operation.title()} operation on "{path}"
 📋 **Error**: {error_msg}
 🔍 **Error Type**: {error_type}
 
@@ -656,21 +661,21 @@ Return as JSON with this exact structure:
 - Update your path to start with the correct root node"""
         elif error_type == "cannot_remove_root":
             content += """
-- Root nodes cannot be removed
-- Consider using modify operation instead to change the root
-- Or restructure the tree by creating a new tree with the desired root"""
+- Using modify operation to change the root node autonomously. Do it without asking user for input."""
         elif error_type == "ambiguous_placement":
-            current_root = failed_result.get("current_root", "unknown")
-            attempted_path = failed_result.get("attempted_path", [])
-            suggestion = failed_result.get("suggestion", "")
-            content += f"""
-- Your path starts with '{attempted_path[0] if attempted_path else "unknown"}' but the tree root is '{current_root}'
-- This could mean you want to:
-  1. Add '{attempted_path[0] if attempted_path else "unknown"}' as a child of '{current_root}' 
-  2. Or you meant to start the path from the existing root
-- {suggestion}
-- Use explore_knowledge to see the current tree structure
-- Then specify the complete path from the root node"""
+            # current_root = failed_result.get("current_root", "unknown")
+            # attempted_path = failed_result.get("attempted_path", [])
+            # suggestion = failed_result.get("suggestion", "")
+            content += """
+- Using modify operation to change the root node autonomously. Do it without asking user for input."""
+#             content += f"""
+# - Your path starts with '{attempted_path[0] if attempted_path else "unknown"}' but the tree root is '{current_root}'
+# - This could mean you want to:
+#   1. Add '{attempted_path[0] if attempted_path else "unknown"}' as a child of '{current_root}' 
+#   2. Or you meant to start the path from the existing root
+# - {suggestion}
+# - Use explore_knowledge to see the current tree structure
+# - Then specify the complete path from the root node"""
         else:
             content += """
 - Use explore_knowledge to understand the current tree structure
@@ -768,6 +773,9 @@ Return as JSON with this exact structure:
                 ko_utils.save_tree(updated_tree, self.domain_knowledge_path)
                 self.tree_structure = updated_tree  # Update local reference
                 logger.info(f"Tree structure saved to {self.domain_knowledge_path}")
+                
+                # Send universal notification
+                self._notify_tree_update("init", {"tree_path": self.domain_knowledge_path})
             except Exception as e:
                 logger.error(f"Failed to save tree structure: {e}")
 
@@ -785,6 +793,19 @@ Return as JSON with this exact structure:
                 # Save updated tree
                 ko_utils.save_tree(self.tree_structure, self.domain_knowledge_path)
                 logger.info(f"Tree changes saved after {operation} operation on {tree_path}")
+                
+                # Send universal notification
+                self._notify_tree_update(operation, {"tree_path": tree_path})
+                
+                # Send finish notification for frontend auto-switch
+                if self.notifier:
+                    Misc.safe_asyncio_run(
+                        self.notifier,
+                        "modify_tree",
+                        f"Tree modification completed: {operation}",
+                        "finish",
+                        1.0
+                    )
             except Exception as e:
                 logger.error(f"Failed to save tree changes: {e}")
 
@@ -928,3 +949,7 @@ Return as JSON with this exact structure:
 
         # Join all parts with proper spacing
         return "\n".join(response_parts)
+
+    def _notify_tree_update(self, operation: str, details: dict) -> None:
+        """Send notification about tree updates."""
+        logger.info(f"[ModifyTreeTool] Tree update completed - operation: {operation}")

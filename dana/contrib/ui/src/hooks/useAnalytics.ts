@@ -58,9 +58,12 @@ export const useAnalytics = () => {
 export const useDanaAnalytics = () => {
   const { trackEvent, trackTiming } = useAnalytics();
 
-  // Track agent creation
+  // Track agent creation with context
   const trackAgentCreation = useCallback(
     (agentName: string, domain?: string) => {
+      analytics.incrementActionCount();
+      const context = analytics.getSessionContext();
+
       trackEvent({
         action: 'create_agent',
         category: 'agent_management',
@@ -74,8 +77,24 @@ export const useDanaAnalytics = () => {
           label: domain,
         });
       }
+
+      // Check if this is user's first agent
+      const firstAgent = !sessionStorage.getItem('analytics_first_agent_created');
+      if (firstAgent) {
+        sessionStorage.setItem('analytics_first_agent_created', 'true');
+        trackEvent({
+          action: 'user_first_agent',
+          category: 'lifecycle',
+          label: agentName,
+        });
+
+        // Calculate time to first agent (activation metric)
+        if (context.session_duration) {
+          trackTiming('time_to_first_agent', context.session_duration, 'activation', 'first_agent');
+        }
+      }
     },
-    [trackEvent],
+    [trackEvent, trackTiming],
   );
 
   // Track agent editing
@@ -154,13 +173,110 @@ export const useDanaAnalytics = () => {
     [trackEvent, trackTiming],
   );
 
-  // Track chat interaction
+  // Track chat interaction with first-time detection
   const trackChatMessage = useCallback(
     (agentId: string, messageType: 'user' | 'agent') => {
+      analytics.incrementActionCount();
+      const context = analytics.getSessionContext();
+
       trackEvent({
         action: 'chat_message',
         category: 'agent_interaction',
         label: `${agentId}_${messageType}`,
+      });
+
+      // Check if this is user's first chat (aha moment!)
+      if (messageType === 'user') {
+        const firstChat = !sessionStorage.getItem('analytics_first_chat_sent');
+        if (firstChat) {
+          sessionStorage.setItem('analytics_first_chat_sent', 'true');
+          trackEvent({
+            action: 'user_first_chat',
+            category: 'lifecycle',
+            label: agentId,
+          });
+
+          // Calculate time to first chat (engagement metric)
+          if (context.session_duration) {
+            trackTiming('time_to_first_chat', context.session_duration, 'activation', 'first_chat');
+          }
+        }
+      }
+    },
+    [trackEvent, trackTiming],
+  );
+
+  // Track tab navigation
+  const trackTabNavigation = useCallback(
+    (tabName: string, context: 'agent_detail' | 'main_page') => {
+      trackEvent({
+        action: 'tab_navigation',
+        category: 'navigation',
+        label: `${context}_${tabName}`,
+      });
+    },
+    [trackEvent],
+  );
+
+  // Track agent import
+  const trackAgentImport = useCallback(
+    (prebuiltKey: string, success: boolean) => {
+      trackEvent({
+        action: success ? 'import_agent_success' : 'import_agent_failed',
+        category: 'agent_management',
+        label: prebuiltKey,
+      });
+    },
+    [trackEvent],
+  );
+
+  // Track document association
+  const trackDocumentAssociation = useCallback(
+    (agentId: string, documentCount: number) => {
+      trackEvent({
+        action: 'associate_documents',
+        category: 'agent_management',
+        label: agentId,
+        value: documentCount,
+      });
+    },
+    [trackEvent],
+  );
+
+  // Track file extraction with first-time detection
+  const trackFileExtraction = useCallback(
+    (fileType: string, extractionType: 'basic' | 'deep', success: boolean) => {
+      analytics.incrementActionCount();
+
+      trackEvent({
+        action: success ? 'file_extraction_success' : 'file_extraction_failed',
+        category: 'library',
+        label: `${fileType}_${extractionType}`,
+      });
+
+      // Track first-time deep extraction usage (feature discovery)
+      if (extractionType === 'deep' && success) {
+        const firstDeepExtraction = !sessionStorage.getItem('analytics_first_deep_extraction');
+        if (firstDeepExtraction) {
+          sessionStorage.setItem('analytics_first_deep_extraction', 'true');
+          trackEvent({
+            action: 'feature_first_use',
+            category: 'discovery',
+            label: 'deep_extraction',
+          });
+        }
+      }
+    },
+    [trackEvent],
+  );
+
+  // Track PDF viewing
+  const trackPdfView = useCallback(
+    (fileName: string) => {
+      trackEvent({
+        action: 'view_pdf',
+        category: 'library',
+        label: fileName,
       });
     },
     [trackEvent],
@@ -169,11 +285,10 @@ export const useDanaAnalytics = () => {
   // Track API connection
   const trackApiConnection = useCallback(
     (status: 'success' | 'error', endpoint?: string) => {
-      console.log('trackApiConnection', status, endpoint);
       trackEvent({
         action: 'api_connection',
         category: 'system',
-        label: endpoint || 'unknown',
+        label: `${status}_${endpoint || 'unknown'}`,
       });
     },
     [trackEvent],
@@ -181,8 +296,7 @@ export const useDanaAnalytics = () => {
 
   // Track error
   const trackError = useCallback(
-    (errorType: string, errorMessage: string, context?: string) => {
-      console.log('trackError', errorType, errorMessage, context);
+    (errorType: string, _errorMessage: string, context?: string) => {
       trackEvent({
         action: 'error',
         category: 'system',
@@ -196,12 +310,18 @@ export const useDanaAnalytics = () => {
     trackAgentCreation,
     trackAgentEdit,
     trackAgentDeletion,
+    trackAgentImport,
+    trackDocumentAssociation,
     trackFileUpload,
     trackFileDownload,
     trackFolderCreation,
+    trackFileExtraction,
+    trackPdfView,
     trackCodeGeneration,
     trackChatMessage,
+    trackTabNavigation,
     trackApiConnection,
     trackError,
+    trackTiming,
   };
 };

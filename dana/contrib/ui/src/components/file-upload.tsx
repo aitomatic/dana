@@ -43,7 +43,7 @@ export function FileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Analytics
-  const { trackFileUpload } = useDanaAnalytics();
+  const { trackFileUpload, trackError } = useDanaAnalytics();
 
   // Auto-open file dialog on mount if autoOpen is true
   useEffect(() => {
@@ -82,10 +82,18 @@ export function FileUpload({
           uploadedFile.status = 'success';
           uploadedFile.path = doc.filename;
         } else {
-          // Fallback to the old upload endpoint
-          const doc = await apiService.uploadDocument({ file, title: file.name });
+          // Use v2 upload endpoint
+          const uploadedResponse = await apiService.uploadDocumentRaw(file, {
+            build_index: true,
+            allow_duplicate: false,
+          });
+
+          if (!uploadedResponse.success || !uploadedResponse.document) {
+            throw new Error(uploadedResponse.message || 'Upload failed');
+          }
+
           uploadedFile.status = 'success';
-          uploadedFile.path = doc.filename;
+          uploadedFile.path = uploadedResponse.document.filename;
         }
 
         // Track successful file upload
@@ -94,6 +102,9 @@ export function FileUpload({
       } catch (error) {
         uploadedFile.status = 'error';
         uploadedFile.error = (error as Error).message;
+
+        // Track file upload error
+        trackError('file_upload_failed', (error as Error).message, file.name);
       }
 
       return uploadedFile;
@@ -132,6 +143,9 @@ export function FileUpload({
       }
     } catch (error) {
       console.error('Upload error:', error);
+
+      // Track batch upload error
+      trackError('batch_upload_failed', (error as Error).message, 'multiple_files');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

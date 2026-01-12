@@ -31,7 +31,7 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
     <div className="flex overflow-auto justify-between items-center w-full">
       <div className="flex justify-between items-center w-full">
         <div className="text-sm text-gray-600">
-          Showing {currentPage * pageSize + 1} to{' '}
+          Showing {currentPage * pageSize + 1} -{' '}
           {Math.min((currentPage + 1) * pageSize, totalRows)} of {totalRows} results
         </div>
         <div className="flex items-center gap-4">
@@ -41,11 +41,12 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
             <ArrowLeft className="w-4 h-4" />
+            Previous
+            
           </Button>
 
-          <div className="flex gap-2 justify-center items-center text-sm font-medium text-gray-600">
+          <div className="flex gap-2 justify-center items-center text-sm font-medium">
             {Array.from({ length: table.getPageCount() }, (_, i) => {
               const currentPage = table.getState().pagination.pageIndex;
               const showPage =
@@ -69,7 +70,7 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
                 <span
                   key={i}
                   className={`cursor-pointer rounded w-10 h-10 flex items-center justify-center ${
-                    currentPage === i ? 'bg-gray-50 text-gray-900' : 'text-gray-600'
+                    currentPage === i ? 'bg-gray-50 text-gray-900 cursor-none' : 'text-gray-400 hover:bg-gray-100'
                   }`}
                   onClick={() => table.setPageIndex(i)}
                 >

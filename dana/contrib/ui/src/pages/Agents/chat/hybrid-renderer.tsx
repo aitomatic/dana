@@ -9,6 +9,8 @@ interface HybridRendererProps {
   theme?: 'light' | 'dark';
   backgroundContext?: 'user' | 'agent' | 'default';
   forceHtml?: boolean; // Force HTML rendering regardless of detection
+  messageId?: string;
+  hasActiveButtons?: boolean;
 }
 
 export const HybridRenderer: React.FC<HybridRendererProps> = ({
@@ -18,6 +20,8 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
   theme = 'light',
   backgroundContext = 'default',
   forceHtml = false,
+  messageId,
+  hasActiveButtons = true,
 }) => {
   // Detect if content contains HTML tags
   const containsHTML = (text: string): boolean => {
@@ -69,6 +73,8 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
         className={className}
         theme={theme}
         backgroundContext={backgroundContext}
+        messageId={messageId}
+        hasActiveButtons={hasActiveButtons}
       />
     );
   }

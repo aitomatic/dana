@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -5,7 +6,8 @@ import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
-import { NavArrowDown, Plus } from 'iconoir-react';
+import { ImportAgentDialog } from '@/components/import-agent-dialog';
+import { NavArrowDown, Plus, Import, Search } from 'iconoir-react';
 import {
   Dialog,
   DialogContent,
@@ -243,9 +245,10 @@ export default function AgentsPage() {
   const [initiatingAgentKey, setInitiatingAgentKey] = useState<string | null>(null);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  // Get activeTab from URL params, default to 'explore'
-  const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
+  // Get activeTab from URL params, default to 'my'
+  const activeTabId = (searchParams.get('tab') as TabId) || 'my';
   const activeTab = TAB_CONFIG[activeTabId];
 
   // Function to update activeTab in URL
@@ -268,16 +271,15 @@ export default function AgentsPage() {
   };
 
   useEffect(() => {
-    // If no agents and no tab specified, default to explore
+    // If no agents and no tab specified, default to my
     if (agents && agents.length === 0 && !searchParams.get('tab')) {
-      setActiveTab('explore');
+      setActiveTab('my');
     }
   }, [agents, searchParams]);
 
   useEffect(() => {
     fetchAgents();
     fetchPrebuiltAgents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Smart header behavior - collapse after scroll or user interaction
@@ -430,18 +432,13 @@ export default function AgentsPage() {
       <div
         className={` relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
-            ? 'bg-gradient-to-r to-brand-900 min-h-[200px] from-slate-900'
-            : 'py-16 bg-gradient-to-br via-brand-700 min-h-[600px] from-slate-900 to-slate-900'
+            ? 'bg-gradient-to-br from-blue-900 to-blue-800 min-h-[128px]'
+            : 'py-16 bg-gradient-to-br from-blue-900 to-blue-900 via-blue-800 min-h-[600px]'
         }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
-            <div className="absolute inset-0">
-              <div className="absolute top-0 left-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob"></div>
-              <div className="absolute top-0 right-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
-            </div>
 
             {/* Grid Pattern Overlay */}
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
@@ -461,9 +458,7 @@ export default function AgentsPage() {
             }`}
           >
             <h1 className="mb-2 text-7xl font-black tracking-tight leading-none text-white md:text-8xl">
-              <span className="text-transparent bg-clip-text bg-white">
-                Dana
-              </span>
+              <span className="text-transparent bg-clip-text bg-white">Dana</span>
             </h1>
             <h2 className="mb-2 text-5xl font-black tracking-tight text-white md:text-6xl">
               Agent Studio
@@ -489,7 +484,7 @@ export default function AgentsPage() {
           >
             {/* Agent Maker - Available Now */}
             <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl shadow-lg">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -517,7 +512,7 @@ export default function AgentsPage() {
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -545,7 +540,7 @@ export default function AgentsPage() {
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
@@ -599,35 +594,22 @@ export default function AgentsPage() {
         </div>
 
         {/* Enhanced Floating Elements - Only show when expanded */}
-        {!headerCollapsed && (
-          <>
-
-          </>
-        )}
+        {!headerCollapsed && <></>}
 
         {/* Compact Header with Highlights - Show when collapsed */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${
+          className={`absolute inset-0 flex p-8 transition-all duration-700 ease-out ${
             headerCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
           }`}
         >
-          <div className="flex flex-col gap-4 items-center">
+          <div className="flex flex-col">
             {/* Main Title with Gradient Highlight */}
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-transparent bg-clip-text bg-white">
-                Dana Agent Studio
-              </span>
+              <span className="text-transparent bg-clip-text bg-white">Dana Agent Studio</span>
             </h1>
 
-            {/* Feature Status Badges */}
-            <div className="flex gap-3 items-center">
-              <span className="px-3 py-1.5 text-sm font-semibold bg-green-500/20 text-green-300 border border-green-400/40 rounded-full shadow-lg">
-                🚀 Agent Maker
-              </span>
-            </div>
-
             {/* Subtle Description */}
-            <p className="max-w-md text-sm text-center text-gray-300">
+            <p className="max-w-xl mt-2 text-sm  text-gray-300">
               The complete platform for building, training, and deploying Dana Expert Agents
             </p>
           </div>
@@ -637,44 +619,15 @@ export default function AgentsPage() {
       {/* Content Section */}
       <div className="flex-1 p-8 bg-white">
         {/* Dana Agent Maker Feature */}
-        <div className="flex items-center justify-between p-8 mb-8 bg-gray-50 rounded-lg">
-          <div className="flex flex-col gap-2">
-            <div className="text-lg font-semibold text-gray-900">
-              Dana Agent Maker
-            </div>
-            <div className="text-sm text-gray-700">
-              Define your requirements and receive workflow solutions.
-            </div>
-          </div>
-          <Button
-            onClick={handleCreateAgent}
-            className="w-[152px] px-4 py-1 font-semibold"
-          >
-            <Plus style={{ width: '20', height: '20' }} />
-            Create Agent
-          </Button>
-        </div>
 
         {/* Search and Navigation */}
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
             <div className="relative w-full md:w-72">
-              <svg
-                className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5" />
               <input
                 type="text"
-                placeholder="Search agents..."
+                placeholder="Search"
                 value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
                 onChange={(e) =>
                   activeTab === 'My Agent'
@@ -684,6 +637,20 @@ export default function AgentsPage() {
                 className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setImportDialogOpen(true)}
+                variant="outline"
+                className="w-[152px] px-4 py-1 font-semibold"
+              >
+                <Import style={{ width: '20', height: '20' }} />
+                Import Agent
+              </Button>
+              <Button onClick={handleCreateAgent} className="w-[152px] px-4 py-1 font-semibold">
+                <Plus style={{ width: '20', height: '20' }} />
+                Create Agent
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -691,16 +658,6 @@ export default function AgentsPage() {
         <div className="flex gap-4 mb-8 border-b border-gray-200">
           <button
             className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
-              activeTab === 'Explore'
-                ? 'border-brand-500 text-brand-600'
-                : 'border-transparent text-gray-500 hover:text-brand-600'
-            }`}
-            onClick={() => setActiveTab('explore')}
-          >
-            <span className="flex gap-2 items-center">Pre-trained Agents</span>
-          </button>
-          <button
-            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
               activeTab === 'My Agent'
                 ? 'border-brand-500 text-brand-600'
                 : 'border-transparent text-gray-500 hover:text-brand-600'
@@ -708,6 +665,16 @@ export default function AgentsPage() {
             onClick={() => setActiveTab('my')}
           >
             <span className="flex gap-2 items-center">My Agents</span>
+          </button>
+          <button
+            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+              activeTab === 'Explore'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
+            }`}
+            onClick={() => setActiveTab('explore')}
+          >
+            <span className="flex gap-2 items-center">Pre-trained Agents</span>
           </button>
         </div>
 
@@ -722,6 +689,7 @@ export default function AgentsPage() {
             navigate={navigate}
             handleCreateAgent={handleCreateAgent}
             creating={creating}
+            onSwitchToPretrained={() => setActiveTab('explore')}
           />
         )}
         {activeTab === 'Explore' && (
@@ -934,6 +902,17 @@ export default function AgentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Import Agent Dialog */}
+      <ImportAgentDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportSuccess={() => {
+          // Refresh agent list
+          fetchAgents();
+          setImportDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

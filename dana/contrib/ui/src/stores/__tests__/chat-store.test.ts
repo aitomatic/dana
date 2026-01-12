@@ -345,4 +345,4 @@ describe('Chat Store', () => {
       expect(state.isCreating).toBe(false);
     });
   });
-}); 
+});

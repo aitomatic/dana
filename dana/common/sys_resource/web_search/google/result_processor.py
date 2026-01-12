@@ -254,7 +254,7 @@ class ResultProcessor:
         # Return True if at least 30% of terms match
         return matches >= len(query_terms) * 0.3
 
-    def limit_results(self, results: list[GoogleResult], max_results: int = None) -> list[GoogleResult]:
+    def limit_results(self, results: list[GoogleResult], max_results: int | None = None) -> list[GoogleResult]:
         """
         Limit results to maximum number.
 
