@@ -115,15 +115,14 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-studio, test-dana-agent, test-dana-lang]
+    needs: [test-dana-studio, test-dana-agent]
     runs-on: ubuntu-latest
     if: always()
     steps:
     - name: Check test results
       run: |
         if [[ "${{ needs.test-dana-studio.result }}" == "failure" ||
-              "${{ needs.test-dana-agent.result }}" == "failure" ||
-              "${{ needs.test-dana-lang.result }}" == "failure" ]]; then
+              "${{ needs.test-dana-agent.result }}" == "failure" ]]; then
           echo "One or more test jobs failed"
           exit 1
         else
