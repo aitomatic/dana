@@ -10,7 +10,6 @@ from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
 from dana.lib.resources.conversation import ConversationResource
-from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 from resources.historical_yield_resource import HistoricalYieldResource
 
@@ -28,17 +27,8 @@ class FailureCorrelationWorkflow(BaseWorkflow):
     This provides context for understanding current failures.
     """
 
-    def __init__(
-        self,
-        workflow_id: str | None = None,
-        llm_provider: str = "anthropic",
-        model: str | None = None,
-        **kwargs
-    ):
-        super().__init__(
-            workflow_id=workflow_id or "failure-correlation",
-            **kwargs
-        )
+    def __init__(self, workflow_id: str | None = None, llm_provider: str = "anthropic", model: str | None = None, **kwargs):
+        super().__init__(workflow_id=workflow_id or "failure-correlation", **kwargs)
 
         # Store config for step agent resources
         self._llm_provider = llm_provider
@@ -53,11 +43,7 @@ class FailureCorrelationWorkflow(BaseWorkflow):
         if not self._step_agent_configured:
             # Give step agent access to resources it needs
             self.workflow_step_agent.with_resources(
-                ConversationResource(
-                    resource_id=f"{self.workflow_id}-llm",
-                    llm_provider=self._llm_provider,
-                    model=self._model
-                )
+                ConversationResource(resource_id=f"{self.workflow_id}-llm", llm_provider=self._llm_provider, model=self._model)
             )
             self._step_agent_configured = True
 
@@ -96,25 +82,29 @@ class FailureCorrelationWorkflow(BaseWorkflow):
 
         try:
             # STEP 1: Historical Yield Trend Lookup (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "historical_lookup",
-                    "message": f"Retrieving {weeks} weeks of yield history..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "historical_lookup",
+                        "message": f"Retrieving {weeks} weeks of yield history...",
+                    }
                 }
-            })
+            )
 
             trend_data = self.historical.get_product_yield_trend(product=product, weeks=weeks)
             trend_analysis = self.historical.analyze_yield_trend(product=product, weeks=weeks)
 
             # STEP 2: Similar Failure Case Lookup (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "similar_cases",
-                    "message": "Searching for historical similar failure patterns..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "similar_cases",
+                        "message": "Searching for historical similar failure patterns...",
+                    }
                 }
-            })
+            )
 
             similar_cases_all = []
             for bin_info in top_bins:
@@ -133,44 +123,41 @@ class FailureCorrelationWorkflow(BaseWorkflow):
             unique_cases.sort(key=lambda x: x.get("similarity_score", 0), reverse=True)
 
             # STEP 3: Process Correlation Analysis (LLM Intelligence)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "process_correlation",
-                    "message": "Analyzing process change correlations..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "process_correlation",
+                        "message": "Analyzing process change correlations...",
+                    }
                 }
-            })
-
-            process_correlations = self._analyze_process_correlations(
-                trend_data,
-                trend_analysis,
-                top_bins
             )
+
+            process_correlations = self._analyze_process_correlations(trend_data, trend_analysis, top_bins)
 
             # STEP 4: Root Cause Hypothesis Generation (LLM Intelligence)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "hypothesis_generation",
-                    "message": "Generating root cause hypotheses..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "hypothesis_generation",
+                        "message": "Generating root cause hypotheses...",
+                    }
                 }
-            })
-
-            hypotheses = self._generate_root_cause_hypotheses(
-                top_bins,
-                unique_cases,
-                process_correlations,
-                trend_analysis
             )
 
+            hypotheses = self._generate_root_cause_hypotheses(top_bins, unique_cases, process_correlations, trend_analysis)
+
             # STEP 5: Output (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "complete",
-                    "message": f"Correlation analysis complete: {len(hypotheses)} hypotheses generated"
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "complete",
+                        "message": f"Correlation analysis complete: {len(hypotheses)} hypotheses generated",
+                    }
                 }
-            })
+            )
 
             return {
                 "success": True,
@@ -188,18 +175,9 @@ class FailureCorrelationWorkflow(BaseWorkflow):
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "correlation_findings": {}
-            }
+            return {"success": False, "error": str(e), "correlation_findings": {}}
 
-    def _analyze_process_correlations(
-        self,
-        trend_data: dict,
-        trend_analysis: dict,
-        top_bins: list
-    ) -> dict:
+    def _analyze_process_correlations(self, trend_data: dict, trend_analysis: dict, top_bins: list) -> dict:
         """
         Analyze correlation between process changes and yield degradation.
 
@@ -208,21 +186,17 @@ class FailureCorrelationWorkflow(BaseWorkflow):
         process_changes = trend_data.get("process_changes", [])
 
         if not process_changes:
-            return {
-                "correlations_found": False,
-                "analysis": "No recent process changes recorded"
-            }
+            return {"correlations_found": False, "analysis": "No recent process changes recorded"}
 
         # Prepare context for LLM
-        bins_summary = "\n".join([
-            f"- {bin['bin_id']}: {bin['description']} ({bin['count']} failures)"
-            for bin in top_bins[:3]  # Top 3 bins
-        ])
+        bins_summary = "\n".join(
+            [
+                f"- {bin['bin_id']}: {bin['description']} ({bin['count']} failures)"
+                for bin in top_bins[:3]  # Top 3 bins
+            ]
+        )
 
-        changes_summary = "\n".join([
-            f"- Week {change['week']}: {change['change']}"
-            for change in process_changes
-        ])
+        changes_summary = "\n".join([f"- Week {change['week']}: {change['change']}" for change in process_changes])
 
         trend_info = f"Yield trend: {trend_analysis['trend_direction']}, change: {trend_analysis['yield_change']:.1f}%"
 
@@ -274,18 +248,10 @@ Provide structured analysis."""
                 }
 
         except Exception as e:
-            return {
-                "correlations_found": False,
-                "error": str(e),
-                "analysis": "Agent correlation analysis failed"
-            }
+            return {"correlations_found": False, "error": str(e), "analysis": "Agent correlation analysis failed"}
 
     def _generate_root_cause_hypotheses(
-        self,
-        top_bins: list,
-        similar_cases: list,
-        process_correlations: dict,
-        trend_analysis: dict
+        self, top_bins: list, similar_cases: list, process_correlations: dict, trend_analysis: dict
     ) -> list:
         """
         Generate root cause hypotheses using LLM reasoning.
@@ -297,19 +263,26 @@ Provide structured analysis."""
         - Yield trend data
         """
         # Prepare context for LLM
-        bins_summary = "\n".join([
-            f"- {bin['bin_id']}: {bin['description']} ({bin['count']} failures, "
-            f"pattern: {bin.get('spatial_pattern', 'unknown')})"
-            for bin in top_bins[:3]
-        ])
+        bins_summary = "\n".join(
+            [
+                f"- {bin['bin_id']}: {bin['description']} ({bin['count']} failures, pattern: {bin.get('spatial_pattern', 'unknown')})"
+                for bin in top_bins[:3]
+            ]
+        )
 
-        cases_summary = "\n".join([
-            f"- Case {case['case_id']}: {case['primary_bin']}, "
-            f"Root cause: {case['root_cause']}, "
-            f"Resolution: {case['resolution']}, "
-            f"Similarity: {case['similarity_score']:.2f}"
-            for case in similar_cases[:2]
-        ]) if similar_cases else "No highly similar historical cases found"
+        cases_summary = (
+            "\n".join(
+                [
+                    f"- Case {case['case_id']}: {case['primary_bin']}, "
+                    f"Root cause: {case['root_cause']}, "
+                    f"Resolution: {case['resolution']}, "
+                    f"Similarity: {case['similarity_score']:.2f}"
+                    for case in similar_cases[:2]
+                ]
+            )
+            if similar_cases
+            else "No highly similar historical cases found"
+        )
 
         correlation_summary = (
             f"Process change correlation: {process_correlations.get('primary_correlation', {}).get('process_change', 'None identified')}"
@@ -328,7 +301,7 @@ Provide structured analysis."""
 **Process Correlation:**
 {correlation_summary}
 
-**Yield Trend:** {trend_analysis['trend_direction']} ({trend_analysis['yield_change']:.1f}% change)
+**Yield Trend:** {trend_analysis["trend_direction"]} ({trend_analysis["yield_change"]:.1f}% change)
 
 Generate 2-3 ranked hypotheses with:
 1. Hypothesis: What is the likely root cause?
@@ -352,45 +325,51 @@ Rank by likelihood (most likely first)."""
             # Hypothesis 1: Based on similar historical case (if exists)
             if similar_cases and similar_cases[0].get("similarity_score", 0) > 0.7:
                 case = similar_cases[0]
-                hypotheses.append({
-                    "rank": 1,
-                    "hypothesis": f"Similar to historical case: {case['root_cause']}",
-                    "evidence": [
-                        f"Very similar failure pattern (similarity: {case['similarity_score']:.2f})",
-                        f"Historical case: {case['case_id']}",
-                        f"Previous resolution: {case['resolution']}",
-                    ],
-                    "confidence": "HIGH" if case["similarity_score"] > 0.9 else "MEDIUM-HIGH",
-                    "next_steps": f"Apply similar resolution approach: {case['resolution']}",
-                })
+                hypotheses.append(
+                    {
+                        "rank": 1,
+                        "hypothesis": f"Similar to historical case: {case['root_cause']}",
+                        "evidence": [
+                            f"Very similar failure pattern (similarity: {case['similarity_score']:.2f})",
+                            f"Historical case: {case['case_id']}",
+                            f"Previous resolution: {case['resolution']}",
+                        ],
+                        "confidence": "HIGH" if case["similarity_score"] > 0.9 else "MEDIUM-HIGH",
+                        "next_steps": f"Apply similar resolution approach: {case['resolution']}",
+                    }
+                )
 
             # Hypothesis 2: Based on process correlation (if exists)
             if process_correlations.get("correlations_found"):
                 corr = process_correlations["primary_correlation"]
-                hypotheses.append({
-                    "rank": 2 if hypotheses else 1,
-                    "hypothesis": f"Process change impact: {corr['suspected_impact']}",
-                    "evidence": [
-                        f"Process change: {corr['process_change']}",
-                        f"Timing correlation: {corr['timing']}",
-                        f"Yield degradation coincides with change",
-                    ],
-                    "confidence": corr.get("confidence", "MEDIUM"),
-                    "next_steps": "Run DOE to test process parameter sensitivity",
-                })
+                hypotheses.append(
+                    {
+                        "rank": 2 if hypotheses else 1,
+                        "hypothesis": f"Process change impact: {corr['suspected_impact']}",
+                        "evidence": [
+                            f"Process change: {corr['process_change']}",
+                            f"Timing correlation: {corr['timing']}",
+                            "Yield degradation coincides with change",
+                        ],
+                        "confidence": corr.get("confidence", "MEDIUM"),
+                        "next_steps": "Run DOE to test process parameter sensitivity",
+                    }
+                )
 
             # If no strong hypotheses, add generic one
             if not hypotheses:
-                hypotheses.append({
-                    "rank": 1,
-                    "hypothesis": "Process variation or random defects",
-                    "evidence": [
-                        "No clear historical similar cases",
-                        "No obvious process change correlation",
-                    ],
-                    "confidence": "LOW",
-                    "next_steps": "Detailed failure analysis, defect pareto, SEM imaging",
-                })
+                hypotheses.append(
+                    {
+                        "rank": 1,
+                        "hypothesis": "Process variation or random defects",
+                        "evidence": [
+                            "No clear historical similar cases",
+                            "No obvious process change correlation",
+                        ],
+                        "confidence": "LOW",
+                        "next_steps": "Detailed failure analysis, defect pareto, SEM imaging",
+                    }
+                )
 
             # Add agent analysis
             for h in hypotheses:
@@ -400,11 +379,13 @@ Rank by likelihood (most likely first)."""
 
         except Exception as e:
             # Fallback hypotheses
-            return [{
-                "rank": 1,
-                "hypothesis": "Unknown - requires investigation",
-                "evidence": ["Agent hypothesis generation failed"],
-                "confidence": "LOW",
-                "next_steps": "Manual root cause analysis",
-                "error": str(e)
-            }]
+            return [
+                {
+                    "rank": 1,
+                    "hypothesis": "Unknown - requires investigation",
+                    "evidence": ["Agent hypothesis generation failed"],
+                    "confidence": "LOW",
+                    "next_steps": "Manual root cause analysis",
+                    "error": str(e),
+                }
+            ]

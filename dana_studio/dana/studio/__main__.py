@@ -56,10 +56,7 @@ Examples:
 """
 
 import argparse
-import json
-import logging
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -73,7 +70,7 @@ sys.path.insert(0, project_root)
 
 # Compatibility layer removed - direct Dana imports only
 
-from dana.lang.common.terminal_utils import ColorScheme, print_header, supports_color
+from dana.lang.common.terminal_utils import ColorScheme, supports_color
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())
@@ -101,7 +98,6 @@ def build_frontend():
     we need to build it).
     """
     import subprocess
-    import os
 
     try:
         # Check if we're running from a pip installation

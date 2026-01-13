@@ -286,10 +286,7 @@ class WilliamLearner_demo(WilliamLearner):
             storage_path = self._get_feedback_storage_path()
             # Check if feedback folder exists and has content
             feedback_file = storage_path / "feedback.md"
-            return (
-                feedback_file.exists()
-                and feedback_file.stat().st_size > 0
-            )
+            return feedback_file.exists() and feedback_file.stat().st_size > 0
         except Exception:
             return False
 
@@ -317,9 +314,7 @@ class WilliamLearner_demo(WilliamLearner):
             # Use standard episodic learning from parent class
             return super()._reflect_episodic(trace_episodic)
 
-    def _reflect_episodic_with_feedback(
-        self, trace_episodic: DictParams
-    ) -> DictParams:
+    def _reflect_episodic_with_feedback(self, trace_episodic: DictParams) -> DictParams:
         """
         Enhanced episodic learning when feedback is available.
 
@@ -345,22 +340,16 @@ class WilliamLearner_demo(WilliamLearner):
             previous_learning = self._load_episodic_learning()
 
             print("[ANALYSIS] Starting analysis step...")
-            prev_learning_len = (
-                len(previous_learning) if previous_learning else 0
-            )
+            prev_learning_len = len(previous_learning) if previous_learning else 0
             print(f"[ANALYSIS] Previous learning length: {prev_learning_len}")
 
-            feedback_section = FEEDBACK_PROMPT.format(
-                feedback_content=feedback_content
-            )
+            feedback_section = FEEDBACK_PROMPT.format(feedback_content=feedback_content)
 
             analysis_messages = []
             analysis_messages.append(
                 LLMMessage(
                     role="system",
-                    content=ANALYSIS_SYSTEM_PROMPT.format(
-                        previous_learning=previous_learning
-                    ),
+                    content=ANALYSIS_SYSTEM_PROMPT.format(previous_learning=previous_learning),
                 ),
             )
             analysis_messages.append(
@@ -381,11 +370,7 @@ class WilliamLearner_demo(WilliamLearner):
             print("[ANALYSIS] Received analysis response")
 
             # Parse analysis response
-            analysis_content = (
-                analysis_response.content
-                if hasattr(analysis_response, "content")
-                else str(analysis_response)
-            )
+            analysis_content = analysis_response.content if hasattr(analysis_response, "content") else str(analysis_response)
 
             # Debug output - use both print and logger
             print(f"[ANALYSIS] Analysis content: {analysis_content}")
@@ -398,84 +383,45 @@ class WilliamLearner_demo(WilliamLearner):
                 if analysis_content_clean.startswith("```"):
                     # Extract JSON from code block
                     lines = analysis_content_clean.split("\n")
-                    analysis_content_clean = "\n".join(
-                        lines[1:-1]
-                        if lines[-1].strip() == "```"
-                        else lines[1:]
-                    )
+                    analysis_content_clean = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
                 elif analysis_content_clean.startswith("```json"):
                     lines = analysis_content_clean.split("\n")
-                    analysis_content_clean = "\n".join(
-                        lines[1:-1]
-                        if lines[-1].strip() == "```"
-                        else lines[1:]
-                    )
+                    analysis_content_clean = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
 
                 analysis_result = json.loads(analysis_content_clean)
-                knowledge_update = analysis_result.get(
-                    "knowledge_update", "yes"
-                )
-                knowledge_update_recommendation = analysis_result.get(
-                    "knowledge_update_recommendation", ""
-                )
-                print(
-                    f"[ANALYSIS] Parsed JSON - "
-                    f"knowledge_update: {knowledge_update}"
-                )
+                knowledge_update = analysis_result.get("knowledge_update", "yes")
+                knowledge_update_recommendation = analysis_result.get("knowledge_update_recommendation", "")
+                print(f"[ANALYSIS] Parsed JSON - knowledge_update: {knowledge_update}")
                 rec_len = len(knowledge_update_recommendation)
                 print(f"[ANALYSIS] Recommendation length: {rec_len}")
             except (json.JSONDecodeError, KeyError) as e:
-                logger.warning(
-                    f"Failed to parse analysis response as JSON: {e}. "
-                    f"Content: {analysis_content[:200]}"
-                )
+                logger.warning(f"Failed to parse analysis response as JSON: {e}. Content: {analysis_content[:200]}")
                 # Default to updating if parsing fails
                 knowledge_update = "yes"
-                knowledge_update_recommendation = (
-                    "Analysis response could not be parsed. "
-                    "Proceeding with standard learning update."
-                )
+                knowledge_update_recommendation = "Analysis response could not be parsed. Proceeding with standard learning update."
 
             # If knowledge_update is "no", return previous learning
             if knowledge_update.lower() == "no":
-                print(
-                    "[ANALYSIS] Knowledge update: NO - "
-                    "returning previous learning"
-                )
-                episodic_content = (
-                    previous_learning
-                    or "No previous learning available."
-                )
-                logger.info(
-                    "Analysis determined no knowledge update needed. "
-                    "Returning previous learning."
-                )
+                print("[ANALYSIS] Knowledge update: NO - returning previous learning")
+                episodic_content = previous_learning or "No previous learning available."
+                logger.info("Analysis determined no knowledge update needed. Returning previous learning.")
             else:
-                print(
-                    "[ANALYSIS] Knowledge update: YES - "
-                    "proceeding with 2nd LLM call"
-                )
+                print("[ANALYSIS] Knowledge update: YES - proceeding with 2nd LLM call")
                 # Proceed with 2nd LLM call using
                 # knowledge_update_recommendation
                 messages = []
 
                 # Enhanced system prompt: system-specific yet adaptable
-                system_prompt = SYSTEM_PROMPT.format(
-                    previous_learning=previous_learning
-                )
+                system_prompt = SYSTEM_PROMPT.format(previous_learning=previous_learning)
 
-                messages.append(
-                    LLMMessage(role="system", content=system_prompt)
-                )
+                messages.append(LLMMessage(role="system", content=system_prompt))
 
                 timeline = self._agent._timeline
                 timeline.timeline = list(timeline.read_since(checkpoint=-2))
 
                 # Convert timeline to messages for learning context
                 if timeline:
-                    timeline_messages = timeline.to_llm_messages(
-                        separate_latest_user=False, max_tokens=40000
-                    )
+                    timeline_messages = timeline.to_llm_messages(separate_latest_user=False, max_tokens=40000)
                     messages.extend(timeline_messages)
 
                 # Include knowledge_update_recommendation in learning prompt
@@ -499,18 +445,11 @@ class WilliamLearner_demo(WilliamLearner):
                 debug_logger.log_agent_interaction(
                     agent_id=self._agent.object_id,
                     agent_type=self._agent.agent_type,
-                    interaction_type=(
-                        "build_session_learning_llm_request_with_feedback"
-                    ),
-                    content=(
-                        f"Built {len(messages)} messages with feedback and "
-                        f"knowledge update recommendation"
-                    ),
+                    interaction_type=("build_session_learning_llm_request_with_feedback"),
+                    content=(f"Built {len(messages)} messages with feedback and knowledge update recommendation"),
                     metadata={
                         "message_count": len(messages),
-                        "timeline_entries": (
-                            len(timeline.timeline) if timeline else 0
-                        ),
+                        "timeline_entries": (len(timeline.timeline) if timeline else 0),
                         "has_feedback": True,
                         "feedback_length": len(feedback_content),
                         "knowledge_update": knowledge_update,
@@ -524,18 +463,10 @@ class WilliamLearner_demo(WilliamLearner):
                     temperature=0.0,
                 )
 
-                episodic_content = (
-                    llm_response.content
-                    if hasattr(llm_response, "content")
-                    else str(llm_response)
-                )
+                episodic_content = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
 
-                episodic_content = episodic_content.replace(
-                    "<updated_learning>", ""
-                )
-                episodic_content = episodic_content.replace(
-                    "</updated_learning>", ""
-                )
+                episodic_content = episodic_content.replace("<updated_learning>", "")
+                episodic_content = episodic_content.replace("</updated_learning>", "")
 
             # Keep in-memory for backward compatibility
             self.episodic_memory = episodic_content
@@ -547,19 +478,13 @@ class WilliamLearner_demo(WilliamLearner):
                 "simple_summary": episodic_content,
                 "learning_note": episodic_content,
                 "timestamp": datetime.now().isoformat(),
-                "reflection_context": (
-                    f"Feedback-aware learning: "
-                    f"{len(feedback_content)} chars"
-                ),
+                "reflection_context": (f"Feedback-aware learning: {len(feedback_content)} chars"),
             }
 
             return {"trace_learning": trace_learning}
 
         except Exception as e:
             # Log error but don't fail STAR loop
-            logger.error(
-                f"Episodic learning with feedback failed: {e}",
-                exc_info=True
-            )
+            logger.error(f"Episodic learning with feedback failed: {e}", exc_info=True)
             # Fall back to parent implementation on error
             return super()._reflect_episodic(trace_episodic)

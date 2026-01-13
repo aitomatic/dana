@@ -21,7 +21,7 @@ def analyze_response(agent, result):
 
     # Check timeline for workflow calls
     timeline = agent.get_timeline_summary()
-    workflow_calls = len([line for line in timeline.split('\n') if 'Tool Call' in line and 'workflow' in line])
+    workflow_calls = len([line for line in timeline.split("\n") if "Tool Call" in line and "workflow" in line])
 
     return {
         "length": len(response),
@@ -72,13 +72,13 @@ def compare_query(query):
     print("\n\n📊 KEY DIFFERENCE:")
     print("-" * 80)
 
-    if det_analysis['used_workflows'] and not prob_analysis['used_workflows']:
+    if det_analysis["used_workflows"] and not prob_analysis["used_workflows"]:
         print("✅ DETERMINISTIC: Executed workflows as designed")
         print("❌ PROBABILISTIC: Did NOT use workflows (LLM chose to answer directly)")
         print("\n💡 This shows workflow orchestration gives you CONTROL")
         print("   - Deterministic: workflows execute regardless of LLM reasoning")
         print("   - Probabilistic: LLM decides whether to use tools")
-    elif det_analysis['used_workflows'] and prob_analysis['used_workflows']:
+    elif det_analysis["used_workflows"] and prob_analysis["used_workflows"]:
         print("⚠️  Both used workflows this time")
         print("   (But probabilistic is inconsistent - try running multiple times)")
     else:
@@ -118,7 +118,7 @@ def main():
         compare_query(query)
         print("\n" + "─" * 80)
         user_input = input("\nPress Enter for next query (or 'q' to quit)...")
-        if user_input.lower() == 'q':
+        if user_input.lower() == "q":
             break
 
     print("\n" + "=" * 80)

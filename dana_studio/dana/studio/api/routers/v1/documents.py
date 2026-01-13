@@ -119,7 +119,9 @@ async def list_documents(
 ):
     """List documents with optional filtering and metadata."""
     try:
-        documents, total_count = await document_service.list_documents(topic_id=topic_id, agent_id=agent_id, limit=limit, offset=offset, db_session=db)
+        documents, total_count = await document_service.list_documents(
+            topic_id=topic_id, agent_id=agent_id, limit=limit, offset=offset, db_session=db
+        )
 
         # Apply agent_id filtering logic for backward compatibility
         for document in documents:
@@ -147,12 +149,7 @@ async def list_documents(
         }
 
         return DocumentListResponse(
-            documents=documents,
-            total=total_count,
-            limit=limit,
-            offset=offset,
-            has_more=has_more,
-            metadata=metadata
+            documents=documents, total=total_count, limit=limit, offset=offset, has_more=has_more, metadata=metadata
         )
 
     except Exception as e:

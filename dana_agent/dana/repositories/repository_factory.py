@@ -7,13 +7,17 @@ from .local_file_repository import LocalEventRepository, LocalLearningRepository
 from .repository_protocol import EventRepositoryProtocol, LearningRepositoryProtocol, PromptRepositoryProtocol, TimelineRepositoryProtocol
 
 
-RepositoryProtocol = TypeVar("RepositoryProtocol", PromptRepositoryProtocol, TimelineRepositoryProtocol, EventRepositoryProtocol, LearningRepositoryProtocol)   
+RepositoryProtocol = TypeVar(
+    "RepositoryProtocol", PromptRepositoryProtocol, TimelineRepositoryProtocol, EventRepositoryProtocol, LearningRepositoryProtocol
+)
+
 
 class RepositoryType(StrEnum):
     PROMPT = "prompt"
     TIMELINE = "timeline"
     EVENT = "event"
     LEARNING = "learning"
+
 
 class RepositoryFactory:
     def __init__(self):

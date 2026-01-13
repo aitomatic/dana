@@ -154,17 +154,27 @@ def execute_file(file_path, debug=False, script_args=None):
         modified_source_code: str = f"""
 {source_code}
 
-{MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
-                                                 skipkeys=False,
-                                                 ensure_ascii=False,
-                                                 check_circular=True,
-                                                 allow_nan=False,
-                                                 cls=None,
-                                                 indent=None,
-                                                 separators=None,
-                                                 default=None,
-                                                 sort_keys=False)}"
-                             for key, value in input_dict.items()])})
+{MAIN_FUNC_NAME}({
+            ", ".join(
+                [
+                    f"{key}={
+                        json.dumps(
+                            obj=value,
+                            skipkeys=False,
+                            ensure_ascii=False,
+                            check_circular=True,
+                            allow_nan=False,
+                            cls=None,
+                            indent=None,
+                            separators=None,
+                            default=None,
+                            sort_keys=False,
+                        )
+                    }"
+                    for key, value in input_dict.items()
+                ]
+            )
+        })
 """
     else:
         modified_source_code = source_code

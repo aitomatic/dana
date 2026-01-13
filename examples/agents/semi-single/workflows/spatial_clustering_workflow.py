@@ -30,10 +30,7 @@ class SpatialClusteringWorkflow(BaseWorkflow):
         bin_id = spatial_data.get("bin_id", "")
 
         if defect_count == 0:
-            return {
-                "success": False,
-                "error": "No defects to analyze"
-            }
+            return {"success": False, "error": "No defects to analyze"}
 
         # Step 2: Calculate clustering metrics (mock for demo)
         # In production, would use sklearn DBSCAN, K-means, etc.
@@ -47,7 +44,7 @@ class SpatialClusteringWorkflow(BaseWorkflow):
         if edge_density > 0:
             density_ratio = center_density / edge_density
         else:
-            density_ratio = float('inf') if center_density > 0 else 1.0
+            density_ratio = float("inf") if center_density > 0 else 1.0
 
         # Step 3: Determine clustering pattern
         if density_ratio > 3.0:
@@ -70,22 +67,14 @@ class SpatialClusteringWorkflow(BaseWorkflow):
             "defect_count": defect_count,
             "pattern_type": pattern_type,
             "clustering_strength": clustering_strength,
-            "metrics": {
-                "center_density": center_density,
-                "edge_density": edge_density,
-                "density_ratio": density_ratio
-            },
+            "metrics": {"center_density": center_density, "edge_density": edge_density, "density_ratio": density_ratio},
             "clusters_detected": 1 if clustering_strength == "strong" else 0,
-            "interpretation": self._interpret_clustering(
-                pattern_type, clustering_strength, density_ratio
-            )
+            "interpretation": self._interpret_clustering(pattern_type, clustering_strength, density_ratio),
         }
 
         return result
 
-    def _interpret_clustering(
-        self, pattern_type: str, strength: str, ratio: float
-    ) -> str:
+    def _interpret_clustering(self, pattern_type: str, strength: str, ratio: float) -> str:
         """Generate human-readable interpretation."""
         if pattern_type == "center_clustered":
             return (
@@ -95,7 +84,7 @@ class SpatialClusteringWorkflow(BaseWorkflow):
             )
         elif pattern_type == "edge_clustered":
             return (
-                f"Strong edge clustering detected (density ratio 1:{1/ratio:.2f}). "
+                f"Strong edge clustering detected (density ratio 1:{1 / ratio:.2f}). "
                 "Suggests edge-ring effects or peripheral circuit stress."
             )
         elif pattern_type == "uniform_random":

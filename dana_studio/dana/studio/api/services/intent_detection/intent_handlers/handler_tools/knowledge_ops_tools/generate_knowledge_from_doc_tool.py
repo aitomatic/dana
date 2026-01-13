@@ -262,13 +262,15 @@ class GenerateKnowledgeTool(BaseTool):
                     try:
                         topic_entry = self.status_manager.get_topic_entry(path_str)
                         if topic_entry:
-                            await self.ws_manager.broadcast({
-                                "type": "knowledge_status_update",
-                                "topic_id": topic_entry.get("id"),
-                                "path": topic_entry.get("path"),
-                                "status": "success",
-                                "last_generated": topic_entry.get("last_generated"),
-                            })
+                            await self.ws_manager.broadcast(
+                                {
+                                    "type": "knowledge_status_update",
+                                    "topic_id": topic_entry.get("id"),
+                                    "path": topic_entry.get("path"),
+                                    "status": "success",
+                                    "last_generated": topic_entry.get("last_generated"),
+                                }
+                            )
                             logger.info(f"Broadcasted success status for: {path_str}")
                     except Exception as e:
                         logger.warning(f"Failed to broadcast success status for {path_str}: {e}")
@@ -282,12 +284,14 @@ class GenerateKnowledgeTool(BaseTool):
                     try:
                         topic_entry = self.status_manager.get_topic_entry(path_str)
                         if topic_entry:
-                            await self.ws_manager.broadcast({
-                                "type": "knowledge_status_update",
-                                "topic_id": topic_entry.get("id"),
-                                "path": topic_entry.get("path"),
-                                "status": "failed",
-                            })
+                            await self.ws_manager.broadcast(
+                                {
+                                    "type": "knowledge_status_update",
+                                    "topic_id": topic_entry.get("id"),
+                                    "path": topic_entry.get("path"),
+                                    "status": "failed",
+                                }
+                            )
                             logger.info(f"Broadcasted failed status for: {path_str}")
                     except Exception as e:
                         logger.warning(f"Failed to broadcast failed status for {path_str}: {e}")

@@ -49,12 +49,7 @@ class TestLocalPromptAPIRepository:
         try:
             agent = MockAgent()
             config = FileStorageConfig(workspace_folder=temp_dir)
-
-            # Create a factory with the custom config
-            factory = RepositoryFactory()
-            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
-
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
 
             # Verify _store is actually a LocalPromptRepository
             assert isinstance(api._store, LocalPromptRepository)
@@ -70,12 +65,7 @@ class TestLocalPromptAPIRepository:
             agent = MockAgent()
             component = MockResource()
             config = FileStorageConfig(workspace_folder=temp_dir)
-
-            # Create a factory with the custom config
-            factory = RepositoryFactory()
-            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
-
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
 
             # Create a prompt engineer
             from dana.core.knowledge.prompts.prompt_engineer.base_prompt_engineer import ResourcePromptEngineer
@@ -84,6 +74,7 @@ class TestLocalPromptAPIRepository:
 
             # Verify engineer has repository, not store
             assert hasattr(engineer, "_repository")
+            assert not hasattr(engineer, "_store")
             assert isinstance(engineer._repository, LocalPromptRepository)
             assert engineer._repository._agent == agent
             assert engineer._repository._component == component
@@ -97,12 +88,7 @@ class TestLocalPromptAPIRepository:
             agent = MockAgent()
             component = MockResource()
             config = FileStorageConfig(workspace_folder=temp_dir)
-
-            # Create a factory with the custom config
-            factory = RepositoryFactory()
-            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
-
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
 
             from dana.core.knowledge.prompts.prompt_engineer.base_prompt_engineer import ResourcePromptEngineer
 
@@ -122,7 +108,7 @@ class TestLocalPromptAPIRepository:
             agent = MockAgent()
             config = FileStorageConfig(workspace_folder=temp_dir)
 
-            # Create a factory with the custom config
+            # Configure factory with the desired storage_config
             factory = RepositoryFactory()
             factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
 
@@ -143,13 +129,14 @@ class TestLocalPromptAPIRepository:
 
 
 class TestLocalPromptAPIFactoryUsage:
-    """Test LocalPromptAPI uses RepositoryFactory."""
+    """Test LocalPromptAPI uses RepositoryFactory (TDD Step 1 - Red)."""
 
     def test_initialization_uses_factory_to_create_repository(self):
         """Test that LocalPromptAPI uses RepositoryFactory to create system prompt repository."""
         temp_dir = tempfile.mkdtemp()
         try:
             agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
 
             # Mock the factory
             mock_factory = Mock(spec=RepositoryFactory)
@@ -158,7 +145,7 @@ class TestLocalPromptAPIFactoryUsage:
 
             api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=mock_factory)
 
-            # Verify factory.create was called with correct parameters
+            # Verify factory.create was called with correct parameters (without storage_config)
             mock_factory.create.assert_called_once_with(RepositoryType.PROMPT, agent=agent, component=None)
 
             # Verify _store is the repository from factory
@@ -172,13 +159,14 @@ class TestLocalPromptAPIFactoryUsage:
         try:
             agent = MockAgent()
             component = MockResource()
+            config = FileStorageConfig(workspace_folder=temp_dir)
 
             # Mock the factory
             mock_factory = Mock(spec=RepositoryFactory)
             mock_repository = Mock(spec=LocalPromptRepository)
             mock_factory.create.return_value = mock_repository
 
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=mock_factory)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec, repository_factory=mock_factory)
 
             # Create a prompt engineer
             from dana.core.knowledge.prompts.prompt_engineer.base_prompt_engineer import ResourcePromptEngineer
@@ -189,7 +177,7 @@ class TestLocalPromptAPIFactoryUsage:
             # Should be called twice: once for system prompt, once for component
             assert mock_factory.create.call_count >= 2
 
-            # Check the last call was for the component
+            # Check the last call was for the component (without storage_config)
             last_call = mock_factory.create.call_args_list[-1]
             assert last_call[0][0] == RepositoryType.PROMPT
             assert last_call[1]["agent"] == agent
@@ -202,29 +190,42 @@ class TestLocalPromptAPIFactoryUsage:
 
     def test_uses_default_factory_when_not_provided(self):
         """Test that LocalPromptAPI uses DEFAULT_REPOSITORY_FACTORY when not provided."""
-        agent = MockAgent()
-
-        api = LocalPromptAPI(agent=agent, codec=CSXMLCodec)
-
-        # Verify _store is a LocalPromptRepository (created by default factory)
-        assert isinstance(api._store, LocalPromptRepository)
-        assert api._store._agent == agent
-
-    def test_factory_creates_repository_with_correct_type(self):
-        """Test that factory creates PROMPT type repository."""
         temp_dir = tempfile.mkdtemp()
         try:
             agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
+
+            # Verify _store is a LocalPromptRepository (created by default factory)
+            assert isinstance(api._store, LocalPromptRepository)
+            assert api._store._agent == agent
+            # Note: When using default factory, it uses its own pre-configured storage_config,
+            # not the one passed to LocalPromptAPI
+            assert api._store.storage_config is not None
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_factory_passes_storage_config_correctly(self):
+        """Test that storage_config is available in created repository."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
 
             # Mock the factory
             mock_factory = Mock(spec=RepositoryFactory)
             mock_repository = Mock(spec=LocalPromptRepository)
+            mock_repository.storage_config = config
             mock_factory.create.return_value = mock_repository
 
-            LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=mock_factory)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec, repository_factory=mock_factory)
 
-            # Verify first positional arg is RepositoryType.PROMPT
+            # Verify factory.create was called without storage_config parameter
             call_args = mock_factory.create.call_args
-            assert call_args[0][0] == RepositoryType.PROMPT
+            assert "storage_config" not in call_args[1]
+
+            # Verify the repository has the correct storage_config
+            assert api._store.storage_config == config
         finally:
             shutil.rmtree(temp_dir)

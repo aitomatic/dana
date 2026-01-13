@@ -3,10 +3,7 @@
 from dana.core.resource.base_resource import BaseResource
 from dana.core.workflow.validation import validate_input
 
-from .mock_data import (
-    get_historical_yield_data,
-    get_similar_failure_cases
-)
+from .mock_data import get_historical_yield_data, get_similar_failure_cases
 
 
 class HistoricalYieldResource(BaseResource):
@@ -20,10 +17,7 @@ class HistoricalYieldResource(BaseResource):
     """
 
     def __init__(self, resource_id: str | None = None, **kwargs):
-        super().__init__(
-            resource_id=resource_id or "historical-yield",
-            **kwargs
-        )
+        super().__init__(resource_id=resource_id or "historical-yield", **kwargs)
 
     @validate_input(
         product={"required": True, "type": str},
@@ -130,33 +124,39 @@ class HistoricalYieldResource(BaseResource):
         # Identify concerns
         concerns = []
         if trend_direction == "down":
-            concerns.append({
-                "type": "yield_degradation",
-                "severity": severity,
-                "description": f"Yield degraded {abs(yield_change):.1f}% over {weeks} weeks",
-                "impact": f"Revenue at risk: ~${abs(yield_change) * 100000:.0f}/week"
-            })
+            concerns.append(
+                {
+                    "type": "yield_degradation",
+                    "severity": severity,
+                    "description": f"Yield degraded {abs(yield_change):.1f}% over {weeks} weeks",
+                    "impact": f"Revenue at risk: ~${abs(yield_change) * 100000:.0f}/week",
+                }
+            )
 
         # Check for process changes
         if trend_data.get("process_changes"):
             for change in trend_data["process_changes"]:
-                concerns.append({
-                    "type": "process_change_correlation",
-                    "severity": "MEDIUM",
-                    "description": f"Process change in week {change['week']}: {change['change']}",
-                    "impact": change.get("impact", "Unknown impact")
-                })
+                concerns.append(
+                    {
+                        "type": "process_change_correlation",
+                        "severity": "MEDIUM",
+                        "description": f"Process change in week {change['week']}: {change['change']}",
+                        "impact": change.get("impact", "Unknown impact"),
+                    }
+                )
 
         # Identify opportunities
         opportunities = []
         if current_yield < 75.0:
             gap_to_target = 75.0 - current_yield
-            opportunities.append({
-                "type": "yield_improvement",
-                "potential": f"{gap_to_target:.1f}% yield improvement possible",
-                "revenue_impact": f"${gap_to_target * 150000:.0f}/week potential revenue",
-                "priority": "HIGH" if gap_to_target > 5.0 else "MEDIUM"
-            })
+            opportunities.append(
+                {
+                    "type": "yield_improvement",
+                    "potential": f"{gap_to_target:.1f}% yield improvement possible",
+                    "revenue_impact": f"${gap_to_target * 150000:.0f}/week potential revenue",
+                    "priority": "HIGH" if gap_to_target > 5.0 else "MEDIUM",
+                }
+            )
 
         return {
             "product": product,
@@ -168,5 +168,5 @@ class HistoricalYieldResource(BaseResource):
             "trend_severity": severity if trend_direction == "down" else "LOW",
             "concerns": concerns,
             "opportunities": opportunities,
-            "process_changes": trend_data.get("process_changes", [])
+            "process_changes": trend_data.get("process_changes", []),
         }

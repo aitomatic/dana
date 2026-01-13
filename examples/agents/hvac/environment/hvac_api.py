@@ -7,9 +7,6 @@ Provides two main functions:
 2. get_feedback() - Get HVAC plan validation and feedback
 """
 
-import sys
-import os
-
 # Import the environment and HVAC simulation modules
 from .single_room import SingleRoomEnvironment
 from .room_feedback import check_hvac_schedule, validate_plan_success
@@ -57,7 +54,7 @@ def get_env_status(room_name: str = "Conference Room A") -> dict:
         "current_time": env_state["current_time"],
         "indoor_temp": env_state["indoor_temp"],
         "outdoor_temp": env_state["outdoor_temp"],
-        "meeting_plan": env_state["meeting_plan"]
+        "meeting_plan": env_state["meeting_plan"],
     }
 
 
@@ -68,7 +65,7 @@ def get_feedback(
     plan: list[dict],
     target_temps: list[float],
     mode: str = "cool",
-    meeting_plan: list[dict] = None
+    meeting_plan: list[dict] = None,
 ) -> dict:
     """
     Validate an HVAC action plan and get detailed feedback.
@@ -141,7 +138,7 @@ def get_feedback(
             "final_temp_f": current_indoor_temp,
             "action_results": [],
             "failed_actions": [],
-            "error": f"Plan has {len(plan)} actions but {len(target_temps)} target temperatures"
+            "error": f"Plan has {len(plan)} actions but {len(target_temps)} target temperatures",
         }
 
     if mode not in ["cool", "heat"]:
@@ -151,7 +148,7 @@ def get_feedback(
             "final_temp_f": current_indoor_temp,
             "action_results": [],
             "failed_actions": [],
-            "error": f"Invalid mode '{mode}'. Must be 'cool' or 'heat'"
+            "error": f"Invalid mode '{mode}'. Must be 'cool' or 'heat'",
         }
 
     # Validate the plan using the HVAC simulation
@@ -162,7 +159,7 @@ def get_feedback(
         plan=plan,
         target_temps=target_temps,
         mode=mode,
-        meeting_plan=meeting_plan
+        meeting_plan=meeting_plan,
     )
 
     return result
@@ -176,7 +173,7 @@ def check_single_action(
     target_time: str,
     outdoor_temp: float,
     use_turbo: bool = False,
-    mode: str = "cool"
+    mode: str = "cool",
 ) -> dict:
     """
     Check if a single HVAC action can reach the target temperature in time.
@@ -221,7 +218,7 @@ def check_single_action(
         current_time=current_time,
         target_time=target_time,
         mode=mode,
-        t_out_f=outdoor_temp
+        t_out_f=outdoor_temp,
     )
 
     return result
@@ -240,6 +237,7 @@ if __name__ == "__main__":
     status = get_env_status()
 
     import json
+
     print(json.dumps(status, indent=2))
     print()
 
@@ -253,7 +251,7 @@ if __name__ == "__main__":
     outdoor_temp = status["outdoor_temp"]
     meetings = status["meeting_plan"]
 
-    print(f"Current conditions:")
+    print("Current conditions:")
     print(f"  Time: {current_time}")
     print(f"  Indoor: {indoor_temp}°F")
     print(f"  Outdoor: {outdoor_temp}°F")
@@ -266,16 +264,10 @@ if __name__ == "__main__":
         print(f"First meeting: {first_meeting['start_time']} - {first_meeting['end_time']}")
 
         # Simple plan: one action with turbo to cool before meeting
-        plan = [
-            {
-                "time_on": current_time,
-                "time_off": first_meeting["start_time"],
-                "use_turbo": True
-            }
-        ]
+        plan = [{"time_on": current_time, "time_off": first_meeting["start_time"], "use_turbo": True}]
         target_temps = [72.0]  # Target 72°F for the meeting
 
-        print(f"\nPlan: Cool to 72°F before meeting starts")
+        print("\nPlan: Cool to 72°F before meeting starts")
         print(f"  Action: {current_time} → {first_meeting['start_time']} (turbo mode)")
         print()
 
@@ -286,7 +278,7 @@ if __name__ == "__main__":
             current_time=current_time,
             plan=plan,
             target_temps=target_temps,
-            mode="cool"
+            mode="cool",
         )
 
         print("Feedback:")
@@ -297,11 +289,11 @@ if __name__ == "__main__":
 
         if feedback["action_results"]:
             action = feedback["action_results"][0]
-            print(f"  Action details:")
+            print("  Action details:")
             print(f"    Success: {action['schedule_success']}")
             print(f"    Time needed: {action['time_needed_minutes']} min")
             print(f"    Time available: {action['time_available_minutes']} min")
-            if action['schedule_success'] == 'success':
+            if action["schedule_success"] == "success":
                 print(f"    Will reach target at: {action['reached_time']}")
                 print(f"    Extra time: {action['redundant_time_minutes']} min")
             else:

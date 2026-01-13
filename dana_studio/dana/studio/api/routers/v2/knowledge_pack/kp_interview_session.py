@@ -127,7 +127,7 @@ Create a markdown interview note with the following structure:
 
 ```markdown
 # Interview Notes - {domain}
-**Date**: {datetime.now().strftime('%Y-%m-%d')}
+**Date**: {datetime.now().strftime("%Y-%m-%d")}
 
 ## Interview Goal
 [Extract and summarize the goal from the template]
@@ -219,7 +219,7 @@ CRITICAL FORMATTING REQUIREMENTS:
         logger.error(f"Failed to initialize interview session: {e}")
         # Create minimal note as fallback
         minimal_note = f"""# Interview Notes - {domain}
-**Date**: {datetime.now().strftime('%Y-%m-%d')}
+**Date**: {datetime.now().strftime("%Y-%m-%d")}
 
 ## Topics to Cover
 *To be determined from conversation*
@@ -682,87 +682,65 @@ async def get_session_progress(
         session = await session_repo.get_session(session_id, db=db)
         if not session:
             logger.error(f"❌ Session {session_id} not found")
-            return InterviewProgressResponse(
-                success=False,
-                data=None,
-                error="Session not found"
-            )
-        
+            return InterviewProgressResponse(success=False, data=None, error="Session not found")
+
         if not session.folder_path:
             logger.error(f"❌ Session {session_id} has no folder_path")
-            return InterviewProgressResponse(
-                success=False,
-                data=None,
-                error="Session folder path not found"
-            )
-        
+            return InterviewProgressResponse(success=False, data=None, error="Session folder path not found")
+
         # Check if interview notes file exists
         note_path = Path(session.folder_path) / "interview_notes.md"
         if not note_path.exists():
             logger.warning(f"⚠️ Interview notes not found for session {session_id}")
             return InterviewProgressResponse(
-                success=True,
-                data=InterviewProgressData(
-                    topics=[],
-                    overall_completeness=0,
-                    current_topic=None
-                ),
-                error=None
+                success=True, data=InterviewProgressData(topics=[], overall_completeness=0, current_topic=None), error=None
             )
-        
+
         # Parse interview notes
         from dana.studio.api.services.knowledge_pack.interview_handler.utils import (
             parse_interview_note,
             analyze_question_status,
-            infer_current_topic_from_conversation
+            infer_current_topic_from_conversation,
         )
-        
+
         # Get conversation messages for question status analysis
         conversation_messages = []
         if session.conversation_id:
             try:
                 from dana.studio.api.repositories import get_conversation_repo
+
                 conv_repo = get_conversation_repo()
                 conversation = await conv_repo.get_conversation(session.conversation_id, db=db)
                 if conversation and conversation.messages:
                     conversation_messages = [
-                        {
-                            'role': msg.role,
-                            'content': msg.content,
-                            'created_at': msg.created_at,
-                            'sender': msg.role
-                        }
+                        {"role": msg.role, "content": msg.content, "created_at": msg.created_at, "sender": msg.role}
                         for msg in conversation.messages
                     ]
             except Exception as e:
                 logger.warning(f"⚠️ Could not load conversation for question analysis: {e}")
-        
+
         logger.debug(f"📝 Parsing interview notes from: {note_path}")
         progress_dict = parse_interview_note(str(note_path))
-        
+
         # Get current topic from notes (might be stale)
         note_current_topic = progress_dict.get("current_topic")
-        
+
         # ALWAYS infer from conversation to get the most accurate current topic
         if conversation_messages:
-            inferred_topic = infer_current_topic_from_conversation(
-                progress_dict.get("topics", []),
-                conversation_messages
-            )
-            
+            inferred_topic = infer_current_topic_from_conversation(progress_dict.get("topics", []), conversation_messages)
+
             # Prefer conversation inference over note status
             if inferred_topic:
                 progress_dict["current_topic"] = inferred_topic
                 logger.info(f"📍 Current topic from conversation: {inferred_topic}")
             elif note_current_topic:
                 # Validate note's current topic is not completed
-                topic_data = next((t for t in progress_dict.get("topics", []) 
-                                  if t["topic_name"] == note_current_topic), None)
+                topic_data = next((t for t in progress_dict.get("topics", []) if t["topic_name"] == note_current_topic), None)
                 if topic_data and topic_data["status"] == "completed":
                     # Clear current topic if it's completed
                     progress_dict["current_topic"] = None
                     logger.info(f"⚠️ Cleared completed topic as current: {note_current_topic}")
-        
+
         # Convert to Pydantic models with question status analysis
         topics = []
         for topic in progress_dict.get("topics", []):
@@ -770,50 +748,38 @@ async def get_session_progress(
             question_statuses = analyze_question_status(
                 template_questions=topic.get("questions", []),
                 conversation_messages=conversation_messages,
-                current_topic_name=progress_dict.get("current_topic")
+                current_topic_name=progress_dict.get("current_topic"),
             )
-            
+
             # Convert to QuestionProgress objects
             questions = [
-                QuestionProgress(
-                    question_text=q["question_text"],
-                    status=q["status"],
-                    asked_at=q["asked_at"]
-                )
-                for q in question_statuses
+                QuestionProgress(question_text=q["question_text"], status=q["status"], asked_at=q["asked_at"]) for q in question_statuses
             ]
-            
+
             topics.append(
                 TopicProgress(
                     topic_name=topic["topic_name"],
                     status=topic["status"],
                     completeness=topic["completeness"],
                     insights_count=topic["insights_count"],
-                    questions=questions
+                    questions=questions,
                 )
             )
-        
+
         progress_data = InterviewProgressData(
             topics=topics,
             overall_completeness=progress_dict.get("overall_completeness", 0),
-            current_topic=progress_dict.get("current_topic")
+            current_topic=progress_dict.get("current_topic"),
         )
-        
+
         logger.info(f"✅ Progress retrieved for session {session_id}: {len(topics)} topics, {progress_data.overall_completeness}% complete")
-        
-        return InterviewProgressResponse(
-            success=True,
-            data=progress_data,
-            error=None
-        )
-    
+
+        return InterviewProgressResponse(success=True, data=progress_data, error=None)
+
     except Exception as e:
         logger.error(f"❌ Error getting progress for session {session_id}: {e}")
         import traceback
+
         logger.error(f"📋 Full traceback: {traceback.format_exc()}")
-        
-        return InterviewProgressResponse(
-            success=False,
-            data=None,
-            error=str(e)
-        )
+
+        return InterviewProgressResponse(success=False, data=None, error=str(e))

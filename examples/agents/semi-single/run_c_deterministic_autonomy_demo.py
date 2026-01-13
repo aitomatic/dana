@@ -13,6 +13,7 @@ Use when: You need both intelligence AND systematic quality assurance.
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 from dana.core.agent.star_agent import STARAgent
@@ -32,10 +33,7 @@ class DeterministicAutonomyAgent(STARAgent):
     """
 
     def __init__(self):
-        super().__init__(
-            agent_type="yield_analysis",
-            agent_id="deterministic-agent"
-        )
+        super().__init__(agent_type="yield_analysis", agent_id="deterministic-agent")
 
         # Agent has access to complete, deterministic workflows
         self.pareto_wf = YieldParetoWorkflow()
@@ -69,7 +67,7 @@ class DeterministicAutonomyAgent(STARAgent):
         top_bins = pareto_data["pareto_bins"]
         classifications = pareto_result.get("pattern_classifications", {})
 
-        print(f"\n✓ Pareto workflow complete (all steps executed)")
+        print("\n✓ Pareto workflow complete (all steps executed)")
         print(f"  - Data collected: {pareto_data['total_dies']} dies")
         print(f"  - Bins sorted: {len(pareto_data['all_bins_sorted'])} bins")
         print(f"  - Pareto calculated: {len(top_bins)} top bins (80% rule)")
@@ -83,7 +81,7 @@ class DeterministicAutonomyAgent(STARAgent):
 
         has_systematic = classifications.get("has_systematic_patterns", False)
 
-        print(f"\nAgent reviews structured data:")
+        print("\nAgent reviews structured data:")
         print(f"  - Systematic patterns detected: {has_systematic}")
         print(f"  - Top bins: {len(top_bins)}")
 
@@ -91,11 +89,7 @@ class DeterministicAutonomyAgent(STARAgent):
         print("→ Running Correlation workflow (deterministic - ALL steps executed)")
 
         # Agent decides to run Correlation (workflow guarantees completeness)
-        correlation_exec_result = self.correlation_wf.execute(
-            product=pareto_data["product"],
-            top_bins=top_bins,
-            weeks=12
-        )
+        correlation_exec_result = self.correlation_wf.execute(product=pareto_data["product"], top_bins=top_bins, weeks=12)
 
         correlation_result = correlation_exec_result.get("result", {})
         if not correlation_result.get("success"):
@@ -105,7 +99,7 @@ class DeterministicAutonomyAgent(STARAgent):
         correlation_data = correlation_result["correlation_findings"]
         hypotheses = correlation_data["root_cause_hypotheses"]
 
-        print(f"\n✓ Correlation workflow complete (all steps executed)")
+        print("\n✓ Correlation workflow complete (all steps executed)")
         print(f"  - Historical data retrieved: {correlation_data['yield_trend']['current_yield']:.1f}% yield")
         print(f"  - Similar cases found: {len(correlation_data.get('similar_cases', []))}")
         print(f"  - Process correlations analyzed: {correlation_data.get('process_correlations', {}).get('correlations_found', False)}")
@@ -116,7 +110,7 @@ class DeterministicAutonomyAgent(STARAgent):
         print("AGENT REASONING: Based on complete correlation data, what next?")
         print("=" * 80)
 
-        print(f"\nAgent reviews structured data:")
+        print("\nAgent reviews structured data:")
         print(f"  - Root cause hypotheses: {len(hypotheses)}")
         print(f"  - Top hypothesis confidence: {hypotheses[0]['confidence'] if hypotheses else 'N/A'}")
 
@@ -129,7 +123,7 @@ class DeterministicAutonomyAgent(STARAgent):
             product_context={
                 "average_selling_price_usd": 150,
                 "monthly_volume_wafers": 10000,
-            }
+            },
         )
 
         roi_result = roi_exec_result.get("result", {})
@@ -141,12 +135,12 @@ class DeterministicAutonomyAgent(STARAgent):
         actions = roi_result["prioritized_actions"]
         total_opportunity = roi_result["total_opportunity_usd"]
 
-        print(f"\n✓ ROI workflow complete (all steps executed)")
+        print("\n✓ ROI workflow complete (all steps executed)")
         print(f"  - Revenue impact calculated: All {len(top_bins)} bins")
         print(f"  - Fix difficulty assessed: All {len(top_bins)} bins")
-        print(f"  - ROI scores calculated: Systematic formula")
+        print("  - ROI scores calculated: Systematic formula")
         print(f"  - Actions ranked: {len(actions)} prioritized")
-        print(f"  - Recommendations generated: Specific action plans")
+        print("  - Recommendations generated: Specific action plans")
         print(f"  - Total opportunity: ${total_opportunity:,.0f}/year")
 
         # Agent generates final comprehensive report
@@ -157,12 +151,12 @@ class DeterministicAutonomyAgent(STARAgent):
         print(f"\nWafer: {wafer_id}")
         print(f"Product: {pareto_data['product']}")
         print(f"Current Yield: {pareto_data['yield_percent']:.1f}%")
-        print(f"\nFailure Analysis:")
+        print("\nFailure Analysis:")
         print(f"  - Total failures: {pareto_data['total_failures']}")
         print(f"  - Pareto bins (80% rule): {len(top_bins)}")
         print(f"  - Systematic patterns: {has_systematic}")
 
-        print(f"\nRoot Cause Analysis:")
+        print("\nRoot Cause Analysis:")
         print(f"  - Historical similar cases: {len(correlation_data.get('similar_cases', []))}")
         print(f"  - Process correlations: {correlation_data.get('process_correlations', {}).get('correlations_found', False)}")
         print(f"  - Root cause hypotheses: {len(hypotheses)}")
@@ -170,7 +164,7 @@ class DeterministicAutonomyAgent(STARAgent):
             print(f"  - Top hypothesis: {hypotheses[0]['hypothesis']}")
             print(f"    Confidence: {hypotheses[0]['confidence']}")
 
-        print(f"\nROI Prioritization:")
+        print("\nROI Prioritization:")
         print(f"  - Total opportunity: ${total_opportunity:,.0f}/year")
         print(f"  - Top priority: {actions[0]['bin_id']} - {actions[0]['description']}")
         print(f"    ROI Score: {actions[0]['roi_score']:,.0f}")
@@ -178,11 +172,11 @@ class DeterministicAutonomyAgent(STARAgent):
         print(f"    Fix Difficulty: {actions[0]['fix_difficulty']}")
         print(f"    Timeline: {actions[0]['estimated_timeline']}")
 
-        print(f"\n  Recommended Actions:")
-        for i, action in enumerate(actions[0]['recommended_actions'][:3], 1):
+        print("\n  Recommended Actions:")
+        for i, action in enumerate(actions[0]["recommended_actions"][:3], 1):
             print(f"    {i}. {action}")
 
-        print(f"\nAgent Confidence: HIGH - All workflows completed systematically")
+        print("\nAgent Confidence: HIGH - All workflows completed systematically")
 
 
 def run_deterministic_autonomy_demo(wafer_id: str = "W12345"):

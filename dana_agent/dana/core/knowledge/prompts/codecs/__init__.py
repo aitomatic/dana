@@ -6,8 +6,8 @@ __all__ = [
     # Abstract Codec
     "AbstractCodec",
     # XML Codec
-    "CSXMLCodec", 
+    "CSXMLCodec",
     "KLXMLCodec",
     # JSON Codec
     # ...
-    ]
+]

@@ -62,19 +62,13 @@ def run_demo():
     print_section("PHASE 1: Initializing Multi-Agent System")
 
     print("🏗️  Creating ProductionManagerAgent (coordinator)...")
-    production_manager = ProductionManagerAgent(
-        agent_id="production-manager-001"
-    )
+    production_manager = ProductionManagerAgent(agent_id="production-manager-001")
 
     print("🏗️  Creating DefectSpecialistAgent (specialist)...")
-    defect_specialist = DefectSpecialistAgent(
-        agent_id="defect-specialist-001"
-    )
+    defect_specialist = DefectSpecialistAgent(agent_id="defect-specialist-001")
 
     print("🏗️  Creating NovelDefectInvestigationWorkflow...")
-    investigation_workflow = NovelDefectInvestigationWorkflow(
-        workflow_id="investigation-001"
-    )
+    investigation_workflow = NovelDefectInvestigationWorkflow(workflow_id="investigation-001")
 
     # Wire up agents and workflows
     print("\n🔗 Wiring agent relationships...")
@@ -114,11 +108,11 @@ What should we do?"""
         "location": "Wafer edge, 120° sector, repeating",
         "frequency": "15%",
         "process_step": "Resist spray, Chamber 3",
-        "detected": "2025-01-15 14:30"
+        "detected": "2025-01-15 14:30",
     }
 
-    print("🔄 ProductionManager: \"I'll engage our defect specialist for systematic investigation.\"")
-    print("🔄 ProductionManager: \"This will take approximately 2-3 minutes.\"\n")
+    print('🔄 ProductionManager: "I\'ll engage our defect specialist for systematic investigation."')
+    print('🔄 ProductionManager: "This will take approximately 2-3 minutes."\n')
 
     findings = production_manager.delegate_investigation(defect_alert)
 
@@ -140,21 +134,21 @@ What should we do?"""
             print(f"\nHypothesis #{top_hypothesis['rank']} ({top_hypothesis['confidence']} confidence):")
             print(f"   {top_hypothesis['root_cause']}")
 
-            print(f"\n📋 SUPPORTING EVIDENCE:")
-            for evidence in top_hypothesis.get('evidence', []):
+            print("\n📋 SUPPORTING EVIDENCE:")
+            for evidence in top_hypothesis.get("evidence", []):
                 print(f"   • {evidence}")
 
         # Show correlations
         correlations = result.get("process_correlations", {})
         if correlations.get("correlations_found"):
-            print(f"\n🔗 PROCESS CORRELATIONS:")
+            print("\n🔗 PROCESS CORRELATIONS:")
             primary = correlations.get("primary_correlation", {})
             print(f"   • {primary.get('change', 'Unknown')} ({primary.get('confidence', 'UNKNOWN')} confidence)")
 
         # Show historical matches
         historical = result.get("historical_matches", {})
         if historical.get("matches_found"):
-            print(f"\n🔍 HISTORICAL MATCHES:")
+            print("\n🔍 HISTORICAL MATCHES:")
             best_match = historical.get("best_match", {})
             print(f"   • Case {best_match.get('case_id', 'Unknown')} (similarity: {best_match.get('similarity_score', 0):.0%})")
             print(f"     Root cause: {best_match.get('root_cause', 'Unknown')}")
@@ -162,7 +156,7 @@ What should we do?"""
         # Show verification plan
         verification = result.get("verification_plan", {})
         if verification:
-            print(f"\n✅ RECOMMENDED VERIFICATION:")
+            print("\n✅ RECOMMENDED VERIFICATION:")
             primary_ver = verification.get("primary_verification", {})
             print(f"   Action: {primary_ver.get('action', 'Unknown')}")
             print(f"   Test: {primary_ver.get('test', 'Unknown')}")
@@ -179,21 +173,21 @@ What should we do?"""
     print_section("PHASE 5: User Approval Gate")
 
     print("💬 ProductionManager:")
-    print("   \"Based on investigation findings, I recommend reducing resist spray\"")
-    print("   \"pressure to 50 PSI baseline and running 5 monitor wafers to verify.\"")
+    print('   "Based on investigation findings, I recommend reducing resist spray"')
+    print('   "pressure to 50 PSI baseline and running 5 monitor wafers to verify."')
     print()
-    print("   \"This will take approximately 2 hours and cost ~$500 for monitor wafers.\"")
+    print('   "This will take approximately 2 hours and cost ~$500 for monitor wafers."')
     print()
-    print("   \"Risk if wrong: LOW (action is reversible)\"")
+    print('   "Risk if wrong: LOW (action is reversible)"')
     print()
     print("   ❓ Should I proceed with corrective action?")
     print()
 
     # Simulate user approval
-    print("👤 User: \"Yes, proceed\"")
+    print('👤 User: "Yes, proceed"')
     print()
 
-    print("✅ ProductionManager: \"Approved. I'll coordinate the corrective action.\"")
+    print('✅ ProductionManager: "Approved. I\'ll coordinate the corrective action."')
     print("   (In full system: Would delegate to ProcessEngineerAgent)")
 
     # Summary
@@ -244,5 +238,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\n❌ Demo failed with error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

@@ -15,7 +15,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -67,8 +66,8 @@ class RipgrepSearchResource(BaseResource):
         is_regex: bool = False,
         is_case_sensitive: bool = False,
         is_word_match: bool = False,
-        file_pattern: Optional[str] = None,
-        exclude_pattern: Optional[str] = None,
+        file_pattern: str | None = None,
+        exclude_pattern: str | None = None,
         max_results: int = 100,
         context_lines: int = 0,
         **kwargs,
@@ -139,8 +138,8 @@ class RipgrepSearchResource(BaseResource):
         is_regex: bool,
         is_case_sensitive: bool,
         is_word_match: bool,
-        file_pattern: Optional[str],
-        exclude_pattern: Optional[str],
+        file_pattern: str | None,
+        exclude_pattern: str | None,
         max_results: int,
         context_lines: int,
     ) -> DictParams:
@@ -194,13 +193,13 @@ class RipgrepSearchResource(BaseResource):
 
         except subprocess.TimeoutExpired:
             return {"success": False, "matches": [], "total_matches": 0, "error": "Search timeout (>30s)"}
-        except Exception as e:
+        except Exception:
             # Fallback to Python search
             return self._search_with_python(
                 pattern, is_regex, is_case_sensitive, is_word_match, file_pattern, exclude_pattern, max_results, context_lines
             )
 
-    def _parse_ripgrep_line(self, line: str) -> Optional[dict]:
+    def _parse_ripgrep_line(self, line: str) -> dict | None:
         """Parse a ripgrep output line."""
         try:
             # Format: filename:line:column:text
@@ -230,8 +229,8 @@ class RipgrepSearchResource(BaseResource):
         is_regex: bool,
         is_case_sensitive: bool,
         is_word_match: bool,
-        file_pattern: Optional[str],
-        exclude_pattern: Optional[str],
+        file_pattern: str | None,
+        exclude_pattern: str | None,
         max_results: int,
         context_lines: int,
     ) -> DictParams:
@@ -260,7 +259,7 @@ class RipgrepSearchResource(BaseResource):
                     break
 
                 try:
-                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(file_path, encoding="utf-8", errors="ignore") as f:
                         lines = f.readlines()
 
                     for line_num, line in enumerate(lines, start=1):
@@ -305,7 +304,7 @@ class RipgrepSearchResource(BaseResource):
         except Exception as e:
             return {"success": False, "matches": [], "total_matches": 0, "error": f"Python search failed: {str(e)}"}
 
-    def _walk_files(self, file_pattern: Optional[str], exclude_pattern: Optional[str]):
+    def _walk_files(self, file_pattern: str | None, exclude_pattern: str | None):
         """Walk through files matching patterns."""
 
         if file_pattern:
@@ -349,20 +348,19 @@ if __name__ == "__main__":
     
     Run this script to see examples of how to use the RipgrepSearchResource.
     """
-    import json
-    
+
     print("=" * 80)
     print("RipgrepSearchResource Usage Examples")
     print("=" * 80)
     print()
-    
+
     # Initialize the resource
     resource = RipgrepSearchResource(workspace_root="examples/agents/teaching/data")
-    
+
     print(f"Ripgrep available: {resource.ripgrep_available}")
     print(f"Search method: {'ripgrep (fast)' if resource.ripgrep_available else 'python (fallback)'}")
     print()
-    
+
     print("Example 1: Simple text search (case-insensitive)")
     print("-" * 80)
     result = resource.search(
@@ -374,13 +372,13 @@ if __name__ == "__main__":
     print(f"Success: {result['success']}")
     print(f"Total matches: {result['total_matches']}")
     print(f"Search method: {result['search_method']}")
-    if result['matches']:
-        print(f"First match:")
-        match = result['matches'][0]
+    if result["matches"]:
+        print("First match:")
+        match = result["matches"][0]
         print(f"  File: {match['file_path']}")
         print(f"  Line {match['line_number']}: {match['line_text']}")
     print()
-    
+
     print("Example 2: Regex search")
     print("-" * 80)
     result = resource.search(
@@ -392,10 +390,10 @@ if __name__ == "__main__":
     print(f"Success: {result['success']}")
     print(f"Total matches: {result['total_matches']}")
     print("Function definitions found:")
-    for i, match in enumerate(result['matches'][:5], 1):
+    for i, match in enumerate(result["matches"][:5], 1):
         print(f"  {i}. {match['file_path']}:{match['line_number']} - {match['line_text'].strip()}")
     print()
-    
+
     print("Example 3: Search with file pattern filter")
     print("-" * 80)
     result = resource.search(
@@ -407,7 +405,7 @@ if __name__ == "__main__":
     print(f"Success: {result['success']}")
     print(f"Total matches in .py files: {result['total_matches']}")
     print()
-    
+
     print("Example 4: Word match search")
     print("-" * 80)
     result = resource.search(
@@ -419,7 +417,7 @@ if __name__ == "__main__":
     print(f"Success: {result['success']}")
     print(f"Total matches (whole word only): {result['total_matches']}")
     print()
-    
+
     print("Example 5: Search with context lines")
     print("-" * 80)
     result = resource.search(
@@ -428,18 +426,18 @@ if __name__ == "__main__":
         context_lines=2,  # Show 2 lines before and after match
         max_results=1,
     )
-    if result['success'] and result['matches']:
-        match = result['matches'][0]
+    if result["success"] and result["matches"]:
+        match = result["matches"][0]
         print(f"Match in {match['file_path']} at line {match['line_number']}:")
         print("Before context:")
-        for line in match['before_context']:
+        for line in match["before_context"]:
             print(f"  {line}")
         print(f"Match: {match['line_text']}")
         print("After context:")
-        for line in match['after_context']:
+        for line in match["after_context"]:
             print(f"  {line}")
     print()
-    
+
     print("=" * 80)
     print("Usage in code:")
     print("=" * 80)
@@ -474,4 +472,3 @@ if result['success']:
 else:
     print(f"Error: {result['error']}")
     """)
-

@@ -63,9 +63,9 @@ TEST_TEMPLATE = """# Master Interview Template: Food Manufacturing - Process Ope
 
 async def test_tool(tool_name, tool_class, test_func):
     """Test a single tool and display results."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"🧪 Testing {tool_name}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     try:
         await test_func()
@@ -200,7 +200,7 @@ async def main():
     await test_tool("UpdateInterviewApproachTool", None, test_update_approach)
     await test_tool("UpdateFrameworkTool", None, test_update_framework)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("✅ All tool tests completed!")
     print("💡 Each tool shows previews and requires user approval for changes.")
     print("🔧 Toolset reduced from 10 to 5 tools (50% simpler)")

@@ -45,10 +45,10 @@ class WaferMapResource(BaseResource):
                 "spatial_distribution": {
                     "center_region": {"count": 147, "density": 0.82},
                     "mid_region": {"count": 28, "density": 0.23},
-                    "edge_region": {"count": 5, "density": 0.05}
+                    "edge_region": {"count": 5, "density": 0.05},
                 },
                 "wafer_diameter_mm": 300,
-                "die_size_mm": 10
+                "die_size_mm": 10,
             }
         elif bin_id == "BIN_2":
             # Logic timing violations - random distribution
@@ -66,15 +66,13 @@ class WaferMapResource(BaseResource):
                 "spatial_distribution": {
                     "center_region": {"count": 24, "density": 0.13},
                     "mid_region": {"count": 28, "density": 0.23},
-                    "edge_region": {"count": 23, "density": 0.23}
+                    "edge_region": {"count": 23, "density": 0.23},
                 },
                 "wafer_diameter_mm": 300,
-                "die_size_mm": 10
+                "die_size_mm": 10,
             }
         else:
-            return {
-                "error": f"No spatial data available for {bin_id}"
-            }
+            return {"error": f"No spatial data available for {bin_id}"}
 
     def get_wafer_map_image(self, wafer_id: str) -> DictParams:
         """
@@ -88,9 +86,5 @@ class WaferMapResource(BaseResource):
             "image_format": "png",
             "image_url": f"/data/wafer_maps/{wafer_id}_map.png",
             "resolution": "1000x1000",
-            "color_coding": {
-                "BIN_1": "red",
-                "BIN_2": "blue",
-                "BIN_3": "green"
-            }
+            "color_coding": {"BIN_1": "red", "BIN_2": "blue", "BIN_3": "green"},
         }

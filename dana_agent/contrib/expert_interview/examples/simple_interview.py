@@ -226,6 +226,7 @@ def main():
             logging.getLogger(logger_name).setLevel(logging.CRITICAL)
         # Suppress structlog output
         import structlog
+
         structlog.configure(
             wrapper_class=structlog.make_filtering_bound_logger(logging.CRITICAL),
         )

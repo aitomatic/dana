@@ -43,7 +43,7 @@ class SimpleCache:
         Returns:
             Hashed filename
         """
-        hash_obj = hashlib.sha256(key.encode('utf-8'))
+        hash_obj = hashlib.sha256(key.encode("utf-8"))
         return hash_obj.hexdigest()
 
     def _get_cache_path(self, key: str) -> Path:
@@ -72,7 +72,7 @@ class SimpleCache:
             return default
 
         try:
-            with open(cache_path, 'r', encoding='utf-8') as f:
+            with open(cache_path, encoding="utf-8") as f:
                 cache_entry = json.load(f)
 
             # Check if expired
@@ -87,7 +87,7 @@ class SimpleCache:
 
             return cache_entry.get("value")
 
-        except (json.JSONDecodeError, IOError, KeyError):
+        except (OSError, json.JSONDecodeError, KeyError):
             # Corrupted cache entry, delete it
             if cache_path.exists():
                 cache_path.unlink()
@@ -108,13 +108,13 @@ class SimpleCache:
             "timestamp": time.time(),
             "ttl": ttl if ttl is not None else self.default_ttl,
             "value": value,
-            "key": key  # Store original key for debugging
+            "key": key,  # Store original key for debugging
         }
 
         try:
-            with open(cache_path, 'w', encoding='utf-8') as f:
+            with open(cache_path, "w", encoding="utf-8") as f:
                 json.dump(cache_entry, f, indent=2, ensure_ascii=False)
-        except (IOError, TypeError) as e:
+        except (OSError, TypeError) as e:
             print(f"Warning: Failed to cache {key}: {e}")
 
     def delete(self, key: str):
@@ -139,7 +139,7 @@ class SimpleCache:
             # Clear all
             for cache_file in self.cache_dir.glob("*.json"):
                 cache_file.unlink()
-            print(f"✅ Cleared all cache entries")
+            print("✅ Cleared all cache entries")
         else:
             # Clear expired entries
             current_time = time.time()
@@ -147,7 +147,7 @@ class SimpleCache:
 
             for cache_file in self.cache_dir.glob("*.json"):
                 try:
-                    with open(cache_file, 'r', encoding='utf-8') as f:
+                    with open(cache_file, encoding="utf-8") as f:
                         cache_entry = json.load(f)
 
                     cached_time = cache_entry.get("timestamp", 0)
@@ -155,7 +155,7 @@ class SimpleCache:
                         cache_file.unlink()
                         cleared_count += 1
 
-                except (json.JSONDecodeError, IOError):
+                except (OSError, json.JSONDecodeError):
                     # Corrupted, delete it
                     cache_file.unlink()
                     cleared_count += 1
@@ -177,7 +177,7 @@ class SimpleCache:
         if cache_files:
             try:
                 oldest_file = min(cache_files, key=lambda f: f.stat().st_mtime)
-                with open(oldest_file, 'r', encoding='utf-8') as f:
+                with open(oldest_file, encoding="utf-8") as f:
                     cache_entry = json.load(f)
                     oldest_time = cache_entry.get("timestamp")
             except Exception:
@@ -188,7 +188,7 @@ class SimpleCache:
             "total_size_bytes": total_size,
             "total_size_mb": round(total_size / (1024 * 1024), 2),
             "oldest_entry_timestamp": oldest_time,
-            "cache_dir": str(self.cache_dir)
+            "cache_dir": str(self.cache_dir),
         }
 
 

@@ -10,7 +10,6 @@ import sys
 import tempfile
 from unittest.mock import MagicMock, Mock
 
-import pytest
 
 # Mock the problematic import before any dana imports
 sys.modules["dana.core.knowledge.prompts.agent_prompt_engineer"] = MagicMock()
@@ -23,16 +22,16 @@ from dana.core.knowledge.prompts.codecs import CSXMLCodec
 from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
 from dana.core.resource.base_resource import BaseResource
 from dana.repositories.local_file_repository import LocalPromptRepository
-from dana.repositories.repository_factory import RepositoryFactory, RepositoryType
 
 
 class MockAgent(BaseAgent):
     """Mock agent for testing."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, storage_config=None, **kwargs):
         super().__init__(agent_type="test_agent", agent_id="test-agent-123", **kwargs)
         self._codec = Mock()
         self._codec.__qualname__ = "TestCodec"
+        self._storage_config = storage_config  # Store storage_config for repository
         self._agents = []
         self._resources = []
         self._workflows = []
@@ -45,7 +44,6 @@ class MockResource(BaseResource):
         super().__init__(resource_type="test_resource", auto_register=False, **kwargs)
 
 
-@pytest.mark.live
 class TestPromptAPIRepositoryIntegration:
     """Integration tests for API → Engineer → Repository workflow."""
 
@@ -53,21 +51,23 @@ class TestPromptAPIRepositoryIntegration:
         """Test full workflow: API creates repository, passes to engineer, engineer uses repository."""
         temp_dir = tempfile.mkdtemp()
         try:
-            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent(storage_config=config)
             component = MockResource()
             agent._resources = [component]
-            config = FileStorageConfig(workspace_folder=temp_dir)
 
-            # Create a custom factory with the test's storage config
-            factory = RepositoryFactory()
-            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
-
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
 
             # Verify API creates repository
             assert isinstance(api._store, LocalPromptRepository)
 
-            # Call available_tools_prompt to trigger engineer creation (lazy initialization)
+            # Mock _instantiate_prompt_engineer to avoid LLM initialization
+            mock_engineer = Mock()
+            mock_engineer._repository = LocalPromptRepository(config, agent, component)
+            mock_engineer.prompt = ""  # Return empty string for prompt property
+            api._instantiate_prompt_engineer = Mock(return_value=mock_engineer)
+
+            # Get available_tools_prompt which creates engineers
             _ = api.available_tools_prompt
 
             # Verify engineer was created with repository
@@ -82,7 +82,7 @@ class TestPromptAPIRepositoryIntegration:
 
             # Verify repository path is correct
             repo_path = engineer._repository._get_relative_prompt_path()
-            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / str(component.object_id)
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / component.object_id
             assert repo_path == expected_path
         finally:
             shutil.rmtree(temp_dir)
@@ -91,14 +91,13 @@ class TestPromptAPIRepositoryIntegration:
         """Test that system prompt uses repository."""
         temp_dir = tempfile.mkdtemp()
         try:
-            agent = MockAgent()
             config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent(storage_config=config)
 
-            # Create a custom factory with the test's storage config
-            factory = RepositoryFactory()
-            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
 
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+            # Replace _store with correctly configured repository
+            api._store = LocalPromptRepository(config, agent, None)
 
             # Verify system prompt repository
             assert isinstance(api._store, LocalPromptRepository)
@@ -129,18 +128,32 @@ class TestPromptAPIRepositoryIntegration:
         """Test that resource engineer uses repository correctly."""
         temp_dir = tempfile.mkdtemp()
         try:
-            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent(storage_config=config)
             component = MockResource()
             agent._resources = [component]
-            config = FileStorageConfig(workspace_folder=temp_dir)
 
-            # Create a custom factory with the test's storage config
-            factory = RepositoryFactory()
-            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
 
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+            # Mock _instantiate_prompt_engineer to avoid LLM initialization
+            mock_engineer = Mock()
+            mock_engineer._repository = LocalPromptRepository(config, agent, component)
+            mock_engineer._prompt = None
+            mock_engineer.prompt = ""  # Return empty string for prompt property
 
-            # Call available_tools_prompt to trigger engineer creation (lazy initialization)
+            # Mock persist and load methods
+            def mock_persist():
+                mock_engineer._repository.create_snapshot(mock_engineer._prompt, {}, {})
+
+            def mock_load():
+                snapshot = mock_engineer._repository.get_active(error_if_not_found=False)
+                return snapshot.content if snapshot else None
+
+            mock_engineer.persist = mock_persist
+            mock_engineer.load = mock_load
+            api._instantiate_prompt_engineer = Mock(return_value=mock_engineer)
+
+            # Get engineer (this will create it)
             _ = api.available_tools_prompt
 
             engineer = api._resource_prompt_engineers[component]
@@ -164,31 +177,41 @@ class TestPromptAPIRepositoryIntegration:
         """Test that file structure created by repository matches expected pattern."""
         temp_dir = tempfile.mkdtemp()
         try:
-            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent(storage_config=config)
             component = MockResource()
             agent._resources = [component]
-            config = FileStorageConfig(workspace_folder=temp_dir)
 
-            # Create a custom factory with the test's storage config
-            factory = RepositoryFactory()
-            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
 
-            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+            # Replace _store with correctly configured repository
+            api._store = LocalPromptRepository(config, agent, None)
 
             # Create some prompts
             api._template = "System template"
             api.persist()
 
-            # Call available_tools_prompt to trigger engineer creation (lazy initialization)
-            _ = api.available_tools_prompt
+            # Mock _instantiate_prompt_engineer to avoid LLM initialization
+            mock_engineer = Mock()
+            mock_engineer._repository = LocalPromptRepository(config, agent, component)
+            mock_engineer._prompt = None
+            mock_engineer.prompt = ""  # Return empty string for prompt property
 
+            def mock_persist():
+                mock_engineer._repository.create_snapshot(mock_engineer._prompt, {}, {})
+
+            mock_engineer.persist = mock_persist
+            api._instantiate_prompt_engineer = Mock(return_value=mock_engineer)
+
+            # Trigger engineer creation
+            _ = api.available_tools_prompt
             engineer = api._resource_prompt_engineers[component]
             engineer._prompt = "Resource prompt"
             engineer.persist()
 
             # Verify file structure
             system_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
-            resource_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / str(component.object_id)
+            resource_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / component.object_id
 
             assert system_path.exists()
             assert resource_path.exists()

@@ -37,10 +37,7 @@ class WilliamLearner2(WilliamLearner):
             storage_path = self._get_feedback_storage_path()
             # Check if feedback folder exists and has content
             feedback_file = storage_path / "feedback.md"
-            return (
-                feedback_file.exists()
-                and feedback_file.stat().st_size > 0
-            )
+            return feedback_file.exists() and feedback_file.stat().st_size > 0
         except Exception:
             return False
 
@@ -68,9 +65,7 @@ class WilliamLearner2(WilliamLearner):
             # Use standard episodic learning from parent class
             return super()._reflect_episodic(trace_episodic)
 
-    def _reflect_episodic_with_feedback(
-        self, trace_episodic: DictParams
-    ) -> DictParams:
+    def _reflect_episodic_with_feedback(self, trace_episodic: DictParams) -> DictParams:
         """
         Enhanced episodic learning when feedback is available.
 
@@ -179,16 +174,12 @@ scenarios (different inputs, times, conditions) within this context.
 Include specific value ranges when they're informative and help distinguish
 THIS system's characteristics, but express them as adaptable parameters."""
 
-
-
             timeline = self._agent._timeline
             timeline.timeline = list(timeline.read_since(checkpoint=-100))
 
             # Convert timeline to messages for learning context
             if timeline:
-                timeline_messages = timeline.to_llm_messages(
-                    separate_latest_user=False, max_tokens=40000
-                )
+                timeline_messages = timeline.to_llm_messages(separate_latest_user=False, max_tokens=40000)
 
                 if timeline_messages:
                     # Include previous learning if available
@@ -214,24 +205,15 @@ THIS system's characteristics, but express them as adaptable parameters."""
                     ]
 
                     for msg in timeline_messages:
-                        role_indicator = (
-                            "USER" if msg.role == "user" else "AGENT"
-                        )
-                        content_tag = (
-                            f"<{role_indicator}>{msg.content}"
-                            f"</{role_indicator}>"
-                        )
+                        role_indicator = "USER" if msg.role == "user" else "AGENT"
+                        content_tag = f"<{role_indicator}>{msg.content}</{role_indicator}>"
                         timeline_lines.append(content_tag)
 
                     timeline_lines.append("</SESSION_TIMELINE>")
                     timeline_content = "\n".join(timeline_lines)
-                    messages.append(
-                        LLMMessage(role="user", content=timeline_content)
-                    )
+                    messages.append(LLMMessage(role="user", content=timeline_content))
 
-                    messages.append(
-                      LLMMessage(role="user", content=feedback_section)
-                    )
+                    messages.append(LLMMessage(role="user", content=feedback_section))
 
                     # Learning prompt: system-specific characteristics
                     if previous_learning:
@@ -304,14 +286,10 @@ extract the knowledge note to perform better for THIS specific system/
 device/context in future scenarios.
 Format: [Condition] [Advice of what should do]"""
 
-                    messages.append(
-                        LLMMessage(role="user", content=learning_prompt)
-                    )
+                    messages.append(LLMMessage(role="user", content=learning_prompt))
                 else:
                     # No timeline content, but still use feedback
-                    messages.append(
-                        LLMMessage(role="user", content=feedback_section)
-                    )
+                    messages.append(LLMMessage(role="user", content=feedback_section))
                     messages.append(
                         LLMMessage(
                             role="user",
@@ -336,15 +314,11 @@ Format: [Condition] [Advice of what should do]"""
             debug_logger.log_agent_interaction(
                 agent_id=self._agent.object_id,
                 agent_type=self._agent.agent_type,
-                interaction_type=(
-                    "build_session_learning_llm_request_with_feedback"
-                ),
+                interaction_type=("build_session_learning_llm_request_with_feedback"),
                 content=f"Built {len(messages)} messages with feedback",
                 metadata={
                     "message_count": len(messages),
-                    "timeline_entries": (
-                        len(timeline.timeline) if timeline else 0
-                    ),
+                    "timeline_entries": (len(timeline.timeline) if timeline else 0),
                     "has_feedback": True,
                     "feedback_length": len(feedback_content),
                 },
@@ -357,11 +331,7 @@ Format: [Condition] [Advice of what should do]"""
                 temperature=0.7,
             )
 
-            episodic_content = (
-                llm_response.content
-                if hasattr(llm_response, "content")
-                else str(llm_response)
-            )
+            episodic_content = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
 
             # Keep in-memory for backward compatibility
             self.episodic_memory = episodic_content
@@ -373,18 +343,13 @@ Format: [Condition] [Advice of what should do]"""
                 "simple_summary": episodic_content,
                 "learning_note": episodic_content,
                 "timestamp": datetime.now().isoformat(),
-                "reflection_context": (
-                    f"Feedback-aware learning: {len(feedback_content)} chars"
-                ),
+                "reflection_context": (f"Feedback-aware learning: {len(feedback_content)} chars"),
             }
 
             return {"trace_learning": trace_learning}
 
         except Exception as e:
             # Log error but don't fail STAR loop
-            logger.error(
-                f"Episodic learning with feedback failed: {e}",
-                exc_info=True
-            )
+            logger.error(f"Episodic learning with feedback failed: {e}", exc_info=True)
             # Fall back to parent implementation on error
             return super()._reflect_episodic(trace_episodic)

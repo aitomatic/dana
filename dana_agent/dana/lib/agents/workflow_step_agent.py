@@ -35,8 +35,4 @@ class WorkflowStepAgent(STARAgent):
             **kwargs: Additional arguments passed to STARAgent
         """
         # Initialize STARAgent with workflow_step type (loads WorkflowStepAgent.xml)
-        super().__init__(
-            agent_type="workflow_step",
-            agent_id=agent_id or "workflow_step",
-            **kwargs
-        )
+        super().__init__(agent_type="workflow_step", agent_id=agent_id or "workflow_step", **kwargs)

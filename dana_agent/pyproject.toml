@@ -51,12 +51,9 @@ dependencies = [
     "readability-lxml>=0.8.1",
     "html2text>=2024.2.26",
     "llama-stack>=0.3.0",
-    "llama-stack-client>=0.3.0",
     "ollama>=0.6.0",
     "pydantic-settings>=2.11.0",
     "rank-bm25>=0.2.2",
-    # PDF processing
-    "pypdf>=4.0.0",
 ]
 
 # Command-line entry points
@@ -239,4 +236,9 @@ disallow_untyped_defs = true
 [tool.pytest.ini_options]
 markers = [
     "windows_console: marks tests that require Windows console features (deselect with '-m \"not windows_console\"')",
+]
+
+[dependency-groups]
+dev = [
+    "langfuse>=3.5.1",
 ]

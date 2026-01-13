@@ -7,8 +7,7 @@ defects with recent process changes.
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
-from datetime import datetime, timedelta
+from typing import Any
 
 # Add dana_agent to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "dana_agent"))
@@ -45,7 +44,7 @@ class ProcessHistoryResource(BaseResource):
                 "new_value": "65 PSI",
                 "reason": "Improve edge coverage",
                 "approved_by": "Process Engineer J.Smith",
-                "confidence": "HIGH"
+                "confidence": "HIGH",
             },
             {
                 "change_id": "CHG-2025-0138",
@@ -59,7 +58,7 @@ class ProcessHistoryResource(BaseResource):
                 "new_value": "Lot ABC-2025-01",
                 "reason": "Routine lot rotation",
                 "approved_by": "Materials Manager K.Lee",
-                "confidence": "MEDIUM"
+                "confidence": "MEDIUM",
             },
             {
                 "change_id": "CHG-2025-0095",
@@ -73,11 +72,11 @@ class ProcessHistoryResource(BaseResource):
                 "new_value": "120°C (±0.5°C)",
                 "reason": "Scheduled PM",
                 "approved_by": "Maintenance Tech R.Chen",
-                "confidence": "LOW"
-            }
+                "confidence": "LOW",
+            },
         ]
 
-    def _do_execute(self, **kwargs) -> Dict[str, Any]:
+    def _do_execute(self, **kwargs) -> dict[str, Any]:
         """
         Query process history for recent changes.
 
@@ -126,7 +125,7 @@ class ProcessHistoryResource(BaseResource):
                         "change": f"{change['parameter']}: {change['old_value']} → {change['new_value']}",
                         "days_ago": change["days_ago"],
                         "confidence": change["confidence"],
-                        "correlation_strength": "Strong temporal correlation"
+                        "correlation_strength": "Strong temporal correlation",
                     }
                     break
 
@@ -134,10 +133,10 @@ class ProcessHistoryResource(BaseResource):
             "correlations_found": len(relevant_changes) > 0,
             "change_count": len(relevant_changes),
             "primary_correlation": primary_correlation,
-            "all_changes": relevant_changes
+            "all_changes": relevant_changes,
         }
 
-    def get_change_details(self, change_id: str) -> Dict[str, Any]:
+    def get_change_details(self, change_id: str) -> dict[str, Any]:
         """
         Get detailed information about a specific change.
 

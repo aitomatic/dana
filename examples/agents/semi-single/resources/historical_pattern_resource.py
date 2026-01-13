@@ -45,7 +45,7 @@ class HistoricalPatternResource(BaseResource):
                         "resolution": "Increased post-CMP clean time from 45s to 75s",
                         "time_to_fix_days": 12,
                         "yield_improvement": 8.5,
-                        "confidence": 0.91
+                        "confidence": 0.91,
                     },
                     {
                         "case_id": "CASE_2023_128",
@@ -57,10 +57,10 @@ class HistoricalPatternResource(BaseResource):
                         "resolution": "Optimized CMP pressure profile",
                         "time_to_fix_days": 18,
                         "yield_improvement": 6.2,
-                        "confidence": 0.76
-                    }
+                        "confidence": 0.76,
+                    },
                 ],
-                "best_match": "CASE_2024_045"
+                "best_match": "CASE_2024_045",
             }
         elif bin_id == "BIN_2":
             # Matches random defect pattern
@@ -77,16 +77,13 @@ class HistoricalPatternResource(BaseResource):
                         "resolution": "Tightened design margins, no process change",
                         "time_to_fix_days": 45,
                         "yield_improvement": 1.2,
-                        "confidence": 0.68
+                        "confidence": 0.68,
                     }
                 ],
-                "best_match": "CASE_2024_067"
+                "best_match": "CASE_2024_067",
             }
         else:
-            return {
-                "matches": [],
-                "message": "No similar historical patterns found"
-            }
+            return {"matches": [], "message": "No similar historical patterns found"}
 
     def get_systematic_pattern_library(self) -> DictParams:
         """
@@ -100,22 +97,14 @@ class HistoricalPatternResource(BaseResource):
                 {
                     "pattern_id": "SYSTEMATIC_001",
                     "name": "Center-clustered oxide defects",
-                    "signature": {
-                        "spatial": "center_weighted",
-                        "morans_i_range": [0.75, 0.95],
-                        "center_density_ratio": [4.0, 8.0]
-                    },
-                    "typical_causes": ["CMP non-uniformity", "metal contamination", "thin oxide"]
+                    "signature": {"spatial": "center_weighted", "morans_i_range": [0.75, 0.95], "center_density_ratio": [4.0, 8.0]},
+                    "typical_causes": ["CMP non-uniformity", "metal contamination", "thin oxide"],
                 },
                 {
                     "pattern_id": "SYSTEMATIC_002",
                     "name": "Edge-ring defects",
-                    "signature": {
-                        "spatial": "edge_weighted",
-                        "morans_i_range": [0.70, 0.90],
-                        "edge_density_ratio": [5.0, 10.0]
-                    },
-                    "typical_causes": ["Edge bead removal issues", "peripheral circuit stress"]
-                }
+                    "signature": {"spatial": "edge_weighted", "morans_i_range": [0.70, 0.90], "edge_density_ratio": [5.0, 10.0]},
+                    "typical_causes": ["Edge bead removal issues", "peripheral circuit stress"],
+                },
             ]
         }

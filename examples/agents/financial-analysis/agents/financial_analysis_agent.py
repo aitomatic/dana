@@ -18,11 +18,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dana.core.agent.star_agent import STARAgent
 from dana.common.protocols import Notifiable, DictParams
-from resources.read_file_resource import ReadFileResource
-from resources.ripgrep_search_resource import RipgrepSearchResource
-from resources.edit_file_resource import EditFileResource
-from resources.create_file_resource import CreateFileResource
-from resources.list_dir_resource import ListDirResource
 from resources.semantic_search_resource import SemanticSearchResource
 
 
@@ -177,8 +172,6 @@ if __name__ == "__main__":
     This demonstrates the agent's ability to use all four file operation resources
     in a coordinated workflow.
     """
-    import tempfile
-    import shutil
     from pathlib import Path
 
     print("=" * 80)

@@ -12,6 +12,7 @@ from dana.lib.resources.web_research.web_fetcher import WebFetcher
 # Import the new resource
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from resources.source_ranking import SourceRankingResource
 
@@ -25,10 +26,7 @@ class ParallelGatheringWorkflow(BaseWorkflow):
     """
 
     def __init__(self, workflow_id: str | None = None, **kwargs):
-        super().__init__(
-            workflow_id=workflow_id or "parallel-gathering",
-            **kwargs
-        )
+        super().__init__(workflow_id=workflow_id or "parallel-gathering", **kwargs)
         self.search_resource = SearchResource()
         self.web_fetcher = WebFetcher()
         self.ranking_resource = SourceRankingResource()
@@ -71,19 +69,10 @@ class ParallelGatheringWorkflow(BaseWorkflow):
             all_sources = asyncio.run(self._parallel_search(query, source_types, max_sources))
 
             if not all_sources:
-                return {
-                    "success": False,
-                    "error": "No sources found",
-                    "sources": [],
-                    "total_found": 0,
-                    "total_fetched": 0
-                }
+                return {"success": False, "error": "No sources found", "sources": [], "total_found": 0, "total_fetched": 0}
 
             # Step 2: Rank sources by quality
-            ranking_result = self.ranking_resource.rank_by_quality(
-                sources=all_sources,
-                query=query
-            )
+            ranking_result = self.ranking_resource.rank_by_quality(sources=all_sources, query=query)
 
             if not ranking_result.get("success"):
                 ranked_sources = all_sources  # Fallback to unranked
@@ -107,18 +96,12 @@ class ParallelGatheringWorkflow(BaseWorkflow):
                 "metadata": {
                     "processing_time": round(processing_time, 3),
                     "strategy": strategy.get("type", "unknown"),
-                    "timestamp": time.time()
-                }
+                    "timestamp": time.time(),
+                },
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "sources": [],
-                "total_found": 0,
-                "total_fetched": 0
-            }
+            return {"success": False, "error": str(e), "sources": [], "total_found": 0, "total_fetched": 0}
 
     async def _parallel_search(self, query: str, source_types: list, max_per_type: int = 10) -> list:
         """
@@ -164,15 +147,17 @@ class ParallelGatheringWorkflow(BaseWorkflow):
             # Convert search results to source format
             sources = []
             for item in result.get("results", []):
-                sources.append({
-                    "url": item.get("link", ""),
-                    "title": item.get("title", ""),
-                    "snippet": item.get("snippet", ""),
-                    "domain": item.get("displayLink", ""),
-                    "date": "",  # Google search doesn't always provide dates
-                    "content": "",  # Will be fetched later
-                    "type": "web"
-                })
+                sources.append(
+                    {
+                        "url": item.get("link", ""),
+                        "title": item.get("title", ""),
+                        "snippet": item.get("snippet", ""),
+                        "domain": item.get("displayLink", ""),
+                        "date": "",  # Google search doesn't always provide dates
+                        "content": "",  # Will be fetched later
+                        "type": "web",
+                    }
+                )
 
             return sources
 

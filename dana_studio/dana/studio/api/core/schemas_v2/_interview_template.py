@@ -81,7 +81,7 @@ class InterviewTemplateWithSessions(InterviewTemplateRead):
 
 class TemplateDiffSection(BaseModel):
     """Represents a section of the template diff"""
-    
+
     type: str  # 'add', 'remove', or 'unchanged'
     content: str
     line_start: int | None = None
@@ -90,7 +90,7 @@ class TemplateDiffSection(BaseModel):
 
 class TemplateDiff(BaseModel):
     """Represents the difference between old and new template content"""
-    
+
     sections: list[TemplateDiffSection] = Field(default_factory=list)
     old_content: str | None = None
     new_content: str | None = None
