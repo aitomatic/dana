@@ -9,10 +9,11 @@ import pytest
 from dana.common.resource.rlm_resource import RLMResource
 
 
+@patch("dana.common.resource.rlm_resource.LLM")
 class TestRLMResource:
     """Tests for RLMResource class."""
 
-    def test_init_creates_file(self):
+    def test_init_creates_file(self, mock_llm_class):
         """Test that init creates file if missing."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test_context.md"
@@ -23,7 +24,7 @@ class TestRLMResource:
             assert file_path.exists()
             assert file_path.read_text() == ""
 
-    def test_append(self):
+    def test_append(self, mock_llm_class):
         """Test that append adds timestamped content."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "test_context.md"
@@ -38,7 +39,7 @@ class TestRLMResource:
             assert "Test content" in content
             assert "[note]" in content
 
-    def test_load_file(self):
+    def test_load_file(self, mock_llm_class):
         """Test that load_file ingests file contents."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create source file
@@ -58,7 +59,7 @@ class TestRLMResource:
             assert "Source file content" in content
             assert "[file: source.txt]" in content
 
-    def test_load_file_not_found(self):
+    def test_load_file_not_found(self, mock_llm_class):
         """Test load_file with non-existent file."""
         with tempfile.TemporaryDirectory() as tmpdir:
             context_path = Path(tmpdir) / "context.md"
@@ -69,7 +70,6 @@ class TestRLMResource:
             assert "Error" in result
             assert "not found" in result
 
-    @patch("dana.common.resource.rlm_resource.LLM")
     def test_query_basic(self, mock_llm_class):
         """Test that query returns answer for simple query."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -95,7 +95,6 @@ class TestRLMResource:
 
             assert result == "42"
 
-    @patch("dana.common.resource.rlm_resource.LLM")
     def test_query_empty_context(self, mock_llm_class):
         """Test query with empty context returns error."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -110,10 +109,10 @@ class TestRLMResource:
             assert "empty" in result.lower()
 
 
+@patch("dana.common.resource.rlm_resource.LLM")
 class TestRLMResourceIntegration:
     """Integration tests for RLMResource (require mocking)."""
 
-    @patch("dana.common.resource.rlm_resource.LLM")
     def test_query_with_final_var(self, mock_llm_class):
         """Test query with FINAL_VAR extracts variable."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -136,7 +135,6 @@ class TestRLMResourceIntegration:
 
             assert result == "found the data"
 
-    @patch("dana.common.resource.rlm_resource.LLM")
     def test_query_max_iterations(self, mock_llm_class):
         """Test query stops after max iterations."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -153,7 +151,7 @@ class TestRLMResourceIntegration:
 
             assert "Maximum iterations" in result
 
-    def test_append_multiple(self):
+    def test_append_multiple(self, mock_llm_class):
         """Test multiple appends accumulate."""
         with tempfile.TemporaryDirectory() as tmpdir:
             context_path = Path(tmpdir) / "context.md"
