@@ -174,8 +174,6 @@ if __name__ == "__main__":
     This demonstrates the agent's ability to use all four file operation resources
     in a coordinated workflow.
     """
-    import tempfile
-    import shutil
     from pathlib import Path
 
     print("=" * 80)

@@ -21,14 +21,8 @@ class SynthesisWorkflow(BaseWorkflow):
     """
 
     def __init__(self, workflow_id: str | None = None, llm_provider: str = "anthropic", model: str | None = None, **kwargs):
-        super().__init__(
-            workflow_id=workflow_id or "synthesis",
-            **kwargs
-        )
-        self.conversation = ConversationResource(
-            llm_provider=llm_provider,
-            model=model or "claude-3-5-sonnet-20241022"
-        )
+        super().__init__(workflow_id=workflow_id or "synthesis", **kwargs)
+        self.conversation = ConversationResource(llm_provider=llm_provider, model=model or "claude-3-5-sonnet-20241022")
 
     @validate_input(
         query={"required": True, "type": str},
@@ -64,13 +58,15 @@ class SynthesisWorkflow(BaseWorkflow):
         start_time = time.time()
 
         # Broadcast: Starting synthesis
-        self.broadcast({
-            "workflow_progress": {
-                "workflow_id": self.workflow_id,
-                "phase": "start",
-                "message": f"Synthesizing findings from {len(sources)} sources..."
+        self.broadcast(
+            {
+                "workflow_progress": {
+                    "workflow_id": self.workflow_id,
+                    "phase": "start",
+                    "message": f"Synthesizing findings from {len(sources)} sources...",
+                }
             }
-        })
+        )
 
         try:
             # Filter sources with content
@@ -80,53 +76,45 @@ class SynthesisWorkflow(BaseWorkflow):
                 return self._create_fallback_response(query, "No valid sources with content")
 
             # Step 1: Extract key information (simplified - in production use LLM)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "extract",
-                    "message": f"Extracting key findings from {len(valid_sources)} sources..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "extract",
+                        "message": f"Extracting key findings from {len(valid_sources)} sources...",
+                    }
                 }
-            })
+            )
             key_findings = self._extract_findings(valid_sources, query)
 
             # Step 2: Identify themes
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "themes",
-                    "message": "Identifying common themes..."
-                }
-            })
+            self.broadcast(
+                {"workflow_progress": {"workflow_id": self.workflow_id, "phase": "themes", "message": "Identifying common themes..."}}
+            )
             themes = self._identify_themes(key_findings)
 
             # Step 3: Generate overview
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "overview",
-                    "message": "Generating synthesis overview..."
-                }
-            })
+            self.broadcast(
+                {"workflow_progress": {"workflow_id": self.workflow_id, "phase": "overview", "message": "Generating synthesis overview..."}}
+            )
             overview = self._generate_overview(query, key_findings, themes)
 
             # Step 4: Detect knowledge gaps
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "gaps",
-                    "message": "Detecting knowledge gaps..."
-                }
-            })
+            self.broadcast(
+                {"workflow_progress": {"workflow_id": self.workflow_id, "phase": "gaps", "message": "Detecting knowledge gaps..."}}
+            )
             knowledge_gaps = self._detect_gaps(query, themes, valid_sources)
 
             # Step 5: Calculate confidence
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "confidence",
-                    "message": "Calculating confidence scores..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "confidence",
+                        "message": "Calculating confidence scores...",
+                    }
                 }
-            })
+            )
             confidence = self._calculate_confidence(valid_sources, knowledge_gaps)
 
             # Step 6: Generate follow-up questions
@@ -135,13 +123,15 @@ class SynthesisWorkflow(BaseWorkflow):
             processing_time = time.time() - start_time
 
             # Broadcast: Synthesis complete
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "complete",
-                    "message": f"Synthesis complete (confidence: {confidence['overall']:.2f}, {len(key_findings)} findings)"
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "complete",
+                        "message": f"Synthesis complete (confidence: {confidence['overall']:.2f}, {len(key_findings)} findings)",
+                    }
                 }
-            })
+            )
 
             return {
                 "success": True,
@@ -154,11 +144,7 @@ class SynthesisWorkflow(BaseWorkflow):
                 "confidence": confidence,
                 "follow_up_questions": follow_ups,
                 "sources_used": [s["url"] for s in valid_sources],
-                "metadata": {
-                    "sources_count": len(valid_sources),
-                    "processing_time": round(processing_time, 3),
-                    "timestamp": time.time()
-                }
+                "metadata": {"sources_count": len(valid_sources), "processing_time": round(processing_time, 3), "timestamp": time.time()},
             }
 
         except Exception as e:
@@ -183,7 +169,7 @@ class SynthesisWorkflow(BaseWorkflow):
                 "source_url": source.get("url", ""),
                 "source_title": title,
                 "significance": "medium",  # In production, use LLM to assess
-                "confidence": source.get("scores", {}).get("overall", 0.7)
+                "confidence": source.get("scores", {}).get("overall", 0.7),
             }
 
             findings.append(finding)
@@ -198,7 +184,7 @@ class SynthesisWorkflow(BaseWorkflow):
             {
                 "theme": "Main findings",
                 "findings_count": len(findings),
-                "description": f"Key information extracted from {len(findings)} sources"
+                "description": f"Key information extracted from {len(findings)} sources",
             }
         ]
 
@@ -216,22 +202,26 @@ class SynthesisWorkflow(BaseWorkflow):
 
         # Simple heuristics for gap detection
         if len(sources) < 5:
-            gaps.append({
-                "gap": "Limited source coverage",
-                "severity": "medium",
-                "reason": f"Only {len(sources)} sources found",
-                "suggested_followup": f"Search for more comprehensive sources on '{query}'"
-            })
+            gaps.append(
+                {
+                    "gap": "Limited source coverage",
+                    "severity": "medium",
+                    "reason": f"Only {len(sources)} sources found",
+                    "suggested_followup": f"Search for more comprehensive sources on '{query}'",
+                }
+            )
 
         # Check for date coverage
         dated_sources = [s for s in sources if s.get("date")]
         if len(dated_sources) < len(sources) * 0.5:
-            gaps.append({
-                "gap": "Publication dates unclear",
-                "severity": "low",
-                "reason": "Many sources lack clear publication dates",
-                "suggested_followup": "Focus on sources with clear dates for recency assessment"
-            })
+            gaps.append(
+                {
+                    "gap": "Publication dates unclear",
+                    "severity": "low",
+                    "reason": "Many sources lack clear publication dates",
+                    "suggested_followup": "Focus on sources with clear dates for recency assessment",
+                }
+            )
 
         return gaps
 
@@ -260,12 +250,8 @@ class SynthesisWorkflow(BaseWorkflow):
 
         return {
             "overall": round(overall, 2),
-            "dimensions": {
-                "verification": round(verification, 2),
-                "recency": round(recency, 2),
-                "completeness": round(completeness, 2)
-            },
-            "explanation": explanation
+            "dimensions": {"verification": round(verification, 2), "recency": round(recency, 2), "completeness": round(completeness, 2)},
+            "explanation": explanation,
         }
 
     def _generate_follow_ups(self, query: str, gaps: list) -> list:
@@ -274,11 +260,13 @@ class SynthesisWorkflow(BaseWorkflow):
 
         # Add generic follow-ups
         if len(follow_ups) < 3:
-            follow_ups.extend([
-                f"What are the latest developments regarding '{query}'?",
-                f"How does '{query}' compare to related topics?",
-                f"What are the practical applications of '{query}'?"
-            ])
+            follow_ups.extend(
+                [
+                    f"What are the latest developments regarding '{query}'?",
+                    f"How does '{query}' compare to related topics?",
+                    f"What are the practical applications of '{query}'?",
+                ]
+            )
 
         return follow_ups[:5]  # Limit to 5
 
@@ -287,24 +275,20 @@ class SynthesisWorkflow(BaseWorkflow):
         return {
             "success": False,
             "error": error,
-            "summary": {
-                "overview": f"Unable to fully synthesize information for '{query}'",
-                "key_findings": [],
-                "themes": []
-            },
+            "summary": {"overview": f"Unable to fully synthesize information for '{query}'", "key_findings": [], "themes": []},
             "knowledge_gaps": [
                 {
                     "gap": "Synthesis failure",
                     "severity": "high",
                     "reason": error,
-                    "suggested_followup": f"Try rephrasing the query: '{query}'"
+                    "suggested_followup": f"Try rephrasing the query: '{query}'",
                 }
             ],
             "confidence": {
                 "overall": 0.0,
                 "dimensions": {"verification": 0.0, "recency": 0.0, "completeness": 0.0},
-                "explanation": [f"Error during synthesis: {error}"]
+                "explanation": [f"Error during synthesis: {error}"],
             },
             "follow_up_questions": [f"Rephrase: '{query}'"],
-            "sources_used": []
+            "sources_used": [],
         }

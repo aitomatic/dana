@@ -318,7 +318,9 @@ class QuestionBankGenerationTool(BaseTool):
                         if leaf_node:
                             leaf_node.status = KnowledgeGenerationStatus.QUESTION_GENERATED
                             # Save the tree
-                            from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
+                            from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import (
+                                knowledge_ops_utils as ko_utils,
+                            )
 
                             ko_utils.save_tree(self.tree_structure, self.tree_structure_path)
 

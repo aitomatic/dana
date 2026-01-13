@@ -192,7 +192,7 @@ RECENT CONVERSATION:
 
 EXPERT'S LAST MESSAGE: "{last_message}"
 
-CURRENT TOPIC: {topics.get('current_focus', 'Unknown')}
+CURRENT TOPIC: {topics.get("current_focus", "Unknown")}
 {insights_text}
 {gaps_text}
 

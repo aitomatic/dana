@@ -35,11 +35,7 @@ class YieldParetoAnalysisAgent(STARAgent):
     """
 
     def __init__(
-        self,
-        agent_id: str = "yield-pareto-agent",
-        llm_provider: str = "anthropic",
-        model: str = "claude-3-5-sonnet-20241022",
-        **kwargs
+        self, agent_id: str = "yield-pareto-agent", llm_provider: str = "anthropic", model: str = "claude-3-5-sonnet-20241022", **kwargs
     ):
         """
         Initialize the Yield Pareto Analysis Agent.
@@ -70,32 +66,14 @@ Key principles:
 Your output should be comprehensive, technically sound, and immediately actionable
 for semiconductor yield engineers and fab managers."""
 
-        super().__init__(
-            agent_id=agent_id,
-            llm_provider=llm_provider,
-            model=model,
-            system_prompt=system_prompt,
-            **kwargs
-        )
+        super().__init__(agent_id=agent_id, llm_provider=llm_provider, model=model, system_prompt=system_prompt, **kwargs)
 
         # Initialize workflows (deterministic execution sequence)
-        self.pareto_workflow = YieldParetoWorkflow(
-            workflow_id="pareto-analysis",
-            llm_provider=llm_provider,
-            model=model
-        )
+        self.pareto_workflow = YieldParetoWorkflow(workflow_id="pareto-analysis", llm_provider=llm_provider, model=model)
 
-        self.correlation_workflow = FailureCorrelationWorkflow(
-            workflow_id="failure-correlation",
-            llm_provider=llm_provider,
-            model=model
-        )
+        self.correlation_workflow = FailureCorrelationWorkflow(workflow_id="failure-correlation", llm_provider=llm_provider, model=model)
 
-        self.roi_workflow = ROIPrioritizationWorkflow(
-            workflow_id="roi-prioritization",
-            llm_provider=llm_provider,
-            model=model
-        )
+        self.roi_workflow = ROIPrioritizationWorkflow(workflow_id="roi-prioritization", llm_provider=llm_provider, model=model)
 
     def _do_execute(self, caller_message: str, **kwargs) -> DictParams:
         """
@@ -115,35 +93,29 @@ for semiconductor yield engineers and fab managers."""
         weeks = kwargs.get("weeks", 12)
 
         # Broadcast agent start
-        self.broadcast({
-            "agent_progress": {
-                "agent_id": self.agent_id,
-                "phase": "start",
-                "message": f"Starting deterministic yield analysis{' for ' + wafer_id if wafer_id else ''}..."
+        self.broadcast(
+            {
+                "agent_progress": {
+                    "agent_id": self.agent_id,
+                    "phase": "start",
+                    "message": f"Starting deterministic yield analysis{' for ' + wafer_id if wafer_id else ''}...",
+                }
             }
-        })
+        )
 
         try:
             # ========================================
             # PHASE 1: PARETO ANALYSIS (MANDATORY)
             # ========================================
-            self.broadcast({
-                "agent_progress": {
-                    "agent_id": self.agent_id,
-                    "phase": "pareto",
-                    "message": "Phase 1/3: Running Pareto analysis..."
-                }
-            })
+            self.broadcast(
+                {"agent_progress": {"agent_id": self.agent_id, "phase": "pareto", "message": "Phase 1/3: Running Pareto analysis..."}}
+            )
 
             pareto_results = self.pareto_workflow.execute(wafer_id=wafer_id)
             pareto_result = pareto_results.get("result", {})
 
             if not pareto_result.get("success"):
-                return {
-                    "success": False,
-                    "error": f"Pareto analysis failed: {pareto_result.get('error')}",
-                    "phase": "pareto"
-                }
+                return {"success": False, "error": f"Pareto analysis failed: {pareto_result.get('error')}", "phase": "pareto"}
 
             pareto_analysis = pareto_result["pareto_analysis"]
             pattern_classifications = pareto_result.get("pattern_classifications", {})
@@ -152,26 +124,24 @@ for semiconductor yield engineers and fab managers."""
             # ========================================
             # PHASE 2: CORRELATION ANALYSIS (MANDATORY)
             # ========================================
-            self.broadcast({
-                "agent_progress": {
-                    "agent_id": self.agent_id,
-                    "phase": "correlation",
-                    "message": f"Phase 2/3: Correlating {len(top_bins)} top bins with historical data..."
+            self.broadcast(
+                {
+                    "agent_progress": {
+                        "agent_id": self.agent_id,
+                        "phase": "correlation",
+                        "message": f"Phase 2/3: Correlating {len(top_bins)} top bins with historical data...",
+                    }
                 }
-            })
-
-            correlation_results = self.correlation_workflow.execute(
-                product=pareto_analysis["product"],
-                top_bins=top_bins,
-                weeks=weeks
             )
+
+            correlation_results = self.correlation_workflow.execute(product=pareto_analysis["product"], top_bins=top_bins, weeks=weeks)
             correlation_result = correlation_results.get("result", {})
 
             if not correlation_result.get("success"):
                 return {
                     "success": False,
                     "error": f"Correlation analysis failed: {correlation_result.get('error')}",
-                    "phase": "correlation"
+                    "phase": "correlation",
                 }
 
             correlation_findings = correlation_result["correlation_findings"]
@@ -179,13 +149,15 @@ for semiconductor yield engineers and fab managers."""
             # ========================================
             # PHASE 3: ROI PRIORITIZATION (MANDATORY)
             # ========================================
-            self.broadcast({
-                "agent_progress": {
-                    "agent_id": self.agent_id,
-                    "phase": "roi",
-                    "message": "Phase 3/3: Calculating ROI and prioritizing actions..."
+            self.broadcast(
+                {
+                    "agent_progress": {
+                        "agent_id": self.agent_id,
+                        "phase": "roi",
+                        "message": "Phase 3/3: Calculating ROI and prioritizing actions...",
+                    }
                 }
-            })
+            )
 
             # Need to get product context for ROI calculation
             # (In real implementation, this would come from test data)
@@ -196,18 +168,11 @@ for semiconductor yield engineers and fab managers."""
                 "revenue_criticality": "HIGH",
             }
 
-            roi_results = self.roi_workflow.execute(
-                top_bins=top_bins,
-                product_context=product_context
-            )
+            roi_results = self.roi_workflow.execute(top_bins=top_bins, product_context=product_context)
             roi_result = roi_results.get("result", {})
 
             if not roi_result.get("success"):
-                return {
-                    "success": False,
-                    "error": f"ROI prioritization failed: {roi_result.get('error')}",
-                    "phase": "roi"
-                }
+                return {"success": False, "error": f"ROI prioritization failed: {roi_result.get('error')}", "phase": "roi"}
 
             prioritized_actions = roi_result["prioritized_actions"]
             total_opportunity = roi_result["total_opportunity_usd"]
@@ -215,13 +180,15 @@ for semiconductor yield engineers and fab managers."""
             # ========================================
             # SYNTHESIS: COMPREHENSIVE REPORT
             # ========================================
-            self.broadcast({
-                "agent_progress": {
-                    "agent_id": self.agent_id,
-                    "phase": "synthesis",
-                    "message": "Synthesizing comprehensive analysis report..."
+            self.broadcast(
+                {
+                    "agent_progress": {
+                        "agent_id": self.agent_id,
+                        "phase": "synthesis",
+                        "message": "Synthesizing comprehensive analysis report...",
+                    }
                 }
-            })
+            )
 
             # Build executive summary
             yield_percent = pareto_analysis["yield_percent"]
@@ -255,13 +222,15 @@ for semiconductor yield engineers and fab managers."""
             # ========================================
             # FINAL OUTPUT
             # ========================================
-            self.broadcast({
-                "agent_progress": {
-                    "agent_id": self.agent_id,
-                    "phase": "complete",
-                    "message": f"Analysis complete: ${total_opportunity:,.0f} opportunity identified across {top_bin_count} bins"
+            self.broadcast(
+                {
+                    "agent_progress": {
+                        "agent_id": self.agent_id,
+                        "phase": "complete",
+                        "message": f"Analysis complete: ${total_opportunity:,.0f} opportunity identified across {top_bin_count} bins",
+                    }
                 }
-            })
+            )
 
             return {
                 "success": True,
@@ -273,21 +242,13 @@ for semiconductor yield engineers and fab managers."""
                 "analysis_metadata": {
                     "agent_id": self.agent_id,
                     "analysis_type": "deterministic",
-                    "workflows_executed": [
-                        "YieldParetoWorkflow",
-                        "FailureCorrelationWorkflow",
-                        "ROIPrioritizationWorkflow"
-                    ],
+                    "workflows_executed": ["YieldParetoWorkflow", "FailureCorrelationWorkflow", "ROIPrioritizationWorkflow"],
                     "historical_weeks_analyzed": weeks,
-                }
+                },
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "phase": "unknown"
-            }
+            return {"success": False, "error": str(e), "phase": "unknown"}
 
     def analyze_yield(self, wafer_id: str | None = None, weeks: int = 12) -> DictParams:
         """
@@ -300,8 +261,4 @@ for semiconductor yield engineers and fab managers."""
         Returns:
             Comprehensive yield analysis results
         """
-        return self.execute(
-            caller_message=f"Analyze yield{' for wafer ' + wafer_id if wafer_id else ''}",
-            wafer_id=wafer_id,
-            weeks=weeks
-        )
+        return self.execute(caller_message=f"Analyze yield{' for wafer ' + wafer_id if wafer_id else ''}", wafer_id=wafer_id, weeks=weeks)

@@ -42,15 +42,15 @@ async def get_knowledge_pack(
         kp = await repo.get_kp(kp_id=knowledge_id, db=db)
         if not kp:
             return KnowledgePackGetResponse(success=False, message="Knowledge pack not found", error="Not found")
-        
+
         # Get knowledge pack tree structure
         tree = await repo.get_kp_tree(kp_id=knowledge_id)
-        
+
         # Combine metadata and tree into a single response
         kp_dict = kp.model_dump()
-        kp_dict['tree'] = tree
+        kp_dict["tree"] = tree
         kp_with_tree = KnowledgePackOutput(**kp_dict)
-        
+
         return KnowledgePackGetResponse(success=True, message="Knowledge pack retrieved successfully", data=kp_with_tree)
     except Exception as e:
         logger.error(f"Error getting knowledge pack {knowledge_id}: {e}")

@@ -11,7 +11,7 @@ This resource handles:
 
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -38,7 +38,7 @@ class FraudDetectionResource(BaseResource):
         super().__init__(resource_type="fraud-detection", resource_id=resource_id or "fraud-detection", **kwargs)
 
     @tool_use
-    def detect(self, normalized_data: Dict[str, Any], **kwargs) -> DictParams:
+    def detect(self, normalized_data: dict[str, Any], **kwargs) -> DictParams:
         """
         Detect fraud patterns in normalized data.
 
@@ -77,7 +77,7 @@ class FraudDetectionResource(BaseResource):
         except Exception as e:
             return {"success": False, "fraud_result": {}, "error": f"Fraud detection failed: {str(e)}"}
 
-    def _analyze_fraud_with_llm(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_fraud_with_llm(self, data: dict[str, Any]) -> dict[str, Any]:
         """Use LLM for intelligent fraud analysis."""
         try:
             result = self.reason(
@@ -122,11 +122,11 @@ class FraudDetectionResource(BaseResource):
 
             return result
 
-        except Exception as e:
+        except Exception:
             # Fallback to rule-based analysis
             return self._analyze_fraud_rule_based(data)
 
-    def _apply_fraud_rules(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _apply_fraud_rules(self, data: dict[str, Any]) -> list[dict[str, Any]]:
         """Apply rule-based fraud detection."""
         indicators = []
 
@@ -192,7 +192,7 @@ class FraudDetectionResource(BaseResource):
 
         return indicators
 
-    def _combine_fraud_analysis(self, llm_analysis: Dict[str, Any], rule_indicators: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _combine_fraud_analysis(self, llm_analysis: dict[str, Any], rule_indicators: list[dict[str, Any]]) -> dict[str, Any]:
         """Combine LLM and rule-based fraud analysis."""
         # Start with LLM analysis
         result = llm_analysis.copy()
@@ -227,7 +227,7 @@ class FraudDetectionResource(BaseResource):
 
         return result
 
-    def _calculate_risk_score(self, indicators: List[Dict[str, Any]]) -> int:
+    def _calculate_risk_score(self, indicators: list[dict[str, Any]]) -> int:
         """Calculate overall risk score (0-100) based on indicators."""
         if not indicators:
             return 0
@@ -259,7 +259,7 @@ class FraudDetectionResource(BaseResource):
         normalized_score = min(100, int(total_score / total_weight))
         return normalized_score
 
-    def _assess_data_completeness(self, data: Dict[str, Any]) -> str:
+    def _assess_data_completeness(self, data: dict[str, Any]) -> str:
         """Assess how complete the normalized data is."""
         critical_fields = ["invoice_id", "date", "amount", "vendor_name"]
         present_fields = sum(1 for field in critical_fields if data.get(field))
@@ -282,7 +282,7 @@ class FraudDetectionResource(BaseResource):
         except ValueError:
             return False
 
-    def _analyze_fraud_rule_based(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_fraud_rule_based(self, data: dict[str, Any]) -> dict[str, Any]:
         """Fallback rule-based fraud analysis."""
         indicators = self._apply_fraud_rules(data)
         risk_score = self._calculate_risk_score(indicators)

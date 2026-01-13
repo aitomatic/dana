@@ -113,7 +113,7 @@ dependencies = [
     "readability-lxml>=0.8.4.1",
     "requests>=2.32.4",
     "dana",
-    # "dana-lang",  # TODO: Re-enable when dana-lang is published or use path dependency
+    "dana-lang",
 ]
 
 # Command-line entry points

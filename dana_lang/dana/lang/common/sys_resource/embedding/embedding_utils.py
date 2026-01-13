@@ -23,6 +23,7 @@ def has_embedding_api_keys():
         if huggingface_models:
             try:
                 from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # noqa: F401
+
                 return True  # HuggingFace is available and doesn't require API keys
             except ImportError:
                 pass  # HuggingFace package not installed, continue checking API keys

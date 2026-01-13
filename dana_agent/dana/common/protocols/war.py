@@ -2,7 +2,7 @@
 Protocols for WAR (Workflow, Agent, Resource) framework.
 """
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Protocol
 
 from .types import DictParams
@@ -125,5 +125,50 @@ class STARAgentProtococol(AgentProtocol):
 
         Returns:
             - trace_learning (DictParams): the learning produced by this REFLECT phase.
+        """
+        ...
+
+    # Async STAR methods
+    async def _think_async(self, trace_percepts: DictParams) -> DictParams:
+        """Async version of _think with native async LLM calls.
+        Args:
+            trace_percepts (DictParams): INPUT: the percepts produced by this SEE phase.
+
+        Returns:
+            - trace_thoughts (DictParams): the thoughts produced by this THINK phase.
+        """
+        ...
+
+    async def _act_async(self, trace_thoughts: DictParams) -> DictParams:
+        """Async version of _act with native async tool execution.
+        Args:
+            trace_thoughts (DictParams): INPUT: the thoughts produced by this THINK phase.
+
+        Returns:
+            - trace_outputs (DictParams): the outputs produced by this ACT phase.
+        """
+        ...
+
+    async def aquery(self, **kwargs) -> DictParams:
+        """Async version of query that uses async STAR methods.
+        Args:
+            **kwargs: Query parameters including message, caller info, etc.
+
+        Returns:
+            - DictParams: Query result with response and metadata.
+        """
+        ...
+
+    async def aconverse(
+        self,
+        initial_message: str | None = None,
+        session_id: str | None = None,
+        input_handler: Callable[[], Awaitable[str]] | None = None,
+    ) -> None:
+        """Async interactive conversation loop with pluggable input handler.
+        Args:
+            initial_message: Optional initial message to start the conversation
+            session_id: Optional session identifier. If None, generates UUID.
+            input_handler: Async callable that returns user input string.
         """
         ...

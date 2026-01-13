@@ -4,16 +4,13 @@ from dana.core.agent.star_agent import STARAgent
 from dana.lib.resources.conversation import ConversationResource
 from dana.lib.resources.web_research.search import SearchResource
 from dana.lib.resources.web_research.web_fetcher import WebFetcher
-from dana.lib.workflows.web_research import GoogleLookupWorkflow
 
 # Import local components
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from resources.source_ranking import SourceRankingResource
-from workflows.research_strategy import ResearchStrategyWorkflow
-from workflows.parallel_gathering import ParallelGatheringWorkflow
-from workflows.synthesis import SynthesisWorkflow
 
 
 class ProbabilisticResearchAgent(STARAgent):
@@ -38,18 +35,14 @@ class ProbabilisticResearchAgent(STARAgent):
             agent_id=agent_id or "probabilistic-research-001",
             llm_provider="anthropic",
             model="claude-3-5-sonnet-20241022",
-            **kwargs
+            **kwargs,
         )
 
         # Compose resources (80% reused from framework)
         self.with_resources(
             SearchResource(resource_id="web-search"),
             WebFetcher(resource_id="web-fetch"),
-            ConversationResource(
-                resource_id="llm-reasoning",
-                llm_provider="anthropic",
-                model="claude-3-5-sonnet-20241022"
-            ),
+            ConversationResource(resource_id="llm-reasoning", llm_provider="anthropic", model="claude-3-5-sonnet-20241022"),
             SourceRankingResource(resource_id="source-ranking"),
         )
 
@@ -74,6 +67,7 @@ class ProbabilisticResearchAgent(STARAgent):
 
         This provides an intuitive interface while maintaining full STAR loop autonomy.
         """
+
         def magic_method(*args, **kwargs):
             # Convert method name to natural language
             natural_language = name.replace("_", " ").strip()

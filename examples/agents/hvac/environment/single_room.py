@@ -6,19 +6,13 @@ import os
 import random
 import json
 
-sys.path.insert(
-    0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "dana_agent")
-)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "dana_agent"))
 
 
 class SingleRoomEnvironment:
     """Simulates a single room environment with temperature and occupancy."""
 
-    def __init__(
-        self,
-        room_name: str = "Conference Room A",
-        base_temp: float = 72.0
-    ):
+    def __init__(self, room_name: str = "Conference Room A", base_temp: float = 72.0):
         """
         Initialize the room environment.
 
@@ -46,13 +40,13 @@ class SingleRoomEnvironment:
     def get_outdoor_temperature(self) -> float:
         """
         Get realistic outdoor temperature based on time of day and season.
-        
+
         Returns:
             Outdoor temperature in Fahrenheit
         """
         current_time = self.get_current_time()
-        hour = int(current_time.split(':')[0])
-        
+        hour = int(current_time.split(":")[0])
+
         # Simulate daily temperature cycle (realistic outdoor pattern)
         # Peak heat: 14:00-16:00, Coolest: 06:00-08:00
         if 6 <= hour <= 8:
@@ -70,17 +64,17 @@ class SingleRoomEnvironment:
         else:  # 20-21
             # Night: cooler
             base_outdoor = random.uniform(50, 75)
-        
+
         # Add some random variation
         variation = random.uniform(-3, 3)
         outdoor_temp = base_outdoor + variation
-        
+
         return round(outdoor_temp, 1)
 
     def get_temperature(self) -> float:
         """
         Get current room temperature with realistic heat transfer from outdoor.
-        
+
         Simulates natural indoor temperature when no AC is running.
         Indoor temp should be very close to outdoor temp.
 
@@ -88,24 +82,24 @@ class SingleRoomEnvironment:
             Current temperature in Fahrenheit
         """
         outdoor_temp = self.get_outdoor_temperature()
-        
+
         # Without AC, indoor temp should be very close to outdoor temp
         # Small offset for building thermal mass and insulation
         thermal_offset = random.uniform(-2, 2)  # ±2°F difference from outdoor
-        
+
         # Indoor temp = outdoor temp with small thermal offset
         base_indoor = outdoor_temp + thermal_offset
-        
+
         # Add small random variation for realism (±0.5°F)
         variation = random.uniform(-0.5, 0.5)
         self.current_temp = base_indoor + variation
-        
+
         return round(self.current_temp, 1)
 
     def get_temperature_from_outdoor(self, outdoor_temp: float) -> float:
         """
         Get indoor temperature based on outdoor temperature.
-        
+
         Simulates natural indoor temperature when no AC is running.
         Indoor temp should be very close to outdoor temp.
 
@@ -118,14 +112,14 @@ class SingleRoomEnvironment:
         # Without AC, indoor temp should be very close to outdoor temp
         # Small offset for building thermal mass and insulation
         thermal_offset = random.uniform(-2, 2)  # ±2°F difference from outdoor
-        
+
         # Indoor temp = outdoor temp with small thermal offset
         base_indoor = outdoor_temp + thermal_offset
-        
+
         # Add small random variation for realism (±0.5°F)
         variation = random.uniform(-0.5, 0.5)
         indoor_temp = base_indoor + variation
-        
+
         return round(indoor_temp, 1)
 
     def generate_meeting_plan(self, current_time_str: str) -> list[dict]:
@@ -139,11 +133,11 @@ class SingleRoomEnvironment:
             List of meeting dictionaries with start_time and end_time
         """
         # Parse current time
-        current_h, current_m = map(int, current_time_str.split(':'))
+        current_h, current_m = map(int, current_time_str.split(":"))
         current_minutes = current_h * 60 + current_m
 
         # Extended hours: 08:00 (480 min) to 22:00 (1320 min)
-        business_end = 22 * 60   # 22:00
+        business_end = 22 * 60  # 22:00
 
         # Calculate how much time is left
         time_left = business_end - current_minutes
@@ -219,10 +213,7 @@ class SingleRoomEnvironment:
             end_h, end_m = divmod(end_minutes, 60)
             end_m = end_m // 30 * 30
 
-            meetings.append({
-                "start_time": f"{start_h:02d}:{start_m:02d}",
-                "end_time": f"{end_h:02d}:{end_m:02d}"
-            })
+            meetings.append({"start_time": f"{start_h:02d}:{start_m:02d}", "end_time": f"{end_h:02d}:{end_m:02d}"})
 
             # Next meeting starts after current one + gap (30 min to 3 hours)
             gap = random.randint(30, 180)
@@ -239,7 +230,7 @@ class SingleRoomEnvironment:
         """
         # Get current time once and use it consistently
         current_time = self.get_current_time()
-        
+
         # Get outdoor temperature once and use it for both outdoor_temp and indoor temp calculation
         outdoor_temp = self.get_outdoor_temperature()
 
@@ -248,7 +239,7 @@ class SingleRoomEnvironment:
             "current_time": current_time,
             "indoor_temp": self.get_temperature_from_outdoor(outdoor_temp),
             "outdoor_temp": outdoor_temp,
-            "meeting_plan": self.generate_meeting_plan(current_time)
+            "meeting_plan": self.generate_meeting_plan(current_time),
         }
 
     def set_temperature(self, target_temp: float):
@@ -270,10 +261,7 @@ def main():
     print()
 
     # Create room environment
-    room = SingleRoomEnvironment(
-        room_name="Conference Room A",
-        base_temp=72.0
-    )
+    room = SingleRoomEnvironment(room_name="Conference Room A", base_temp=72.0)
 
     # Get environment state
     print("Getting environment state...")
@@ -284,7 +272,7 @@ def main():
         "current_time": env_state["current_time"],
         "indoor_temp": env_state["indoor_temp"],
         "outdoor_temp": env_state["outdoor_temp"],
-        "meeting_plan": env_state["meeting_plan"]
+        "meeting_plan": env_state["meeting_plan"],
     }
 
     print()

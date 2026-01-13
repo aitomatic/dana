@@ -223,8 +223,11 @@ class Timeline:
         self._agent = agent
         self.timeline: list[TimelineEntry] = []
 
-        # Create repository via factory
-        self._repository = repository_factory.create(RepositoryType.TIMELINE, agent=agent)
+        # Create repository via factory (only if agent is provided)
+        if agent is not None:
+            self._repository = repository_factory.create(RepositoryType.TIMELINE, agent=agent)
+        else:
+            self._repository = None
 
     def __repr__(self) -> str:
         """

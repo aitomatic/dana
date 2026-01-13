@@ -3,10 +3,7 @@
 from dana.core.resource.base_resource import BaseResource
 from dana.core.workflow.validation import validate_input
 
-from .mock_data import (
-    get_wafer_test_data,
-    get_bin_details
-)
+from .mock_data import get_wafer_test_data, get_bin_details
 
 
 class TestDataResource(BaseResource):
@@ -20,10 +17,7 @@ class TestDataResource(BaseResource):
     """
 
     def __init__(self, resource_id: str | None = None, **kwargs):
-        super().__init__(
-            resource_id=resource_id or "test-data",
-            **kwargs
-        )
+        super().__init__(resource_id=resource_id or "test-data", **kwargs)
 
     @validate_input(
         wafer_id={"required": False, "type": str},
@@ -73,15 +67,9 @@ class TestDataResource(BaseResource):
         bin_details = get_bin_details(bin_id)
 
         if not bin_details:
-            return {
-                "error": f"Bin {bin_id} not found",
-                "bin_id": bin_id
-            }
+            return {"error": f"Bin {bin_id} not found", "bin_id": bin_id}
 
-        return {
-            "bin_id": bin_id,
-            **bin_details
-        }
+        return {"bin_id": bin_id, **bin_details}
 
     @validate_input(
         wafer_id={"required": False, "type": str},
@@ -105,11 +93,7 @@ class TestDataResource(BaseResource):
         yield_loss = 100.0 - test_data["yield_percent"]
 
         # Sort bins by count
-        sorted_bins = sorted(
-            test_data["failure_bins"].items(),
-            key=lambda x: x[1]["count"],
-            reverse=True
-        )
+        sorted_bins = sorted(test_data["failure_bins"].items(), key=lambda x: x[1]["count"], reverse=True)
 
         return {
             "wafer_id": test_data["wafer_id"],
@@ -120,8 +104,8 @@ class TestDataResource(BaseResource):
                     "bin_id": bin_id,
                     "count": data["count"],
                     "description": data["description"],
-                    "percent_of_total": round(100.0 * data["count"] / total_fails, 1)
+                    "percent_of_total": round(100.0 * data["count"] / total_fails, 1),
                 }
                 for bin_id, data in sorted_bins
-            ]
+            ],
         }

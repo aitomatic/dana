@@ -4,108 +4,117 @@ from typing import Literal
 Mode = Literal["cool", "heat"]
 
 # Fixed HVAC thermal capacities
-BASE_CAPACITY_W  = 2000.0   # W
-TURBO_CAPACITY_W = 2600.0   # W
-TURBO_MAX_MIN    = 30.0     # max Turbo time (minutes)
+BASE_CAPACITY_W = 2000.0  # W
+TURBO_CAPACITY_W = 2600.0  # W
+TURBO_MAX_MIN = 30.0  # max Turbo time (minutes)
+
 
 def _tau_minutes(C: float, UA_eff: float) -> float:
     return (C / UA_eff) / 60.0
 
+
 def _T_inf(T_out: float, UA_eff: float, Q_int: float, Q_HVAC: float) -> float:
     return T_out + (Q_int + Q_HVAC) / UA_eff
 
+
 def _time_to_target_minutes(T0: float, T_target: float, Tinf: float, tau_min: float) -> float:
-    num = (T_target - Tinf)
-    den = (T0 - Tinf)
+    num = T_target - Tinf
+    den = T0 - Tinf
     if num == 0:
         return 0.0
     ratio = num / den
-    
+
     # Only block targets below 60°F (15.56°C)
     min_achievable = 15.56  # 60°F in Celsius
     if T_target < min_achievable:
         raise ValueError("Target below 60°F minimum.")
-    
+
     # For targets above 60°F, allow them even if ratio <= 0
     # This means the HVAC can reach any temperature above 60°F
     if ratio <= 0:
         # Calculate time based on temperature difference and difficulty
         temp_diff = abs(T_target - T0)
-        
+
         # More realistic calculation:
         # - Base time: 5 minutes per degree (more realistic)
         # - Difficulty factor: exponential for larger drops
         # - Minimum: 30 min, Maximum: 300 min
         base_time = temp_diff * 5.0  # 5 minutes per degree is more realistic
-        
+
         # Add difficulty factor for larger temperature changes
         if temp_diff > 5:  # Start difficulty factor earlier
             difficulty_factor = 1.0 + (temp_diff - 5) * 0.2  # 20% extra per degree above 5
             base_time *= difficulty_factor
-        
+
         time_estimate = max(30.0, min(300.0, base_time))  # Higher minimum for realism
         # Convert to Fahrenheit for display
-        T0_F = (T0 * 9/5) + 32
-        T_target_F = (T_target * 9/5) + 32
-        temp_diff_F = temp_diff * 9/5
+        T0_F = (T0 * 9 / 5) + 32
+        T_target_F = (T_target * 9 / 5) + 32
+        temp_diff_F = temp_diff * 9 / 5
         print(f"      Fallback calculation: {T0_F:.1f}°F → {T_target_F:.1f}°F, diff={temp_diff_F:.1f}°F, time={time_estimate:.0f}min")
         return time_estimate
-    
+
     result = -tau_min * math.log(ratio)
     # Convert to Fahrenheit for display
-    T0_F = (T0 * 9/5) + 32
-    T_target_F = (T_target * 9/5) + 32
-    Tinf_F = (Tinf * 9/5) + 32
+    T0_F = (T0 * 9 / 5) + 32
+    T_target_F = (T_target * 9 / 5) + 32
+    Tinf_F = (Tinf * 9 / 5) + 32
     print(f"      Normal calculation: {T0_F:.1f}°F → {T_target_F:.1f}°F, ratio={ratio:.3f}, time={result:.0f}min")
     print(f"        Current: {T0_F:.1f}°F, Target: {T_target_F:.1f}°F, Tinf: {Tinf_F:.1f}°F")
     return result
 
+
 def _advance_temperature(T0: float, minutes: float, Tinf: float, tau_min: float) -> float:
     return Tinf + (T0 - Tinf) * math.exp(-minutes / tau_min)
+
 
 def hvac_time(
     T0_F: float,
     T_target_F: float,
     mode: Mode = "cool",
     *,
-    T_out_F: float = 95.0,   # °F, outdoor temperature
-    UA: float = 150.0,       # W/K, heat transfer coefficient
-    C: float = 5e5,          # J/K, thermal mass
-    Q_int: float = 200.0,    # W, internal heat
+    T_out_F: float = 95.0,  # °F, outdoor temperature
+    UA: float = 150.0,  # W/K, heat transfer coefficient
+    C: float = 5e5,  # J/K, thermal mass
+    Q_int: float = 200.0,  # W, internal heat
     fan_boost_UA: float = 1.0,
-    use_turbo: bool = False
+    use_turbo: bool = False,
 ) -> int:
     """
     Returns time (minutes) to reach T_target_F from T0_F.
     Turbo = 2600 W up to 30 minutes, then 2000 W base.
     All temps in °F (internally converted to K-deltas).
     """
+
     # Convert °F to K scale differences
-    def F_to_K(F: float) -> float: return (F - 32.0) * 5.0/9.0
-    def K_to_F(K: float) -> float: return K * 9.0/5.0 + 32.0
+    def F_to_K(F: float) -> float:
+        return (F - 32.0) * 5.0 / 9.0
+
+    def K_to_F(K: float) -> float:
+        return K * 9.0 / 5.0 + 32.0
 
     # Work in Kelvin-equivalent °C
-    T0     = F_to_K(T0_F)
-    T_out  = F_to_K(T_out_F)
+    T0 = F_to_K(T0_F)
+    T_out = F_to_K(T_out_F)
     T_goal = F_to_K(T_target_F)
 
     UA_eff = UA * fan_boost_UA
     tau_min = _tau_minutes(C, UA_eff)
 
-    sign   = -1.0 if mode == "cool" else  1.0
+    sign = -1.0 if mode == "cool" else 1.0
     Q_base = sign * BASE_CAPACITY_W
-    Q_tbo  = sign * TURBO_CAPACITY_W
+    Q_tbo = sign * TURBO_CAPACITY_W
 
     def _check(T_start, T_goal, Q_hvac):
         Tinf = _T_inf(T_out, UA_eff, Q_int, Q_hvac)
         if (T_goal - T_start) == 0:
             return Tinf, 0.0
-        
+
         # Only block targets below 60°F (15.56°C)
         min_achievable = 15.56  # 60°F in Celsius
         if T_goal < min_achievable:
             raise ValueError(f"Target {T_target_F}°F unreachable (below 60°F minimum).")
-        
+
         # For targets above 60°F, allow them even if they seem "unreachable"
         # The HVAC system should be able to reach any temperature above 60°F
         return Tinf, _time_to_target_minutes(T_start, T_goal, Tinf, tau_min)
@@ -131,12 +140,12 @@ def estimate_temp_at_time(
     current_indoor_temp_f: float,
     current_outdoor_temp_f: float,
     current_time: str,  # Format: "HH:MM"
-    target_time: str,   # Format: "HH:MM"
+    target_time: str,  # Format: "HH:MM"
     *,
-    ua: float = 150.0,       # W/K, heat transfer coefficient
-    c: float = 5e5,          # J/K, thermal mass
-    q_int: float = 200.0,    # W, internal heat
-    max_temp_diff: float = 15.0  # Max difference from outdoor temp (°F)
+    ua: float = 150.0,  # W/K, heat transfer coefficient
+    c: float = 5e5,  # J/K, thermal mass
+    q_int: float = 200.0,  # W, internal heat
+    max_temp_diff: float = 15.0,  # Max difference from outdoor temp (°F)
 ) -> float:
     """
     Estimate indoor temperature at a given time without HVAC running.
@@ -154,16 +163,17 @@ def estimate_temp_at_time(
     Returns:
         Estimated indoor temperature in °F at target time
     """
+
     def parse_time(time_str: str) -> int:
         """Convert HH:MM to minutes since midnight"""
-        hours, minutes = map(int, time_str.split(':'))
+        hours, minutes = map(int, time_str.split(":"))
         return hours * 60 + minutes
 
     def f_to_k(f: float) -> float:
-        return (f - 32.0) * 5.0/9.0
+        return (f - 32.0) * 5.0 / 9.0
 
     def k_to_f(k: float) -> float:
-        return k * 9.0/5.0 + 32.0
+        return k * 9.0 / 5.0 + 32.0
 
     # Parse times
     current_minutes = parse_time(current_time)
@@ -187,21 +197,19 @@ def estimate_temp_at_time(
     t_inf = _T_inf(t_outdoor, ua, q_int, 0.0)
 
     # Use the temperature advance function to estimate temperature
-    t_estimated = _advance_temperature(
-        t_indoor, time_diff_minutes, t_inf, tau_min
-    )
+    t_estimated = _advance_temperature(t_indoor, time_diff_minutes, t_inf, tau_min)
 
     # Convert back to Fahrenheit
     estimated_temp_f = k_to_f(t_estimated)
-    
+
     # Constrain the estimated temperature to be within reasonable bounds
     # of the outdoor temperature
     min_estimated = current_outdoor_temp_f - max_temp_diff
     max_estimated = current_outdoor_temp_f + max_temp_diff
-    
+
     # Apply constraints
     constrained_temp = max(min_estimated, min(estimated_temp_f, max_estimated))
-    
+
     return constrained_temp
 
 
@@ -210,18 +218,18 @@ def check_hvac_schedule(
     target_temp_f: float,
     use_turbo: bool,
     current_time: str,  # Format: "HH:MM"
-    target_time: str,   # Format: "HH:MM"
+    target_time: str,  # Format: "HH:MM"
     *,
     mode: Mode = "cool",
-    t_out_f: float = 95.0,   # °F, outdoor temperature
-    ua: float = 150.0,       # W/K, heat transfer coefficient
-    c: float = 5e5,          # J/K, thermal mass
-    q_int: float = 200.0,    # W, internal heat
-    fan_boost_ua: float = 1.0
+    t_out_f: float = 95.0,  # °F, outdoor temperature
+    ua: float = 150.0,  # W/K, heat transfer coefficient
+    c: float = 5e5,  # J/K, thermal mass
+    q_int: float = 200.0,  # W, internal heat
+    fan_boost_ua: float = 1.0,
 ) -> dict:
     """
     Check if HVAC can reach target temperature within the specified time window.
-    
+
     Args:
         current_temp_f: Current indoor temperature in °F
         target_temp_f: Target temperature in °F
@@ -234,7 +242,7 @@ def check_hvac_schedule(
         c: Thermal mass (J/K)
         q_int: Internal heat generation (W)
         fan_boost_ua: Fan boost multiplier for UA
-        
+
     Returns:
         Dictionary with keys:
         - reached_temp: "success" or "failed"
@@ -243,32 +251,39 @@ def check_hvac_schedule(
         - redundant_time_minutes: Extra time if target reached early (None if failed)
         - reached_time: Time when target would be reached (HH:MM format, None if failed)
     """
+
     def parse_time(time_str: str) -> int:
         """Convert HH:MM to minutes since midnight"""
-        hours, minutes = map(int, time_str.split(':'))
+        hours, minutes = map(int, time_str.split(":"))
         return hours * 60 + minutes
-    
+
     def minutes_to_time(minutes: int) -> str:
         """Convert minutes since midnight to HH:MM format"""
         hours = minutes // 60
         mins = minutes % 60
         return f"{hours:02d}:{mins:02d}"
-    
+
     # Parse times
     current_minutes = parse_time(current_time)
     target_minutes = parse_time(target_time)
-    
+
     # Calculate time available
     time_available_minutes = target_minutes - current_minutes
     if time_available_minutes < 0:
         time_available_minutes += 24 * 60  # Next day
-    
+
     # Calculate time needed using hvac_time function
     try:
         time_needed_minutes = hvac_time(
-            current_temp_f, target_temp_f, mode=mode,
-            T_out_F=t_out_f, UA=ua, C=c, Q_int=q_int,
-            fan_boost_UA=fan_boost_ua, use_turbo=use_turbo
+            current_temp_f,
+            target_temp_f,
+            mode=mode,
+            T_out_F=t_out_f,
+            UA=ua,
+            C=c,
+            Q_int=q_int,
+            fan_boost_UA=fan_boost_ua,
+            use_turbo=use_turbo,
         )
     except ValueError as e:
         # Target temperature is unreachable (physically impossible)
@@ -278,25 +293,25 @@ def check_hvac_schedule(
             "time_available_minutes": time_available_minutes,
             "redundant_time_minutes": None,
             "reached_time": None,
-            "error": str(e)
+            "error": str(e),
         }
-    
+
     # Check if we can reach target in time
     if time_needed_minutes <= time_available_minutes:
         # Success case
         reached_minutes = current_minutes + time_needed_minutes
         if reached_minutes >= 24 * 60:
             reached_minutes -= 24 * 60  # Next day
-        
+
         redundant_time = time_available_minutes - time_needed_minutes
-        
+
         return {
             "reached_temp": "success",
             "time_needed_minutes": time_needed_minutes,
             "time_available_minutes": time_available_minutes,
             "redundant_time_minutes": redundant_time,
             "reached_time": minutes_to_time(reached_minutes),
-            "error": None
+            "error": None,
         }
     else:
         # Failed case - not enough time
@@ -306,7 +321,7 @@ def check_hvac_schedule(
             "time_available_minutes": time_available_minutes,
             "redundant_time_minutes": None,
             "reached_time": None,
-            "error": f"Need {time_needed_minutes} min, only {time_available_minutes} min available"
+            "error": f"Need {time_needed_minutes} min, only {time_available_minutes} min available",
         }
 
 
@@ -317,24 +332,24 @@ def calculate_plan_cost(
     plan: list,  # List of action dictionaries
     *,
     mode: Mode = "cool",
-    ua: float = 150.0,       # W/K, heat transfer coefficient
-    c: float = 5e5,          # J/K, thermal mass
-    q_int: float = 200.0,    # W, internal heat
+    ua: float = 150.0,  # W/K, heat transfer coefficient
+    c: float = 5e5,  # J/K, thermal mass
+    q_int: float = 200.0,  # W, internal heat
     fan_boost_ua: float = 1.0,
-    base_power_w: float = 2000.0,    # W, base HVAC power consumption
+    base_power_w: float = 2000.0,  # W, base HVAC power consumption
     turbo_power_w: float = 2600.0,  # W, turbo HVAC power consumption
-    turbo_max_min: float = 30.0     # max turbo time (minutes)
+    turbo_max_min: float = 30.0,  # max turbo time (minutes)
 ) -> dict:
     """
     Calculate total electricity cost for a HVAC action plan.
-    
+
     Args:
         current_indoor_temp_f: Current indoor temperature in °F
         outdoor_temp_f: Outdoor temperature in °F
         current_time: Current time in "HH:MM" format
         plan: List of action dictionaries with keys:
             - time_on: Start time in "HH:MM" format
-            - time_off: End time in "HH:MM" format  
+            - time_off: End time in "HH:MM" format
             - use_turbo: Boolean for turbo mode
         mode: HVAC mode ("cool" or "heat")
         ua: Heat transfer coefficient (W/K)
@@ -344,24 +359,25 @@ def calculate_plan_cost(
         base_power_w: Base HVAC power consumption (W)
         turbo_power_w: Turbo HVAC power consumption (W)
         turbo_max_min: Maximum turbo time (minutes)
-        
+
     Returns:
         Dictionary with:
         - total_cost_kwh: Total electricity consumption in kWh
         - action_details: List of detailed cost breakdown per action
         - final_temp_f: Final temperature after all actions
     """
+
     def parse_time(time_str: str) -> int:
         """Convert HH:MM to minutes since midnight"""
-        hours, minutes = map(int, time_str.split(':'))
+        hours, minutes = map(int, time_str.split(":"))
         return hours * 60 + minutes
-    
+
     def minutes_to_time(minutes: int) -> str:
         """Convert minutes since midnight to HH:MM format"""
         hours = minutes // 60
         mins = minutes % 60
         return f"{hours:02d}:{mins:02d}"
-    
+
     def time_diff_minutes(start_time: str, end_time: str) -> int:
         """Calculate time difference in minutes"""
         start_min = parse_time(start_time)
@@ -370,85 +386,77 @@ def calculate_plan_cost(
         if diff < 0:
             diff += 24 * 60  # Next day
         return diff
-    
+
     # Initialize tracking variables
     current_temp = current_indoor_temp_f
     current_time_min = parse_time(current_time)
     total_cost_kwh = 0.0
     action_details = []
-    
+
     for i, action in enumerate(plan):
         time_on = action["time_on"]
         time_off = action["time_off"]
         use_turbo = action["use_turbo"]
-        
+
         # Check for gap between previous action and current action
         if i > 0:
-            prev_action = plan[i-1]
+            prev_action = plan[i - 1]
             prev_time_off = prev_action["time_off"]
-            
+
             # If there's a gap, estimate temperature change during off period
             if prev_time_off != time_on:
                 print(f"    Gap detected: {prev_time_off} to {time_on}")
                 print(f"    Estimating temp change from {current_temp:.1f}°F...")
-                gap_temp = estimate_temp_at_time(
-                    current_temp, outdoor_temp_f, prev_time_off, time_on,
-                    ua=ua, c=c, q_int=q_int
-                )
+                gap_temp = estimate_temp_at_time(current_temp, outdoor_temp_f, prev_time_off, time_on, ua=ua, c=c, q_int=q_int)
                 print(f"    Estimated temp after gap: {gap_temp:.1f}°F")
                 current_temp = gap_temp
             else:
                 print(f"    No gap: {prev_time_off} = {time_on}")
-        
+
         # Calculate action duration
         duration_minutes = time_diff_minutes(time_on, time_off)
-        
+
         # Calculate power consumption for this action
         if use_turbo:
             # Turbo phase (up to turbo_max_min) + base phase
             turbo_duration = min(duration_minutes, turbo_max_min)
             base_duration = max(0, duration_minutes - turbo_max_min)
-            
+
             turbo_cost_kwh = (turbo_power_w * turbo_duration) / (1000 * 60)  # Convert to kWh
             base_cost_kwh = (base_power_w * base_duration) / (1000 * 60)
             total_action_cost_kwh = turbo_cost_kwh + base_cost_kwh
         else:
             # Base power only
             total_action_cost_kwh = (base_power_w * duration_minutes) / (1000 * 60)
-        
+
         # Update total cost
         total_cost_kwh += total_action_cost_kwh
-        
+
         # Store action details
-        action_details.append({
-            "action_index": i,
-            "time_on": time_on,
-            "time_off": time_off,
-            "use_turbo": use_turbo,
-            "duration_minutes": duration_minutes,
-            "cost_kwh": total_action_cost_kwh,
-            "start_temp_f": current_temp
-        })
-        
+        action_details.append(
+            {
+                "action_index": i,
+                "time_on": time_on,
+                "time_off": time_off,
+                "use_turbo": use_turbo,
+                "duration_minutes": duration_minutes,
+                "cost_kwh": total_action_cost_kwh,
+                "start_temp_f": current_temp,
+            }
+        )
+
         # Update current time and temperature for next iteration
         current_time_min = parse_time(time_off)
-        
+
         # Estimate final temperature after this action
         # This is a simplified approach - in reality you'd need to track the target temp
         # For now, we'll just use the estimate_temp_at_time function
         if i < len(plan) - 1:  # Not the last action
             next_action = plan[i + 1]
             next_time_on = next_action["time_on"]
-            current_temp = estimate_temp_at_time(
-                current_temp, outdoor_temp_f, time_off, next_time_on,
-                ua=ua, c=c, q_int=q_int
-            )
-    
-    return {
-        "total_cost_kwh": total_cost_kwh,
-        "action_details": action_details,
-        "final_temp_f": current_temp
-    }
+            current_temp = estimate_temp_at_time(current_temp, outdoor_temp_f, time_off, next_time_on, ua=ua, c=c, q_int=q_int)
+
+    return {"total_cost_kwh": total_cost_kwh, "action_details": action_details, "final_temp_f": current_temp}
 
 
 def validate_plan_success(
@@ -459,24 +467,24 @@ def validate_plan_success(
     target_temps: list,  # List of target temperatures for each action
     *,
     mode: Mode = "cool",
-    ua: float = 150.0,       # W/K, heat transfer coefficient
-    c: float = 5e5,          # J/K, thermal mass
-    q_int: float = 200.0,    # W, internal heat
+    ua: float = 150.0,  # W/K, heat transfer coefficient
+    c: float = 5e5,  # J/K, thermal mass
+    q_int: float = 200.0,  # W, internal heat
     fan_boost_ua: float = 1.0,
-    base_power_w: float = 2000.0,    # W, base HVAC power consumption
+    base_power_w: float = 2000.0,  # W, base HVAC power consumption
     turbo_power_w: float = 2600.0,  # W, turbo HVAC power consumption
-    turbo_max_min: float = 30.0     # max turbo time (minutes)
+    turbo_max_min: float = 30.0,  # max turbo time (minutes)
 ) -> dict:
     """
     Validate if a HVAC plan can successfully reach all target temperatures.
-    
+
     Args:
         current_indoor_temp_f: Current indoor temperature in °F
         outdoor_temp_f: Outdoor temperature in °F
         current_time: Current time in "HH:MM" format
         plan: List of action dictionaries with keys:
             - time_on: Start time in "HH:MM" format
-            - time_off: End time in "HH:MM" format  
+            - time_off: End time in "HH:MM" format
             - use_turbo: Boolean for turbo mode
         target_temps: List of target temperatures for each action
         mode: HVAC mode ("cool" or "heat")
@@ -487,7 +495,7 @@ def validate_plan_success(
         base_power_w: Base HVAC power consumption (W)
         turbo_power_w: Turbo HVAC power consumption (W)
         turbo_max_min: Maximum turbo time (minutes)
-        
+
     Returns:
         Dictionary with:
         - plan_success: "success" or "failed"
@@ -496,11 +504,12 @@ def validate_plan_success(
         - failed_actions: List of actions that failed
         - final_temp_f: Final temperature after all actions
     """
+
     def parse_time(time_str: str) -> int:
         """Convert HH:MM to minutes since midnight"""
-        hours, minutes = map(int, time_str.split(':'))
+        hours, minutes = map(int, time_str.split(":"))
         return hours * 60 + minutes
-    
+
     def time_diff_minutes(start_time: str, end_time: str) -> int:
         """Calculate time difference in minutes"""
         start_min = parse_time(start_time)
@@ -509,7 +518,7 @@ def validate_plan_success(
         if diff < 0:
             diff += 24 * 60  # Next day
         return diff
-    
+
     # Validate input lengths match
     if len(plan) != len(target_temps):
         return {
@@ -518,37 +527,34 @@ def validate_plan_success(
             "action_results": [],
             "failed_actions": [],
             "final_temp_f": current_indoor_temp_f,
-            "error": f"Plan has {len(plan)} actions but {len(target_temps)} target temperatures"
+            "error": f"Plan has {len(plan)} actions but {len(target_temps)} target temperatures",
         }
-    
+
     # Initialize tracking variables
     current_temp = current_indoor_temp_f
     current_time_min = parse_time(current_time)
     total_cost_kwh = 0.0
     action_results = []
     failed_actions = []
-    
-    for i, (action, target_temp) in enumerate(zip(plan, target_temps)):
+
+    for i, (action, target_temp) in enumerate(zip(plan, target_temps, strict=False)):
         time_on = action["time_on"]
         time_off = action["time_off"]
         use_turbo = action["use_turbo"]
-        
+
         # Check for gap between previous action and current action
         if i > 0:
-            prev_action = plan[i-1]
+            prev_action = plan[i - 1]
             prev_time_off = prev_action["time_off"]
-            
+
             # If there's a gap, estimate temperature change during off period
             if prev_time_off != time_on:
                 print(f"    Gap detected: {prev_time_off} to {time_on}")
                 print(f"    Temp before gap: {current_temp:.1f}°F")
-                gap_temp = estimate_temp_at_time(
-                    current_temp, outdoor_temp_f, prev_time_off, time_on,
-                    ua=ua, c=c, q_int=q_int
-                )
+                gap_temp = estimate_temp_at_time(current_temp, outdoor_temp_f, prev_time_off, time_on, ua=ua, c=c, q_int=q_int)
                 print(f"    Temp after gap: {gap_temp:.1f}°F")
                 current_temp = gap_temp
-        
+
         # Check if this action can reach target temperature
         schedule_result = check_hvac_schedule(
             current_temp_f=current_temp,
@@ -561,9 +567,9 @@ def validate_plan_success(
             ua=ua,
             c=c,
             q_int=q_int,
-            fan_boost_ua=fan_boost_ua
+            fan_boost_ua=fan_boost_ua,
         )
-        
+
         # Calculate cost for this action
         cost_result = calculate_plan_cost(
             current_indoor_temp_f=current_temp,
@@ -577,9 +583,9 @@ def validate_plan_success(
             fan_boost_ua=fan_boost_ua,
             base_power_w=base_power_w,
             turbo_power_w=turbo_power_w,
-            turbo_max_min=turbo_max_min
+            turbo_max_min=turbo_max_min,
         )
-        
+
         # Store action result
         action_result = {
             "action_index": i,
@@ -594,24 +600,26 @@ def validate_plan_success(
             "time_available_minutes": schedule_result["time_available_minutes"],
             "reached_time": schedule_result["reached_time"],
             "redundant_time_minutes": schedule_result["redundant_time_minutes"],
-            "error": schedule_result["error"]
+            "error": schedule_result["error"],
         }
-        
+
         action_results.append(action_result)
-        
+
         # Check if this action failed
         if schedule_result["reached_temp"] == "failed":
-            failed_actions.append({
-                "action_index": i,
-                "time_on": time_on,
-                "time_off": time_off,
-                "target_temp_f": target_temp,
-                "error": schedule_result["error"]
-            })
-        
+            failed_actions.append(
+                {
+                    "action_index": i,
+                    "time_on": time_on,
+                    "time_off": time_off,
+                    "target_temp_f": target_temp,
+                    "error": schedule_result["error"],
+                }
+            )
+
         # Update total cost
         total_cost_kwh += cost_result["total_cost_kwh"]
-        
+
         # Update current temperature for next iteration
         if schedule_result["reached_temp"] == "success":
             # If successful, assume we reach the target temperature
@@ -620,7 +628,7 @@ def validate_plan_success(
             # If failed, calculate partial cooling achieved
             # Use the HVAC system to partially cool the room
             duration_minutes = time_diff_minutes(time_on, time_off)
-            
+
             # Calculate what temperature would be achieved with partial cooling
             # This is a simplified approach - in reality you'd need to track the actual cooling
             # For now, estimate based on the time available vs time needed
@@ -633,18 +641,18 @@ def validate_plan_success(
             else:
                 # If we can't calculate, use a conservative estimate
                 current_temp = current_temp - 2.0  # Assume 2°F cooling achieved
-            
+
             print(f"    Action {i} failed, temp after action: {current_temp:.1f}°F")
-    
+
     # Determine overall plan success
     plan_success = "success" if len(failed_actions) == 0 else "failed"
-    
+
     return {
         "plan_success": plan_success,
         "total_cost_kwh": total_cost_kwh,
         "action_results": action_results,
         "failed_actions": failed_actions,
-        "final_temp_f": current_temp
+        "final_temp_f": current_temp,
     }
 
 
@@ -653,22 +661,18 @@ def validate_plan_success(
 # -------------------------
 if __name__ == "__main__":
     # COOLING: 86 → 77 °F (outdoor 95 °F)
-    print("Cool + Turbo (86→77, out=95):",
-          hvac_time(86, 77, mode="cool", T_out_F=95, use_turbo=True))
+    print("Cool + Turbo (86→77, out=95):", hvac_time(86, 77, mode="cool", T_out_F=95, use_turbo=True))
 
-    print("Cool + NoTurbo (86→77, out=95):",
-          hvac_time(86, 77, mode="cool", T_out_F=95, use_turbo=False))
+    print("Cool + NoTurbo (86→77, out=95):", hvac_time(86, 77, mode="cool", T_out_F=95, use_turbo=False))
 
     # HEATING: 64 → 75 °F (outdoor 50 °F)
-    print("Heat + Turbo (64→75, out=50):",
-          hvac_time(64, 75, mode="heat", T_out_F=50, use_turbo=True))
+    print("Heat + Turbo (64→75, out=50):", hvac_time(64, 75, mode="heat", T_out_F=50, use_turbo=True))
 
-    print("Heat + NoTurbo (64→75, out=50):",
-          hvac_time(64, 75, mode="heat", T_out_F=50, use_turbo=False))
-    
-    print("\n" + "="*50)
+    print("Heat + NoTurbo (64→75, out=50):", hvac_time(64, 75, mode="heat", T_out_F=50, use_turbo=False))
+
+    print("\n" + "=" * 50)
     print("Temperature Estimation Examples:")
-    print("="*50)
+    print("=" * 50)
 
     # Example 1: Estimate temperature in 2 hours
     current_temp = 75.0
@@ -676,246 +680,204 @@ if __name__ == "__main__":
     current_time = "14:00"
     target_time = "15:00"
 
-    estimated_temp = estimate_temp_at_time(
-        current_temp, outdoor_temp, current_time, target_time
-    )
-    print(f"Current: {current_temp}°F at {current_time}, "
-          f"Outdoor: {outdoor_temp}°F")
+    estimated_temp = estimate_temp_at_time(current_temp, outdoor_temp, current_time, target_time)
+    print(f"Current: {current_temp}°F at {current_time}, Outdoor: {outdoor_temp}°F")
     print(f"Estimated temp at {target_time}: {estimated_temp:.1f}°F")
 
     # Example 2: Estimate temperature in 4 hours
     target_time = "18:00"
-    estimated_temp = estimate_temp_at_time(
-        current_temp, outdoor_temp, current_time, target_time
-    )
+    estimated_temp = estimate_temp_at_time(current_temp, outdoor_temp, current_time, target_time)
     print(f"Estimated temp at {target_time}: {estimated_temp:.1f}°F")
 
     # Example 3: Different scenario - cooler outdoor temp
     outdoor_temp = 70.0
-    estimated_temp = estimate_temp_at_time(
-        current_temp, outdoor_temp, current_time, target_time
-    )
-    print(f"With cooler outdoor temp ({outdoor_temp}°F): "
-          f"{estimated_temp:.1f}°F")
-    
+    estimated_temp = estimate_temp_at_time(current_temp, outdoor_temp, current_time, target_time)
+    print(f"With cooler outdoor temp ({outdoor_temp}°F): {estimated_temp:.1f}°F")
+
     # Example 4: Test constraint with extreme case
     print("\nTesting constraint with extreme case:")
     extreme_outdoor = 50.0  # Very cold outdoor
     extreme_current = 80.0  # Very warm indoor
     estimated_temp = estimate_temp_at_time(
-        extreme_current, extreme_outdoor, current_time, target_time,
-        max_temp_diff=10.0  # Tighter constraint
+        extreme_current,
+        extreme_outdoor,
+        current_time,
+        target_time,
+        max_temp_diff=10.0,  # Tighter constraint
     )
-    print(f"Extreme case (indoor={extreme_current}°F, outdoor={extreme_outdoor}°F): "
-          f"{estimated_temp:.1f}°F")
-    
-    print("\n" + "="*50)
+    print(f"Extreme case (indoor={extreme_current}°F, outdoor={extreme_outdoor}°F): {estimated_temp:.1f}°F")
+
+    print("\n" + "=" * 50)
     print("HVAC Schedule Check Examples:")
-    print("="*50)
-    
+    print("=" * 50)
+
     # Example 1: Success case with turbo
     result = check_hvac_schedule(
-        current_temp_f=86.0,
-        target_temp_f=77.0,
-        use_turbo=True,
-        current_time="14:00",
-        target_time="15:30",
-        mode="cool",
-        t_out_f=95.0
+        current_temp_f=86.0, target_temp_f=77.0, use_turbo=True, current_time="14:00", target_time="15:30", mode="cool", t_out_f=95.0
     )
-    print(f"Success case (86→77°F, turbo, 14:00→15:30):")
+    print("Success case (86→77°F, turbo, 14:00→15:30):")
     print(f"  Result: {result['reached_temp']}")
     print(f"  Time needed: {result['time_needed_minutes']} min")
     print(f"  Time available: {result['time_available_minutes']} min")
-    if result['reached_temp'] == 'success':
+    if result["reached_temp"] == "success":
         print(f"  Reached at: {result['reached_time']}")
         print(f"  Redundant time: {result['redundant_time_minutes']} min")
-    
+
     # Example 2: Failed case - not enough time
     result = check_hvac_schedule(
-        current_temp_f=86.0,
-        target_temp_f=77.0,
-        use_turbo=False,
-        current_time="14:00",
-        target_time="14:30",
-        mode="cool",
-        t_out_f=95.0
+        current_temp_f=86.0, target_temp_f=77.0, use_turbo=False, current_time="14:00", target_time="14:30", mode="cool", t_out_f=95.0
     )
-    print(f"\nFailed case (86→77°F, no turbo, 14:00→14:30):")
+    print("\nFailed case (86→77°F, no turbo, 14:00→14:30):")
     print(f"  Result: {result['reached_temp']}")
     print(f"  Time needed: {result['time_needed_minutes']} min")
     print(f"  Time available: {result['time_available_minutes']} min")
-    if result['error']:
+    if result["error"]:
         print(f"  Error: {result['error']}")
-    
+
     # Example 3: Heating case
     result = check_hvac_schedule(
-        current_temp_f=64.0,
-        target_temp_f=75.0,
-        use_turbo=True,
-        current_time="08:00",
-        target_time="09:00",
-        mode="heat",
-        t_out_f=50.0
+        current_temp_f=64.0, target_temp_f=75.0, use_turbo=True, current_time="08:00", target_time="09:00", mode="heat", t_out_f=50.0
     )
-    print(f"\nHeating case (64→75°F, turbo, 08:00→09:00):")
+    print("\nHeating case (64→75°F, turbo, 08:00→09:00):")
     print(f"  Result: {result['reached_temp']}")
     print(f"  Time needed: {result['time_needed_minutes']} min")
     print(f"  Time available: {result['time_available_minutes']} min")
-    if result['reached_temp'] == 'success':
+    if result["reached_temp"] == "success":
         print(f"  Reached at: {result['reached_time']}")
         print(f"  Redundant time: {result['redundant_time_minutes']} min")
-    
-    print("\n" + "="*50)
+
+    print("\n" + "=" * 50)
     print("HVAC Plan Cost Calculation Examples:")
-    print("="*50)
-    
+    print("=" * 50)
+
     # Example 1: Simple plan with gaps
     plan1 = [
         {"time_on": "14:00", "time_off": "14:30", "use_turbo": True},
         {"time_on": "15:00", "time_off": "15:45", "use_turbo": False},
-        {"time_on": "16:30", "time_off": "17:00", "use_turbo": True}
+        {"time_on": "16:30", "time_off": "17:00", "use_turbo": True},
     ]
-    
-    result1 = calculate_plan_cost(
-        current_indoor_temp_f=86.0,
-        outdoor_temp_f=95.0,
-        current_time="13:30",
-        plan=plan1
-    )
-    
+
+    result1 = calculate_plan_cost(current_indoor_temp_f=86.0, outdoor_temp_f=95.0, current_time="13:30", plan=plan1)
+
     print("Plan 1: Multiple actions with gaps")
     print(f"  Total cost: {result1['total_cost_kwh']:.3f} kWh")
     print(f"  Final temp: {result1['final_temp_f']:.1f}°F")
     print("  Action breakdown:")
-    for action in result1['action_details']:
-        print(f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
-              f"({action['duration_minutes']}min, turbo={action['use_turbo']}) "
-              f"= {action['cost_kwh']:.3f} kWh")
-    
+    for action in result1["action_details"]:
+        print(
+            f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
+            f"({action['duration_minutes']}min, turbo={action['use_turbo']}) "
+            f"= {action['cost_kwh']:.3f} kWh"
+        )
+
     # Example 2: Continuous plan (no gaps)
-    plan2 = [
-        {"time_on": "14:00", "time_off": "14:30", "use_turbo": True},
-        {"time_on": "14:30", "time_off": "15:15", "use_turbo": False}
-    ]
-    
-    result2 = calculate_plan_cost(
-        current_indoor_temp_f=86.0,
-        outdoor_temp_f=95.0,
-        current_time="13:30",
-        plan=plan2
-    )
-    
-    print(f"\nPlan 2: Continuous actions (no gaps)")
+    plan2 = [{"time_on": "14:00", "time_off": "14:30", "use_turbo": True}, {"time_on": "14:30", "time_off": "15:15", "use_turbo": False}]
+
+    result2 = calculate_plan_cost(current_indoor_temp_f=86.0, outdoor_temp_f=95.0, current_time="13:30", plan=plan2)
+
+    print("\nPlan 2: Continuous actions (no gaps)")
     print(f"  Total cost: {result2['total_cost_kwh']:.3f} kWh")
     print(f"  Final temp: {result2['final_temp_f']:.1f}°F")
-    
+
     # Example 3: Test turbo for 60 minutes (exceeds turbo limit)
     plan3 = [
         {"time_on": "14:00", "time_off": "15:00", "use_turbo": True}  # 60 minutes with turbo
     ]
-    
-    result3 = calculate_plan_cost(
-        current_indoor_temp_f=86.0,
-        outdoor_temp_f=95.0,
-        current_time="13:30",
-        plan=plan3
-    )
-    
-    print(f"\nPlan 3: Turbo for 60 minutes (exceeds 30min turbo limit)")
+
+    result3 = calculate_plan_cost(current_indoor_temp_f=86.0, outdoor_temp_f=95.0, current_time="13:30", plan=plan3)
+
+    print("\nPlan 3: Turbo for 60 minutes (exceeds 30min turbo limit)")
     print(f"  Total cost: {result3['total_cost_kwh']:.3f} kWh")
     print(f"  Final temp: {result3['final_temp_f']:.1f}°F")
     print("  Action breakdown:")
-    for action in result3['action_details']:
-        print(f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
-              f"({action['duration_minutes']}min, turbo={action['use_turbo']}) "
-              f"= {action['cost_kwh']:.3f} kWh")
-        print(f"      Breakdown: 30min turbo (2600W) + 30min base (2000W)")
+    for action in result3["action_details"]:
+        print(
+            f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
+            f"({action['duration_minutes']}min, turbo={action['use_turbo']}) "
+            f"= {action['cost_kwh']:.3f} kWh"
+        )
+        print("      Breakdown: 30min turbo (2600W) + 30min base (2000W)")
         print(f"      Turbo cost: {(2600 * 30) / (1000 * 60):.3f} kWh")
         print(f"      Base cost: {(2000 * 30) / (1000 * 60):.3f} kWh")
-    
-    print("\n" + "="*50)
+
+    print("\n" + "=" * 50)
     print("HVAC Plan Validation Examples:")
-    print("="*50)
-    
+    print("=" * 50)
+
     # Example 1: Successful plan
     plan_success = [
         {"time_on": "14:00", "time_off": "14:30", "use_turbo": True},
-        {"time_on": "15:00", "time_off": "15:45", "use_turbo": False}
+        {"time_on": "15:00", "time_off": "15:45", "use_turbo": False},
     ]
     target_temps_success = [77.0, 75.0]  # Target temperatures for each action
-    
+
     result_success = validate_plan_success(
-        current_indoor_temp_f=86.0,
-        outdoor_temp_f=95.0,
-        current_time="13:30",
-        plan=plan_success,
-        target_temps=target_temps_success
+        current_indoor_temp_f=86.0, outdoor_temp_f=95.0, current_time="13:30", plan=plan_success, target_temps=target_temps_success
     )
-    
+
     print("Plan Success: Multiple actions with targets")
     print(f"  Overall result: {result_success['plan_success']}")
     print(f"  Total cost: {result_success['total_cost_kwh']:.3f} kWh")
     print(f"  Final temp: {result_success['final_temp_f']:.1f}°F")
     print("  Action details:")
-    for action in result_success['action_results']:
-        print(f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
-              f"target={action['target_temp_f']}°F, result={action['schedule_success']}")
-        if action['schedule_success'] == 'success':
-            print(f"      Reached at: {action['reached_time']}, "
-                  f"redundant: {action['redundant_time_minutes']} min")
+    for action in result_success["action_results"]:
+        print(
+            f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
+            f"target={action['target_temp_f']}°F, result={action['schedule_success']}"
+        )
+        if action["schedule_success"] == "success":
+            print(f"      Reached at: {action['reached_time']}, redundant: {action['redundant_time_minutes']} min")
         else:
             print(f"      Error: {action['error']}")
-    
+
     # Example 2: Failed plan (unrealistic targets)
     plan_fail = [
         {"time_on": "14:00", "time_off": "14:15", "use_turbo": False},  # Only 15 min, no turbo
-        {"time_on": "14:30", "time_off": "14:45", "use_turbo": False}   # Only 15 min, no turbo
+        {"time_on": "14:30", "time_off": "14:45", "use_turbo": False},  # Only 15 min, no turbo
     ]
     target_temps_fail = [70.0, 65.0]  # Very aggressive targets
-    
+
     result_fail = validate_plan_success(
-        current_indoor_temp_f=86.0,
-        outdoor_temp_f=95.0,
-        current_time="13:30",
-        plan=plan_fail,
-        target_temps=target_temps_fail
+        current_indoor_temp_f=86.0, outdoor_temp_f=95.0, current_time="13:30", plan=plan_fail, target_temps=target_temps_fail
     )
-    
-    print(f"\nPlan Fail: Unrealistic targets")
+
+    print("\nPlan Fail: Unrealistic targets")
     print(f"  Overall result: {result_fail['plan_success']}")
     print(f"  Total cost: {result_fail['total_cost_kwh']:.3f} kWh")
     print(f"  Final temp: {result_fail['final_temp_f']:.1f}°F")
     print(f"  Failed actions: {len(result_fail['failed_actions'])}")
-    for failed in result_fail['failed_actions']:
-        print(f"    Action {failed['action_index']}: {failed['time_on']}-{failed['time_off']} "
-              f"target={failed['target_temp_f']}°F - {failed['error']}")
-    
+    for failed in result_fail["failed_actions"]:
+        print(
+            f"    Action {failed['action_index']}: {failed['time_on']}-{failed['time_off']} "
+            f"target={failed['target_temp_f']}°F - {failed['error']}"
+        )
+
     # Example 3: Successful plan with realistic targets and enough time
     plan_success_real = [
         {"time_on": "14:00", "time_off": "15:00", "use_turbo": True},  # 60 min with turbo
-        {"time_on": "15:30", "time_off": "16:45", "use_turbo": False}  # 75 min base (more time)
+        {"time_on": "15:30", "time_off": "16:45", "use_turbo": False},  # 75 min base (more time)
     ]
     target_temps_success_real = [80.0, 78.0]  # More realistic targets
-    
+
     result_success_real = validate_plan_success(
         current_indoor_temp_f=86.0,
         outdoor_temp_f=95.0,
         current_time="13:30",
         plan=plan_success_real,
-        target_temps=target_temps_success_real
+        target_temps=target_temps_success_real,
     )
-    
-    print(f"\nPlan Success Real: Realistic targets with enough time")
+
+    print("\nPlan Success Real: Realistic targets with enough time")
     print(f"  Overall result: {result_success_real['plan_success']}")
     print(f"  Total cost: {result_success_real['total_cost_kwh']:.3f} kWh")
     print(f"  Final temp: {result_success_real['final_temp_f']:.1f}°F")
     print("  Action details:")
-    for action in result_success_real['action_results']:
-        print(f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
-              f"target={action['target_temp_f']}°F, result={action['schedule_success']}")
-        if action['schedule_success'] == 'success':
-            print(f"      Reached at: {action['reached_time']}, "
-                  f"redundant: {action['redundant_time_minutes']} min")
+    for action in result_success_real["action_results"]:
+        print(
+            f"    Action {action['action_index']}: {action['time_on']}-{action['time_off']} "
+            f"target={action['target_temp_f']}°F, result={action['schedule_success']}"
+        )
+        if action["schedule_success"] == "success":
+            print(f"      Reached at: {action['reached_time']}, redundant: {action['redundant_time_minutes']} min")
         else:
             print(f"      Error: {action['error']}")

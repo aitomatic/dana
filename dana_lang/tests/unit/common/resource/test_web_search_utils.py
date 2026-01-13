@@ -7,6 +7,7 @@ import pytest
 from dana_lang.common.sys_resource.web_search.utils.content_processor import ContentProcessor
 from dana_lang.common.sys_resource.web_search.utils.summarizer import ContentSummarizer
 
+
 class TestContentProcessor:
     """Tests for ContentProcessor utility."""
 

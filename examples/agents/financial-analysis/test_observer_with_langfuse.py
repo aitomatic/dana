@@ -1,12 +1,10 @@
 from dana.core.knowledge.prompts.codecs import CSXMLCodec
-from dana.core.agent.components.observer import ObserverProtocol
 from dana.config.storage_config import LangfuseStorageConfig
 from dana.repositories import LangfusePromptRepository
 from dana.repositories import RepositoryFactory, RepositoryType
 
 import sys
 from pathlib import Path
-from typing import Any
 
 sys.path.append("examples/agents/financial-analysis")
 
@@ -77,7 +75,7 @@ print()
 result = coordinator.query(
     session_id=SESSION_ID,
     message="Create a comprehensive financial health report for AMD based on the data in the data directory. "
-    "The report should include liquidity analysis, profitability analysis, leverage analysis, and efficiency analysis."
+    "The report should include liquidity analysis, profitability analysis, leverage analysis, and efficiency analysis.",
 )
 
 # Observe final state
@@ -92,9 +90,9 @@ print(f"  Folder: {final_observation['folder_path']}")
 print(f"  Files: {final_observation['file_count']}")
 print(f"  Total Size: {final_observation['total_size_kb']} KB ({final_observation['total_size_mb']} MB)")
 print()
-if final_observation['files']:
+if final_observation["files"]:
     print("  Files:")
-    for file_info in final_observation['files']:
+    for file_info in final_observation["files"]:
         print(f"    - {file_info['path']}: {file_info['size_kb']} KB")
 print("=" * 80)
 

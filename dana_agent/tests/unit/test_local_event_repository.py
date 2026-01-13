@@ -120,13 +120,14 @@ class TestLocalEventRepositoryInitialization:
             agent = MockAgent(storage_config=config)
             repository = LocalEventRepository(config, agent)
 
-            # Path uses object_id instead of class name
             # Path should be: {codec_prefix}/{agent.object_id}/events
+            # Check path structure (doesn't need to exist yet)
             path_str = str(repository._events_path)
             assert "TestCodec" in path_str
-            assert agent.object_id in path_str  # Uses object_id not class name
+            assert agent.object_id in path_str
             assert "events" in path_str
-            assert repository._events_path.name == "events"  # Cross-platform check
+            # Platform-independent check - path name should be "events"
+            assert repository._events_path.name == "events"
         finally:
             shutil.rmtree(temp_dir)
 
@@ -226,8 +227,8 @@ class TestLocalEventRepositorySave:
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_save_appends_to_existing_file(self):
-        """Test save appends to existing events.jsonl file."""
+    def test_save_overwrites_existing_file(self):
+        """Test save overwrites existing events.jsonl file."""
         temp_dir = tempfile.mkdtemp()
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
@@ -240,14 +241,18 @@ class TestLocalEventRepositorySave:
             events1 = [Event(type="observation", data={"event": 1}, timestamp=datetime.now())]
             repository.save(session_id, events1)
 
-            # Second save (should append)
+            # Second save (should overwrite, not append)
             events2 = [Event(type="observation", data={"event": 2}, timestamp=datetime.now())]
             repository.save(session_id, events2)
 
             events_file = repository._events_path / session_id / "events.jsonl"
             with open(events_file) as f:
                 lines = f.readlines()
-                assert len(lines) == 2
+                # Should only have events from second save (overwrites first)
+                assert len(lines) == 1
+                import json
+                event_data = json.loads(lines[0])
+                assert event_data["data"] == {"event": 2}
         finally:
             shutil.rmtree(temp_dir)
 

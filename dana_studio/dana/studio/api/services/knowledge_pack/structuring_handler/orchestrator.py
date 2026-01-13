@@ -142,7 +142,9 @@ class KPStructuringOrchestrator(AbstractHandler):
         )
 
         # Question bank generation tool
-        from dana.studio.api.services.knowledge_pack.structuring_handler.tools.question_bank_generation_tool import QuestionBankGenerationTool
+        from dana.studio.api.services.knowledge_pack.structuring_handler.tools.question_bank_generation_tool import (
+            QuestionBankGenerationTool,
+        )
 
         self.tools.update(
             QuestionBankGenerationTool(

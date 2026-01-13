@@ -352,9 +352,7 @@ The tool automatically preserves the template markdown structure and formatting.
         logger.info(f"Successfully parsed {len(blocks)} diff block(s) using new parser")
         return blocks
 
-    def _create_ambiguity_suggestion(
-        self, content: str, search_pattern: str, replace_content: str, occurrences: int
-    ) -> dict:
+    def _create_ambiguity_suggestion(self, content: str, search_pattern: str, replace_content: str, occurrences: int) -> dict:
         """
         Create suggestion for more specific search pattern.
 

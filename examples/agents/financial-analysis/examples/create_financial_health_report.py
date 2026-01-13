@@ -36,11 +36,11 @@ def main():
 
     # Get the base directory (financial-analysis/)
     base_dir = Path(__file__).parent.parent
-    
+
     # Setup directories
     data_dir = base_dir / "data"
     reports_dir = base_dir / "reports"
-    
+
     print(f"📂 Data directory: {data_dir}")
     print(f"📂 Reports directory: {reports_dir}")
     print()
@@ -48,16 +48,12 @@ def main():
     # Step 1: Initialize FinancialAnalysisAgent
     print("Step 1: Initializing FinancialAnalysisAgent...")
     print("-" * 80)
-    
-    financial_analyst = FinancialAnalysisAgent(
-        agent_id="financial-analysis-001",
-        workspace_root=str(data_dir),
-        model="gpt-4.1-mini"
-    )
-    
+
+    financial_analyst = FinancialAnalysisAgent(agent_id="financial-analysis-001", workspace_root=str(data_dir), model="gpt-4.1-mini")
+
     # Disable verbose notifications for cleaner demo output
     financial_analyst.enable_notifications(verbose=False)
-    
+
     print("✅ FinancialAnalysisAgent initialized")
     print(f"   - Agent ID: {financial_analyst.object_id}")
     print(f"   - Agent Type: {financial_analyst.agent_type}")
@@ -67,17 +63,14 @@ def main():
     # Step 2: Initialize FinancialReportCoordinatorAgent
     print("Step 2: Initializing FinancialReportCoordinatorAgent...")
     print("-" * 80)
-    
+
     coordinator = FinancialReportCoordinatorAgent(
-        agent_id="coordinator-001",
-        workspace_root=str(base_dir),
-        financial_analysis_agent=financial_analyst,
-        model="gpt-4.1-mini"
+        agent_id="coordinator-001", workspace_root=str(base_dir), financial_analysis_agent=financial_analyst, model="gpt-4.1-mini"
     )
-    
+
     # Enable verbose notifications to see coordination in action
     coordinator.enable_notifications(verbose=True)
-    
+
     print("✅ FinancialReportCoordinatorAgent initialized")
     print(f"   - Agent ID: {coordinator.object_id}")
     print(f"   - Agent Type: {coordinator.agent_type}")
@@ -115,13 +108,13 @@ def main():
 
     try:
         result = coordinator.converse(request_message)
-        
+
         print()
         print("=" * 80)
         print("✅ Report Generation Complete!")
         print("=" * 80)
         print()
-        
+
         # List generated reports
         print("📄 Generated Reports:")
         print("-" * 80)
@@ -134,15 +127,15 @@ def main():
             else:
                 print("  No reports found (this may indicate an issue)")
         print()
-        
+
         # Show statistics
         print("📊 Coordination Statistics:")
         print("-" * 80)
         print(f"  - Notifications received: {coordinator.get_notification_count()}")
-        print(f"  - Sub-agent delegations: Multiple analysis tasks")
-        print(f"  - Report sections: Liquidity, Profitability, Leverage, Efficiency")
+        print("  - Sub-agent delegations: Multiple analysis tasks")
+        print("  - Report sections: Liquidity, Profitability, Leverage, Efficiency")
         print()
-        
+
     except Exception as e:
         print()
         print("=" * 80)
@@ -151,6 +144,7 @@ def main():
         print(f"Error: {str(e)}")
         print()
         import traceback
+
         traceback.print_exc()
         return 1
 
@@ -163,11 +157,9 @@ def main():
     print("  - Try modifying the request to create different report types")
     print("  - Experiment with different companies (if data available)")
     print()
-    
+
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

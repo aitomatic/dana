@@ -92,7 +92,6 @@ class RefineKnowledgeStructureTool(BaseTool):
             # Format the response for user review
             content = self._build_structured_response(refined_structure, topic, modification_request)
 
-
             return ToolResult(name="refine_knowledge_structure", result=content, require_user=True)
 
         except Exception as e:
@@ -240,13 +239,13 @@ Apply the requested modification and return ONLY the complete modified structure
     def _convert_markdown_to_html(self, markdown_content: str) -> str:
         """Convert markdown formatting to HTML for consistent rendering."""
         html_content = markdown_content
-        
+
         # Convert **text** to <strong>text</strong>
-        html_content = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html_content)
-        
+        html_content = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", html_content)
+
         # Convert line breaks to <br> tags for proper HTML formatting
-        html_content = html_content.replace('\n', '<br>\n')
-        
+        html_content = html_content.replace("\n", "<br>\n")
+
         # Wrap the entire content in a div for proper structure
         return f"<div class='structure-content'>{html_content}</div>"
 
@@ -268,9 +267,11 @@ Apply the requested modification and return ONLY the complete modified structure
         response_parts.append("")  # Empty line for spacing
 
         # Add next steps and guidelines with clickable options
-        response_parts.append("<p><strong>Do you want to modify this structure further, or should I add it to domain knowledge?</strong></p>")
+        response_parts.append(
+            "<p><strong>Do you want to modify this structure further, or should I add it to domain knowledge?</strong></p>"
+        )
         response_parts.append("")  # Empty line for spacing
-        
+
         # Add clickable options
         response_parts.append("<div class='options-container'>")
         response_parts.append("<button class='option-button' data-option='1'>Add this structure to domain knowledge</button>")
