@@ -82,6 +82,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           cd ${{ matrix.package }}
+          uv sync --extra dev
           if [ "$RUNNER_OS" = "Windows" ]; then
             uv run python -X utf8 -m pytest -q --maxfail=1 -m "not live and not deep"
           else
