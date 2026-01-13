@@ -115,7 +115,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "system_prompt_template"
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
             assert path == expected_path
             assert path.exists()
         finally:
@@ -132,7 +132,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "resources" / "MockResource"
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / component.object_id
             assert path == expected_path
             assert path.exists()
         finally:
@@ -149,7 +149,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "workflows" / "MockWorkflow"
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "workflows" / component.object_id
             assert path == expected_path
             assert path.exists()
         finally:
@@ -166,7 +166,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "agents" / "MockAgent"
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "agents" / nested_agent.object_id
             assert path == expected_path
             assert path.exists()
         finally:

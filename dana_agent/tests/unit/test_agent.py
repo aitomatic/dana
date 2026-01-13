@@ -191,7 +191,13 @@ class TestBaseSTARAgent:
             def _think(self, trace_percepts: DictParams) -> DictParams:
                 return trace_percepts
 
+            async def _think_async(self, trace_percepts: DictParams) -> DictParams:
+                return trace_percepts
+
             def _act(self, trace_thoughts: DictParams) -> DictParams:
+                return trace_thoughts
+
+            async def _act_async(self, trace_thoughts: DictParams) -> DictParams:
                 return trace_thoughts
 
             def _reflect(self, trace_outputs: DictParams) -> DictParams:

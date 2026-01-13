@@ -146,62 +146,9 @@ class TestBasePromptEngineer:
 
             shutil.rmtree(temp_dir)
 
-    def test_has_find_library_root_method(self):
-        """Test that BasePromptEngineer has _find_library_root method."""
-        component = MockResource()
-        engineer = BasePromptEngineer(component)
-
-        assert hasattr(engineer, "_find_library_root")
-        assert callable(engineer._find_library_root)
-
-    def test_has_load_file_content_method(self):
-        """Test that BasePromptEngineer has _load_file_content method."""
-        component = MockResource()
-        engineer = BasePromptEngineer(component)
-
-        assert hasattr(engineer, "_load_file_content")
-        assert callable(engineer._load_file_content)
-
-    def test_load_file_content_reads_file(self):
-        """Test that _load_file_content reads XML file content."""
-        component = MockResource()
-        engineer = BasePromptEngineer(component)
-
-        # Create a temporary XML file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-            f.write("<TEST>Content</TEST>")
-            temp_path = f.name
-
-        try:
-            content = engineer._load_file_content(temp_path)
-            assert content == "<TEST>Content</TEST>"
-        finally:
-            os.unlink(temp_path)
-
-    def test_load_file_content_handles_missing_file(self):
-        """Test that _load_file_content handles missing files gracefully."""
-        component = MockResource()
-        engineer = BasePromptEngineer(component)
-
-        content = engineer._load_file_content("/nonexistent/path.xml")
-        assert content == ""
-
-    def test_load_file_content_handles_empty_path(self):
-        """Test that _load_file_content handles empty path."""
-        component = MockResource()
-        engineer = BasePromptEngineer(component)
-
-        content = engineer._load_file_content("")
-        assert content == ""
-
-    def test_find_library_root_returns_string(self):
-        """Test that _find_library_root returns a string path."""
-        component = MockResource()
-        engineer = BasePromptEngineer(component)
-
-        root = engineer._find_library_root()
-        assert isinstance(root, str)
-        assert len(root) > 0
+    # NOTE: These tests were removed because _find_library_root and _load_file_content
+    # methods no longer exist in the current BasePromptEngineer implementation.
+    # The functionality has been refactored to use repository pattern for prompt loading.
 
 
 class TestResourcePromptEngineer:
@@ -281,51 +228,109 @@ class TestResourcePromptEngineer:
             shutil.rmtree(temp_dir)
 
     def test_initialization_with_custom_prompt_engineer_class(self):
-        """Test ResourcePromptEngineer initialization with custom prompt engineer class."""
-        component = MockResource()
+        """Test ResourcePromptEngineer initialization."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        # Create a custom prompt engineer class
-        class CustomPromptEngineer(BasePromptEngineer):
-            pass
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
 
-        engineer = ResourcePromptEngineer(component, CustomPromptEngineer)
+            assert engineer._component == component
+            assert engineer._repository == repository
+        finally:
+            import shutil
 
-        assert engineer._engineer is not None
-        assert isinstance(engineer._engineer, CustomPromptEngineer)
+            shutil.rmtree(temp_dir)
 
     def test_initialization_defaults_to_base_prompt_engineer(self):
-        """Test that ResourcePromptEngineer defaults to BasePromptEngineer."""
-        component = MockResource()
-        engineer = ResourcePromptEngineer(component)
+        """Test that ResourcePromptEngineer uses BasePromptEngineer implementation."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        assert type(engineer._engineer).__name__ == "BasePromptEngineer"
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
+
+            # ResourcePromptEngineer IS a BasePromptEngineer
+            assert isinstance(engineer, BasePromptEngineer)
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
 
     def test_has_get_prompt_method(self):
-        """Test that ResourcePromptEngineer has get_prompt method."""
-        component = MockResource()
-        engineer = ResourcePromptEngineer(component)
+        """Test that ResourcePromptEngineer has prompt property."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        assert hasattr(engineer, "get_prompt")
-        assert callable(engineer.get_prompt)
+            # Pre-create a prompt in the repository to avoid LLM calls
+            repository.create_snapshot("Test prompt", {}, {})
+            repository.set_active("v1")
+
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
+
+            assert hasattr(engineer, "prompt")
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
 
     def test_get_prompt_returns_string(self):
-        """Test that get_prompt returns a string."""
-        component = MockResource()
-        engineer = ResourcePromptEngineer(component)
+        """Test that prompt property returns a string."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        prompt = engineer.get_prompt()
-        assert isinstance(prompt, str)
+            # Pre-create a prompt in the repository to avoid LLM calls
+            repository.create_snapshot("Test prompt content", {}, {})
+            repository.set_active("v1")
+
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
+
+            prompt = engineer.prompt
+            assert isinstance(prompt, str)
+            assert prompt == "Test prompt content"
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
 
     def test_get_prompt_delegates_to_internal_engineer(self):
-        """Test that get_prompt delegates to internal engineer's _load_inherited_prompt_content."""
-        component = MockResource()
-        engineer = ResourcePromptEngineer(component)
+        """Test that prompt property loads from repository."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        # Mock the internal engineer's method
-        with patch.object(engineer._engineer, "_load_inherited_prompt_content", return_value="<MOCK>Content</MOCK>"):
-            result = engineer.get_prompt()
+            # Pre-create a prompt in the repository
+            repository.create_snapshot("Repository loaded prompt", {}, {})
+            repository.set_active("v1")
 
-        assert result == "<MOCK>Content</MOCK>"
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
+
+            # Should load from repository
+            result = engineer.prompt
+
+            assert isinstance(result, str)
+            assert result == "Repository loaded prompt"
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
 
 
 class TestResourcePromptEngineerWithCreateFileResource:
@@ -380,32 +385,57 @@ class TestResourcePromptEngineerWithCreateFileResource:
         assert "NAME" in prompt or "create" in prompt.lower()
 
     def test_handles_missing_prompt_file_gracefully(self):
-        """Test that missing prompt file returns empty string gracefully."""
-        # Create a resource with no associated prompt file
-        component = MockResource()
-        engineer = ResourcePromptEngineer(component)
+        """Test that missing prompt file in repository returns None then generates."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # Create a resource with no prompt in repository
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        # Should not raise an error
-        prompt = engineer.get_prompt()
-        assert isinstance(prompt, str)
+            # Don't pre-create a snapshot - repository will return None
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
+
+            # load() should return None when no versions exist
+            loaded = engineer.load()
+            assert loaded is None
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
 
 
 class TestResourcePromptEngineerInheritanceChain:
     """Test ResourcePromptEngineer handles inheritance chain correctly."""
 
     def test_loads_inherited_prompts_in_order(self):
-        """Test that ResourcePromptEngineer loads prompts following inheritance chain."""
+        """Test that ResourcePromptEngineer loads prompts from repository."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # Create a derived resource class
+            class DerivedResource(MockResource):
+                pass
 
-        # Create a derived resource class
-        class DerivedResource(MockResource):
-            pass
+            component = DerivedResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        component = DerivedResource()
-        engineer = ResourcePromptEngineer(component)
+            # Pre-create a prompt to avoid LLM calls
+            repository.create_snapshot("Derived resource prompt", {}, {})
+            repository.set_active("v1")
 
-        # Should follow MRO: BaseWAR -> BaseResource -> MockResource -> DerivedResource
-        prompt = engineer.get_prompt()
-        assert isinstance(prompt, str)
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
+
+            # Should load from repository
+            prompt = engineer.prompt
+            assert isinstance(prompt, str)
+            assert prompt == "Derived resource prompt"
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
 
 
 class TestResourcePromptEngineerPromptPriority:
@@ -437,23 +467,40 @@ class TestResourcePromptEngineerPromptPriority:
         sys.path.insert(0, examples_path)
         from create_file_resource import CreateFileResource
 
-        component = CreateFileResource(workspace_root="/tmp", auto_register=False)
-        engineer = ResourcePromptEngineer(component)
+        temp_dir = tempfile.mkdtemp()
+        try:
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent()
+            component = CreateFileResource(workspace_root="/tmp", auto_register=False)
+            repository = LocalPromptRepository(config, agent, component)
 
-        prompt = engineer.get_prompt()
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec, force_generate=True)
 
-        # Should find the co-located CreateFileResource.xml
-        assert len(prompt) > 0
+            prompt = engineer.prompt
+
+            # Should find the co-located CreateFileResource.xml
+            assert len(prompt) > 0
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
 
     def test_user_prompt_priority_over_lib(self):
-        """Test that user prompts (~/.dana/prompts/) have priority over lib prompts."""
-        # This test documents the expected behavior
-        # Priority: user > lib > core > co-located
-        component = MockResource()
-        engineer = ResourcePromptEngineer(component)
+        """Test that user prompts are loaded via repository pattern."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # This test documents that prompts are now managed via repository pattern
+            component = MockResource()
+            agent = MockAgent()
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            repository = LocalPromptRepository(config, agent, component)
 
-        # Get the priority methods
-        assert hasattr(engineer._engineer, "_get_user_prompt_file")
-        assert hasattr(engineer._engineer, "_get_lib_prompt_file")
-        assert hasattr(engineer._engineer, "_get_core_prompt_file")
-        assert hasattr(engineer._engineer, "_get_co_located_prompt_file")
+            engineer = ResourcePromptEngineer(component=component, repository=repository, codec=CSXMLCodec)
+
+            # Engineer should use repository for loading prompts
+            assert engineer._repository is not None
+            assert isinstance(engineer._repository, LocalPromptRepository)
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir)
