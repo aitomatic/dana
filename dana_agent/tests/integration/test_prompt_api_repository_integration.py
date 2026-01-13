@@ -22,6 +22,7 @@ from dana.core.knowledge.prompts.codecs import CSXMLCodec
 from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
 from dana.core.resource.base_resource import BaseResource
 from dana.repositories.local_file_repository import LocalPromptRepository
+from dana.repositories.repository_factory import RepositoryFactory, RepositoryType
 
 
 class MockAgent(BaseAgent):
@@ -55,12 +56,17 @@ class TestPromptAPIRepositoryIntegration:
             agent._resources = [component]
             config = FileStorageConfig(workspace_folder=temp_dir)
 
-            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
+
+            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
 
             # Verify API creates repository
             assert isinstance(api._store, LocalPromptRepository)
 
-            # Get available_tools_prompt which creates engineers
+            # Call available_tools_prompt to trigger engineer creation (lazy initialization)
+            _ = api.available_tools_prompt
 
             # Verify engineer was created with repository
             assert component in api._resource_prompt_engineers
@@ -74,7 +80,7 @@ class TestPromptAPIRepositoryIntegration:
 
             # Verify repository path is correct
             repo_path = engineer._repository._get_relative_prompt_path()
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "resources" / "MockResource"
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / str(component.object_id)
             assert repo_path == expected_path
         finally:
             shutil.rmtree(temp_dir)
@@ -86,7 +92,11 @@ class TestPromptAPIRepositoryIntegration:
             agent = MockAgent()
             config = FileStorageConfig(workspace_folder=temp_dir)
 
-            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
+
+            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
 
             # Verify system prompt repository
             assert isinstance(api._store, LocalPromptRepository)
@@ -95,7 +105,7 @@ class TestPromptAPIRepositoryIntegration:
 
             # Verify repository path for system prompt
             repo_path = api._store._get_relative_prompt_path()
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "system_prompt_template"
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
             assert repo_path == expected_path
 
             # Test persist and load
@@ -122,9 +132,14 @@ class TestPromptAPIRepositoryIntegration:
             agent._resources = [component]
             config = FileStorageConfig(workspace_folder=temp_dir)
 
-            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
 
-            # Get engineer (this will create it)
+            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
+
+            # Call available_tools_prompt to trigger engineer creation (lazy initialization)
+            _ = api.available_tools_prompt
 
             engineer = api._resource_prompt_engineers[component]
 
@@ -152,19 +167,26 @@ class TestPromptAPIRepositoryIntegration:
             agent._resources = [component]
             config = FileStorageConfig(workspace_folder=temp_dir)
 
-            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
+
+            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
 
             # Create some prompts
             api._template = "System template"
             api.persist()
+
+            # Call available_tools_prompt to trigger engineer creation (lazy initialization)
+            _ = api.available_tools_prompt
 
             engineer = api._resource_prompt_engineers[component]
             engineer._prompt = "Resource prompt"
             engineer.persist()
 
             # Verify file structure
-            system_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "system_prompt_template"
-            resource_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "resources" / "MockResource"
+            system_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
+            resource_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / str(component.object_id)
 
             assert system_path.exists()
             assert resource_path.exists()

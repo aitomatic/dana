@@ -13,6 +13,7 @@ from dana.core.agent import BaseAgent
 from dana.core.agent.components.event_log_api import EventLogAPI
 from dana.core.agent.components.observer import ObserverProtocol
 from dana.repositories import LocalEventRepository
+from dana.repositories.repository_factory import RepositoryFactory, RepositoryType
 
 
 class MockAgentForIntegration(BaseAgent):
@@ -63,9 +64,15 @@ class TestEventLogAPIRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             observer = MockObserverForIntegration({"key": "value"})
+
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.EVENT, LocalEventRepository, config)
+
             event_log = EventLogAPI(
                 agent=agent,
                 observer=observer,
+                repository_factory=factory,
             )
 
             # Record an event
@@ -90,9 +97,15 @@ class TestEventLogAPIRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             observer = MockObserverForIntegration({"event": 0})
+
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.EVENT, LocalEventRepository, config)
+
             event_log = EventLogAPI(
                 agent=agent,
                 observer=observer,
+                repository_factory=factory,
             )
 
             # Record multiple events
@@ -121,9 +134,15 @@ class TestEventLogAPIRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             observer = MockObserverForIntegration({"event": 0})
+
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.EVENT, LocalEventRepository, config)
+
             event_log = EventLogAPI(
                 agent=agent,
                 observer=observer,
+                repository_factory=factory,
             )
 
             # Record multiple events
@@ -151,10 +170,17 @@ class TestEventLogAPIRepositoryIntegration:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgentForIntegration(storage_config=config)
             observer = MockObserverForIntegration({"key": "value"})
-            # Create event_log with agent only (no repository)
+
+            # Create a custom factory with the test's storage config
+            # This isolates the test from shared storage state
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.EVENT, LocalEventRepository, config)
+
+            # Create event_log with agent and factory (tests repository auto-creation via factory)
             event_log = EventLogAPI(
                 agent=agent,
                 observer=observer,
+                repository_factory=factory,
             )
 
             # Should have repository
