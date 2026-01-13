@@ -456,11 +456,11 @@ class LocalLearningRepository(LocalRepositoryMixin, LearningRepositoryProtocol):
         # Format timestamp: YYYYMMDD_HHMMSS_microseconds
         timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S_%f")
 
-        # Extract short loop_id (first 8 chars before first hyphen)
-        loop_id_short = loop_id.split("-")[0] if "-" in loop_id else loop_id[:8]
+        # Use full loop_id with hyphens replaced by underscores for filename safety
+        loop_id_safe = loop_id.replace("-", "_")
 
         # Create filename
-        filename = f"loop_{timestamp_str}_{loop_id_short}.json"
+        filename = f"loop_{timestamp_str}_{loop_id_safe}.json"
         loop_file = acquisitive_path / filename
 
         # Write JSON file
