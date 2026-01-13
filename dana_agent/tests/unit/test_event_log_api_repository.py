@@ -227,7 +227,6 @@ class TestEventLogAPIWithRepository:
         observer = MockObserver()
         event_log = EventLogAPI(
             agent=agent,
-            codec=None,
             observer=observer,
         )
 

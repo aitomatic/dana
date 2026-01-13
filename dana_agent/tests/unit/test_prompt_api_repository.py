@@ -107,7 +107,12 @@ class TestLocalPromptAPIRepository:
         try:
             agent = MockAgent()
             config = FileStorageConfig(workspace_folder=temp_dir)
-            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec)
+
+            # Configure factory with the desired storage_config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.PROMPT, LocalPromptRepository, config)
+
+            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=factory)
 
             # Verify _store is a repository
             assert isinstance(api._store, LocalPromptRepository)
@@ -138,10 +143,10 @@ class TestLocalPromptAPIFactoryUsage:
             mock_repository = Mock(spec=LocalPromptRepository)
             mock_factory.create.return_value = mock_repository
 
-            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec, repository_factory=mock_factory)
+            api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=mock_factory)
 
-            # Verify factory.create was called with correct parameters
-            mock_factory.create.assert_called_once_with(RepositoryType.PROMPT, storage_config=config, agent=agent, component=None)
+            # Verify factory.create was called with correct parameters (without storage_config)
+            mock_factory.create.assert_called_once_with(RepositoryType.PROMPT, agent=agent, component=None)
 
             # Verify _store is the repository from factory
             assert api._store == mock_repository
@@ -172,12 +177,11 @@ class TestLocalPromptAPIFactoryUsage:
             # Should be called twice: once for system prompt, once for component
             assert mock_factory.create.call_count >= 2
 
-            # Check the last call was for the component
+            # Check the last call was for the component (without storage_config)
             last_call = mock_factory.create.call_args_list[-1]
             assert last_call[0][0] == RepositoryType.PROMPT
             assert last_call[1]["agent"] == agent
             assert last_call[1]["component"] == component
-            assert last_call[1]["storage_config"] == config
 
             # Verify engineer received repository from factory
             assert engineer._repository == mock_repository
@@ -196,12 +200,14 @@ class TestLocalPromptAPIFactoryUsage:
             # Verify _store is a LocalPromptRepository (created by default factory)
             assert isinstance(api._store, LocalPromptRepository)
             assert api._store._agent == agent
-            assert api._store.storage_config == config
+            # Note: When using default factory, it uses its own pre-configured storage_config,
+            # not the one passed to LocalPromptAPI
+            assert api._store.storage_config is not None
         finally:
             shutil.rmtree(temp_dir)
 
     def test_factory_passes_storage_config_correctly(self):
-        """Test that storage_config is passed correctly to factory."""
+        """Test that storage_config is available in created repository."""
         temp_dir = tempfile.mkdtemp()
         try:
             agent = MockAgent()
@@ -213,10 +219,13 @@ class TestLocalPromptAPIFactoryUsage:
             mock_repository.storage_config = config
             mock_factory.create.return_value = mock_repository
 
-            LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec, repository_factory=mock_factory)
+            api = LocalPromptAPI(agent=agent, storage_config=config, codec=CSXMLCodec, repository_factory=mock_factory)
 
-            # Verify storage_config was passed to factory
+            # Verify factory.create was called without storage_config parameter
             call_args = mock_factory.create.call_args
-            assert call_args[1]["storage_config"] == config
+            assert "storage_config" not in call_args[1]
+
+            # Verify the repository has the correct storage_config
+            assert api._store.storage_config == config
         finally:
             shutil.rmtree(temp_dir)
