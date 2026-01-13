@@ -1,9 +1,5 @@
-from dana.core.knowledge.prompts.codecs import CSXMLCodec
-from dana.core.agent.components.observer import ObserverProtocol
-
 import sys
 from pathlib import Path
-from typing import Any
 
 sys.path.append("examples/agents/financial-analysis")
 
@@ -35,7 +31,7 @@ analyst = FinancialAnalysisAgent(
     model="gpt-4.1-mini",
     max_context_tokens=40000,
     # codec=CSXMLCodec,
-    observer=reports_observer  # Add observer
+    observer=reports_observer,  # Add observer
 )
 analyst.enable_notifications(verbose=False)
 analyst._learner = WilliamLearner(agent=analyst)
@@ -50,7 +46,7 @@ coordinator = FinancialReportCoordinatorAgent(
     model="gpt-4.1-mini",
     # codec=CSXMLCodec,
     max_context_tokens=40000,
-    observer=reports_observer  # Add observer
+    observer=reports_observer,  # Add observer
 )
 
 # Disable notifications for cleaner output in demo
@@ -69,7 +65,7 @@ print()
 result = coordinator.converse(
     session_id=SESSION_ID,
     initial_message="Create a comprehensive financial health report for AMD based on the data in the data directory. "
-    "The report should include liquidity analysis, profitability analysis, leverage analysis, and efficiency analysis."
+    "The report should include liquidity analysis, profitability analysis, leverage analysis, and efficiency analysis.",
 )
 
 # Observe final state
@@ -84,9 +80,9 @@ print(f"  Folder: {final_observation['folder_path']}")
 print(f"  Files: {final_observation['file_count']}")
 print(f"  Total Size: {final_observation['total_size_kb']} KB ({final_observation['total_size_mb']} MB)")
 print()
-if final_observation['files']:
+if final_observation["files"]:
     print("  Files:")
-    for file_info in final_observation['files']:
+    for file_info in final_observation["files"]:
         print(f"    - {file_info['path']}: {file_info['size_kb']} KB")
 print("=" * 80)
 

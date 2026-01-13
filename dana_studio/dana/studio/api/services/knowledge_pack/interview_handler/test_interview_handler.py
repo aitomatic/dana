@@ -191,7 +191,7 @@ async def test_conversation_state_management(handler):
     for i, msg in enumerate(conversation):
         role_emoji = "👤" if msg.role == "user" else "🤖"
         content_preview = msg.content[:50] + "..." if len(msg.content) > 50 else msg.content
-        print(f"  {i+1}. {role_emoji} {msg.role}: {content_preview}")
+        print(f"  {i + 1}. {role_emoji} {msg.role}: {content_preview}")
 
     print("✅ Conversation state management test completed")
     return result

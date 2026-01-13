@@ -9,6 +9,7 @@ from dana.lib.workflows.web_research import GoogleLookupWorkflow
 # Import local components
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from resources.source_ranking import SourceRankingResource
 from workflows.research_strategy import ResearchStrategyWorkflow
@@ -43,34 +44,22 @@ class SmartResearchAgent(STARAgent):
             agent_id=agent_id or "smart-research-001",
             llm_provider="anthropic",
             model="claude-3-5-sonnet-20241022",
-            **kwargs
+            **kwargs,
         )
 
         # Compose resources (80% reused from framework)
         self.with_resources(
             SearchResource(resource_id="web-search"),
             WebFetcher(resource_id="web-fetch"),
-            ConversationResource(
-                resource_id="llm-reasoning",
-                llm_provider="anthropic",
-                model="claude-3-5-sonnet-20241022"
-            ),
+            ConversationResource(resource_id="llm-reasoning", llm_provider="anthropic", model="claude-3-5-sonnet-20241022"),
             SourceRankingResource(resource_id="source-ranking"),
         )
 
         # Compose workflows (pass LLM config for workflows that need it)
         self.with_workflows(
-            ResearchStrategyWorkflow(
-                workflow_id="strategy-selection",
-                llm_provider="anthropic",
-                model="claude-3-5-sonnet-20241022"
-            ),
+            ResearchStrategyWorkflow(workflow_id="strategy-selection", llm_provider="anthropic", model="claude-3-5-sonnet-20241022"),
             ParallelGatheringWorkflow(workflow_id="parallel-gather"),
-            SynthesisWorkflow(
-                workflow_id="synthesis",
-                llm_provider="anthropic",
-                model="claude-3-5-sonnet-20241022"
-            ),
+            SynthesisWorkflow(workflow_id="synthesis", llm_provider="anthropic", model="claude-3-5-sonnet-20241022"),
             GoogleLookupWorkflow(workflow_id="quick-lookup"),
         )
 
@@ -85,6 +74,7 @@ class SmartResearchAgent(STARAgent):
 
         This provides an intuitive interface while maintaining full STAR loop autonomy.
         """
+
         def magic_method(*args, **kwargs):
             # Convert method name to natural language
             natural_language = name.replace("_", " ").strip()

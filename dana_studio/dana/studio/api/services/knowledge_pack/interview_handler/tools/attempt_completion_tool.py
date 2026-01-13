@@ -73,13 +73,14 @@ class AttemptCompletionTool(BaseTool):
         """
         try:
             # Log if this appears to be a topic completion
-            is_topic_completion = any(word in result.lower() for word in ["completed", "complete", "done", "finished"]) and \
-                                any(word in result.lower() for word in ["topic", "section", "area"])
-            
+            is_topic_completion = any(word in result.lower() for word in ["completed", "complete", "done", "finished"]) and any(
+                word in result.lower() for word in ["topic", "section", "area"]
+            )
+
             if is_topic_completion:
                 logger.info(f"📝 Topic completion detected: {result[:100]}...")
                 logger.warning("⚠️ Ensure update_note was called before attempt_completion to mark topic as Completed")
-            
+
             # Build response with options if provided
             if options and len(options) > 0:
                 formatted_result = self._build_interactive_response(result, options)
@@ -115,7 +116,7 @@ if __name__ == "__main__":
         # Test completion
         result = await tool._execute(
             result="Thank you for sharing your insights on **Safety Procedures** ✓\n\nKey points captured:\n• 6-step LOTO process with verification checkpoints\n• Dual verification for high-voltage equipment\n• Monthly safety audits with documentation\n\n---\n\n**Progress**: 1 of 11 topics complete (~9%)\n\nReady to explore **Equipment Operation** next?",
-            options=["Begin Equipment Operation topic", "Review safety procedures captured"]
+            options=["Begin Equipment Operation topic", "Review safety procedures captured"],
         )
 
         print("🎯 Completion Result:")

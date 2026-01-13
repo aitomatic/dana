@@ -29,36 +29,31 @@ if TYPE_CHECKING:
     from dana.core.agent.timeline import Timeline
     from dana.repositories.repository_factory import RepositoryFactory
 
+
 class LearnerProtocol(Protocol):
     def __init__(self, agent: "STARAgent", repository_factory: "RepositoryFactory | None" = None):
         """Initialize learner with agent and optional repository factory."""
         ...
-    def _reflect_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
-        ...
 
-    def _reflect_episodic(self, trace_episodic: DictParams) -> DictParams:
-        ...
+    def _reflect_acquisitive(self, trace_acquisitive: DictParams) -> DictParams: ...
 
-    def _reflect_integrative(self, trace_integrative: DictParams) -> DictParams:
-        ...
+    def _reflect_episodic(self, trace_episodic: DictParams) -> DictParams: ...
 
-    def _reflect_retentive(self, trace_retentive: DictParams) -> DictParams:
-        ...
+    def _reflect_integrative(self, trace_integrative: DictParams) -> DictParams: ...
 
-    def _load_acquisitive(self) -> list[str]:
-        ...
+    def _reflect_retentive(self, trace_retentive: DictParams) -> DictParams: ...
 
-    def _load_episodic(self) -> str | None:
-        ...
+    def _load_acquisitive(self) -> list[str]: ...
 
-    def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
-        ...
+    def _load_episodic(self) -> str | None: ...
 
-    def _load_feedback(self) -> Any:
-        ...
+    def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None: ...
 
-    def save_feedback(self, feedback: Any) -> None:
-        ...
+    def _load_feedback(self) -> Any: ...
+
+    def save_feedback(self, feedback: Any) -> None: ...
+
+
 class Learner:
     """Component providing STAR learning phase implementations."""
 
@@ -74,6 +69,7 @@ class Learner:
         # Create repository using factory if agent is provided
         if agent:
             from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryType
+
             factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
             self._repository = factory.create(RepositoryType.LEARNING, agent=agent)
         else:
@@ -84,9 +80,7 @@ class Learner:
     # ============================================================================
 
     @observable
-    def _reflect_acquisitive(
-        self, trace_acquisitive: DictParams
-    ) -> DictParams:
+    def _reflect_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
         """
         Reflect on the acquisitions (immediate learning phase).
 
@@ -99,9 +93,7 @@ class Learner:
         tool_results = trace_acquisitive.get("tool_results", [])
 
         trace_learning = {
-            "acquisitions_summary": (
-                f"Processed acquisitions with {len(tool_results)} tool results"
-            ),
+            "acquisitions_summary": (f"Processed acquisitions with {len(tool_results)} tool results"),
             "timestamp": datetime.now().isoformat(),
         }
         return {"trace_learning": trace_learning}
@@ -119,17 +111,13 @@ class Learner:
         """
         # Basic episode reflection - can be overridden by subclasses
         trace_learning = {
-            "episode_summary": (
-                f"Processed episode with {len(trace_episodic)} interactions"
-            ),
+            "episode_summary": (f"Processed episode with {len(trace_episodic)} interactions"),
             "timestamp": datetime.now().isoformat(),
         }
         return {"trace_learning": trace_learning}
 
     @observable
-    def _reflect_integrative(
-        self, trace_integrative: DictParams
-    ) -> DictParams:
+    def _reflect_integrative(self, trace_integrative: DictParams) -> DictParams:
         """
         Reflect on integration (collection of episodes).
 
@@ -141,9 +129,7 @@ class Learner:
         """
         # Basic integration reflection - can be overridden by subclasses
         trace_learning = {
-            "integrative_summary": (
-                "Integrated learning from multiple episodes"
-            ),
+            "integrative_summary": ("Integrated learning from multiple episodes"),
             "timestamp": datetime.now().isoformat(),
         }
         return {"trace_learning": trace_learning}
@@ -234,6 +220,7 @@ class Learner:
             return None
         return _event_log._current_session_id
 
+
 class DefaultLearner(LearnerProtocol):
     """Component providing STAR learning phase implementations."""
 
@@ -249,6 +236,7 @@ class DefaultLearner(LearnerProtocol):
         # Create repository using factory (use DEFAULT_REPOSITORY_FACTORY if not provided)
         if agent:
             from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryType
+
             factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
             self._repository = factory.create(RepositoryType.LEARNING, agent=agent)
         else:
@@ -364,12 +352,14 @@ class DefaultLearner(LearnerProtocol):
 
         for i in range(start_index, end_index):
             entry = timeline.timeline[i]
-            timeline_context.append({
-                "type": entry.entry_type.value,
-                "content": entry.content,
-                "timestamp": entry.timestamp.isoformat(),
-                "metadata": entry.metadata,
-            })
+            timeline_context.append(
+                {
+                    "type": entry.entry_type.value,
+                    "content": entry.content,
+                    "timestamp": entry.timestamp.isoformat(),
+                    "metadata": entry.metadata,
+                }
+            )
 
         return timeline_context
 
@@ -382,19 +372,19 @@ class DefaultLearner(LearnerProtocol):
         """
         if self._repository is None:
             return None
-        
+
         session_id = self._get_session_id()
         if session_id is None:
             return None
-        
+
         try:
             # Load all acquisitive loops
             learning_notes = self._repository.load_acquisitive_loops(session_id)
-            
+
             # If no learning notes, return None
             if not learning_notes:
                 return None
-            
+
             # For DefaultLearner, we use the latest learning_note as accumulated markdown
             # (The markdown is accumulated and updated each loop)
             return learning_notes[-1] if learning_notes else None
@@ -547,11 +537,7 @@ Provide your analysis in the markdown format specified above."""
             )
 
             # Extract markdown text from response
-            markdown_text = (
-                llm_response.content
-                if hasattr(llm_response, "content")
-                else str(llm_response)
-            )
+            markdown_text = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
             return markdown_text
         except Exception as e:
             logger.error(f"LLM call failed for acquisitive learning: {e}")
@@ -599,12 +585,14 @@ Provide your analysis in the markdown format specified above."""
                 failure_pattern = r"\*\*Tool\*\*:\s*(.+?)\n\*\*Parameters\*\*:\s*(.+?)\n\*\*Issue\*\*:\s*(.+?)\n\*\*Improvement\*\*:\s*(.+?)(?=\n\*\*|\n##|$)"
                 failures = re.findall(failure_pattern, failures_text, re.DOTALL)
                 for failure in failures:
-                    insights["tool_failures"].append({
-                        "tool": failure[0].strip(),
-                        "parameters": failure[1].strip(),
-                        "issue": failure[2].strip(),
-                        "improvement": failure[3].strip(),
-                    })
+                    insights["tool_failures"].append(
+                        {
+                            "tool": failure[0].strip(),
+                            "parameters": failure[1].strip(),
+                            "issue": failure[2].strip(),
+                            "improvement": failure[3].strip(),
+                        }
+                    )
 
             # Extract "Tool Selection" section
             selection_match = re.search(
@@ -665,17 +653,17 @@ Provide your analysis in the markdown format specified above."""
         if self._repository is None:
             logger.warning("Cannot store acquisitive learning markdown: repository is None")
             return
-        
+
         session_id = self._get_session_id()
         if session_id is None:
             logger.warning("Cannot store acquisitive learning markdown: session_id is None")
             return
-        
+
         try:
             # Store markdown as a loop with learning_note containing the markdown
             loop_id = str(uuid4())
             timestamp = datetime.now()
-            
+
             # Create loop data with markdown as learning_note
             loop_data = {
                 "learning_note": markdown_content,
@@ -683,7 +671,7 @@ Provide your analysis in the markdown format specified above."""
                 "session_id": session_id,
                 "loop_id": loop_id,
             }
-            
+
             self._repository.save_acquisitive_loop(session_id, loop_data, loop_id, timestamp)
             logger.info("Stored acquisitive learning markdown via repository")
         except Exception as e:

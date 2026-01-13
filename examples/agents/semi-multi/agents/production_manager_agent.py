@@ -39,13 +39,7 @@ class ProductionManagerAgent(STARAgent):
     decision points.
     """
 
-    def __init__(
-        self,
-        agent_id: str = "production-manager",
-        llm_provider: str = "anthropic",
-        model: str = None,
-        **kwargs
-    ):
+    def __init__(self, agent_id: str = "production-manager", llm_provider: str = "anthropic", model: str = None, **kwargs):
         """
         Initialize ProductionManagerAgent.
 
@@ -60,14 +54,12 @@ class ProductionManagerAgent(STARAgent):
             agent_type="ProductionManagerAgent",
             llm_provider=llm_provider,
             model=model or "claude-3-5-sonnet-20241022",
-            **kwargs
+            **kwargs,
         )
 
         # Conversation resource for multi-turn dialogue
         self.conversation = ConversationResource(
-            resource_id=f"{agent_id}-conversation",
-            llm_provider=llm_provider,
-            model=model or "claude-3-5-sonnet-20241022"
+            resource_id=f"{agent_id}-conversation", llm_provider=llm_provider, model=model or "claude-3-5-sonnet-20241022"
         )
 
         # Track specialist agents (will be added via with_agents)
@@ -103,17 +95,12 @@ class ProductionManagerAgent(STARAgent):
         conversation_history = kwargs.get("conversation_history", [])
 
         # Use conversation resource for natural dialogue
-        response = self.conversation.send_message(
-            message=user_message,
-            conversation_history=conversation_history
-        )
+        response = self.conversation.send_message(message=user_message, conversation_history=conversation_history)
 
         return {
             "response": response.get("response", ""),
-            "conversation_history": conversation_history + [
-                {"role": "user", "content": user_message},
-                {"role": "assistant", "content": response.get("response", "")}
-            ]
+            "conversation_history": conversation_history
+            + [{"role": "user", "content": user_message}, {"role": "assistant", "content": response.get("response", "")}],
         }
 
     def delegate_investigation(self, defect_alert: dict) -> dict:
@@ -131,28 +118,23 @@ class ProductionManagerAgent(STARAgent):
             dict: Investigation findings from specialist
         """
         if not self.defect_specialist:
-            return {
-                "error": "No DefectSpecialist registered. Use with_agents() first."
-            }
+            return {"error": "No DefectSpecialist registered. Use with_agents() first."}
 
         # Delegate to specialist
-        print(f"\n🔄 [ProductionManager] Delegating investigation to DefectSpecialist...")
+        print("\n🔄 [ProductionManager] Delegating investigation to DefectSpecialist...")
 
         investigation_request = f"""Please investigate this defect:
 
-Lot: {defect_alert.get('lot_id', 'Unknown')}
-Defect Type: {defect_alert.get('defect_type', 'Unknown')}
-Pattern: {defect_alert.get('pattern', 'Unknown')}
-Location: {defect_alert.get('location', 'Unknown')}
-Frequency: {defect_alert.get('frequency', 'Unknown')}
-Process Step: {defect_alert.get('process_step', 'Unknown')}
+Lot: {defect_alert.get("lot_id", "Unknown")}
+Defect Type: {defect_alert.get("defect_type", "Unknown")}
+Pattern: {defect_alert.get("pattern", "Unknown")}
+Location: {defect_alert.get("location", "Unknown")}
+Frequency: {defect_alert.get("frequency", "Unknown")}
+Process Step: {defect_alert.get("process_step", "Unknown")}
 
 Conduct systematic investigation and report findings."""
 
         # Call the specialist's _do_execute directly (not interactive)
-        result = self.defect_specialist._do_execute(
-            caller_message=investigation_request,
-            defect_data=defect_alert
-        )
+        result = self.defect_specialist._do_execute(caller_message=investigation_request, defect_data=defect_alert)
 
         return result

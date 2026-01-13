@@ -9,9 +9,6 @@ This workflow coordinates the sequential execution of:
 The workflow ensures proper data flow between agents and handles errors.
 """
 
-import os
-import sys
-from typing import Any
 
 # Add parent directory to path for imports
 # sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
@@ -235,7 +232,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
                     "workflow_progress": {
                         "workflow_id": self.workflow_id,
                         "phase": "complete",
-                        "message": f"Fraud detection pipeline completed successfully",
+                        "message": "Fraud detection pipeline completed successfully",
                     }
                 }
             )

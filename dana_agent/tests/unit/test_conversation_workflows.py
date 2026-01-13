@@ -24,8 +24,8 @@ class TestSummarizeWorkflow:
         mock_instance = mock_resource_class.return_value
         mock_instance._format_conversation.return_value = "Formatted conversation text"
 
-        # Mock _generate_llm_summary (sync method that calls asyncio.run internally)
-        expected_summary = {
+        # Mock return value for both _generate_llm_summary and _create_fallback_summary
+        summary_data = {
             "key_topics": ["Python", "programming"],
             "technical_areas": ["software development"],
             "expert_insights": ["Python is versatile"],
@@ -35,10 +35,8 @@ class TestSummarizeWorkflow:
             "expertise_level": "intermediate",
             "conversation_summary": "Discussion about Python programming",
         }
-        mock_instance._generate_llm_summary.return_value = expected_summary
-
-        # Also mock fallback in case of any exception
-        mock_instance._create_fallback_summary.return_value = expected_summary
+        mock_instance._generate_llm_summary.return_value = summary_data
+        mock_instance._create_fallback_summary.return_value = summary_data
 
         # Execute workflow
         workflow = SummarizeConversationWorkflow()
@@ -49,11 +47,10 @@ class TestSummarizeWorkflow:
             ]
         )
 
-        # Verify - result is returned directly, not wrapped in "result" key
+        # Verify
         assert result["key_topics"] == ["Python", "programming"]
         assert result["conversation_stage"] == "early"
-        # conversation_length and processing_time/timestamp may be added elsewhere
-        # Just verify core fields from the summary
+        assert result["conversation_summary"] == "Discussion about Python programming"
 
     @patch("dana.lib.workflows.conversation.ConversationResource")
     def test_summarize_workflow_with_current_message(self, mock_resource_class):
@@ -62,8 +59,8 @@ class TestSummarizeWorkflow:
         mock_instance = mock_resource_class.return_value
         mock_instance._format_conversation.return_value = "Formatted conversation with current message"
 
-        # Mock _generate_llm_summary (sync method that calls asyncio.run internally)
-        expected_summary = {
+        # Mock return value for both _generate_llm_summary and _create_fallback_summary
+        summary_data = {
             "key_topics": ["error handling"],
             "technical_areas": ["exception management"],
             "expert_insights": [],
@@ -73,10 +70,8 @@ class TestSummarizeWorkflow:
             "expertise_level": "intermediate",
             "conversation_summary": "Discussion about error handling",
         }
-        mock_instance._generate_llm_summary.return_value = expected_summary
-
-        # Also mock fallback in case of any exception
-        mock_instance._create_fallback_summary.return_value = expected_summary
+        mock_instance._generate_llm_summary.return_value = summary_data
+        mock_instance._create_fallback_summary.return_value = summary_data
 
         workflow = SummarizeConversationWorkflow()
         result = workflow.execute(
@@ -87,5 +82,4 @@ class TestSummarizeWorkflow:
             current_message="How do I handle errors?",
         )
 
-        # Verify - result is returned directly, not wrapped in "result" key
         assert result["key_topics"] == ["error handling"]

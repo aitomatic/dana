@@ -269,11 +269,11 @@ No knowledge areas found matching '{query}'.
         emoji = "•"
         # Add generation status indicator for each topic
         status_indicator = self._get_status_indicator(node.topic)
-        
+
         # Use markdown list syntax with proper indentation
         indent = "  " * level  # 2 spaces per level for markdown lists
         list_marker = "- " if level == 0 else "  - " if level == 1 else "    - " if level == 2 else "      - "
-        
+
         lines = [f"{indent}{list_marker}{emoji} {node.topic}{status_indicator}"]
 
         # Add children info if they exist but we're not showing them due to depth limit

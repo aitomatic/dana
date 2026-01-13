@@ -35,24 +35,24 @@ def demo_query(agent, query_type, query):
 
     # Show response
     if "response" in result:
-        response = result['response']
+        response = result["response"]
         print(f"\n✅ Response generated: {len(response)} characters")
         print(f"\nFirst 300 chars:\n{response[:300]}...")
 
     # Check timeline for workflow calls
     timeline = agent.get_timeline_summary()
-    workflow_calls = [line for line in timeline.split('\n') if 'Tool Call' in line or 'Tool Response (Workflow)' in line]
+    workflow_calls = [line for line in timeline.split("\n") if "Tool Call" in line or "Tool Response (Workflow)" in line]
 
     print(f"\n✅ Workflow calls made: {len([l for l in workflow_calls if 'Tool Call' in l])}")
 
     # Show what strategy was selected
-    if 'QUICK_FACT' in timeline:
+    if "QUICK_FACT" in timeline:
         print("✅ Strategy selected: QUICK_FACT")
-    elif 'TECHNICAL_DEEP_DIVE' in timeline:
+    elif "TECHNICAL_DEEP_DIVE" in timeline:
         print("✅ Strategy selected: TECHNICAL_DEEP_DIVE")
-    elif 'COMPARATIVE_ANALYSIS' in timeline:
+    elif "COMPARATIVE_ANALYSIS" in timeline:
         print("✅ Strategy selected: COMPARATIVE_ANALYSIS")
-    elif 'CURRENT_EVENTS' in timeline:
+    elif "CURRENT_EVENTS" in timeline:
         print("✅ Strategy selected: CURRENT_EVENTS")
 
     print("\n💡 KEY INSIGHT:")
@@ -82,14 +82,9 @@ def main():
 
     # Demo different query types to show strategy selection
     queries = [
-        ("QUICK FACT",
-         "What is quantum computing?"),
-
-        ("QUICK FACT - DIFFERENT TOPIC",
-         "What is photosynthesis?"),
-
-        ("COMPARISON",
-         "Compare Python vs JavaScript"),
+        ("QUICK FACT", "What is quantum computing?"),
+        ("QUICK FACT - DIFFERENT TOPIC", "What is photosynthesis?"),
+        ("COMPARISON", "Compare Python vs JavaScript"),
     ]
 
     print("\nRunning 3 queries to demonstrate consistency...")
@@ -100,7 +95,7 @@ def main():
 
         print("\n" + "─" * 80)
         user_input = input("\nPress Enter to continue (or 'q' to quit)...")
-        if user_input.lower() == 'q':
+        if user_input.lower() == "q":
             break
 
     print("\n" + "=" * 80)

@@ -163,9 +163,9 @@ class DomainKnowledgeService(Loggable):
             db.commit()
 
             self.info(f"Saved domain knowledge for agent {agent_id} to {file_path} (version {tree.version})")
-            
+
             logger.info(f"[DomainKnowledgeService] Domain knowledge saved for agent {agent_id}")
-            
+
             return True
 
         except Exception as e:

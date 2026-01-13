@@ -52,27 +52,27 @@ def main():
     print("\n" + "=" * 80)
     print("🤖 AUTONOMOUS AGENT RESULT")
     print("=" * 80)
-    
+
     # The autonomous agent returns different structure
     if result.get("error"):
         print(f"\n❌ Agent Error: {result.get('error')}")
         return
-    
+
     # Show agent's reasoning and actions
-    print(f"\n📋 Agent Response:")
+    print("\n📋 Agent Response:")
     print(f"   Status: {result.get('status', 'unknown')}")
     print(f"   Content: {result.get('content', 'No content')}")
-    
+
     # Show tool calls made by agent
-    tool_calls = result.get('tool_calls', [])
+    tool_calls = result.get("tool_calls", [])
     if tool_calls:
-        print(f"\n🔧 Agent Tool Usage:")
+        print("\n🔧 Agent Tool Usage:")
         for i, call in enumerate(tool_calls, 1):
-            target_type = call.get('target_type', 'unknown')
-            target_id = call.get('target_id', 'unknown')
-            function = call.get('function', 'unknown')
+            target_type = call.get("target_type", "unknown")
+            target_id = call.get("target_id", "unknown")
+            function = call.get("function", "unknown")
             print(f"   {i}. {target_type}:{target_id}.{function}()")
-    
+
     # Export results
     output_file = "vietnam_coffee_autonomous_output.json"
     with open(output_file, "w", encoding="utf-8") as f:

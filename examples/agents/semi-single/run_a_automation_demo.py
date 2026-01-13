@@ -13,6 +13,7 @@ Use when: The process is well-defined and never changes.
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 from workflows.yield_pareto_workflow import YieldParetoWorkflow
@@ -62,11 +63,7 @@ def run_automation_demo(wafer_id: str = "W12345"):
     print("STEP 2: Running Failure Correlation (fixed step)")
     print("=" * 80)
     correlation_wf = FailureCorrelationWorkflow()
-    correlation_exec_result = correlation_wf.execute(
-        product=pareto_data["product"],
-        top_bins=top_bins,
-        weeks=12
-    )
+    correlation_exec_result = correlation_wf.execute(product=pareto_data["product"], top_bins=top_bins, weeks=12)
     correlation_result = correlation_exec_result.get("result", {})
 
     if not correlation_result.get("success"):
@@ -88,7 +85,7 @@ def run_automation_demo(wafer_id: str = "W12345"):
         product_context={
             "average_selling_price_usd": 150,
             "monthly_volume_wafers": 10000,
-        }
+        },
     )
     roi_result = roi_exec_result.get("result", {})
 

@@ -8,7 +8,6 @@ This component provides functionality for:
 - RETENTIVE learning (long-term learning)
 """
 
-import json
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -34,6 +33,7 @@ if TYPE_CHECKING:
     from dana.repositories.repository_protocol import LearningRepositoryProtocol
     from dana.repositories.repository_factory import RepositoryFactory
 
+
 class BM25SearchEngine:
     def __init__(self, corpus: list[str]):
         self._original_corpus = corpus
@@ -53,12 +53,15 @@ class BM25SearchEngine:
         return np.argsort(scores)[::-1][:n].tolist()
 
 
-
-
 class WilliamLearner(LearnerProtocol):
     """Component providing STAR learning phase implementations."""
 
-    def __init__(self, agent: "STARAgent", repository: "LearningRepositoryProtocol | None" = None, repository_factory: "RepositoryFactory | None" = None):
+    def __init__(
+        self,
+        agent: "STARAgent",
+        repository: "LearningRepositoryProtocol | None" = None,
+        repository_factory: "RepositoryFactory | None" = None,
+    ):
         """
         Initialize the component with a reference to the agent.
 
@@ -77,6 +80,7 @@ class WilliamLearner(LearnerProtocol):
             self._repository = repository
         elif agent:
             from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryType
+
             factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
             self._repository = factory.create(RepositoryType.LEARNING, agent=agent)
         else:
@@ -106,7 +110,6 @@ class WilliamLearner(LearnerProtocol):
         else:
             return None
 
-
     @property
     def session_id(self) -> str | None:
         # Get session_id from agent if available
@@ -126,10 +129,7 @@ class WilliamLearner(LearnerProtocol):
     def _get_acquisitive_storage_path(self) -> Path:
         return self._repository._base_storage_path / "learnings" / self.session_id / "acquisitive"
 
-
-    def _reflect_acquisitive(
-        self, trace_acquisitive: DictParams
-    ) -> DictParams:
+    def _reflect_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
         """
         Reflect on the acquisitions (immediate learning phase).
 
@@ -160,11 +160,9 @@ class WilliamLearner(LearnerProtocol):
             result = self._reflect_action(trace_acquisitive)
             learning_note = result["trace_learning"].get("learning_note", "")
             reflection_context = result["trace_learning"].get("reflection_context", "")
-            
+
             # Keep in-memory for backward compatibility
             self.acquisitive_memory.append(learning_note)
-
-            
 
             # Build complete JSON structure
             loop_data = {
@@ -238,9 +236,7 @@ knowledge."""
             timeline.timeline = list(timeline.read_since(checkpoint=-100))
             # Convert timeline to messages for learning context
             if timeline:
-                timeline_messages = timeline.to_llm_messages(
-                    separate_latest_user=False, max_tokens=40000
-                )
+                timeline_messages = timeline.to_llm_messages(separate_latest_user=False, max_tokens=40000)
 
                 if timeline_messages:
                     # Include previous learning if available
@@ -260,18 +256,12 @@ knowledge."""
                     ]
 
                     for msg in timeline_messages:
-                        role_indicator = (
-                            "USER" if msg.role == "user" else "AGENT"
-                        )
-                        timeline_lines.append(
-                            f"<{role_indicator}>{msg.content}</{role_indicator}>"
-                        )
+                        role_indicator = "USER" if msg.role == "user" else "AGENT"
+                        timeline_lines.append(f"<{role_indicator}>{msg.content}</{role_indicator}>")
 
                     timeline_lines.append("</SESSION_TIMELINE>")
                     timeline_content = "\n".join(timeline_lines)
-                    messages.append(
-                        LLMMessage(role="user", content=timeline_content)
-                    )
+                    messages.append(LLMMessage(role="user", content=timeline_content))
 
                     # Add learning request
                     if previous_learning:
@@ -296,19 +286,13 @@ You need to consider the following:
 
 You need to learn from the whole session and extract the knowledge note to perform better in the future for this task or similar tasks.
 Format: [Condition] [Advice of what should do]"""
-                    messages.append(
-                        LLMMessage(role="user", content=learning_prompt)
-                    )
+                    messages.append(LLMMessage(role="user", content=learning_prompt))
                 else:
                     # No timeline content, provide default learning request
                     messages.append(
                         LLMMessage(
                             role="user",
-                            content=(
-                                "No session timeline available. "
-                                "Provide general learning insights "
-                                "for agent improvement."
-                            ),
+                            content=("No session timeline available. Provide general learning insights for agent improvement."),
                         )
                     )
 
@@ -321,9 +305,7 @@ Format: [Condition] [Advice of what should do]"""
                 content=f"Built {len(messages)} messages for learning",
                 metadata={
                     "message_count": len(messages),
-                    "timeline_entries": (
-                        len(timeline.timeline) if timeline else 0
-                    ),
+                    "timeline_entries": (len(timeline.timeline) if timeline else 0),
                 },
             )
 
@@ -333,11 +315,7 @@ Format: [Condition] [Advice of what should do]"""
                 agent_type=self._agent.agent_type,
             )
 
-            episodic_content = (
-                llm_response.content
-                if hasattr(llm_response, "content")
-                else str(llm_response)
-            )
+            episodic_content = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
 
             # Keep in-memory for backward compatibility
             self.episodic_memory = episodic_content
@@ -351,7 +329,7 @@ Format: [Condition] [Advice of what should do]"""
                 "timestamp": datetime.now().isoformat(),
                 "reflection_context": "",
             }
-            
+
             return {"trace_learning": trace_learning}
 
         except Exception as e:
@@ -364,9 +342,7 @@ Format: [Condition] [Advice of what should do]"""
             return {"trace_learning": trace_learning}
 
     @observable
-    def _reflect_integrative(
-        self, trace_integrative: DictParams
-    ) -> DictParams:
+    def _reflect_integrative(self, trace_integrative: DictParams) -> DictParams:
         """
         Reflect on integration (collection of episodes).
 
@@ -378,9 +354,7 @@ Format: [Condition] [Advice of what should do]"""
         """
         # Basic integration reflection - can be overridden by subclasses
         trace_learning = {
-            "integrative_summary": (
-                "Integrated learning from multiple episodes"
-            ),
+            "integrative_summary": ("Integrated learning from multiple episodes"),
             "timestamp": datetime.now().isoformat(),
         }
         return {"trace_learning": trace_learning}
@@ -436,18 +410,12 @@ Format: [Condition] [Advice of what should do]"""
                 tool_id = tool_call.get("target", {}).get("id", "unknown")
                 reflection_context.append(f"  {i}. {tool_type} - {tool_id}")
         if tool_results:
-            reflection_context.append(
-                f"Tool Results Received: {len(tool_results)}"
-            )
+            reflection_context.append(f"Tool Results Received: {len(tool_results)}")
             for i, result in enumerate(tool_results, 1):
                 result_summary = str(result.get("result", ""))[:100]
                 reflection_context.append(f"  {i}. {result_summary}...")
 
-        context_text = (
-            "\n".join(reflection_context)
-            if reflection_context
-            else "No context available"
-        )
+        context_text = "\n".join(reflection_context) if reflection_context else "No context available"
 
         # Build LLM messages for reflection
         system_prompt = """You are a learning reflection assistant.
@@ -481,11 +449,7 @@ learned from this interaction."""
         )
 
         # Extract reflection text from response
-        reflection_text = (
-            llm_response.content
-            if hasattr(llm_response, "content")
-            else str(llm_response)
-        )
+        reflection_text = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
 
         trace_learning = {
             "simple_summary": reflection_text,
@@ -494,8 +458,6 @@ learned from this interaction."""
             "reflection_context": context_text,
         }
         return {"trace_learning": trace_learning}
-
-
 
     def _get_timeline_context_for_loop(self, timeline: "Timeline", max_entries: int = 5) -> list[dict]:
         """
@@ -533,12 +495,14 @@ learned from this interaction."""
 
         for i in range(start_index, end_index):
             entry = timeline.timeline[i]
-            timeline_context.append({
-                "type": entry.entry_type.value,
-                "content": entry.content,
-                "timestamp": entry.timestamp.isoformat(),
-                "metadata": entry.metadata,
-            })
+            timeline_context.append(
+                {
+                    "type": entry.entry_type.value,
+                    "content": entry.content,
+                    "timestamp": entry.timestamp.isoformat(),
+                    "metadata": entry.metadata,
+                }
+            )
 
         return timeline_context
 

@@ -34,17 +34,10 @@ class StatisticalTestWorkflow(BaseWorkflow):
         resource = test_params.get("resource")
 
         if not spatial_data:
-            return {
-                "success": False,
-                "error": "No spatial data provided for statistical analysis"
-            }
+            return {"success": False, "error": "No spatial data provided for statistical analysis"}
 
         bin_id = spatial_data.get("bin_id", "")
-        results = {
-            "success": True,
-            "bin_id": bin_id,
-            "tests_run": []
-        }
+        results = {"success": True, "bin_id": bin_id, "tests_run": []}
 
         # If resource provided, use it; otherwise use mock data
         if resource:
@@ -59,19 +52,15 @@ class StatisticalTestWorkflow(BaseWorkflow):
             results["tests_run"].append("getis_ord_gi_star")
 
             # Step 3: Synthesize overall assessment
-            results["overall_assessment"] = self._synthesize_results(
-                morans_result, hotspot_result
-            )
-            results["confidence"] = self._calculate_confidence(
-                morans_result, hotspot_result
-            )
+            results["overall_assessment"] = self._synthesize_results(morans_result, hotspot_result)
+            results["confidence"] = self._calculate_confidence(morans_result, hotspot_result)
         else:
             # Mock results for demo
             results["morans_i"] = {
                 "test": "morans_i",
                 "statistic": 0.85,
                 "p_value": 0.001,
-                "interpretation": "strong_positive_autocorrelation"
+                "interpretation": "strong_positive_autocorrelation",
             }
             results["tests_run"].append("morans_i")
             results["overall_assessment"] = "Strong spatial clustering detected (p<0.001)"
@@ -79,9 +68,7 @@ class StatisticalTestWorkflow(BaseWorkflow):
 
         return results
 
-    def _synthesize_results(
-        self, morans_result: DictParams, hotspot_result: DictParams
-    ) -> str:
+    def _synthesize_results(self, morans_result: DictParams, hotspot_result: DictParams) -> str:
         """Synthesize multiple test results into overall assessment."""
         morans_i = morans_result.get("statistic", 0)
         p_value = morans_result.get("p_value", 1.0)
@@ -94,24 +81,16 @@ class StatisticalTestWorkflow(BaseWorkflow):
 
         # Moran's I assessment
         if p_value < 0.001:
-            assessment_parts.append(
-                f"Highly significant spatial autocorrelation (I={morans_i:.2f}, p<0.001)"
-            )
+            assessment_parts.append(f"Highly significant spatial autocorrelation (I={morans_i:.2f}, p<0.001)")
         elif p_value < 0.05:
-            assessment_parts.append(
-                f"Significant spatial autocorrelation (I={morans_i:.2f}, p<0.05)"
-            )
+            assessment_parts.append(f"Significant spatial autocorrelation (I={morans_i:.2f}, p<0.05)")
         else:
-            assessment_parts.append(
-                f"No significant spatial pattern detected (p={p_value:.3f})"
-            )
+            assessment_parts.append(f"No significant spatial pattern detected (p={p_value:.3f})")
 
         # Hot spot assessment
         if hot_spots:
             locations = [hs.get("location", "") for hs in hot_spots]
-            assessment_parts.append(
-                f"Significant hot spots detected in {', '.join(locations)}"
-            )
+            assessment_parts.append(f"Significant hot spots detected in {', '.join(locations)}")
 
         # Overall determination
         if interpretation == "strong_positive_autocorrelation":
@@ -121,17 +100,13 @@ class StatisticalTestWorkflow(BaseWorkflow):
 
         return ". ".join(assessment_parts) + "."
 
-    def _calculate_confidence(
-        self, morans_result: DictParams, hotspot_result: DictParams
-    ) -> float:
+    def _calculate_confidence(self, morans_result: DictParams, hotspot_result: DictParams) -> float:
         """Calculate overall confidence in the assessment."""
         p_value = morans_result.get("p_value", 1.0)
         morans_confidence = morans_result.get("confidence", 0.5)
 
         hot_spots = hotspot_result.get("hot_spots", [])
-        hotspot_confidence = max(
-            [hs.get("confidence", 0) for hs in hot_spots], default=0
-        )
+        hotspot_confidence = max([hs.get("confidence", 0) for hs in hot_spots], default=0)
 
         # Combine confidences
         if p_value < 0.001:

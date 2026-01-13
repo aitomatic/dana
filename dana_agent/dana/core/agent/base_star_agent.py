@@ -213,6 +213,40 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
         return result
 
     # ============================================================================
+    # ASYNC STAR METHODS
+    # ============================================================================
+
+    @abstractmethod
+    async def _think_async(self, trace_percepts: DictParams) -> DictParams:
+        """
+        THINK (async): Async version of _think with native async LLM calls.
+
+        Args:
+            trace_percepts (DictParams): the percepts produced by this SEE phase.
+
+        Returns:
+            - trace_thoughts (DictParams): the thoughts produced by this THINK phase.
+        """
+        result = {"trace_thoughts": trace_percepts}
+        self.broadcast(result)
+        return result
+
+    @abstractmethod
+    async def _act_async(self, trace_thoughts: DictParams) -> DictParams:
+        """
+        ACT (async): Async version of _act with native async tool execution.
+
+        Args:
+            trace_thoughts (DictParams): the thoughts produced by this THINK phase.
+
+        Returns:
+            - trace_outputs (DictParams): the outputs produced by this ACT phase.
+        """
+        result = {"trace_outputs": trace_thoughts}
+        self.broadcast(result)
+        return result
+
+    # ============================================================================
     # EXIT STAR LOOP FLAG
     # ============================================================================
 
@@ -230,15 +264,12 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
     # STAR LOOP ORCHESTRATION
     # ============================================================================
 
-
     def query(self, **kwargs) -> DictParams:
         """Main entry point - orchestrates the STAR loop.
-        
+
         Args:
             **kwargs: Additional arguments passed to STAR loop.
         """
-
-        
 
         @observable(name=f"Dana {self.agent_type}-agent-query")
         def _do_query(trace_inputs: DictParams) -> DictParams:
@@ -256,15 +287,13 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
                         # Prepare acquisitive learning input (async, non-blocking)
                         acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
                         acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
+
                         # Run asynchronously to not block STAR loop
                         # Capture acquisitive_input in closure properly
                         def run_reflect(acq_input):
                             return self._reflect(acq_input)
-                        threading.Thread(
-                            target=run_reflect,
-                            args=(acquisitive_input,),
-                            daemon=True
-                        ).start()
+
+                        threading.Thread(target=run_reflect, args=(acquisitive_input,), daemon=True).start()
 
                     if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
                         break
@@ -283,9 +312,61 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
             result = _do_query(trace_inputs={"trace_inputs": kwargs})
             result = result.get("trace_outputs", {}) if result else {}
 
-
         except Exception as e:
             print(f"Error in query: {e}")
+            result = {"error": e}
+
+        return result
+
+    async def aquery(self, **kwargs) -> DictParams:
+        """Async version of query that uses async STAR methods.
+
+        Args:
+            **kwargs: Additional arguments passed to STAR loop.
+        """
+
+        @observable(name=f"Dana {self.agent_type}-agent-aquery")
+        async def _do_aquery(trace_inputs: DictParams) -> DictParams:
+            trace_outputs: DictParams = {}
+
+            MAX_ITERATIONS = 10
+            for _ in range(MAX_ITERATIONS):
+                try:
+                    # _see is sync (no async ops needed)
+                    trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
+                    # _think_async uses native async LLM call
+                    trace_thoughts = await self._think_async(trace_percepts.get("trace_percepts", {}))
+                    # _act_async uses native async tool execution
+                    trace_outputs = await self._act_async(trace_thoughts.get("trace_thoughts", {}))
+
+                    # Trigger acquisitive learning asynchronously at end of each STAR loop
+                    if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
+                        # Prepare acquisitive learning input (async, non-blocking)
+                        acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
+                        acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
+
+                        # Run asynchronously to not block STAR loop
+                        def run_reflect(acq_input):
+                            return self._reflect(acq_input)
+
+                        threading.Thread(target=run_reflect, args=(acquisitive_input,), daemon=True).start()
+
+                    if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
+                        break
+
+                except Exception as e:
+                    print(f"Error in aquery: {e}")
+                    trace_outputs = {"trace_outputs": {"error": e}}
+                    break
+
+            return trace_outputs
+
+        try:
+            result = await _do_aquery(trace_inputs={"trace_inputs": kwargs})
+            result = result.get("trace_outputs", {}) if result else {}
+
+        except Exception as e:
+            print(f"Error in aquery: {e}")
             result = {"error": e}
 
         return result

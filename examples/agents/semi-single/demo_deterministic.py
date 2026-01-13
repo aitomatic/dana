@@ -22,6 +22,7 @@ import os
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
+
     # Load from project root
     env_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
     load_dotenv(env_path)
@@ -31,7 +32,6 @@ except ImportError:
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
-from dana.apps.dana.thought_logger import ThoughtLogger
 from agents.yield_pareto_analysis_agent import YieldParetoAnalysisAgent
 
 
@@ -88,8 +88,8 @@ def print_root_cause_hypotheses(hypotheses: list):
     for i, hyp in enumerate(hypotheses, start=1):
         print(f"\nHypothesis #{hyp['rank']}: {hyp['hypothesis']}")
         print(f"  Confidence: {hyp['confidence']}")
-        print(f"  Evidence:")
-        for evidence in hyp.get('evidence', []):
+        print("  Evidence:")
+        for evidence in hyp.get("evidence", []):
             print(f"    • {evidence}")
         print(f"  Next Steps: {hyp.get('next_steps', 'Unknown')}")
 
@@ -104,10 +104,10 @@ def print_prioritized_actions(actions: list):
         print(f"  Fix Difficulty:  {action['fix_difficulty']}")
         print(f"  ROI Score:       {action['roi_score']:,.0f}")
         print(f"  Priority:        {action['priority_justification'][:80]}")
-        if 'estimated_timeline' in action:
+        if "estimated_timeline" in action:
             print(f"  Timeline:        {action['estimated_timeline']}")
-        print(f"  Actions:")
-        for rec_action in action.get('recommended_actions', [])[:3]:
+        print("  Actions:")
+        for rec_action in action.get("recommended_actions", [])[:3]:
             print(f"    • {rec_action}")
 
 
@@ -151,11 +151,7 @@ Watch the workflow progress in real-time below...
     print("Setting up agent...")
 
     # Create agent
-    agent = YieldParetoAnalysisAgent(
-        agent_id="yield-pareto-agent",
-        llm_provider="anthropic",
-        model="claude-3-5-sonnet-20241022"
-    )
+    agent = YieldParetoAnalysisAgent(agent_id="yield-pareto-agent", llm_provider="anthropic", model="claude-3-5-sonnet-20241022")
 
     print("✓ Agent ready\n")
 
@@ -166,11 +162,7 @@ Watch the workflow progress in real-time below...
     print("(Workflow progress shown below in gray...)\n")
 
     # Run the analysis directly via _do_execute to avoid REPL mode
-    results = agent._do_execute(
-        caller_message="Analyze yield",
-        wafer_id=None,
-        weeks=12
-    )
+    results = agent._do_execute(caller_message="Analyze yield", wafer_id=None, weeks=12)
 
     # ========================================
     # RESULTS: Display comprehensive output
@@ -202,7 +194,7 @@ Watch the workflow progress in real-time below...
     total_opportunity = summary["total_revenue_opportunity_usd"]
 
     print(f"""
-✓ SYSTEMATIC: Executed {len(results['analysis_metadata']['workflows_executed'])} workflows
+✓ SYSTEMATIC: Executed {len(results["analysis_metadata"]["workflows_executed"])} workflows
   - Can't skip steps (engineering rigor)
   - Every bin analyzed (comprehensive)
   - Pareto, correlation, ROI always performed
@@ -215,7 +207,7 @@ Watch the workflow progress in real-time below...
 
 ✓ ACTIONABLE: Clear prioritized plan
   - ${total_opportunity:,.0f} annual revenue opportunity identified
-  - {summary['pareto_bins_identified']} bins prioritized by ROI
+  - {summary["pareto_bins_identified"]} bins prioritized by ROI
   - Specific next steps with timelines
   - Evidence-based root cause hypotheses
 

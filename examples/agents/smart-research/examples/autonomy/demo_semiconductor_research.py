@@ -38,8 +38,7 @@ def analyze_research_quality(agent, result):
     timeline = agent.get_timeline_summary()
 
     # Count workflow usage
-    workflow_calls = len([line for line in timeline.split('\n')
-                         if 'Tool Call' in line and 'workflow' in line])
+    workflow_calls = len([line for line in timeline.split("\n") if "Tool Call" in line and "workflow" in line])
 
     # Check for quality indicators
     has_sources = "source" in response.lower() or "http" in response.lower()
@@ -107,9 +106,9 @@ def main():
     print(f"  Claim verification: {'Yes' if det_analysis['has_verification'] else 'No'}")
     print(f"  Recency check (2024-2025): {'Yes' if det_analysis['has_recency'] else 'No'}")
     print()
-    print(f"Response preview (first 500 chars):")
+    print("Response preview (first 500 chars):")
     print("-" * 80)
-    print(det_result.get('response', '')[:500] + "...")
+    print(det_result.get("response", "")[:500] + "...")
     print()
 
     # Wait for user
@@ -143,9 +142,9 @@ def main():
     print(f"  Claim verification: {'Yes' if prob_analysis['has_verification'] else 'No'}")
     print(f"  Recency check (2024-2025): {'Yes' if prob_analysis['has_recency'] else 'No'}")
     print()
-    print(f"Response preview (first 500 chars):")
+    print("Response preview (first 500 chars):")
     print("-" * 80)
-    print(prob_result.get('response', '')[:500] + "...")
+    print(prob_result.get("response", "")[:500] + "...")
     print()
 
     # Comparison

@@ -13,6 +13,7 @@ Use when: You want flexibility but can accept incomplete results.
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 from dana.core.agent.star_agent import STARAgent
@@ -30,10 +31,7 @@ class ProbabilisticAutonomyAgent(STARAgent):
     """
 
     def __init__(self):
-        super().__init__(
-            agent_type="yield_analysis",
-            agent_id="probabilistic-agent"
-        )
+        super().__init__(agent_type="yield_analysis", agent_id="probabilistic-agent")
 
         # Agent has access to workflows but makes probabilistic decisions
         self.pareto_wf = YieldParetoWorkflow()
@@ -85,14 +83,10 @@ class ProbabilisticAutonomyAgent(STARAgent):
         else:
             print("\nAgent reasoning: I see systematic patterns...")
             print("→ Agent decision: Run correlation workflow")
-            correlation_exec_result = self.correlation_wf.execute(
-                product=pareto_data["product"],
-                top_bins=top_bins,
-                weeks=12
-            )
+            correlation_exec_result = self.correlation_wf.execute(product=pareto_data["product"], top_bins=top_bins, weeks=12)
             correlation_result = correlation_exec_result.get("result", {})
             correlation_data = correlation_result.get("correlation_findings")
-            print(f"✓ Correlation complete")
+            print("✓ Correlation complete")
 
         # PROBABILISTIC DECISION: Agent decides on ROI
         print("\n" + "=" * 80)
@@ -107,7 +101,7 @@ class ProbabilisticAutonomyAgent(STARAgent):
                 product_context={
                     "average_selling_price_usd": 150,
                     "monthly_volume_wafers": 10000,
-                }
+                },
             )
             roi_result = roi_exec_result.get("result", {})
             actions = roi_result.get("prioritized_actions", [])

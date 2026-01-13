@@ -1826,6 +1826,7 @@ async def get_agent_knowledge_status(agent_id: int, db: Session = Depends(get_db
 
         # Load domain knowledge tree to get ALL topics
         from dana.studio.api.services.domain_knowledge_service import DomainKnowledgeService
+
         domain_service = DomainKnowledgeService()
         tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
 
@@ -1856,13 +1857,15 @@ async def get_agent_knowledge_status(agent_id: int, db: Session = Depends(get_db
                     all_topics.append(existing_status[current_path])
                 else:
                     # Topic exists in tree but hasn't been generated yet
-                    all_topics.append({
-                        "path": current_path,
-                        "status": None,  # null = not generated yet
-                        "last_generated": None,
-                        "file": None,
-                        "error": None,
-                    })
+                    all_topics.append(
+                        {
+                            "path": current_path,
+                            "status": None,  # null = not generated yet
+                            "last_generated": None,
+                            "file": None,
+                            "error": None,
+                        }
+                    )
 
             # Recurse for children
             if hasattr(node, "children") and node.children:

@@ -103,13 +103,10 @@ class ListDirResource(BaseResource):
                 entries = []
                 for entry in dir_path.iterdir():
                     # Filter hidden files (starting with '.')
-                    if entry.name.startswith('.'):
+                    if entry.name.startswith("."):
                         continue
 
-                    entries.append({
-                        "name": entry.name,
-                        "is_directory": entry.is_dir()
-                    })
+                    entries.append({"name": entry.name, "is_directory": entry.is_dir()})
 
                 # Sort: directories first, then alphabetically
                 entries.sort(key=lambda x: (not x["is_directory"], x["name"].lower()))
@@ -168,17 +165,17 @@ if __name__ == "__main__":
     """
     import tempfile
     import shutil
-    
+
     print("=" * 80)
     print("ListDirResource Usage Examples")
     print("=" * 80)
     print()
-    
+
     # Create a temporary directory structure for demo
     temp_dir = tempfile.mkdtemp()
     print(f"Created temporary workspace: {temp_dir}")
     print()
-    
+
     # Create sample directory structure
     print("Creating sample directory structure...")
     (Path(temp_dir) / "src").mkdir()
@@ -186,7 +183,7 @@ if __name__ == "__main__":
     (Path(temp_dir) / "src" / "utils").mkdir()
     (Path(temp_dir) / "tests").mkdir()
     (Path(temp_dir) / "docs").mkdir()
-    
+
     # Create some files
     (Path(temp_dir) / "README.md").write_text("# Project README")
     (Path(temp_dir) / "setup.py").write_text("# Setup file")
@@ -198,10 +195,10 @@ if __name__ == "__main__":
     (Path(temp_dir) / "src" / "utils" / "helpers.py").write_text("# Helpers")
     print("✓ Sample structure created")
     print()
-    
+
     # Initialize the resource
     resource = ListDirResource(workspace_root=temp_dir)
-    
+
     print("Example 1: List root directory")
     print("-" * 80)
     result = resource.list(directory_path=".")
@@ -209,71 +206,71 @@ if __name__ == "__main__":
     print(f"Directory: {result['directory_relative_workspace_path']}")
     print(f"Total entries: {len(result['files'])}")
     print("Contents:")
-    for entry in result['files']:
-        icon = "📁" if entry['is_directory'] else "📄"
+    for entry in result["files"]:
+        icon = "📁" if entry["is_directory"] else "📄"
         print(f"  {icon} {entry['name']}")
     print()
-    
+
     print("Example 2: List nested directory (src/)")
     print("-" * 80)
     result = resource.list(directory_path="src")
     print(f"Success: {result['success']}")
     print(f"Directory: {result['directory_relative_workspace_path']}")
     print("Contents:")
-    for entry in result['files']:
-        icon = "📁" if entry['is_directory'] else "📄"
+    for entry in result["files"]:
+        icon = "📁" if entry["is_directory"] else "📄"
         print(f"  {icon} {entry['name']}")
     print()
-    
+
     print("Example 3: List deeply nested directory (src/components/)")
     print("-" * 80)
     result = resource.list(directory_path="src/components")
     print(f"Success: {result['success']}")
     print(f"Directory: {result['directory_relative_workspace_path']}")
     print("Contents:")
-    for entry in result['files']:
-        icon = "📁" if entry['is_directory'] else "📄"
+    for entry in result["files"]:
+        icon = "📁" if entry["is_directory"] else "📄"
         print(f"  {icon} {entry['name']}")
     print()
-    
+
     print("Example 4: Handle non-existent directory")
     print("-" * 80)
     result = resource.list(directory_path="nonexistent")
     print(f"Success: {result['success']}")
     print(f"Error: {result['error']}")
     print()
-    
+
     print("Example 5: Handle file path (not a directory)")
     print("-" * 80)
     result = resource.list(directory_path="README.md")
     print(f"Success: {result['success']}")
     print(f"Error: {result['error']}")
     print()
-    
+
     print("Example 6: Hidden files filtering")
     print("-" * 80)
     print("Note: Hidden files (starting with '.') are automatically filtered out")
-    print(f"Created .gitignore file, but it won't appear in listings")
+    print("Created .gitignore file, but it won't appear in listings")
     result = resource.list(directory_path=".")
     print(f"Files listed: {[f['name'] for f in result['files']]}")
     print(f".gitignore is filtered: {'.gitignore' not in [f['name'] for f in result['files']]}")
     print()
-    
+
     print("Example 7: Sorting demonstration")
     print("-" * 80)
     print("Results are sorted: directories first, then alphabetically")
     result = resource.list(directory_path=".")
-    dirs = [f['name'] for f in result['files'] if f['is_directory']]
-    files = [f['name'] for f in result['files'] if not f['is_directory']]
+    dirs = [f["name"] for f in result["files"] if f["is_directory"]]
+    files = [f["name"] for f in result["files"] if not f["is_directory"]]
     print(f"Directories: {dirs}")
     print(f"Files: {files}")
     print()
-    
+
     # Cleanup
     shutil.rmtree(temp_dir)
-    print(f"Cleaned up temporary workspace")
+    print("Cleaned up temporary workspace")
     print()
-    
+
     print("=" * 80)
     print("Usage in code:")
     print("=" * 80)
@@ -298,4 +295,3 @@ if result['success']:
 else:
     print(f"Error: {result['error']}")
     """)
-

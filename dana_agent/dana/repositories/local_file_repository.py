@@ -374,7 +374,7 @@ class LocalEventRepository(LocalRepositoryMixin, EventRepositoryProtocol):
 
         # Save events to JSONL (one event per line)
         events_file = session_folder / "events.jsonl"
-        with open(events_file, "a") as f:
+        with open(events_file, "w") as f:
             for event in events:
                 f.write(json.dumps(event.to_dict()) + "\n")
 
@@ -456,11 +456,11 @@ class LocalLearningRepository(LocalRepositoryMixin, LearningRepositoryProtocol):
         # Format timestamp: YYYYMMDD_HHMMSS_microseconds
         timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S_%f")
 
-        # Use full loop_id with hyphens replaced by underscores for filename safety
-        loop_id_safe = loop_id.replace("-", "_")
+        # Extract short loop_id (first 8 chars before first hyphen)
+        loop_id_short = loop_id.split("-")[0] if "-" in loop_id else loop_id[:8]
 
         # Create filename
-        filename = f"loop_{timestamp_str}_{loop_id_safe}.json"
+        filename = f"loop_{timestamp_str}_{loop_id_short}.json"
         loop_file = acquisitive_path / filename
 
         # Write JSON file

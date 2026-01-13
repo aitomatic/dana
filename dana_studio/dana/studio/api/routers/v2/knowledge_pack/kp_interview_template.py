@@ -433,7 +433,7 @@ async def template_finetune_chat(
             role=spec.role,
             notifier=None,  # TODO: Add WebSocket notifier if available
         )
-        
+
         # Store db session for tools that need it
         handler.db = db
 
@@ -493,63 +493,59 @@ async def template_finetune_chat(
                 logger.info(f"📄 Read new template content ({len(new_content)} chars)")
                 logger.info(f"📊 Old content length: {len(old_content) if old_content else 0}")
                 logger.info(f"📊 Contents are same: {old_content == new_content}")
-                
+
                 # Import diff computation utilities
                 from dana.studio.api.core.schemas_v2._interview_template import TemplateDiff, TemplateDiffSection
                 import difflib
-                
+
                 # Use difflib to compute line-based diff
                 old_lines = old_content.splitlines(keepends=True) if old_content else []
                 new_lines = new_content.splitlines(keepends=True)
-                
+
                 differ = difflib.Differ()
                 diff_result = list(differ.compare(old_lines, new_lines))
-                
+
                 # Parse diff into sections
                 sections = []
                 current_section = None
                 line_num = 0
-                
+
                 for line in diff_result:
-                    if line.startswith('+ '):
+                    if line.startswith("+ "):
                         # Addition
-                        if current_section and current_section['type'] == 'add':
-                            current_section['content'] += line[2:]
+                        if current_section and current_section["type"] == "add":
+                            current_section["content"] += line[2:]
                         else:
                             if current_section:
                                 sections.append(TemplateDiffSection(**current_section))
-                            current_section = {'type': 'add', 'content': line[2:], 'line_start': line_num, 'line_end': line_num}
+                            current_section = {"type": "add", "content": line[2:], "line_start": line_num, "line_end": line_num}
                         line_num += 1
-                    elif line.startswith('- '):
+                    elif line.startswith("- "):
                         # Removal
-                        if current_section and current_section['type'] == 'remove':
-                            current_section['content'] += line[2:]
+                        if current_section and current_section["type"] == "remove":
+                            current_section["content"] += line[2:]
                         else:
                             if current_section:
                                 sections.append(TemplateDiffSection(**current_section))
-                            current_section = {'type': 'remove', 'content': line[2:], 'line_start': line_num, 'line_end': line_num}
-                    elif line.startswith('  '):
+                            current_section = {"type": "remove", "content": line[2:], "line_start": line_num, "line_end": line_num}
+                    elif line.startswith("  "):
                         # Unchanged
-                        if current_section and current_section['type'] == 'unchanged':
-                            current_section['content'] += line[2:]
-                            current_section['line_end'] = line_num
+                        if current_section and current_section["type"] == "unchanged":
+                            current_section["content"] += line[2:]
+                            current_section["line_end"] = line_num
                         else:
                             if current_section:
                                 sections.append(TemplateDiffSection(**current_section))
-                            current_section = {'type': 'unchanged', 'content': line[2:], 'line_start': line_num, 'line_end': line_num}
+                            current_section = {"type": "unchanged", "content": line[2:], "line_start": line_num, "line_end": line_num}
                         line_num += 1
-                
+
                 # Add last section
                 if current_section:
                     sections.append(TemplateDiffSection(**current_section))
-                
-                template_diff = TemplateDiff(
-                    sections=sections,
-                    old_content=old_content,
-                    new_content=new_content
-                )
+
+                template_diff = TemplateDiff(sections=sections, old_content=old_content, new_content=new_content)
                 logger.info(f"✅ Computed template diff with {len(sections)} sections")
-                
+
             except Exception as e:
                 logger.error(f"❌ Error computing template diff: {e}")
                 template_diff = None

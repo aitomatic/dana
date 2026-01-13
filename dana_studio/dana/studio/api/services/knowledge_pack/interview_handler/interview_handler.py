@@ -101,7 +101,7 @@ class InterviewHandler(AbstractHandler):
             logger.error(f"Failed to initialize note from template: {e}")
             # Create minimal note
             minimal_note = f"""# Interview Notes - {self.domain}
-**Date**: {datetime.now().strftime('%Y-%m-%d')}
+**Date**: {datetime.now().strftime("%Y-%m-%d")}
 
 ## Topics to Cover
 *To be determined from conversation*
@@ -131,7 +131,7 @@ INTERVIEW TEMPLATE:
 Create a markdown interview note with the following structure:
 
 # Interview Notes - [Domain from template]
-**Date**: {datetime.now().strftime('%Y-%m-%d')}
+**Date**: {datetime.now().strftime("%Y-%m-%d")}
 
 ## Interview Goal
 [Extract and summarize the goal from the template]
@@ -205,7 +205,7 @@ Generate the complete markdown note:"""
     def _generate_simple_note(self, template_content: str) -> str:
         """Fallback simple note generation without LLM."""
         return f"""# Interview Notes - {self.domain}
-**Date**: {datetime.now().strftime('%Y-%m-%d')}
+**Date**: {datetime.now().strftime("%Y-%m-%d")}
 
 ## Topics to Cover
 *To be determined from conversation*

@@ -11,13 +11,12 @@ from dana.studio.api.services.intent_detection.intent_handlers.handler_tools.bas
 )
 from dana.studio.api.repositories.domain_knowledge_repo import SQLDomainKnowledgeRepo
 from dana.studio.api.repositories.document_repo import SQLDocumentRepo
-from datetime import datetime
 
 
 class ReadDocumentsTool(BaseTool):
     """
     Tool for browsing and reading documents in a knowledge pack.
-    
+
     Two modes:
     1. List Mode (no document_id): Shows all documents with metadata
     2. Read Mode (with document_id): Previews document content using RAG
@@ -48,7 +47,7 @@ class ReadDocumentsTool(BaseTool):
     async def _execute(self, document_id: int = None, **kwargs) -> ToolResult:
         """
         List or read documents from the knowledge pack.
-        
+
         Args:
             document_id: Optional document ID. If None, lists all documents. If provided, reads that document.
         """
@@ -65,7 +64,7 @@ class ReadDocumentsTool(BaseTool):
             # Mode 1: List all documents (no document_id provided)
             if document_id is None:
                 return await self._list_all_documents(db)
-            
+
             # Mode 2: Read specific document (document_id provided)
             else:
                 return await self._read_document_content(document_id, db)
@@ -80,9 +79,7 @@ class ReadDocumentsTool(BaseTool):
     async def _list_all_documents(self, db) -> ToolResult:
         """List all documents in the knowledge pack."""
         # Get associated document IDs
-        doc_ids = await SQLDomainKnowledgeRepo.get_kp_associated_documents(
-            kp_id=self.kp_id, db=db
-        )
+        doc_ids = await SQLDomainKnowledgeRepo.get_kp_associated_documents(kp_id=self.kp_id, db=db)
 
         if not doc_ids:
             return ToolResult(
@@ -92,9 +89,7 @@ class ReadDocumentsTool(BaseTool):
             )
 
         # Fetch document details
-        documents = await SQLDocumentRepo.get_document_by_ids(
-            document_ids=doc_ids, db=db
-        )
+        documents = await SQLDocumentRepo.get_document_by_ids(document_ids=doc_ids, db=db)
 
         if not documents:
             return ToolResult(
@@ -115,9 +110,7 @@ class ReadDocumentsTool(BaseTool):
     async def _read_document_content(self, document_id: int, db) -> ToolResult:
         """Read and preview content from a specific document using RAG."""
         # Get document details
-        documents = await SQLDocumentRepo.get_document_by_ids(
-            document_ids=[document_id], db=db
-        )
+        documents = await SQLDocumentRepo.get_document_by_ids(document_ids=[document_id], db=db)
 
         if not documents:
             return ToolResult(
@@ -134,7 +127,7 @@ class ReadDocumentsTool(BaseTool):
             try:
                 query = f"Provide a brief overview and summary of the key content in the document titled: {doc.original_filename}"
                 results = await self.rag_docs.query(query)
-                
+
                 if results:
                     # Get top 5 most relevant chunks
                     content_preview = "\n\n".join([r.text for r in results[:5]])
@@ -163,7 +156,7 @@ class ReadDocumentsTool(BaseTool):
             content_parts.append(f"### {i}. {doc.original_filename}")
             content_parts.append(f"- **Document ID**: {doc.id}")
             content_parts.append(f"- **File Type**: {doc.mime_type}")
-            
+
             # Format file size
             if doc.file_size:
                 file_size_mb = doc.file_size / (1024 * 1024)
@@ -172,17 +165,19 @@ class ReadDocumentsTool(BaseTool):
                     content_parts.append(f"- **File Size**: {file_size_kb:.1f} KB")
                 else:
                     content_parts.append(f"- **File Size**: {file_size_mb:.2f} MB")
-            
+
             # Format upload date
             if doc.created_at:
                 upload_date = doc.created_at.strftime("%Y-%m-%d %H:%M")
                 content_parts.append(f"- **Uploaded**: {upload_date}")
-            
+
             content_parts.append("")
 
         content_parts.append("---")
         content_parts.append("")
-        content_parts.append("💡 **Tip**: To read a document's content, use `read_documents` with the document ID. To generate questions from a document, use `generate_additional_questions` with document IDs.")
+        content_parts.append(
+            "💡 **Tip**: To read a document's content, use `read_documents` with the document ID. To generate questions from a document, use `generate_additional_questions` with document IDs."
+        )
 
         return "\n".join(content_parts)
 
@@ -194,7 +189,7 @@ class ReadDocumentsTool(BaseTool):
         content_parts.append("")
         content_parts.append(f"**Document ID**: {doc.id}")
         content_parts.append(f"**File Type**: {doc.mime_type}")
-        
+
         # Format file size
         if doc.file_size:
             file_size_mb = doc.file_size / (1024 * 1024)
@@ -203,12 +198,12 @@ class ReadDocumentsTool(BaseTool):
                 content_parts.append(f"**File Size**: {file_size_kb:.1f} KB")
             else:
                 content_parts.append(f"**File Size**: {file_size_mb:.2f} MB")
-        
+
         # Format upload date
         if doc.created_at:
             upload_date = doc.created_at.strftime("%Y-%m-%d %H:%M")
             content_parts.append(f"**Uploaded**: {upload_date}")
-        
+
         content_parts.append("")
         content_parts.append("---")
         content_parts.append("")
@@ -221,12 +216,16 @@ class ReadDocumentsTool(BaseTool):
         else:
             content_parts.append("### Content Overview")
             content_parts.append("")
-            content_parts.append("*Document content preview is not available. The document may not be indexed yet, or RAG is not configured for this knowledge pack.*")
-        
+            content_parts.append(
+                "*Document content preview is not available. The document may not be indexed yet, or RAG is not configured for this knowledge pack.*"
+            )
+
         content_parts.append("")
         content_parts.append("---")
         content_parts.append("")
-        content_parts.append("💡 **Next Steps**: You can generate interview questions from this document using `generate_additional_questions` with this document ID.")
+        content_parts.append(
+            "💡 **Next Steps**: You can generate interview questions from this document using `generate_additional_questions` with this document ID."
+        )
 
         return "\n".join(content_parts)
 
@@ -249,4 +248,3 @@ if __name__ == "__main__":
         print("      Use this tool within the template handler context")
 
     asyncio.run(test_read_documents())
-

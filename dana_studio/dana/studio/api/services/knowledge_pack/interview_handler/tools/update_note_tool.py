@@ -189,7 +189,7 @@ The tool automatically preserves the note markdown structure and formatting.""",
                 # Extract insights from search content
                 search_insights = self._extract_insights_from_text(search_content)
                 replace_insights = self._extract_insights_from_text(replace_content)
-                
+
                 if search_insights and not replace_insights:
                     # Insights are being removed - this is likely an error
                     logger.error(
@@ -205,7 +205,9 @@ The tool automatically preserves the note markdown structure and formatting.""",
                         f"Please use view_note to see current insights and include them in your update."
                     )
                 elif search_insights and replace_insights:
-                    logger.info(f"✓ Insight preservation validated: {len(search_insights)} insights in search, {len(replace_insights)} in replace")
+                    logger.info(
+                        f"✓ Insight preservation validated: {len(search_insights)} insights in search, {len(replace_insights)} in replace"
+                    )
 
             if mode == "text":
                 # Text mode: exact string replacement
@@ -220,7 +222,7 @@ The tool automatically preserves the note markdown structure and formatting.""",
 
                 if occurrences == 1:
                     # Single match - safe to replace
-                    logger.info(f"Applying replacement - Preview of change:")
+                    logger.info("Applying replacement - Preview of change:")
                     logger.info(f"  BEFORE (first 150 chars): {search_content[:150]}...")
                     logger.info(f"  AFTER (first 150 chars): {replace_content[:150]}...")
                     new_content = new_content.replace(search_content, replace_content)
@@ -394,23 +396,23 @@ The tool automatically preserves the note markdown structure and formatting.""",
     def _extract_insights_from_text(self, text: str) -> list[str]:
         """
         Extract insight bullets from text content.
-        
+
         Args:
             text: Text content that may contain expert insights
-            
+
         Returns:
             List of insight strings (bullet points)
         """
         insights = []
-        
+
         # Look for Expert Insights section
-        insights_match = re.search(r'\*\*Expert Insights\*\*\s*\n((?:^[-*]\s.+$\n?)+)', text, re.MULTILINE)
+        insights_match = re.search(r"\*\*Expert Insights\*\*\s*\n((?:^[-*]\s.+$\n?)+)", text, re.MULTILINE)
         if insights_match:
             insights_text = insights_match.group(1)
             # Extract bullet points
-            bullet_points = re.findall(r'^[-*]\s(.+)$', insights_text, re.MULTILINE)
+            bullet_points = re.findall(r"^[-*]\s(.+)$", insights_text, re.MULTILINE)
             insights = [bp.strip() for bp in bullet_points if bp.strip()]
-        
+
         return insights
 
     def _create_ambiguity_suggestion(

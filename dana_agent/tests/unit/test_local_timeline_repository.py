@@ -135,13 +135,14 @@ class TestLocalTimelineRepositoryInitialization:
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
 
-            # Path uses object_id instead of class name
             # Path should be: {codec_prefix}/{agent.object_id}/events
+            # Check path structure (doesn't need to exist yet)
             path_str = str(repository._events_path)
             assert "TestCodec" in path_str
-            assert agent.object_id in path_str  # Uses object_id not class name
+            assert agent.object_id in path_str
             assert "events" in path_str
-            assert repository._events_path.name == "events"  # Cross-platform check
+            # Platform-independent check - path name should be "events"
+            assert repository._events_path.name == "events"
         finally:
             shutil.rmtree(temp_dir)
 
