@@ -374,7 +374,7 @@ class LocalEventRepository(LocalRepositoryMixin, EventRepositoryProtocol):
 
         # Save events to JSONL (one event per line)
         events_file = session_folder / "events.jsonl"
-        with open(events_file, "a") as f:
+        with open(events_file, "w") as f:
             for event in events:
                 f.write(json.dumps(event.to_dict()) + "\n")
 
