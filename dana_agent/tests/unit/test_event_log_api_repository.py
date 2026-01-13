@@ -15,6 +15,7 @@ from dana.core.agent import BaseAgent
 from dana.core.agent.components.event_log_api import EventLogAPI
 from dana.core.agent.components.observer import ObserverProtocol
 from dana.repositories import LocalEventRepository
+from dana.repositories.repository_factory import RepositoryFactory, RepositoryType
 
 
 class MockAgentForEventAPI(BaseAgent):
@@ -131,9 +132,15 @@ class TestEventLogAPIWithRepository:
             agent = MockAgentForEventAPI(storage_config=config)
             agent._session_id = "test-session-001"
             observer = MockObserver({"key": "value"})
+
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.EVENT, LocalEventRepository, config)
+
             event_log = EventLogAPI(
                 agent=agent,
                 observer=observer,
+                repository_factory=factory,
             )
 
             # Record and save an event
@@ -156,9 +163,15 @@ class TestEventLogAPIWithRepository:
             agent = MockAgentForEventAPI(storage_config=config)
             agent._session_id = "test-session-001"
             observer = MockObserver({"event": 0})
+
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.EVENT, LocalEventRepository, config)
+
             event_log = EventLogAPI(
                 agent=agent,
                 observer=observer,
+                repository_factory=factory,
             )
 
             # Record multiple events
@@ -185,9 +198,15 @@ class TestEventLogAPIWithRepository:
             agent = MockAgentForEventAPI(storage_config=config)
             agent._session_id = "test-session-001"
             observer = MockObserver({"event": 0})
+
+            # Create a custom factory with the test's storage config
+            factory = RepositoryFactory()
+            factory.register(RepositoryType.EVENT, LocalEventRepository, config)
+
             event_log = EventLogAPI(
                 agent=agent,
                 observer=observer,
+                repository_factory=factory,
             )
 
             # Record multiple events
@@ -227,7 +246,6 @@ class TestEventLogAPIWithRepository:
         observer = MockObserver()
         event_log = EventLogAPI(
             agent=agent,
-            codec=None,
             observer=observer,
         )
 

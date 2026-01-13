@@ -67,7 +67,7 @@ class TestLocalTimelineRepositoryInitialization:
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
 
-            assert repository._storage_config == config
+            assert repository.storage_config == config
             assert repository._workspace_folder == Path(temp_dir)
         finally:
             shutil.rmtree(temp_dir)
@@ -82,8 +82,8 @@ class TestLocalTimelineRepositoryInitialization:
             config = FileStorageConfig(workspace_folder=temp_dir)
             repository = LocalTimelineRepository(config, agent)
 
-            assert repository._storage_config is not None
-            assert isinstance(repository._storage_config, FileStorageConfig)
+            assert repository.storage_config is not None
+            assert isinstance(repository.storage_config, FileStorageConfig)
         finally:
             shutil.rmtree(temp_dir)
 
@@ -135,11 +135,11 @@ class TestLocalTimelineRepositoryInitialization:
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
 
-            # Path should be: {codec_prefix}/{agent.__class__.__qualname__}__{filename}/events
-            # Check path structure (doesn't need to exist yet)
+            # Path uses object_id instead of class name
+            # Path should be: {codec_prefix}/{agent.object_id}/events
             path_str = str(repository._events_path)
             assert "TestCodec" in path_str
-            assert "MockAgent" in path_str
+            assert agent.object_id in path_str  # Uses object_id not class name
             assert "events" in path_str
             assert path_str.endswith("/events")
         finally:

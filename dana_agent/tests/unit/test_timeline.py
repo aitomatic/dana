@@ -382,14 +382,18 @@ class TestTimelineWithRepository:
 
     def test_timeline_read_since_error_when_no_repository(self):
         """Test Timeline.read_since() raises error when repository is None."""
-        timeline = Timeline(max_context_tokens=1000)
+        agent = MockAgentForTimeline()
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
+        # Manually set repository to None to test error case
+        timeline._repository = None
 
         with pytest.raises(ValueError, match="repository is None"):
             list(timeline.read_since(checkpoint=0))
 
     def test_timeline_read_since_error_when_no_agent(self):
-        """Test Timeline.read_since() raises error when agent is None."""
-        timeline = Timeline(max_context_tokens=1000)
+        """Test Timeline.read_since() raises error when repository is None (agent=None creates this)."""
+        agent = MockAgentForTimeline()
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
         # Manually set repository to None to test error case
         timeline._repository = None
 
@@ -407,7 +411,10 @@ class TestTimelineWithRepository:
 
     def test_timeline_save_error_when_no_repository(self):
         """Test Timeline.save() raises error when repository is None."""
-        timeline = Timeline(max_context_tokens=1000)
+        agent = MockAgentForTimeline()
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
+        # Manually set repository to None to test error case
+        timeline._repository = None
 
         with pytest.raises(ValueError, match="repository is None"):
             timeline.save("test-session")

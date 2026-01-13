@@ -119,11 +119,11 @@ class TestLocalLearningRepositoryInitialization:
             agent = MockAgent(storage_config=config)
             repository = LocalLearningRepository(config, agent)
 
-            # Path should be: {workspace_folder}/{codec_prefix}/{agent.__class__.__qualname__}__{filename}
-            # Check path structure (doesn't need to exist yet)
+            # Path uses object_id instead of class name
+            # Path should be: {workspace_folder}/{codec_prefix}/{agent.object_id}
             path_str = str(repository._base_storage_path)
             assert "TestCodec" in path_str
-            assert "MockAgent" in path_str
+            assert agent.object_id in path_str  # Uses object_id not class name
         finally:
             shutil.rmtree(temp_dir)
 

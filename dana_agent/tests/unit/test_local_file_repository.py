@@ -115,7 +115,8 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "system_prompt_template"
+            # Path now uses object_id instead of class name
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
             assert path == expected_path
             assert path.exists()
         finally:
@@ -132,7 +133,8 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "resources" / "MockResource"
+            # Path now uses object_id instead of class name
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / str(component.object_id)
             assert path == expected_path
             assert path.exists()
         finally:
@@ -149,7 +151,8 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "workflows" / "MockWorkflow"
+            # Path now uses object_id instead of class name
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "workflows" / str(component.object_id)
             assert path == expected_path
             assert path.exists()
         finally:
@@ -166,7 +169,8 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / "MockAgent" / "prompts" / "agents" / "MockAgent"
+            # Path now uses object_id instead of class name
+            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "agents" / str(nested_agent.object_id)
             assert path == expected_path
             assert path.exists()
         finally:
