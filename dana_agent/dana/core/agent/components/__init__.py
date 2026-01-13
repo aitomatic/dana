@@ -9,12 +9,14 @@ with different capabilities:
 - State: State management and timeline functionality
 - Learner: STAR learning phases and reflection
 - ToolCaller: Tool call execution and orchestration
+- PythonSandbox: Safe Python execution environment for RLM pattern
 """
 
 from .communicator import Communicator
 from .learner import Learner, LearnerProtocol
 from .observer import NullObserver, ObserverProtocol
 from .prompt_engineer import PromptEngineer
+from .python_sandbox import PythonSandbox
 from .state import State
 from .tool_caller import ToolCaller
 
@@ -26,6 +28,7 @@ __all__ = [
     "NullObserver",
     "ObserverProtocol",
     "PromptEngineer",
+    "PythonSandbox",
     "State",
     "ToolCaller",
 ]

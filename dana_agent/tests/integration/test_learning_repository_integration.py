@@ -44,15 +44,17 @@ class TestLearningRepositoryIntegration:
 
             session_id = agent._session_id
 
-            # Save multiple loops
+            # Save multiple loops with unique loop IDs
+            # Use unique first segment to avoid filename collisions on fast systems
             for i in range(3):
+                loop_id = f"loop{i}-test-{i}"
                 loop_data = {
-                    "loop_id": f"test-loop-{i}",
+                    "loop_id": loop_id,
                     "timestamp": datetime.now().isoformat(),
                     "session_id": session_id,
                     "learning_note": f"Learning note {i}",
                 }
-                repository.save_acquisitive_loop(session_id, loop_data, f"test-loop-{i}", datetime.now())
+                repository.save_acquisitive_loop(session_id, loop_data, loop_id, datetime.now())
 
             # Load back
             learning_notes = repository.load_acquisitive_loops(session_id)
