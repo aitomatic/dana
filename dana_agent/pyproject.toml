@@ -51,6 +51,7 @@ dependencies = [
     "readability-lxml>=0.8.1",
     "html2text>=2024.2.26",
     "llama-stack>=0.3.0",
+    "llama-stack-client>=0.3.0",
     "ollama>=0.6.0",
     "pydantic-settings>=2.11.0",
     "rank-bm25>=0.2.2",
