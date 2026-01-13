@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import {
   IconLoader,
   IconChevronLeft,
@@ -34,54 +34,56 @@ export const ExcelReview = ({ blobUrl, currentPage, setCurrentPage }: ExcelRevie
   const processExcelFile = useCallback(
     async (arrayBuffer: ArrayBuffer, fileSize: number) => {
       try {
-        // For large files, use limited processing options
-        const options: XLSX.ParsingOptions = {
-          type: 'array',
-          cellDates: true,
-          cellNF: false, // Don't parse number formats for better performance
-          cellStyles: false, // Skip styles for better performance with large files
-        };
-
-        // Additional options for smaller files
-        if (fileSize <= MAX_PREVIEW_SIZE) {
-          options.cellStyles = true;
-          options.cellNF = true;
-        }
-
-        const workbook = XLSX.read(new Uint8Array(arrayBuffer), options);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(arrayBuffer);
 
         const sheetsData: { [sheetName: string]: any[] } = {};
         const rowCountsData: { [sheetName: string]: number } = {};
+        const sheetNamesList: string[] = [];
 
         // Set partial data flag for large files
         setIsPartialData(fileSize > MAX_PREVIEW_SIZE);
 
-        workbook.SheetNames.forEach((sheetName) => {
-          const worksheet = workbook.Sheets[sheetName];
+        workbook.eachSheet((worksheet) => {
+          const sheetName = worksheet.name;
+          sheetNamesList.push(sheetName);
 
-          // Get sheet range to determine total rows
-          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-          rowCountsData[sheetName] = range.e.r + 1;
+          // Get total row count
+          const totalRows = worksheet.rowCount;
+          rowCountsData[sheetName] = totalRows;
 
           // For large files, limit the amount of data we process
-          if (fileSize > MAX_PREVIEW_SIZE) {
-            // Create a limited range to read (first ~1000 rows)
-            const limitedRange = {
-              s: { r: 0, c: 0 },
-              e: { r: Math.min(1000, range.e.r), c: range.e.c },
-            };
-            worksheet['!ref'] = XLSX.utils.encode_range(limitedRange);
-          }
+          const maxRows = fileSize > MAX_PREVIEW_SIZE ? Math.min(1000, totalRows) : totalRows;
 
-          // Convert to JSON with headers option for first row
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          const jsonData: any[][] = [];
+          worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+            if (rowNumber <= maxRows) {
+              const rowData: any[] = [];
+              row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                // Handle different cell value types
+                let value = cell.value;
+                if (value && typeof value === 'object') {
+                  if ('result' in value) {
+                    value = value.result; // Formula result
+                  } else if ('text' in value) {
+                    value = value.text; // Rich text
+                  } else if (value instanceof Date) {
+                    value = value.toLocaleDateString();
+                  }
+                }
+                rowData[colNumber - 1] = value;
+              });
+              jsonData.push(rowData);
+            }
+          });
+
           sheetsData[sheetName] = jsonData;
         });
 
         setSheets(sheetsData);
-        setSheetNames(workbook.SheetNames);
+        setSheetNames(sheetNamesList);
         setSheetRowCounts(rowCountsData);
-        setActiveSheet(workbook.SheetNames[0]); // Set the first sheet as active by default
+        setActiveSheet(sheetNamesList[0] || '');
         setError(null);
       } catch (error) {
         console.error('Error processing Excel file:', error);

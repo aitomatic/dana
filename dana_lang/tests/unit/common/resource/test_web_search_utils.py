@@ -7,15 +7,15 @@ import pytest
 from dana_lang.common.sys_resource.web_search.utils.content_processor import ContentProcessor
 from dana_lang.common.sys_resource.web_search.utils.summarizer import ContentSummarizer
 
-
 class TestContentProcessor:
     """Tests for ContentProcessor utility."""
 
     def setup_method(self):
         """Set up test fixtures."""
-        with patch("dana.common.sys_resource.llm.legacy_llm_resource.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.content_processor.AzureReasoning"):
             self.processor = ContentProcessor()
             self.processor._llm_resource = MagicMock()
+            self.processor._llm_resource.reason = AsyncMock()
 
     @pytest.mark.asyncio
     async def test_process_content_short(self):
@@ -36,16 +36,13 @@ class TestContentProcessor:
         medium_content = "This is a medium length content. " * 20  # ~660 characters
         query = "specific information"
 
-        # Mock LLM response
-        mock_response = MagicMock()
-        mock_response.success = True
-        mock_response.content = {"choices": [{"message": {"content": "Summarized content relevant to query"}}]}
-        self.processor._llm_resource.query = AsyncMock(return_value=mock_response)
+        # Mock LLM response - reason() returns a string directly
+        self.processor._llm_resource.reason = AsyncMock(return_value="Summarized content relevant to query")
 
         result = await self.processor.process_content(medium_content, query)
 
         assert result == "Summarized content relevant to query"
-        self.processor._llm_resource.query.assert_called_once()
+        self.processor._llm_resource.reason.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_process_content_long_rag_approach(self):
@@ -73,18 +70,16 @@ class TestContentProcessor:
         content = "This content contains information about Intel processors and their specifications."
         query = "Intel processor specifications"
 
-        mock_response = MagicMock()
-        mock_response.success = True
-        mock_response.content = {"choices": [{"message": {"content": "Intel processor specifications include core count and frequency."}}]}
-        self.processor._llm_resource.query = AsyncMock(return_value=mock_response)
+        # Mock LLM response - reason() returns a string directly
+        self.processor._llm_resource.reason = AsyncMock(return_value="Intel processor specifications include core count and frequency.")
 
         result = await self.processor._summarize_for_query(content, query)
 
         assert result == "Intel processor specifications include core count and frequency."
 
         # Verify the request structure
-        call_args = self.processor._llm_resource.query.call_args[0][0]
-        messages = call_args.arguments["messages"]
+        call_args = self.processor._llm_resource.reason.call_args
+        messages = call_args.kwargs["messages"]
         assert len(messages) == 2
         assert "Extract only the information" in messages[1]["content"]
         assert query in messages[1]["content"]
@@ -96,10 +91,8 @@ class TestContentProcessor:
         content = "This content is about cooking recipes."
         query = "Intel processor specifications"
 
-        mock_response = MagicMock()
-        mock_response.success = True
-        mock_response.content = {"choices": [{"message": {"content": "No relevant information found"}}]}
-        self.processor._llm_resource.query = AsyncMock(return_value=mock_response)
+        # Mock LLM response - reason() returns a string directly
+        self.processor._llm_resource.reason = AsyncMock(return_value="No relevant information found")
 
         result = await self.processor._summarize_for_query(content, query)
 
@@ -174,7 +167,7 @@ class TestContentSummarizer:
 
     def test_content_summarizer_initialization(self):
         """Test ContentSummarizer initialization."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
@@ -183,7 +176,7 @@ class TestContentSummarizer:
 
     def test_build_query_engine_success(self):
         """Test successful query engine building."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch("llama_index.core.VectorStoreIndex") as mock_index_class:
                 with patch("dana.common.sys_resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource"):
                     # Mock the index and retriever
@@ -199,7 +192,7 @@ class TestContentSummarizer:
 
     def test_build_query_engine_exception_handling(self):
         """Test query engine building with exception handling."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch("llama_index.core.VectorStoreIndex") as mock_index_class:
                 mock_index_class.from_documents.side_effect = Exception("Index building failed")
 
@@ -210,7 +203,7 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_retrieve_success(self):
         """Test successful content retrieval."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
@@ -232,7 +225,7 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_retrieve_no_retriever(self):
         """Test retrieval when no retriever is available."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
                 summarizer.retriever = None
@@ -244,7 +237,7 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_retrieve_exception_handling(self):
         """Test retrieval with exception handling."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
@@ -259,7 +252,7 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_get_relevant_context(self):
         """Test getting relevant context chunks."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
@@ -273,7 +266,7 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_get_relevant_context_empty_chunks(self):
         """Test getting relevant context with empty chunks."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
                 summarizer.retrieve = AsyncMock(return_value=[])
@@ -285,15 +278,11 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_summarize_for_query_success(self):
         """Test successful query-focused summarization."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource") as mock_llm_resource_class:
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning") as mock_llm_resource_class:
             with patch.object(ContentSummarizer, "_build_retriever"):
-                # Mock LLM response
-                mock_response = MagicMock()
-                mock_response.success = True
-                mock_response.content = {"choices": [{"message": {"content": "Generated summary content"}}]}
-
+                # Mock LLM instance and reason method - reason() returns a string directly
                 mock_llm_instance = MagicMock()
-                mock_llm_instance.query = AsyncMock(return_value=mock_response)
+                mock_llm_instance.reason = AsyncMock(return_value="Generated summary content")
                 mock_llm_resource_class.return_value = mock_llm_instance
 
                 summarizer = ContentSummarizer(self.test_content)
@@ -306,7 +295,7 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_summarize_for_query_no_context(self):
         """Test summarization with no relevant context."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning"):
             with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
                 summarizer.get_relevant_context = AsyncMock(return_value=None)
@@ -318,15 +307,11 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_summarize_for_query_llm_failure(self):
         """Test summarization with LLM failure."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource") as mock_llm_resource_class:
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning") as mock_llm_resource_class:
             with patch.object(ContentSummarizer, "_build_retriever"):
-                # Mock failed LLM response
-                mock_response = MagicMock()
-                mock_response.success = False
-                mock_response.error = "LLM query failed"
-
+                # Mock LLM instance that returns empty string (failure case)
                 mock_llm_instance = MagicMock()
-                mock_llm_instance.query = AsyncMock(return_value=mock_response)
+                mock_llm_instance.reason = AsyncMock(return_value="")
                 mock_llm_resource_class.return_value = mock_llm_instance
 
                 summarizer = ContentSummarizer(self.test_content)
@@ -374,21 +359,19 @@ class TestContentSummarizer:
     @pytest.mark.asyncio
     async def test_summarize_for_query_exception_handling(self):
         """Test summarization with exception handling."""
-        with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource") as mock_llm_resource_class:
+        with patch("dana.common.sys_resource.web_search.utils.summarizer.AzureReasoning") as mock_llm_resource_class:
             with patch.object(ContentSummarizer, "_build_retriever"):
-                with patch.object(
-                    ContentSummarizer, "get_relevant_context", new=AsyncMock(return_value="Context chunk 1\n\nContext chunk 2")
-                ):
-                    # Create mock LLM instance that fails during query
-                    mock_llm_instance = AsyncMock()
-                    mock_llm_resource_class.return_value = mock_llm_instance
-                    mock_llm_instance.query = AsyncMock(side_effect=Exception("Query failed"))
+                # Create mock LLM instance that fails during reason call
+                mock_llm_instance = MagicMock()
+                mock_llm_instance.reason = AsyncMock(side_effect=Exception("Query failed"))
+                mock_llm_resource_class.return_value = mock_llm_instance
 
-                    summarizer = ContentSummarizer(self.test_content)
+                summarizer = ContentSummarizer(self.test_content)
+                summarizer.get_relevant_context = AsyncMock(return_value="Context chunk 1\n\nContext chunk 2")
 
-                    result = await summarizer.summarize_for_query("test query")
+                result = await summarizer.summarize_for_query("test query")
 
-                    assert result is None
+                assert result is None
 
 
 if __name__ == "__main__":

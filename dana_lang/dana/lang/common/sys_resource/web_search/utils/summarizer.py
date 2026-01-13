@@ -2,9 +2,7 @@
 
 import logging
 
-from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.lang.common.types import BaseRequest
-from dana.lang.common.utils.misc import Misc
+from dana.common.sys_resource.web_search.utils.reasoning import AzureReasoning
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +23,14 @@ class ContentSummarizer:
         self.top_k = top_k
 
         # Initialize LLM resource for summarization
-        self._llm_resource = LegacyLLMResource(
-            name="web_search_content_summarizer",
-            temperature=0.1,  # Low temperature for consistent, factual summaries
-        )
-
+        self._llm_resource = AzureReasoning()
         self._build_retriever()
 
     def _build_retriever(self):
         """Build retrieval system from content."""
         try:
             from llama_index.core import VectorStoreIndex, Document
-            from dana.lang.common.sys_resource.embedding.embedding_integrations import LlamaIndexEmbeddingResource
+            from dana.common.sys_resource.embedding.embedding_integrations import LlamaIndexEmbeddingResource
 
             # Get Dana's standard embedding model
             embedding_resource = LlamaIndexEmbeddingResource()
@@ -137,22 +131,17 @@ class ContentSummarizer:
             }
 
             # Call LLM resource
-            request = BaseRequest(
-                arguments={
-                    "messages": [system_message, user_message],
-                    "max_tokens": 2000,  # Reasonable limit for summaries
-                }
+            summary = await self._llm_resource.reason(
+                messages=[system_message, user_message],
+                max_tokens=2000,  # Reasonable limit for summaries
+                temperature=0.1,  # Low temperature for consistent, factual summaries
             )
 
-            response = await self._llm_resource.query(request)
-
-            if response.success and response.content:
-                summary = Misc.get_response_content(response)
-
+            if summary:
                 logger.debug(f"Generated summary for query '{query}': {len(summary)} chars")
                 return summary
             else:
-                logger.error(f"LLM query failed: {response.error}")
+                logger.error("LLM query failed or returned no content")
                 return None
 
         except Exception as e:
