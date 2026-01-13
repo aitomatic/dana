@@ -1,0 +1,242 @@
+# pyproject.toml - Adana Project Configuration
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
+# =============================================================================
+# Build System Configuration
+# =============================================================================
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# =============================================================================
+# Project Metadata
+# =============================================================================
+
+[project]
+name = "dana"
+version = "0.1.1"
+description = "Dana Agent - Domain-Aware Neurosymbolic Agents"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Christopher Nguyen", email = "ctn@aitomatic.com" }]
+maintainers = [
+    { name = "Vinh Luong", email = "vinh@aitomatic.com" },
+    { name = "Annie Ha", email = "annie@aitomatic.com" },
+    { name = "Lam Nguyen", email = "lam@aitomatic.com" },
+    { name = "Roy Vu", email = "roy@aitomatic.com" },
+    { name = "Sang Dinh", email = "sang@aitomatic.com" },
+]
+
+# Core runtime dependencies for LLM app development
+dependencies = [
+    # Core LLM Integration
+    "openai>=1.55.3",
+    "anthropic",
+    # HTTP client for API calls
+    "httpx>=0.27.0",
+    # Configuration management
+    "python-dotenv>=1.0.0",
+    # Basic utilities
+    "structlog>=24.0.0",
+    "tqdm>=4.65.0",
+    # Data processing (if needed at runtime)
+    "matplotlib>=3.10.6",
+    "pandas>=2.2.0,<2.3.0", # Aligned with llama-index-embeddings-ibm requirements
+    "langfuse>=3.5.1",
+    # Web research dependencies
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
+    "readability-lxml>=0.8.1",
+    "html2text>=2024.2.26",
+    "llama-stack>=0.3.0",
+    "llama-stack-client>=0.3.0",
+    "ollama>=0.6.0",
+    "pydantic-settings>=2.11.0",
+    "rank-bm25>=0.2.2",
+    # PDF processing
+    "pypdf>=4.0.0",
+]
+
+# Command-line entry points
+[project.scripts]
+dana-agent = "dana.apps.dana.__main__:main"
+dana-agent-repl = "dana.apps.repl.__main__:main"
+
+# Optional dependency groups
+[project.optional-dependencies]
+dev = [
+    # Testing framework
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    # Code quality tools
+    "ruff>=0.13.0",      # Fast Python linter and formatter
+    "mypy>=1.8.0",       # Static type checking
+    "pre-commit>=4.3.0", # Git hooks for code quality
+    # Package management
+    "build>=1.0.0", # Package building tool
+    "twine>=5.0.0", # PyPI upload tool
+    # Development utilities
+    "langfuse>=3", # LLM observability
+    # REPL support (dev/interactive use)
+    "prompt-toolkit>=3.0.0",
+    "pygments>=2.0.0",
+]
+
+docs = [
+    # Minimal documentation setup
+    "mkdocs",
+    "mkdocs-material",
+]
+
+# =============================================================================
+# Package Configuration
+# =============================================================================
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dana*"]
+exclude = ["tests*", "examples*", "docs*", "tmp*", "dana.egg-info*", ".venv*", ".ruff_cache*", "__pycache__*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "**/*.py",
+    "**/*.na",
+    "**/*.lark",
+    "**/*.json",
+    "**/*.xml",
+]
+
+# =============================================================================
+# Package Manager Configuration (uv)
+# =============================================================================
+
+[tool.uv]
+package = true
+preview = true                     # Enable preview features
+resolution = "highest"             # Use highest compatible versions
+prerelease = "allow"               # Allow pre-release versions for OpenTelemetry
+python-preference = "only-managed" # Use uv-managed Python installations
+compile-bytecode = true            # Pre-compile .pyc files for performance
+
+[tool.uv.sources]
+# Future: Custom dependency sources
+
+# =============================================================================
+# Code Quality Tools
+# =============================================================================
+
+[tool.black]
+line-length = 140
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "B",    # bugbear (common Python gotchas)
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort (import sorting)
+    "UP",   # pyupgrade (modern Python features)
+    "N801", # naming conventions - class names
+    "N803", # naming conventions - argument names
+    "N804", # naming conventions - first argument names
+    "F401", # unused imports
+    "F821", # undefined names
+    "F822", # undefined names in __all__
+    "F841", # unused variables
+]
+
+ignore = [
+    "B008",  # Function call in default argument
+    "B010",  # setattr in class body
+    "B024",  # Abstract base class without abstract methods (design pattern choice)
+    "B904",  # raise ... from ...
+    "E203",  # Whitespace before ':' (conflicts with Black)
+    "E402",  # Module level import not at top of file (intentional in CLI)
+    "E501",  # Line too long (handled by line-length)
+    "F403",  # import * used; unable to detect undefined names (acceptable in __init__.py)
+    "N802",  # Function name should be lowercase
+    "UP007", # use `X | Y` for type annotations
+]
+
+exclude = [
+    "*.na",
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "dana.egg-info",
+    "**/.archived/**",
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+force-single-line = false
+lines-after-imports = 2
+known-first-party = ["apps", "common", "core", "frameworks", "lib", "specs"]
+known-third-party = [
+    "openai",
+    "anthropic",
+    "httpx",
+    "structlog",
+    "tqdm",
+    "pytest",
+    "pytest-asyncio",
+    "pre-commit",
+    "ruff",
+    "matplotlib",
+    "pandas",
+    "mypy",
+    "build",
+    "twine",
+    "mkdocs",
+    "mkdocs-material",
+    "requests",
+    "bs4",
+    "lxml",
+    "readability",
+    "html2text",
+]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[tool.pyright]
+reportAttributeAccessIssue = false
+reportGeneralTypeIssues = false
+reportAssignmentType = false
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "dana.core.lang.interpreter.*"
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+markers = [
+    "windows_console: marks tests that require Windows console features (deselect with '-m \"not windows_console\"')",
+]

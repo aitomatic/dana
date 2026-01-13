@@ -27,6 +27,7 @@
       "module": "dana.apps.cli.__main__",
       "args": ["${file}"],
       "console": "integratedTerminal",
+      "justMyCode": false,
       "env" : {
         "DANAPATH" : "${workspaceFolder}"
       }
@@ -38,6 +39,18 @@
       "justMyCode": false,
       "module": "dana.apps.cli.__main__",
       "args": ["studio", "--reload"],
+      "console": "integratedTerminal",
+      "env" : {
+        "DANAPATH" : "${workspaceFolder}"
+      }
+    },
+    {
+      "name" : "Debug Dana Backend Migrated",
+      "type": "python",
+      "request": "launch",
+      "justMyCode": false,
+      "module": "dana_studio.dana.studio.__main__",
+      "args": ["--reload"],
       "console": "integratedTerminal",
       "env" : {
         "DANAPATH" : "${workspaceFolder}"

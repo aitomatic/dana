@@ -19,6 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  if: false  # temporarily disable all jobs (ctn 9/14/25)
   build:
     runs-on: ubuntu-latest
     steps:

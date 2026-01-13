@@ -1,0 +1,12 @@
+struct FileLoader:
+    name : str = "FileLoader"
+
+def (loader: FileLoader) say_hi():
+    return "Hello, world!"
+
+def (loader: FileLoader) list_files(path: str = "."):
+    print(loader.say_hi())
+    return ["file1.txt", "file2.txt", "file3.txt"]
+
+loader = FileLoader()
+

@@ -1,0 +1,142 @@
+# Dana Agent Keyword - Basic Agent Example
+# This example demonstrates the fundamental agent keyword functionality
+
+log("🚀 Dana Agent Keyword - Basic Agent Example")
+log("=" * 50)
+
+# ============================================================================
+# 1. BASIC AGENT DEFINITION
+# ============================================================================
+
+log("\n📋 1. Basic Agent Definition")
+log("-" * 30)
+
+# Define an agent with built-in intelligence capabilities
+agent_blueprint ManufacturingInspector:
+    process_type: str = "assembly"
+    tolerance_threshold: float = 0.02
+    alert_channels: list[str] = ["email", "slack"]
+
+log("✅ Agent type 'ManufacturingInspector' defined with built-in intelligence")
+
+# ============================================================================
+# 2. AGENT INSTANTIATION
+# ============================================================================
+
+log("\n🔧 2. Agent Instantiation")
+log("-" * 30)
+
+# Create agent instances with different configurations
+inspector_assembly = ManufacturingInspector(
+    process_type="assembly",
+    tolerance_threshold=0.015
+)
+
+inspector_welding = ManufacturingInspector(
+    process_type="welding",
+    tolerance_threshold=0.025
+)
+
+log(f"✅ Created inspector_assembly: {inspector_assembly}")
+log(f"✅ Created inspector_welding: {inspector_welding}")
+
+# ============================================================================
+# 3. BUILT-IN PLAN() METHOD
+# ============================================================================
+
+log("\n🧠 3. Built-in plan() Method")
+log("-" * 30)
+
+# Use the built-in AI-powered planning capability
+log("📋 Planning for assembly inspector:")
+assembly_plan = inspector_assembly.plan("Inspect production line for quality defects")
+
+log(f"📝 Assembly Plan Result: {assembly_plan}")
+
+log("\n📋 Planning for welding inspector:")
+welding_plan = inspector_welding.plan("Optimize welding process parameters")
+
+log(f"📝 Welding Plan Result: {welding_plan}")
+
+# ============================================================================
+# 4. BUILT-IN SOLVE() METHOD
+# ============================================================================
+
+log("\n🔍 4. Built-in solve() Method")
+log("-" * 30)
+
+# Use the built-in AI-powered problem-solving capability
+log("🔍 Solving problem with assembly inspector:")
+assembly_solution = inspector_assembly.solve("High defect rate in batch A-2024-001")
+
+log(f"💡 Assembly Solution: {assembly_solution}")
+
+log("\n🔍 Solving problem with welding inspector:")
+welding_solution = inspector_welding.solve("Inconsistent weld penetration depth")
+
+log(f"💡 Welding Solution: {welding_solution}")
+
+# ============================================================================
+# 5. MEMORY AND CONVERSATION HISTORY
+# ============================================================================
+
+log("\n🧠 5. Memory and Conversation History")
+log("-" * 30)
+
+# Store information in agent memory
+inspector_assembly.remember("common_defects", ["misalignment", "surface_roughness"])
+inspector_assembly.remember("best_practices", ["calibrate_daily", "check_temperature"])
+
+# Retrieve information from memory
+common_defects = inspector_assembly.recall("common_defects")
+best_practices = inspector_assembly.recall("best_practices")
+
+log(f"📚 Common Defects: {common_defects}")
+log(f"📚 Best Practices: {best_practices}")
+
+# Check memory functionality
+log("📜 Memory functionality tested above")
+log("🔑 Common defects and best practices stored in memory")
+
+# ============================================================================
+# 6. FIELD ACCESS AND MODIFICATION
+# ============================================================================
+
+log("\n⚙️ 6. Field Access and Modification")
+log("-" * 30)
+
+# Access agent fields
+log(f"🔧 Assembly Inspector Process Type: {inspector_assembly.process_type}")
+log(f"🔧 Assembly Inspector Tolerance: {inspector_assembly.tolerance_threshold}")
+log(f"🔧 Welding Inspector Mode: {inspector_welding.process_type}")
+
+# Modify agent fields
+inspector_assembly.tolerance_threshold = 0.012
+inspector_welding.alert_channels = ["email", "slack", "sms"]
+
+log(f"🔧 Updated Assembly Tolerance: {inspector_assembly.tolerance_threshold}")
+log(f"🔧 Updated Welding Alerts: {inspector_welding.alert_channels}")
+
+# ============================================================================
+# 7. SUMMARY
+# ============================================================================
+
+log("\n🎯 7. Summary")
+log("-" * 30)
+
+log("""
+✅ What we've learned:
+- Agent definition with built-in intelligence
+- Built-in plan() and solve() methods with AI reasoning
+- Memory systems and conversation history
+- Field access and modification
+- Context-aware responses
+
+🚀 Next steps:
+- Try method overriding (02_method_override.na)
+- Explore type hint adaptation (03_type_hint_adaptation.na)
+- Learn memory systems (04_memory_systems.na)
+""")
+
+log("\n🎉 Basic Agent Example Complete!")
+log("The agent keyword provides immediate AI-powered capabilities with minimal setup!") 

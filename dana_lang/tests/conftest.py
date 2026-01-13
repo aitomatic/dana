@@ -1,0 +1,348 @@
+"""Pytest configuration file."""
+
+import logging
+import os
+from pathlib import Path
+
+import pytest
+
+
+pytest_plugins = ["pytest_asyncio"]
+
+
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
+
+
+def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):
+    """Create a mock LLM resource for testing.
+
+    This utility function creates a configured LLMResourceInstance with mock mode enabled,
+    reducing code duplication across test files.
+
+    Args:
+        name: Name of the LLM resource (default: "test_llm")
+        model: Model identifier (default: "openai:gpt-4o-mini")
+
+    Returns:
+        Configured LLMResourceInstance with mock mode enabled
+    """
+    from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
+
+    # Create the resource type and extract values
+    resource_type = LLMResourceType()
+    llm_resource = LegacyLLMResource(name=name, model=model)
+
+    # Create values dict for the resource instance
+    values = {
+        "name": name,
+        "model": model,
+        "state": "READY",
+        "provider": "auto",
+        "temperature": 0.7,
+        "max_tokens": 2048,
+    }
+
+    llm_resource_instance = LLMResourceInstance(resource_type, llm_resource, values)
+    llm_resource_instance.initialize()
+    llm_resource_instance.with_mock_llm_call(True)  # Enable mock mode
+    return llm_resource_instance
+
+
+@pytest.fixture
+def mock_llm_resource():
+    """Pytest fixture that provides a mock LLM resource.
+
+    This fixture can be used in test functions by adding it as a parameter.
+
+    Returns:
+        Configured LLMResourceInstance with mock mode enabled
+    """
+    return create_mock_llm_resource()
+
+
+def pytest_addoption(parser):
+    """Add custom command line options for pytest."""
+    parser.addoption("--run-llm", action="store_true", default=False, help="Run tests that require LLM calls")
+
+
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line("markers", "llm: mark test as requiring an LLM connection")
+    config.addinivalue_line("markers", "live: mark test as requiring external services (deselect with '-m \"not live\"')")
+    config.addinivalue_line("markers", "na_file: mark tests that execute .na files")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip llm-marked tests unless --run-llm is provided."""
+    if not config.getoption("--run-llm"):
+        skip_llm = pytest.mark.skip(reason="Need --run-llm option to run LLM tests")
+        for item in items:
+            if "llm" in item.keywords:
+                item.add_marker(skip_llm)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def load_environment_variables():
+    """Load environment variables from .env file for all tests."""
+    try:
+        from dotenv import load_dotenv
+
+        # Load .env file from project root
+        project_root = Path(__file__).parent.parent
+        env_file = project_root / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
+            print(f"Loaded environment variables from {env_file}")
+        else:
+            print(f"No .env file found at {env_file}")
+    except ImportError:
+        print("python-dotenv not available, skipping .env file loading")
+    except Exception as e:
+        print(f"Error loading .env file: {e}")
+    yield
+
+
+@pytest.fixture(autouse=True)
+def ensure_environment_variables():
+    """Ensure critical environment variables are available for each test."""
+    # Store original values
+    original_openai_key = os.environ.get("OPENAI_API_KEY")
+    original_cohere_key = os.environ.get("COHERE_API_KEY")
+    original_azure_key = os.environ.get("AZURE_OPENAI_API_KEY")
+
+    # If any of these keys are missing, try to reload from .env
+    if not any([original_openai_key, original_cohere_key, original_azure_key]):
+        try:
+            from dotenv import load_dotenv
+
+            project_root = Path(__file__).parent.parent
+            env_file = project_root / ".env"
+            if env_file.exists():
+                load_dotenv(env_file, override=True)
+        except Exception:
+            pass  # Silently fail if we can't reload
+
+    yield
+
+    # Restore original values if they were changed
+    if original_openai_key is not None:
+        os.environ["OPENAI_API_KEY"] = original_openai_key
+    elif "OPENAI_API_KEY" in os.environ:
+        os.environ.pop("OPENAI_API_KEY")
+
+    if original_cohere_key is not None:
+        os.environ["COHERE_API_KEY"] = original_cohere_key
+    elif "COHERE_API_KEY" in os.environ:
+        os.environ.pop("COHERE_API_KEY")
+
+    if original_azure_key is not None:
+        os.environ["AZURE_OPENAI_API_KEY"] = original_azure_key
+    elif "AZURE_OPENAI_API_KEY" in os.environ:
+        os.environ.pop("AZURE_OPENAI_API_KEY")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_test_logging():
+    """Configure logging levels for tests to reduce verbose output."""
+    # Suppress verbose HTTP logs from httpx and similar libraries
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("h11").setLevel(logging.WARNING)
+
+    # Suppress Dana logs during tests to reduce noise
+    # Set to ERROR to suppress the repetitive INFO-level cleanup messages
+    logging.getLogger("dana").setLevel(logging.ERROR)
+
+    # Suppress specific noisy loggers during tests
+    logging.getLogger("dana.dana").setLevel(logging.ERROR)
+    logging.getLogger("dana.common").setLevel(logging.ERROR)
+    logging.getLogger("dana.api").setLevel(logging.ERROR)
+    logging.getLogger("dana.common.sys_resource.llm_resource").setLevel(logging.ERROR)
+    logging.getLogger("dana.api.client").setLevel(logging.ERROR)
+    logging.getLogger("dana.api.server").setLevel(logging.ERROR)
+
+    # Allow critical errors to still show through
+    # If you need to see specific warnings/info during debugging,
+    # you can temporarily lower these levels or use:
+    # pytest -s --log-cli-level=INFO tests/your_test.py
+
+    yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_llm_mocking(request):
+    """
+    Configure LLM mocking based on the --run-llm flag.
+
+    If --run-llm is NOT provided, enable mock LLM mode for all tests.
+    This prevents tests that indirectly initialize LLM resources from
+    failing when no API keys are configured.
+
+    If --run-llm is provided, we assume live credentials are set up
+    and do not enable mock mode.
+    """
+    # No longer overriding DANA_MOCK_LLM - let environment control it
+    yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clear_promise_groups():
+    """Clear Promise groups at the start of each test session to prevent bleeding."""
+    from dana_lang.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear any existing Promise groups
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+    yield
+
+    # Clear again at the end of the session
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+
+@pytest.fixture(autouse=True)
+def clear_promise_groups_per_test():
+    """Clear Promise groups before each test to prevent bleeding."""
+    from dana_lang.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear any existing Promise groups before test
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+    yield
+
+    # Clear again after test
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+
+@pytest.fixture(autouse=True)
+def ensure_mock_llm_for_tests():
+    """
+    Ensure DANA_MOCK_LLM is set to 'true' for tests that expect mock responses.
+
+    This prevents tests from failing when other tests clear the environment variable.
+    """
+    # Set DANA_MOCK_LLM to true for all tests unless explicitly overridden
+    original_mock_llm = os.environ.get("DANA_MOCK_LLM")
+    os.environ["DANA_MOCK_LLM"] = "true"
+
+    yield
+
+    # Restore original value
+    if original_mock_llm is None:
+        os.environ.pop("DANA_MOCK_LLM", None)
+    else:
+        os.environ["DANA_MOCK_LLM"] = original_mock_llm
+
+
+# Universal Dana (.na) file test integration
+def pytest_generate_tests(metafunc):
+    """
+    Universal Dana (.na) file test generator.
+
+    This function automatically discovers and creates pytest tests for any .na files
+    in the same directory as the test file. Works across all test directories.
+    """
+    if "dana_test_file" in metafunc.fixturenames:
+        # Get the directory of the current test file
+        test_file_path = Path(metafunc.module.__file__)
+        test_dir = test_file_path.parent
+
+        # Find all .na files in the same directory
+        na_files = list(test_dir.glob("test_*.na"))
+
+        if na_files:
+            # Create test IDs from filenames for better reporting
+            test_ids = [f.stem for f in na_files]
+            metafunc.parametrize("dana_test_file", na_files, ids=test_ids)
+
+
+@pytest.fixture(scope="session")
+def api_server():
+    """Session-scoped fixture that starts a single API server for the entire test session."""
+    logger = logging.getLogger(__name__)
+    logger.info("Starting session-wide API server")
+
+    # Set environment variable for API server URL
+    os.environ["AITOMATIC_API_URL"] = "http://localhost:12345"
+    logger.info("Set AITOMATIC_API_URL to http://localhost:12345")
+
+    # Import and start the API server
+    from dana_lang.api.server.server import APIServiceManager
+
+    # Create and start the API service
+    api_service = APIServiceManager()
+    api_service.startup()
+
+    logger.info("Session-wide API server ready")
+    yield api_service
+
+    logger.info("Session ending - shutting down API server")
+    api_service.shutdown()
+
+    # Clean up environment variable
+    if "AITOMATIC_API_URL" in os.environ:
+        del os.environ["AITOMATIC_API_URL"]
+
+
+@pytest.fixture
+def fresh_dana_sandbox(api_server):
+    """Provide a fresh DanaSandbox for each test, using the shared API server."""
+    sandbox = DanaSandbox()
+    try:
+        yield sandbox
+    finally:
+        sandbox._cleanup()
+
+
+# Universal Dana file test function
+def run_dana_test_file(dana_test_file):
+    """
+    Universal function to run a Dana (.na) test file.
+
+    This can be used in any test directory by creating a simple test function like:
+
+    def test_dana_files(dana_test_file, fresh_dana_sandbox):
+        from tests.conftest import run_dana_test_file
+        run_dana_test_file(dana_test_file, fresh_dana_sandbox)
+    """
+    # Clear only what's needed for test isolation, not everything
+    from dana_lang.__init__ import initialize_module_system, reset_module_system
+    from dana_lang.registry import GLOBAL_REGISTRY
+
+    registry = GLOBAL_REGISTRY
+
+    # Clear type registry to prevent struct type conflicts between tests
+    registry.types.clear()
+
+    # Clear module registry to ensure fresh module loading
+    registry.modules.clear()
+
+    # Clear agent/resource instances to prevent state bleeding
+    registry.agents.clear()
+    registry.resources.clear()
+
+    # Clear Promise group to prevent bleeding between tests
+    from dana_lang.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear the thread-local Promise group
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+    # Initialize module system for tests that may use imports
+    reset_module_system()
+    initialize_module_system()
+
+    sandbox = DanaSandbox()
+    try:
+        result = sandbox.execute_file(dana_test_file)
+        assert result.success, f"Dana test {dana_test_file.name} failed: {result.error}"
+    finally:
+        sandbox._cleanup()
+        # Clear Promise group again after test
+        if hasattr(_current_promise_group, "group"):
+            delattr(_current_promise_group, "group")
