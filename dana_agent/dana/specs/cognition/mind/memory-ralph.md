@@ -89,12 +89,12 @@ class STMemory:
 ```
 
 Requirements:
-- [ ] Append entries with auto-timestamp
-- [ ] Enforce max_entries limit (drop oldest)
-- [ ] Query recent N entries
-- [ ] Estimate token count
-- [ ] Format as text for context inclusion
-- [ ] Clear all entries
+- [x] Append entries with auto-timestamp
+- [x] Enforce max_entries limit (drop oldest)
+- [x] Query recent N entries
+- [x] Estimate token count
+- [x] Format as text for context inclusion
+- [x] Clear all entries
 
 ### 2. LTMemory (`dana_agent/dana/core/memory/ltmemory.py`)
 
@@ -126,11 +126,11 @@ class LTMemory:
 ```
 
 Requirements:
-- [ ] Store memories to markdown file (append)
-- [ ] Auto-generate timestamp if not provided
-- [ ] Query via RLM (reuse RLMResource internally)
-- [ ] Create storage directory if missing
-- [ ] Count stored memories
+- [x] Store memories to markdown file (append)
+- [x] Auto-generate timestamp if not provided
+- [x] Query via RLM (reuse RLMResource internally)
+- [x] Create storage directory if missing
+- [x] Count stored memories
 
 ### 3. Memory Entry Format (in memories.md)
 
@@ -151,10 +151,10 @@ Requirements:
 ```
 
 Requirements:
-- [ ] Human-readable format
-- [ ] Parseable by RLM queries
-- [ ] Timestamped entries
-- [ ] Separator between entries
+- [x] Human-readable format
+- [x] Parseable by RLM queries
+- [x] Timestamped entries
+- [x] Separator between entries
 
 ## Current Progress
 
@@ -169,21 +169,21 @@ Update checkboxes above as you complete each requirement.
 ## Tests Required
 
 Create `dana_agent/tests/unit/test_stmemory.py`:
-- [ ] test_append - adds entry with timestamp
-- [ ] test_max_entries - drops oldest when limit exceeded
-- [ ] test_recent - returns N most recent
-- [ ] test_timeline - returns all entries
-- [ ] test_estimate_tokens - returns reasonable estimate
-- [ ] test_to_text - formats as readable text
-- [ ] test_clear - removes all entries
-- [ ] test_len - returns entry count
+- [x] test_append - adds entry with timestamp
+- [x] test_max_entries - drops oldest when limit exceeded
+- [x] test_recent - returns N most recent
+- [x] test_timeline - returns all entries
+- [x] test_estimate_tokens - returns reasonable estimate
+- [x] test_to_text - formats as readable text
+- [x] test_clear - removes all entries
+- [x] test_len - returns entry count
 
 Create `dana_agent/tests/unit/test_ltmemory.py`:
-- [ ] test_store - persists memory to file
-- [ ] test_store_auto_timestamp - generates timestamp if missing
-- [ ] test_query - retrieves relevant memories
-- [ ] test_creates_directory - creates path if missing
-- [ ] test_count - returns memory count
+- [x] test_store - persists memory to file
+- [x] test_store_auto_timestamp - generates timestamp if missing
+- [x] test_query - retrieves relevant memories
+- [x] test_creates_directory - creates path if missing
+- [x] test_count - returns memory count
 
 Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py tests/unit/test_ltmemory.py -v`
 
@@ -197,14 +197,13 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py test
 
 ## Before Marking Complete
 
-- [ ] Review code for KISS/YAGNI compliance
-- [ ] Simplify any overly complex implementations
-- [ ] Remove unnecessary abstractions
-- [ ] Ensure code is readable and maintainable
+- [x] Review code for KISS/YAGNI compliance
+- [x] Simplify any overly complex implementations
+- [x] Remove unnecessary abstractions
+- [x] Ensure code is readable and maintainable
 
 ## When Complete
 
-Output in this file:
 <promise>MEMORY COMPLETE</promise>
 
 ## References
