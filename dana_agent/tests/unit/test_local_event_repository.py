@@ -126,7 +126,8 @@ class TestLocalEventRepositoryInitialization:
             assert "TestCodec" in path_str
             assert agent.object_id in path_str
             assert "events" in path_str
-            assert path_str.endswith("/events")
+            # Platform-independent check - path name should be "events"
+            assert repository._events_path.name == "events"
         finally:
             shutil.rmtree(temp_dir)
 
