@@ -41,8 +41,10 @@ class WebSearchResource(BaseSysResource):
     async def search(
         self,
         query: str,
+        supporting_query: str = "",
         search_depth: SearchDepth = SearchDepth.BASIC,
         domain: str = "",
+        target_sites: list[str] | None = None,
         with_full_content: bool = False,
     ) -> SearchResults:
         """Execute web search with given query."""
@@ -53,8 +55,10 @@ class WebSearchResource(BaseSysResource):
 
         request = SearchRequest(
             query=query,
+            supporting_query=supporting_query,
             search_depth=search_depth,
             domain=domain,
+            target_sites=target_sites,
             with_full_content=with_full_content,
         )
 

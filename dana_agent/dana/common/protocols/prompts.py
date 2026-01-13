@@ -128,6 +128,7 @@ class PublicPromptsProtocol(Protocol):
         """Public description for the object."""
         ...
 
+
 class PrivatePromptsProtocol(Protocol):
     """Protocol for private prompts."""
 

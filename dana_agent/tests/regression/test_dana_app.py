@@ -14,6 +14,7 @@ import pytest
 from dana.apps.dana.dana_app import DanaApp
 
 
+@pytest.mark.live
 @pytest.mark.requires_api_keys
 class TestDanaAppInitialization:
     """Test Dana app initialization."""
@@ -82,6 +83,7 @@ class TestDanaAppInitialization:
         assert app.thought_logger is None
 
 
+@pytest.mark.live
 @pytest.mark.requires_api_keys
 class TestDanaAppCommands:
     """Test Dana app command handling."""
@@ -194,6 +196,7 @@ class TestDanaAppCommands:
         assert "Unknown command" in captured.out
 
 
+@pytest.mark.live
 @pytest.mark.requires_api_keys
 class TestDanaAppConversation:
     """Test Dana app conversation functionality."""
@@ -276,6 +279,7 @@ class TestDanaAppConversation:
         assert "I'm not sure how to respond" in captured.out
 
 
+@pytest.mark.live
 @pytest.mark.requires_api_keys
 class TestDanaAppRegression:
     """Regression tests for known issues."""

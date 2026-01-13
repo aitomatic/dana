@@ -10,12 +10,7 @@ import functools
 from typing import Callable, Any
 
 
-def with_retry(
-    max_attempts: int = 3,
-    initial_delay: float = 1.0,
-    backoff_factor: float = 2.0,
-    exceptions: tuple = (Exception,)
-):
+def with_retry(max_attempts: int = 3, initial_delay: float = 1.0, backoff_factor: float = 2.0, exceptions: tuple = (Exception,)):
     """
     Decorator to retry a function with exponential backoff.
 
@@ -31,6 +26,7 @@ def with_retry(
             # May fail due to network issues
             return requests.get(url)
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
@@ -62,6 +58,7 @@ def with_retry(
                 raise last_exception
 
         return wrapper
+
     return decorator
 
 
@@ -78,6 +75,7 @@ def with_timeout(timeout_seconds: float):
             # Will be interrupted if it takes > 30 seconds
             pass
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
@@ -99,6 +97,7 @@ def with_timeout(timeout_seconds: float):
             return result
 
         return wrapper
+
     return decorator
 
 
@@ -111,13 +110,7 @@ class RetryableOperation:
             result = op.execute(fetch_data, url="https://example.com")
     """
 
-    def __init__(
-        self,
-        fallback_value: Any = None,
-        max_attempts: int = 3,
-        initial_delay: float = 1.0,
-        backoff_factor: float = 2.0
-    ):
+    def __init__(self, fallback_value: Any = None, max_attempts: int = 3, initial_delay: float = 1.0, backoff_factor: float = 2.0):
         """
         Initialize retryable operation.
 
@@ -166,7 +159,7 @@ class RetryableOperation:
                 if attempt == self.max_attempts:
                     print(f"❌ Operation failed after {self.max_attempts} attempts: {e}")
                     if self.fallback_value is not None:
-                        print(f"   Using fallback value")
+                        print("   Using fallback value")
                         return self.fallback_value
                     raise
 

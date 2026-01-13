@@ -6,7 +6,7 @@ import os
 
 
 def has_embedding_api_keys():
-    """Check if any embedding API keys are available by reading dana_config.json dynamically."""
+    """Check if any embedding model is available (API keys or local models like HuggingFace)."""
     try:
         from dana.lang.common.config.config_loader import ConfigLoader
 
@@ -16,6 +16,17 @@ def has_embedding_api_keys():
         # Get embedding provider configs
         embedding_config = config.get("embedding", {})
         provider_configs = embedding_config.get("provider_configs", {})
+        preferred_models = embedding_config.get("preferred_models", [])
+
+        # Check if HuggingFace is in preferred models and package is available
+        huggingface_models = [m for m in preferred_models if m.startswith("huggingface:")]
+        if huggingface_models:
+            try:
+                from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # noqa: F401
+
+                return True  # HuggingFace is available and doesn't require API keys
+            except ImportError:
+                pass  # HuggingFace package not installed, continue checking API keys
 
         # Check each provider for required API keys
         for provider_name, provider_config in provider_configs.items():

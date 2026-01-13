@@ -63,5 +63,5 @@ class AttemptCompletionTool(BaseTool):
             content = self._build_interactive_response(summary, options)
         else:
             content = summary
-            
+
         return ToolResult(name="attempt_completion", result=content, require_user=True)

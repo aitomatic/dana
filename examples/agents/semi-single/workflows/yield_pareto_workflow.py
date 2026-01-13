@@ -10,7 +10,6 @@ from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
 from dana.lib.resources.conversation import ConversationResource
-from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 from resources.test_data_resource import TestDataResource
 
@@ -28,17 +27,8 @@ class YieldParetoWorkflow(BaseWorkflow):
     This workflow ALWAYS executes all steps - deterministic behavior.
     """
 
-    def __init__(
-        self,
-        workflow_id: str | None = None,
-        llm_provider: str = "anthropic",
-        model: str | None = None,
-        **kwargs
-    ):
-        super().__init__(
-            workflow_id=workflow_id or "pareto-analysis",
-            **kwargs
-        )
+    def __init__(self, workflow_id: str | None = None, llm_provider: str = "anthropic", model: str | None = None, **kwargs):
+        super().__init__(workflow_id=workflow_id or "pareto-analysis", **kwargs)
 
         # Store config for step agent resources
         self._llm_provider = llm_provider
@@ -53,11 +43,7 @@ class YieldParetoWorkflow(BaseWorkflow):
         if not self._step_agent_configured:
             # Give step agent access to resources it needs
             self.workflow_step_agent.with_resources(
-                ConversationResource(
-                    resource_id=f"{self.workflow_id}-llm",
-                    llm_provider=self._llm_provider,
-                    model=self._model
-                )
+                ConversationResource(resource_id=f"{self.workflow_id}-llm", llm_provider=self._llm_provider, model=self._model)
             )
             self._step_agent_configured = True
 
@@ -91,50 +77,42 @@ class YieldParetoWorkflow(BaseWorkflow):
 
         try:
             # STEP 1: Data Collection (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "data_collection",
-                    "message": "Collecting wafer test data..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "data_collection",
+                        "message": "Collecting wafer test data...",
+                    }
                 }
-            })
+            )
 
             test_results = self.test_data.get_test_results(wafer_id=wafer_id)
 
             if not test_results or "failure_bins" not in test_results:
-                return {
-                    "success": False,
-                    "error": "No test data available",
-                    "pareto_analysis": {}
-                }
+                return {"success": False, "error": "No test data available", "pareto_analysis": {}}
 
             # STEP 2: Bin Sorting (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "sorting",
-                    "message": "Sorting failure bins by count..."
-                }
-            })
+            self.broadcast(
+                {"workflow_progress": {"workflow_id": self.workflow_id, "phase": "sorting", "message": "Sorting failure bins by count..."}}
+            )
 
             failure_bins = test_results["failure_bins"]
             total_failures = sum(bin_data["count"] for bin_data in failure_bins.values())
 
             # Sort bins by failure count (descending)
-            sorted_bins = sorted(
-                failure_bins.items(),
-                key=lambda x: x[1]["count"],
-                reverse=True
-            )
+            sorted_bins = sorted(failure_bins.items(), key=lambda x: x[1]["count"], reverse=True)
 
             # STEP 3: Pareto Calculation (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "pareto_calc",
-                    "message": "Calculating Pareto cumulative percentages..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "pareto_calc",
+                        "message": "Calculating Pareto cumulative percentages...",
+                    }
                 }
-            })
+            )
 
             cumulative_count = 0
             pareto_bins = []
@@ -165,24 +143,28 @@ class YieldParetoWorkflow(BaseWorkflow):
                         pareto_threshold_reached = True
 
             # STEP 5: Pattern Recognition (LLM Intelligence)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "pattern_recognition",
-                    "message": "Analyzing failure patterns with LLM..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "pattern_recognition",
+                        "message": "Analyzing failure patterns with LLM...",
+                    }
                 }
-            })
+            )
 
             pattern_classifications = self._classify_failure_patterns(pareto_bins, test_results)
 
             # STEP 6: Output (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "complete",
-                    "message": f"Pareto analysis complete: {len(pareto_bins)} top bins identified (80% rule)"
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "complete",
+                        "message": f"Pareto analysis complete: {len(pareto_bins)} top bins identified (80% rule)",
+                    }
                 }
-            })
+            )
 
             return {
                 "success": True,
@@ -200,11 +182,7 @@ class YieldParetoWorkflow(BaseWorkflow):
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "pareto_analysis": {}
-            }
+            return {"success": False, "error": str(e), "pareto_analysis": {}}
 
     def _classify_failure_patterns(self, pareto_bins: list, test_results: dict) -> dict:
         """
@@ -225,11 +203,13 @@ class YieldParetoWorkflow(BaseWorkflow):
         """
         # Prepare context
         wafer_id = test_results.get("wafer_id", "unknown")
-        bins_summary = "\n".join([
-            f"- {bin['bin_id']}: {bin['description']} ({bin['count']} failures, "
-            f"{bin['percent_of_total']}%, spatial pattern: {bin.get('spatial_pattern', 'unknown')})"
-            for bin in pareto_bins
-        ])
+        bins_summary = "\n".join(
+            [
+                f"- {bin['bin_id']}: {bin['description']} ({bin['count']} failures, "
+                f"{bin['percent_of_total']}%, spatial pattern: {bin.get('spatial_pattern', 'unknown')})"
+                for bin in pareto_bins
+            ]
+        )
 
         try:
             # Ensure step agent has basic resources
@@ -244,7 +224,7 @@ class YieldParetoWorkflow(BaseWorkflow):
             self.workflow_step_agent.with_resources(
                 WaferMapResource(resource_id="wafer-map"),
                 StatisticalAnalysisResource(resource_id="stats"),
-                HistoricalPatternResource(resource_id="historical-patterns")
+                HistoricalPatternResource(resource_id="historical-patterns"),
             )
             print("  ✓ Added: WaferMapResource, StatisticalAnalysisResource, HistoricalPatternResource")
 
@@ -252,16 +232,13 @@ class YieldParetoWorkflow(BaseWorkflow):
             from workflows.spatial_clustering_workflow import SpatialClusteringWorkflow
             from workflows.statistical_test_workflow import StatisticalTestWorkflow
 
-            self.workflow_step_agent.with_workflows(
-                SpatialClusteringWorkflow(),
-                StatisticalTestWorkflow()
-            )
+            self.workflow_step_agent.with_workflows(SpatialClusteringWorkflow(), StatisticalTestWorkflow())
             print("  ✓ Added: SpatialClusteringWorkflow, StatisticalTestWorkflow")
             print("🔧 WorkflowStepAgent now equipped with 3 Resources + 2 Workflows")
             print()
 
             # ULTIMATE PATTERN: Give agent OBJECTIVE (not simple prompt)
-            objective = f"""OBJECTIVE: Determine if failure patterns for bins {[b['bin_id'] for b in pareto_bins]}
+            objective = f"""OBJECTIVE: Determine if failure patterns for bins {[b["bin_id"] for b in pareto_bins]}
 are SYSTEMATIC or RANDOM, with HIGH CONFIDENCE (>0.9).
 
 CONTEXT:
@@ -353,6 +330,7 @@ Return JSON with this EXACT structure:
 
             # Extract response content
             import json
+
             response_text = result.get("response", "{}")
 
             print(f"📥 Agent response received: {len(response_text)} chars")
@@ -405,7 +383,7 @@ Return JSON with this EXACT structure:
                         "pattern_type": pattern_type,
                         "fixability": fixability,
                         "investigation_priority": priority,
-                        "reasoning": f"Spatial pattern: {spatial_pattern}"
+                        "reasoning": f"Spatial pattern: {spatial_pattern}",
                     }
 
                 return {
@@ -421,5 +399,5 @@ Return JSON with this EXACT structure:
                 "classifications": {},
                 "overall_assessment": f"Agent analysis failed: {str(e)}",
                 "has_systematic_patterns": False,
-                "error": str(e)
+                "error": str(e),
             }

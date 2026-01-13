@@ -31,7 +31,7 @@ class KnowledgePackOutput(BaseModel):
 
     # Interview templates with their sessions nested inside
     interview_templates: list[InterviewTemplateWithSessions] = []
-    
+
     # Optional tree structure for endpoints that need both metadata and tree
     tree: DomainKnowledgeTreeV2 | None = None
 

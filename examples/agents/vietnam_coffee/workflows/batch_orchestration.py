@@ -218,9 +218,7 @@ class BatchOrchestrationWorkflow(BaseWorkflow):
             """Enrich a single company."""
             try:
                 enrich_result = self.enrichment_workflow.execute(
-                    company_name=company["name"],
-                    tax_id=company["tax_id"],
-                    province=company["province"]
+                    company_name=company["name"], tax_id=company["tax_id"], province=company["province"]
                 )
 
                 inner_result = enrich_result.get("result", {})
@@ -236,10 +234,7 @@ class BatchOrchestrationWorkflow(BaseWorkflow):
         # Use ThreadPoolExecutor for I/O-bound operations (web fetching)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all enrichment tasks
-            future_to_company = {
-                executor.submit(enrich_single, company): company
-                for company in batch
-            }
+            future_to_company = {executor.submit(enrich_single, company): company for company in batch}
 
             # Collect results as they complete
             for future in as_completed(future_to_company):

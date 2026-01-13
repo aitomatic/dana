@@ -23,8 +23,11 @@ class GoogleSearchConfig:
     api_key: str
     cse_id: str
 
+    # API endpoint
+    base_url: str
+
     # Search settings
-    max_results: int = 10
+    max_results: int = 25
     timeout_seconds: int = 30
 
     # Content extraction settings
@@ -62,8 +65,8 @@ class GoogleSearchConfig:
         if self.max_results <= 0:
             raise ConfigurationError("max_results must be positive")
 
-        if self.max_results > 10:
-            raise ConfigurationError("max_results cannot exceed 10 (Google API limit)")
+        if self.max_results > 25:
+            raise ConfigurationError("max_results cannot exceed 25")
 
         if self.timeout_seconds <= 0:
             raise ConfigurationError("timeout_seconds must be positive")
@@ -97,6 +100,7 @@ def load_google_config() -> GoogleSearchConfig:
     """
     api_key = os.getenv("GOOGLE_SEARCH_API_KEY")
     cse_id = os.getenv("GOOGLE_SEARCH_CX")
+    base_url = os.getenv("GOOGLE_SEARCH_BASE_URL")
 
     if not api_key:
         raise ConfigurationError("GOOGLE_SEARCH_API_KEY environment variable is required")
@@ -104,11 +108,16 @@ def load_google_config() -> GoogleSearchConfig:
     if not cse_id:
         raise ConfigurationError("GOOGLE_SEARCH_CX environment variable is required")
 
+    if not base_url:
+        raise ConfigurationError("GOOGLE_SEARCH_BASE_URL environment variable is required")
+    print(f"\n--------------------------------\nBase URL: {base_url}\n--------------------------------\n")
+
     # Optional configuration with defaults
     config = GoogleSearchConfig(
         api_key=api_key,
         cse_id=cse_id,
-        max_results=int(os.getenv("GOOGLE_SEARCH_MAX_RESULTS", "10")),
+        base_url=base_url,
+        max_results=int(os.getenv("GOOGLE_SEARCH_MAX_RESULTS", "25")),
         timeout_seconds=int(os.getenv("GOOGLE_SEARCH_TIMEOUT", "30")),
         enable_content_extraction=os.getenv("ENABLE_CONTENT_EXTRACTION", "true").lower() == "true",
         max_content_length=int(os.getenv("GOOGLE_SEARCH_MAX_CONTENT_LENGTH", "50000")),

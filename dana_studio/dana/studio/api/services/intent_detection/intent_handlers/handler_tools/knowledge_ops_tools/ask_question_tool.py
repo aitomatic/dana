@@ -48,7 +48,7 @@ class AskQuestionTool(BaseTool):
                         name="options",
                         type="list",
                         description="1 actionable choice (exactly 1 choice) that directly answer the question. Each option must be a complete user response that makes sense when sent as the next message. Use descriptive phrases, not generic yes/no responses. Omit if the question requires open-ended user input.",
-                        example='["Create comprehensive loan knowledge structure", "Add basic loan topics to existing analysis", "Generate knowledge for all financial topics"]'
+                        example='["Create comprehensive loan knowledge structure", "Add basic loan topics to existing analysis", "Generate knowledge for all financial topics"]',
                     ),
                     BaseArgument(
                         name="workflow_phase",

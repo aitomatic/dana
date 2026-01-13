@@ -13,7 +13,6 @@ WAFER_TEST_DATA = {
     "total_dies": 1000,
     "good_dies": 685,
     "yield_percent": 68.5,
-
     # Failure bins with interesting patterns for analysis
     "failure_bins": {
         "BIN_1": {
@@ -22,7 +21,7 @@ WAFER_TEST_DATA = {
             "test_type": "memory",
             "failure_mode": "stuck_bits",
             "spatial_pattern": "clustered",  # Systematic - process issue
-            "notes": "Pattern shows edge die clustering, suggests process sensitivity"
+            "notes": "Pattern shows edge die clustering, suggests process sensitivity",
         },
         "BIN_2": {
             "count": 75,
@@ -30,7 +29,7 @@ WAFER_TEST_DATA = {
             "test_type": "timing",
             "failure_mode": "slow_path",
             "spatial_pattern": "random",  # Random - design margin issue
-            "notes": "Randomly distributed, marginal timing design"
+            "notes": "Randomly distributed, marginal timing design",
         },
         "BIN_3": {
             "count": 35,
@@ -38,7 +37,7 @@ WAFER_TEST_DATA = {
             "test_type": "io",
             "failure_mode": "driver_weak",
             "spatial_pattern": "systematic",  # Systematic - package issue
-            "notes": "Peripheral dies only, package-related stress"
+            "notes": "Peripheral dies only, package-related stress",
         },
         "BIN_4": {
             "count": 15,
@@ -46,7 +45,7 @@ WAFER_TEST_DATA = {
             "test_type": "power",
             "failure_mode": "vdd_dropout",
             "spatial_pattern": "random",
-            "notes": "Low volume, random distribution"
+            "notes": "Low volume, random distribution",
         },
         "BIN_5": {
             "count": 8,
@@ -54,7 +53,7 @@ WAFER_TEST_DATA = {
             "test_type": "leakage",
             "failure_mode": "high_iddq",
             "spatial_pattern": "random",
-            "notes": "Very low volume, process outliers"
+            "notes": "Very low volume, process outliers",
         },
         "BIN_6": {
             "count": 2,
@@ -62,10 +61,9 @@ WAFER_TEST_DATA = {
             "test_type": "functional",
             "failure_mode": "logic_fail",
             "spatial_pattern": "isolated",
-            "notes": "Rare, likely random defects"
+            "notes": "Rare, likely random defects",
         },
     },
-
     # Product business context
     "product_context": {
         "average_selling_price_usd": 150,  # ASP per die
@@ -74,7 +72,6 @@ WAFER_TEST_DATA = {
         "revenue_criticality": "HIGH",
         "quality_requirements": "Automotive grade (zero defects)",
     },
-
     # Wafer manufacturing context
     "manufacturing_context": {
         "fab": "Fab 5",
@@ -82,7 +79,7 @@ WAFER_TEST_DATA = {
         "process_flow": "1274 steps",
         "cycle_time_days": 45,
         "wafer_cost_usd": 5000,
-    }
+    },
 }
 
 # Historical yield trend data for correlation
@@ -108,9 +105,9 @@ HISTORICAL_YIELD_DATA = {
         {
             "week": "2024-W50",
             "change": "Metal etch recipe: Increased RF power 5% for throughput improvement",
-            "impact": "Suspected cause of SRAM yield loss - more aggressive etch may damage cell structures"
+            "impact": "Suspected cause of SRAM yield loss - more aggressive etch may damage cell structures",
         }
-    ]
+    ],
 }
 
 # Historical similar failure cases for correlation
@@ -127,7 +124,7 @@ HISTORICAL_FAILURE_CASES = [
         "time_to_resolve_days": 12,
         "revenue_recovered_usd": 15000000,
         "similarity_score": 0.92,  # Very similar to current issue
-        "notes": "Nearly identical failure pattern. Resolution: etch recipe tuning."
+        "notes": "Nearly identical failure pattern. Resolution: etch recipe tuning.",
     },
     {
         "case_id": "YLD-2024-034",
@@ -141,7 +138,7 @@ HISTORICAL_FAILURE_CASES = [
         "time_to_resolve_days": 18,
         "revenue_recovered_usd": 5000000,
         "similarity_score": 0.65,
-        "notes": "I/O failures, but different root cause (package vs die-level)"
+        "notes": "I/O failures, but different root cause (package vs die-level)",
     },
     {
         "case_id": "YLD-2024-091",
@@ -155,8 +152,8 @@ HISTORICAL_FAILURE_CASES = [
         "time_to_resolve_days": 90,  # Design fix takes long time
         "revenue_recovered_usd": 8000000,
         "similarity_score": 0.45,
-        "notes": "Timing failures, but design-limited (hard to fix)"
-    }
+        "notes": "Timing failures, but design-limited (hard to fix)",
+    },
 ]
 
 # Bin details for analysis
@@ -169,11 +166,11 @@ BIN_DETAILS = {
             "Etch damage to cell transistors",
             "Implant dose variation",
             "Contact resistance issues",
-            "Cell ratio imbalance"
+            "Cell ratio imbalance",
         ],
         "fix_difficulty": "MEDIUM",  # Process tuning typically feasible
         "fix_difficulty_reasoning": "SRAM failures often process-related. Recipe tuning or implant adjustment can resolve. Not design-limited.",
-        "typical_time_to_fix_days": "10-20 days"
+        "typical_time_to_fix_days": "10-20 days",
     },
     "BIN_2": {
         "test_conditions": "At-speed functional test @ nominal voltage and frequency",
@@ -183,11 +180,11 @@ BIN_DETAILS = {
             "Marginal timing design",
             "Process variation (interconnect RC)",
             "Voltage droop",
-            "Temperature sensitivity"
+            "Temperature sensitivity",
         ],
         "fix_difficulty": "HARD",  # Often design-limited
         "fix_difficulty_reasoning": "Timing failures often require design changes (long cycle time). Process fixes limited. May need voltage screening or frequency binning.",
-        "typical_time_to_fix_days": "60-90 days (design rev)"
+        "typical_time_to_fix_days": "60-90 days (design rev)",
     },
     "BIN_3": {
         "test_conditions": "I/O buffer DC and AC tests",
@@ -197,11 +194,11 @@ BIN_DETAILS = {
             "Package-induced stress",
             "Interconnect resistance",
             "ESD protection device variation",
-            "Assembly process issues"
+            "Assembly process issues",
         ],
         "fix_difficulty": "MEDIUM",  # Package or assembly process
         "fix_difficulty_reasoning": "I/O failures often package or assembly related. Can adjust assembly process, change substrate, or screen at package test.",
-        "typical_time_to_fix_days": "15-30 days"
+        "typical_time_to_fix_days": "15-30 days",
     },
     "BIN_4": {
         "test_conditions": "Power supply regulation test under load transients",
@@ -211,44 +208,37 @@ BIN_DETAILS = {
             "Decap density insufficient",
             "Regulator loop instability",
             "Metal resistance variation",
-            "Design marginality"
+            "Design marginality",
         ],
         "fix_difficulty": "MEDIUM-HARD",  # May need design change
         "fix_difficulty_reasoning": "May require design changes to add decaps or adjust regulator. Process fixes limited.",
-        "typical_time_to_fix_days": "30-60 days"
+        "typical_time_to_fix_days": "30-60 days",
     },
     "BIN_5": {
         "test_conditions": "Quiescent current (IDDQ) test",
         "failure_mechanism": "Excessive leakage current",
         "design_info": "Bulk leakage across all transistors",
-        "typical_root_causes": [
-            "Gate oxide defects",
-            "Junction leakage",
-            "ESD damage",
-            "Contamination"
-        ],
+        "typical_root_causes": ["Gate oxide defects", "Junction leakage", "ESD damage", "Contamination"],
         "fix_difficulty": "HARD",  # Often random defects
         "fix_difficulty_reasoning": "Leakage often random defects or contamination. Difficult to systematically improve. May need defect density reduction (long-term).",
-        "typical_time_to_fix_days": "45-90 days"
+        "typical_time_to_fix_days": "45-90 days",
     },
     "BIN_6": {
         "test_conditions": "Full functional test vectors",
         "failure_mechanism": "Logic function incorrect",
         "design_info": "Complex state machines, arithmetic units",
-        "typical_root_causes": [
-            "Random defects (shorts, opens)",
-            "Rare design bugs",
-            "Exotic failure modes"
-        ],
+        "typical_root_causes": ["Random defects (shorts, opens)", "Rare design bugs", "Exotic failure modes"],
         "fix_difficulty": "HARD",  # Often random or design bugs
         "fix_difficulty_reasoning": "Functional errors typically random defects (hard to improve yield) or rare design bugs (need design fix).",
-        "typical_time_to_fix_days": "60-120 days"
-    }
+        "typical_time_to_fix_days": "60-120 days",
+    },
 }
+
 
 def get_wafer_test_data():
     """Get mock wafer test results."""
     return WAFER_TEST_DATA
+
 
 def get_historical_yield_data(product, weeks=12):
     """Get historical yield trend data."""
@@ -257,8 +247,9 @@ def get_historical_yield_data(product, weeks=12):
         "weeks": HISTORICAL_YIELD_DATA["weeks"][:weeks],
         "trend": HISTORICAL_YIELD_DATA["trend"],
         "trend_analysis": HISTORICAL_YIELD_DATA["trend_analysis"],
-        "process_changes": HISTORICAL_YIELD_DATA["process_changes"]
+        "process_changes": HISTORICAL_YIELD_DATA["process_changes"],
     }
+
 
 def get_similar_failure_cases(bin_id):
     """Get historical similar failure cases."""
@@ -274,6 +265,7 @@ def get_similar_failure_cases(bin_id):
         return [HISTORICAL_FAILURE_CASES[2]]
     else:
         return []
+
 
 def get_bin_details(bin_id):
     """Get detailed bin information."""

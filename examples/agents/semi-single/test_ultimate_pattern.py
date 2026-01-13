@@ -19,9 +19,9 @@ from workflows.statistical_test_workflow import StatisticalTestWorkflow
 def test_ultimate_pattern():
     """Test that WorkflowStepAgent can use Resources and Workflows."""
 
-    print("="*80)
+    print("=" * 80)
     print("TESTING ULTIMATE DETERMINISTIC AUTONOMY PATTERN")
-    print("="*80)
+    print("=" * 80)
     print()
 
     # Create WorkflowStepAgent
@@ -29,13 +29,7 @@ def test_ultimate_pattern():
     agent = WorkflowStepAgent(agent_id="test-ultimate-agent")
 
     # Configure with LLM resource
-    agent.with_resources(
-        ConversationResource(
-            resource_id="test-llm",
-            llm_provider="anthropic",
-            model="claude-3-5-sonnet-20241022"
-        )
-    )
+    agent.with_resources(ConversationResource(resource_id="test-llm", llm_provider="anthropic", model="claude-3-5-sonnet-20241022"))
     print("✓ Agent created with LLM resource")
     print()
 
@@ -44,7 +38,7 @@ def test_ultimate_pattern():
     agent.with_resources(
         WaferMapResource(resource_id="wafer-map"),
         StatisticalAnalysisResource(resource_id="stats"),
-        HistoricalPatternResource(resource_id="historical")
+        HistoricalPatternResource(resource_id="historical"),
     )
     print("✓ Agent equipped with 3 Resources:")
     print("  - WaferMapResource")
@@ -54,10 +48,7 @@ def test_ultimate_pattern():
 
     # Step 3: Equip agent with Workflows
     print("Step 3: Equipping agent with Workflows...")
-    agent.with_workflows(
-        SpatialClusteringWorkflow(),
-        StatisticalTestWorkflow()
-    )
+    agent.with_workflows(SpatialClusteringWorkflow(), StatisticalTestWorkflow())
     print("✓ Agent equipped with 2 Workflows:")
     print("  - SpatialClusteringWorkflow")
     print("  - StatisticalTestWorkflow")
@@ -70,7 +61,7 @@ def test_ultimate_pattern():
     wafer_resource = WaferMapResource()
     print("Test 4a: WaferMapResource.get_spatial_data()")
     spatial_data = wafer_resource.get_spatial_data("W12345", "BIN_1")
-    print(f"  ✓ Retrieved spatial data for BIN_1:")
+    print("  ✓ Retrieved spatial data for BIN_1:")
     print(f"    - Defect count: {spatial_data['defect_count']}")
     print(f"    - Center density: {spatial_data['spatial_distribution']['center_region']['density']}")
     print(f"    - Edge density: {spatial_data['spatial_distribution']['edge_region']['density']}")
@@ -79,7 +70,7 @@ def test_ultimate_pattern():
     stats_resource = StatisticalAnalysisResource()
     print("Test 4b: StatisticalAnalysisResource.morans_i_test()")
     morans_result = stats_resource.morans_i_test(spatial_data)
-    print(f"  ✓ Moran's I test completed:")
+    print("  ✓ Moran's I test completed:")
     print(f"    - Statistic: {morans_result['statistic']}")
     print(f"    - P-value: {morans_result['p_value']}")
     print(f"    - Interpretation: {morans_result['interpretation']}")
@@ -89,10 +80,10 @@ def test_ultimate_pattern():
     print("Test 4c: HistoricalPatternResource.find_similar_patterns()")
     pattern_sig = {"bin_id": "BIN_1", "spatial": "center_clustered"}
     historical_result = historical_resource.find_similar_patterns(pattern_sig)
-    print(f"  ✓ Historical pattern match:")
+    print("  ✓ Historical pattern match:")
     print(f"    - Best match: {historical_result.get('best_match', 'None')}")
-    if historical_result.get('matches'):
-        match = historical_result['matches'][0]
+    if historical_result.get("matches"):
+        match = historical_result["matches"][0]
         print(f"    - Similarity: {match['similarity_score']}")
         print(f"    - Root cause: {match['root_cause']}")
     print()
@@ -104,7 +95,7 @@ def test_ultimate_pattern():
     clustering_workflow = SpatialClusteringWorkflow()
     print("Test 5a: SpatialClusteringWorkflow.execute()")
     clustering_result = clustering_workflow.execute(spatial_data)
-    print(f"  ✓ Clustering analysis completed:")
+    print("  ✓ Clustering analysis completed:")
     print(f"    - Pattern type: {clustering_result['pattern_type']}")
     print(f"    - Clustering strength: {clustering_result['clustering_strength']}")
     print(f"    - Density ratio: {clustering_result['metrics']['density_ratio']:.2f}")
@@ -112,21 +103,17 @@ def test_ultimate_pattern():
 
     stats_workflow = StatisticalTestWorkflow()
     print("Test 5b: StatisticalTestWorkflow.execute()")
-    stats_workflow_result = stats_workflow.execute({
-        "test_type": "comprehensive",
-        "spatial_data": spatial_data,
-        "resource": stats_resource
-    })
-    print(f"  ✓ Statistical test workflow completed:")
+    stats_workflow_result = stats_workflow.execute({"test_type": "comprehensive", "spatial_data": spatial_data, "resource": stats_resource})
+    print("  ✓ Statistical test workflow completed:")
     print(f"    - Tests run: {', '.join(stats_workflow_result['tests_run'])}")
     print(f"    - Confidence: {stats_workflow_result['confidence']}")
     print(f"    - Assessment: {stats_workflow_result['overall_assessment']}")
     print()
 
     # Step 6: Give agent OBJECTIVE and let it decide
-    print("="*80)
+    print("=" * 80)
     print("Step 6: ULTIMATE TEST - Agent with OBJECTIVE")
-    print("="*80)
+    print("=" * 80)
     print()
     print("Giving agent high-level objective:")
     print("  'Determine if BIN_1 failures are SYSTEMATIC or RANDOM'")
@@ -176,13 +163,14 @@ Return JSON:
         response = result.get("response", "")
 
         print("AGENT RESPONSE:")
-        print("-"*80)
+        print("-" * 80)
         print(response)
-        print("-"*80)
+        print("-" * 80)
         print()
 
         # Try to parse JSON
         import json
+
         try:
             if "```json" in response:
                 response = response.split("```json")[1].split("```")[0].strip()
@@ -202,12 +190,13 @@ Return JSON:
     except Exception as e:
         print(f"❌ Agent query failed: {e}")
         import traceback
+
         traceback.print_exc()
 
     print()
-    print("="*80)
+    print("=" * 80)
     print("ULTIMATE PATTERN TEST COMPLETE")
-    print("="*80)
+    print("=" * 80)
     print()
     print("Summary:")
     print("✓ Resources work independently")

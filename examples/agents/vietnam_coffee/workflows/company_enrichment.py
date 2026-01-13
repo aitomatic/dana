@@ -57,6 +57,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         # Initialize cache (7-day TTL for company data)
         import sys
         from pathlib import Path
+
         sys.path.insert(0, str(Path(__file__).parent.parent))
         from utils.cache import SimpleCache
 
@@ -171,8 +172,8 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         """
         import sys
         from pathlib import Path
+
         sys.path.insert(0, str(Path(__file__).parent.parent))
-        from utils.cache import cached_fetch
         from utils.retry_handler import with_retry
 
         cache_key = f"registry_{tax_id}"
@@ -194,10 +195,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
                     return {"content": content, "url": source_url}
 
             # Fallback to search
-            search_result = self.search_resource.search(
-                query=f"site:masothue.com {tax_id}",
-                max_results=5
-            )
+            search_result = self.search_resource.search(query=f"site:masothue.com {tax_id}", max_results=5)
 
             if search_result.get("success"):
                 results = search_result.get("results", [])
@@ -252,9 +250,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
                         continue
 
                     # Check if title matches company name reasonably well
-                    if company_name[:20].lower() in title.lower() or \
-                       any(word in title.lower() for word in ["coffee", "cà phê", "cafe"]):
-
+                    if company_name[:20].lower() in title.lower() or any(word in title.lower() for word in ["coffee", "cà phê", "cafe"]):
                         # Try to fetch this page
                         try:
                             fetch_result = self.fetch_resource.fetch_url(url=url)
@@ -288,7 +284,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         import warnings
 
         # Suppress asyncio cleanup warnings
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
         llm = LLM()
 
@@ -309,11 +305,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         """
 
         async def generate():
-            return await llm.chat_response(
-                messages=[LLMMessage(role="user", content=generation_prompt)],
-                max_tokens=500,
-                temperature=0.3
-            )
+            return await llm.chat_response(messages=[LLMMessage(role="user", content=generation_prompt)], max_tokens=500, temperature=0.3)
 
         try:
             result = asyncio.run(generate())
@@ -321,7 +313,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
             result = None
 
         if result:
-            return result.content if hasattr(result, 'content') else str(result)
+            return result.content if hasattr(result, "content") else str(result)
 
         # Minimal fallback
         return f"""
@@ -351,7 +343,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         import warnings
 
         # Suppress asyncio cleanup warnings
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
         llm = LLM()
 
@@ -371,11 +363,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         """
 
         async def generate():
-            return await llm.chat_response(
-                messages=[LLMMessage(role="user", content=generation_prompt)],
-                max_tokens=500,
-                temperature=0.3
-            )
+            return await llm.chat_response(messages=[LLMMessage(role="user", content=generation_prompt)], max_tokens=500, temperature=0.3)
 
         try:
             result = asyncio.run(generate())
@@ -383,7 +371,7 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
             result = None
 
         if result:
-            return result.content if hasattr(result, 'content') else str(result)
+            return result.content if hasattr(result, "content") else str(result)
 
         # Minimal fallback
         return f"""

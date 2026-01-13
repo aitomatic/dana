@@ -10,7 +10,6 @@ from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
 from dana.lib.resources.conversation import ConversationResource
-from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 from resources.test_data_resource import TestDataResource
 
@@ -29,17 +28,8 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
     This provides data-driven prioritization of yield improvement efforts.
     """
 
-    def __init__(
-        self,
-        workflow_id: str | None = None,
-        llm_provider: str = "anthropic",
-        model: str | None = None,
-        **kwargs
-    ):
-        super().__init__(
-            workflow_id=workflow_id or "roi-prioritization",
-            **kwargs
-        )
+    def __init__(self, workflow_id: str | None = None, llm_provider: str = "anthropic", model: str | None = None, **kwargs):
+        super().__init__(workflow_id=workflow_id or "roi-prioritization", **kwargs)
 
         # Store config for step agent resources
         self._llm_provider = llm_provider
@@ -54,11 +44,7 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
         if not self._step_agent_configured:
             # Give step agent access to resources it needs
             self.workflow_step_agent.with_resources(
-                ConversationResource(
-                    resource_id=f"{self.workflow_id}-llm",
-                    llm_provider=self._llm_provider,
-                    model=self._model
-                )
+                ConversationResource(resource_id=f"{self.workflow_id}-llm", llm_provider=self._llm_provider, model=self._model)
             )
             self._step_agent_configured = True
 
@@ -102,13 +88,15 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
 
         try:
             # STEP 1: Revenue Impact Calculation (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "revenue_calc",
-                    "message": "Calculating revenue impact per bin..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "revenue_calc",
+                        "message": "Calculating revenue impact per bin...",
+                    }
                 }
-            })
+            )
 
             asp = product_context.get("average_selling_price_usd", 150)
             monthly_volume = product_context.get("monthly_volume_wafers", 10000)
@@ -121,38 +109,38 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
                 # Annualized
                 annual_impact = monthly_impact * 12
 
-                bins_with_impact.append({
-                    **bin_info,
-                    "failures_per_wafer": failures_per_wafer,
-                    "monthly_revenue_impact_usd": monthly_impact,
-                    "annual_revenue_impact_usd": annual_impact,
-                })
+                bins_with_impact.append(
+                    {
+                        **bin_info,
+                        "failures_per_wafer": failures_per_wafer,
+                        "monthly_revenue_impact_usd": monthly_impact,
+                        "annual_revenue_impact_usd": annual_impact,
+                    }
+                )
 
             # STEP 2: Fix Difficulty Assessment (LLM Intelligence)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "difficulty_assessment",
-                    "message": "Assessing fix difficulty with LLM..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "difficulty_assessment",
+                        "message": "Assessing fix difficulty with LLM...",
+                    }
                 }
-            })
+            )
 
             bins_with_difficulty = self._assess_fix_difficulty(bins_with_impact)
 
             # STEP 3: ROI Score Calculation (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "roi_calculation",
-                    "message": "Calculating ROI scores..."
-                }
-            })
+            self.broadcast(
+                {"workflow_progress": {"workflow_id": self.workflow_id, "phase": "roi_calculation", "message": "Calculating ROI scores..."}}
+            )
 
             # Map difficulty to score multiplier (higher = better ROI)
             difficulty_multiplier = {
-                "EASY": 3.0,      # Easy fixes get 3x multiplier
-                "MEDIUM": 1.5,    # Medium fixes get 1.5x multiplier
-                "HARD": 0.5,      # Hard fixes get 0.5x penalty
+                "EASY": 3.0,  # Easy fixes get 3x multiplier
+                "MEDIUM": 1.5,  # Medium fixes get 1.5x multiplier
+                "HARD": 0.5,  # Hard fixes get 0.5x penalty
                 "UNKNOWN": 1.0,
             }
 
@@ -165,43 +153,45 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
                 # (Higher score = better ROI = prioritize this)
                 roi_score = bin_info["annual_revenue_impact_usd"] * multiplier
 
-                bins_with_roi.append({
-                    **bin_info,
-                    "roi_score": roi_score,
-                })
+                bins_with_roi.append(
+                    {
+                        **bin_info,
+                        "roi_score": roi_score,
+                    }
+                )
 
             # STEP 4: Ranking by ROI (MANDATORY)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "ranking",
-                    "message": "Ranking bins by ROI score..."
-                }
-            })
+            self.broadcast(
+                {"workflow_progress": {"workflow_id": self.workflow_id, "phase": "ranking", "message": "Ranking bins by ROI score..."}}
+            )
 
             bins_with_roi.sort(key=lambda x: x["roi_score"], reverse=True)
 
             # STEP 5: Action Recommendation Generation (LLM Intelligence)
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "recommendations",
-                    "message": "Generating actionable recommendations with LLM..."
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "recommendations",
+                        "message": "Generating actionable recommendations with LLM...",
+                    }
                 }
-            })
+            )
 
             prioritized_actions = self._generate_action_recommendations(bins_with_roi)
 
             # STEP 6: Output (MANDATORY)
             total_opportunity = sum(b["annual_revenue_impact_usd"] for b in bins_with_roi)
 
-            self.broadcast({
-                "workflow_progress": {
-                    "workflow_id": self.workflow_id,
-                    "phase": "complete",
-                    "message": f"ROI prioritization complete: ${total_opportunity:,.0f} annual opportunity"
+            self.broadcast(
+                {
+                    "workflow_progress": {
+                        "workflow_id": self.workflow_id,
+                        "phase": "complete",
+                        "message": f"ROI prioritization complete: ${total_opportunity:,.0f} annual opportunity",
+                    }
                 }
-            })
+            )
 
             return {
                 "success": True,
@@ -210,11 +200,7 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "prioritized_actions": []
-            }
+            return {"success": False, "error": str(e), "prioritized_actions": []}
 
     def _assess_fix_difficulty(self, bins_with_impact: list) -> list:
         """
@@ -233,12 +219,14 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
 
             if "error" in bin_details:
                 # Fallback if bin details not found
-                bins_with_difficulty.append({
-                    **bin_info,
-                    "fix_difficulty": "UNKNOWN",
-                    "fix_difficulty_reasoning": "Bin details not available",
-                    "estimated_time_to_fix_days": None,
-                })
+                bins_with_difficulty.append(
+                    {
+                        **bin_info,
+                        "fix_difficulty": "UNKNOWN",
+                        "fix_difficulty_reasoning": "Bin details not available",
+                        "estimated_time_to_fix_days": None,
+                    }
+                )
                 continue
 
             # Use existing difficulty assessment from bin details if available
@@ -248,13 +236,15 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
 
             # Optionally use LLM to refine assessment based on current context
             # For now, use the pre-defined difficulty from bin details
-            bins_with_difficulty.append({
-                **bin_info,
-                "fix_difficulty": existing_difficulty,
-                "fix_difficulty_reasoning": existing_reasoning,
-                "estimated_time_to_fix_days": estimated_time,
-                "typical_root_causes": bin_details.get("typical_root_causes", []),
-            })
+            bins_with_difficulty.append(
+                {
+                    **bin_info,
+                    "fix_difficulty": existing_difficulty,
+                    "fix_difficulty_reasoning": existing_reasoning,
+                    "estimated_time_to_fix_days": estimated_time,
+                    "typical_root_causes": bin_details.get("typical_root_causes", []),
+                }
+            )
 
         return bins_with_difficulty
 
@@ -267,16 +257,18 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
         # Prepare context for LLM
         top_3_bins = bins_with_roi[:3]  # Focus on top 3 ROI opportunities
 
-        bins_summary = "\n".join([
-            f"{i+1}. {bin['bin_id']}: {bin['description']}\n"
-            f"   - Failures: {bin['count']} per wafer\n"
-            f"   - Annual revenue impact: ${bin['annual_revenue_impact_usd']:,.0f}\n"
-            f"   - Fix difficulty: {bin['fix_difficulty']}\n"
-            f"   - ROI score: {bin['roi_score']:,.0f}\n"
-            f"   - Typical root causes: {', '.join(bin.get('typical_root_causes', ['Unknown']))}\n"
-            f"   - Est. time to fix: {bin.get('estimated_time_to_fix_days', 'Unknown')}"
-            for i, bin in enumerate(top_3_bins)
-        ])
+        bins_summary = "\n".join(
+            [
+                f"{i + 1}. {bin['bin_id']}: {bin['description']}\n"
+                f"   - Failures: {bin['count']} per wafer\n"
+                f"   - Annual revenue impact: ${bin['annual_revenue_impact_usd']:,.0f}\n"
+                f"   - Fix difficulty: {bin['fix_difficulty']}\n"
+                f"   - ROI score: {bin['roi_score']:,.0f}\n"
+                f"   - Typical root causes: {', '.join(bin.get('typical_root_causes', ['Unknown']))}\n"
+                f"   - Est. time to fix: {bin.get('estimated_time_to_fix_days', 'Unknown')}"
+                for i, bin in enumerate(top_3_bins)
+            ]
+        )
 
         prompt = f"""Generate specific actionable recommendations for these yield improvement opportunities:
 
@@ -342,18 +334,20 @@ Provide recommendations in structured format."""
                         "Consider design changes or workarounds",
                     ]
 
-                prioritized_actions.append({
-                    "rank": rank,
-                    "bin_id": bin_info["bin_id"],
-                    "description": bin_info["description"],
-                    "failures_per_wafer": bin_info["count"],
-                    "revenue_impact_usd": bin_info["annual_revenue_impact_usd"],
-                    "fix_difficulty": bin_info["fix_difficulty"],
-                    "roi_score": bin_info["roi_score"],
-                    "recommended_actions": recommended_actions,
-                    "priority_justification": justification,
-                    "estimated_timeline": bin_info.get("estimated_time_to_fix_days", "Unknown"),
-                })
+                prioritized_actions.append(
+                    {
+                        "rank": rank,
+                        "bin_id": bin_info["bin_id"],
+                        "description": bin_info["description"],
+                        "failures_per_wafer": bin_info["count"],
+                        "revenue_impact_usd": bin_info["annual_revenue_impact_usd"],
+                        "fix_difficulty": bin_info["fix_difficulty"],
+                        "roi_score": bin_info["roi_score"],
+                        "recommended_actions": recommended_actions,
+                        "priority_justification": justification,
+                        "estimated_timeline": bin_info.get("estimated_time_to_fix_days", "Unknown"),
+                    }
+                )
 
             # Add agent analysis to top priorities
             if prioritized_actions:
@@ -365,15 +359,17 @@ Provide recommendations in structured format."""
             # Fallback: return actions without agent recommendations
             prioritized_actions = []
             for rank, bin_info in enumerate(bins_with_roi, start=1):
-                prioritized_actions.append({
-                    "rank": rank,
-                    "bin_id": bin_info["bin_id"],
-                    "description": bin_info["description"],
-                    "revenue_impact_usd": bin_info["annual_revenue_impact_usd"],
-                    "fix_difficulty": bin_info["fix_difficulty"],
-                    "roi_score": bin_info["roi_score"],
-                    "recommended_actions": ["Agent recommendation generation failed"],
-                    "priority_justification": f"ROI score: {bin_info['roi_score']:,.0f}",
-                    "error": str(e),
-                })
+                prioritized_actions.append(
+                    {
+                        "rank": rank,
+                        "bin_id": bin_info["bin_id"],
+                        "description": bin_info["description"],
+                        "revenue_impact_usd": bin_info["annual_revenue_impact_usd"],
+                        "fix_difficulty": bin_info["fix_difficulty"],
+                        "roi_score": bin_info["roi_score"],
+                        "recommended_actions": ["Agent recommendation generation failed"],
+                        "priority_justification": f"ROI score: {bin_info['roi_score']:,.0f}",
+                        "error": str(e),
+                    }
+                )
             return prioritized_actions

@@ -381,7 +381,7 @@ class LangfusePromptRepository(PromptRepositoryProtocol, LocalRepositoryMixin):
                 metrics=metrics,
             )
 
-            logger.info(f"Created prompt snapshot {version} for {self._prompt_name} " f"in Langfuse")
+            logger.info(f"Created prompt snapshot {version} for {self._prompt_name} in Langfuse")
 
             return snapshot
         except Exception as e:

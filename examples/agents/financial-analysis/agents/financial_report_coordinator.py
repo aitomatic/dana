@@ -145,7 +145,7 @@ class FinancialReportCoordinatorAgent(STARAgent):
 
         # Store workspace root for reports
         self.workspace_root = workspace_root or str(Path.cwd())
-        
+
         # Ensure reports directory exists
         reports_dir = Path(self.workspace_root) / "reports"
         reports_dir.mkdir(parents=True, exist_ok=True)
@@ -201,24 +201,18 @@ if __name__ == "__main__":
 
     # Get the current directory (agents/)
     current_dir = Path(__file__).parent.parent
-    
+
     # Initialize the financial analysis agent
     print("🤖 Initializing FinancialAnalysisAgent...")
     analyst = FinancialAnalysisAgent(
-        agent_id="financial-analysis-001",
-        workspace_root=str(current_dir / "data"),
-        model="gpt-4.1-mini",
-        max_context_tokens=40000
+        agent_id="financial-analysis-001", workspace_root=str(current_dir / "data"), model="gpt-4.1-mini", max_context_tokens=40000
     )
     analyst.enable_notifications(verbose=False)
 
     # Initialize the coordinator agent with the analyst
     print("🤖 Initializing FinancialReportCoordinatorAgent...")
     coordinator = FinancialReportCoordinatorAgent(
-        agent_id="coordinator-001",
-        workspace_root=str(current_dir),
-        financial_analysis_agent=analyst,
-        model="gpt-4.1-mini"
+        agent_id="coordinator-001", workspace_root=str(current_dir), financial_analysis_agent=analyst, model="gpt-4.1-mini"
     )
 
     # Disable notifications for cleaner output in demo
@@ -239,4 +233,3 @@ if __name__ == "__main__":
     print("=" * 80)
     print("✅ Report generation complete!")
     print(f"Reports are saved in: {current_dir / 'reports'}")
-

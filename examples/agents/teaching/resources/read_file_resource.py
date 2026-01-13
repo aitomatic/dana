@@ -246,11 +246,11 @@ if __name__ == "__main__":
     print("ReadFileResource Usage Examples")
     print("=" * 80)
     print()
-    
+
     # Initialize the resource
     # By default, workspace_root is the current working directory
     resource = ReadFileResource(workspace_root=".")
-    
+
     print("Example 1: Read entire file")
     print("-" * 80)
     result = resource.read(
@@ -263,9 +263,9 @@ if __name__ == "__main__":
     print(f"Lines returned: {result.get('lines_returned', 'N/A')}")
     print(f"Did downgrade to line range: {result['did_downgrade_to_line_range']}")
     print("Content preview (first 200 chars):")
-    print(result['contents'][:200] + "..." if len(result['contents']) > 200 else result['contents'])
+    print(result["contents"][:200] + "..." if len(result["contents"]) > 200 else result["contents"])
     print()
-    
+
     print("Example 2: Read specific line range")
     print("-" * 80)
     result = resource.read(
@@ -277,9 +277,9 @@ if __name__ == "__main__":
     )
     print(f"Success: {result['success']}")
     print("Lines 1-20:")
-    print(result['contents'])
+    print(result["contents"])
     print()
-    
+
     print("Example 3: Handle file not found")
     print("-" * 80)
     result = resource.read(
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     print(f"Success: {result['success']}")
     print(f"Error: {result['error']}")
     print()
-    
+
     print("Example 4: Read with character limit")
     print("-" * 80)
     result = resource.read(
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     print(f"Did shorten char range: {result['did_shorten_char_range']}")
     print(f"Content length: {len(result['contents'])} chars")
     print()
-    
+
     print("=" * 80)
     print("Usage in code:")
     print("=" * 80)
@@ -334,4 +334,3 @@ if result['success']:
 else:
     print(f"Error: {result['error']}")
     """)
-
