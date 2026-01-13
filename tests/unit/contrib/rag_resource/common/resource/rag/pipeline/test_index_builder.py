@@ -16,6 +16,9 @@ from dana.common.sys_resource.rag.pipeline.index_builder import IndexBuilder
 # Helper function to check if OpenAI API key is available
 def has_real_openai_api_key():
     """Check if OpenAI API key is available for integration tests."""
+    # Skip in CI environments - these tests require validated API keys
+    if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
+        return False
     api_key = os.getenv("OPENAI_API_KEY")
     # Check if we have a real API key, not just the test placeholder
     return bool(api_key) and api_key != "test-key" and not api_key.startswith("test")
