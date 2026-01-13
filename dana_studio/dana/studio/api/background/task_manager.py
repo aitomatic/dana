@@ -108,7 +108,7 @@ class TaskManager:
             for task_type, max_workers in TASK_TYPE_LIMITS.items():
                 for i in range(max_workers):
                     worker_thread = Thread(
-                        target=self._worker, args=(task_type, i + 1), name=f"TaskManager-{task_type}-Worker-{i+1}", daemon=True
+                        target=self._worker, args=(task_type, i + 1), name=f"TaskManager-{task_type}-Worker-{i + 1}", daemon=True
                     )
                     worker_thread.start()
                     self._workers[task_type].append(worker_thread)

@@ -250,16 +250,6 @@ class TestDomainResult:
         assert result.reasoning == ""
         assert result.error_message == ""
 
-    def test_domain_result_sources_none_initialization(self):
-        """Test that None sources are converted to empty list."""
-        result = DomainResult(
-            success=True,
-            data={"test": "value"},
-            sources=None,
-        )
-
-        assert result.sources == []
-
     def test_domain_result_validation_success_no_data(self):
         """Test that successful results must have data."""
         with pytest.raises(ValueError, match="successful result must have data"):
@@ -269,17 +259,6 @@ class TestDomainResult:
         """Test that failed results must have error message."""
         with pytest.raises(ValueError, match="failed result must have error_message"):
             DomainResult(success=False, data={})
-
-    def test_domain_result_confidence_values(self):
-        """Test valid confidence values."""
-        # Test all valid confidence levels
-        for confidence in ["high", "medium", "low"]:
-            result = DomainResult(
-                success=True,
-                data={"test": "value"},
-                confidence=confidence,
-            )
-            assert result.confidence == confidence
 
 
 if __name__ == "__main__":

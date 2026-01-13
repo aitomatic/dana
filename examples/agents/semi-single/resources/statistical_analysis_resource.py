@@ -36,7 +36,7 @@ class StatisticalAnalysisResource(BaseResource):
                 "z_score": 8.45,
                 "interpretation": "strong_positive_autocorrelation",
                 "conclusion": "Defects are significantly clustered (p<0.001)",
-                "confidence": 0.99
+                "confidence": 0.99,
             }
         elif bin_id == "BIN_2":
             # Random pattern - near-zero autocorrelation
@@ -48,7 +48,7 @@ class StatisticalAnalysisResource(BaseResource):
                 "z_score": 0.36,
                 "interpretation": "no_autocorrelation",
                 "conclusion": "Defects show no significant spatial pattern (p=0.72)",
-                "confidence": 0.75
+                "confidence": 0.75,
             }
         else:
             return {"error": "No data for analysis"}
@@ -70,7 +70,7 @@ class StatisticalAnalysisResource(BaseResource):
             "chi_square_statistic": 45.23,
             "degrees_of_freedom": 5,
             "p_value": 0.0001,
-            "conclusion": "Observed distribution significantly different from expected (p<0.001)"
+            "conclusion": "Observed distribution significantly different from expected (p<0.001)",
         }
 
     def getis_ord_gi_star(self, spatial_data: DictParams) -> DictParams:
@@ -88,10 +88,8 @@ class StatisticalAnalysisResource(BaseResource):
                 "hot_spots": [
                     {"location": "center", "gi_star": 3.85, "p_value": 0.0001, "confidence": 0.99},
                 ],
-                "cold_spots": [
-                    {"location": "edge", "gi_star": -2.14, "p_value": 0.032, "confidence": 0.95}
-                ],
-                "conclusion": "Significant hot spot in center region (Gi*=3.85, p<0.001)"
+                "cold_spots": [{"location": "edge", "gi_star": -2.14, "p_value": 0.032, "confidence": 0.95}],
+                "conclusion": "Significant hot spot in center region (Gi*=3.85, p<0.001)",
             }
         else:
             return {
@@ -99,5 +97,5 @@ class StatisticalAnalysisResource(BaseResource):
                 "bin_id": bin_id,
                 "hot_spots": [],
                 "cold_spots": [],
-                "conclusion": "No statistically significant hot or cold spots detected"
+                "conclusion": "No statistically significant hot or cold spots detected",
             }

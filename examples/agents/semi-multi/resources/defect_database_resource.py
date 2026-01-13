@@ -7,7 +7,7 @@ for pattern matching and root cause learning.
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any
 
 # Add dana_agent to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "dana_agent"))
@@ -44,7 +44,7 @@ class DefectDatabaseResource(BaseResource):
                 "root_cause": "Resist nozzle clogging",
                 "fix_action": "Nozzle cleaning and spray pressure reduction",
                 "effectiveness": "100% resolution",
-                "similarity_score": 0.85
+                "similarity_score": 0.85,
             },
             {
                 "case_id": "2024-DEF-0089",
@@ -58,7 +58,7 @@ class DefectDatabaseResource(BaseResource):
                 "root_cause": "Vacuum chuck seal degradation",
                 "fix_action": "Chuck seal replacement",
                 "effectiveness": "95% reduction",
-                "similarity_score": 0.45
+                "similarity_score": 0.45,
             },
             {
                 "case_id": "2023-DEF-0298",
@@ -72,11 +72,11 @@ class DefectDatabaseResource(BaseResource):
                 "root_cause": "Nozzle alignment drift",
                 "fix_action": "Nozzle realignment and calibration",
                 "effectiveness": "100% resolution",
-                "similarity_score": 0.62
-            }
+                "similarity_score": 0.62,
+            },
         ]
 
-    def _do_execute(self, **kwargs) -> Dict[str, Any]:
+    def _do_execute(self, **kwargs) -> dict[str, Any]:
         """
         Query defect database for pattern matching.
 
@@ -98,9 +98,7 @@ class DefectDatabaseResource(BaseResource):
         for case in self.historical_cases:
             # Check if pattern keywords match
             pattern_match = any(
-                keyword in case["pattern"].lower()
-                for keyword in ["circular", "cluster", "edge"]
-                if keyword in defect_pattern.lower()
+                keyword in case["pattern"].lower() for keyword in ["circular", "cluster", "edge"] if keyword in defect_pattern.lower()
             )
 
             # Check if process step matches
@@ -119,10 +117,10 @@ class DefectDatabaseResource(BaseResource):
             "matches_found": len(matches) > 0,
             "match_count": len(matches),
             "best_match": matches[0] if matches else None,
-            "all_matches": matches
+            "all_matches": matches,
         }
 
-    def get_case_details(self, case_id: str) -> Dict[str, Any]:
+    def get_case_details(self, case_id: str) -> dict[str, Any]:
         """
         Get detailed information about a specific case.
 

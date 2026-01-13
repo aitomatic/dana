@@ -31,16 +31,17 @@
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.5",
     "@tanstack/react-table": "^8.21.3",
-    "axios": "^1.10.0",
+    "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
+    "exceljs": "^4.4.0",
     "github-markdown-css": "^5.8.1",
     "gtag": "^1.0.1",
     "iconoir-react": "^7.11.0",
     "katex": "^0.16.22",
     "lucide-react": "^0.468.0",
-    "mammoth": "^1.10.0",
+    "mammoth": "^1.11.0",
     "monaco-editor": "^0.52.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -51,8 +52,8 @@
     "react-pdf": "^10.0.1",
     "react-resizable-panels": "^3.0.4",
     "recharts": "^2.10.0",
-    "react-router-dom": "^7.6.3",
-    "react-syntax-highlighter": "^15.6.6",
+    "react-router-dom": "^7.12.0",
+    "react-syntax-highlighter": "^16.1.0",
     "react-use-websocket": "^4.13.0",
     "reactflow": "^11.11.4",
     "rehype-katex": "^7.0.1",
@@ -62,7 +63,6 @@
     "tailwind-merge": "^3.3.1",
     "tailwind-variants": "^1.0.0",
     "tailwindcss": "^4.1.5",
-    "xlsx": "^0.18.5",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
@@ -86,7 +86,7 @@
     "prettier": "^3.6.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.34.1",
-    "vite": "^7.0.0",
+    "vite": "^7.0.9",
     "vitest": "^3.2.4"
   }
 }

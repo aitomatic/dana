@@ -55,7 +55,6 @@ class PromptAPIProtocol(PublicPromptsProtocol, PrivatePromptsProtocol, Persistab
     def render(self, template: str) -> str: ...
 
 
-
 TEMPLATE_SYSTEM_PROMPT = """
 {{identity}}
 
@@ -83,23 +82,25 @@ Bias towards not asking the user for help if you can find the answer yourself.
 </available_tools>
 """
 
-class LocalPromptAPI(PromptAPIProtocol):
-    # If static prompt variables are provided, they will be replaced in the template, then save. 
-    # These variables will not be constructed dynamically next time.
-    static_prompt_variables = [
-        "identity"
-    ]
 
-    def __init__(self, agent: "BaseAgent", 
-                codec: type[AbstractCodec],
-                agent_prompt_engineer_cls: type[AgentPromptEngineer]=AgentPromptEngineer,
-                resource_prompt_engineer_cls: type[ResourcePromptEngineer]=ResourcePromptEngineer,
-                workflow_prompt_engineer_cls: type[WorkflowPromptEngineer]=WorkflowPromptEngineer,
-                template_system_prompt: str = TEMPLATE_SYSTEM_PROMPT,
-                force_generate: bool = False,
-                check_conflicts: bool = False,
-                repository_factory: RepositoryFactory | None = None,
-                **kwargs):
+class LocalPromptAPI(PromptAPIProtocol):
+    # If static prompt variables are provided, they will be replaced in the template, then save.
+    # These variables will not be constructed dynamically next time.
+    static_prompt_variables = ["identity"]
+
+    def __init__(
+        self,
+        agent: "BaseAgent",
+        codec: type[AbstractCodec],
+        agent_prompt_engineer_cls: type[AgentPromptEngineer] = AgentPromptEngineer,
+        resource_prompt_engineer_cls: type[ResourcePromptEngineer] = ResourcePromptEngineer,
+        workflow_prompt_engineer_cls: type[WorkflowPromptEngineer] = WorkflowPromptEngineer,
+        template_system_prompt: str = TEMPLATE_SYSTEM_PROMPT,
+        force_generate: bool = False,
+        check_conflicts: bool = False,
+        repository_factory: RepositoryFactory | None = None,
+        **kwargs,
+    ):
         self._agent = agent
         self._agent_prompt_engineer_cls = agent_prompt_engineer_cls
         self._resource_prompt_engineer_cls = resource_prompt_engineer_cls
@@ -114,7 +115,7 @@ class LocalPromptAPI(PromptAPIProtocol):
         self._store = self._repository_factory.create(
             RepositoryType.PROMPT,
             agent=self._agent,
-            component=None  # For system prompt template
+            component=None,  # For system prompt template
         )
         # NOTE : Registry management will be added later
         self._agent_prompt_engineers = {}
@@ -127,19 +128,15 @@ class LocalPromptAPI(PromptAPIProtocol):
         self, prompt_engineer_cls: type[BasePromptEngineer], component, relative_path: str, **kwargs
     ) -> BasePromptEngineer:
         # Create repository via factory
-        repository = self._repository_factory.create(
-            RepositoryType.PROMPT,
-            agent=self._agent,
-            component=component
-        )
+        repository = self._repository_factory.create(RepositoryType.PROMPT, agent=self._agent, component=component)
         return prompt_engineer_cls(
             component=component,
             repository=repository,
             codec=self._codec,
             force_generate=self._force_generate,
             check_conflicts=self._check_conflicts,
-            **kwargs
-            )
+            **kwargs,
+        )
 
     @property
     def relative_path(self) -> str:
@@ -148,7 +145,7 @@ class LocalPromptAPI(PromptAPIProtocol):
         return f"{self._codec.__qualname__}/{self._agent.__class__.__qualname__}__{filename}/prompts"
 
     @property
-    def public_description(self) -> str: 
+    def public_description(self) -> str:
         if self not in self._agent_prompt_engineers:
             self._agent_prompt_engineers[self] = self._instantiate_prompt_engineer(
                 self._agent_prompt_engineer_cls, self._agent, relative_path=f"{self.relative_path}/public_description"
@@ -208,13 +205,17 @@ class LocalPromptAPI(PromptAPIProtocol):
         for resource in self._agent._resources:
             if resource not in self._resource_prompt_engineers:
                 self._resource_prompt_engineers[resource] = self._instantiate_prompt_engineer(
-                    self._resource_prompt_engineer_cls, resource, relative_path=f"{self.relative_path}/resources/{resource.__class__.__qualname__}"
+                    self._resource_prompt_engineer_cls,
+                    resource,
+                    relative_path=f"{self.relative_path}/resources/{resource.__class__.__qualname__}",
                 )
             tools_prompt += self._resource_prompt_engineers[resource].prompt + "\n"
         for workflow in self._agent._workflows:
             if workflow not in self._workflow_prompt_engineers:
                 self._workflow_prompt_engineers[workflow] = self._instantiate_prompt_engineer(
-                    self._workflow_prompt_engineer_cls, workflow, relative_path=f"{self.relative_path}/workflows/{workflow.__class__.__qualname__}"
+                    self._workflow_prompt_engineer_cls,
+                    workflow,
+                    relative_path=f"{self.relative_path}/workflows/{workflow.__class__.__qualname__}",
                 )
             tools_prompt += self._workflow_prompt_engineers[workflow].prompt + "\n"
         return tools_prompt
@@ -267,6 +268,7 @@ class LocalPromptAPI(PromptAPIProtocol):
 
         # Debug logging - log message building
         from dana.common.llm.debug_logger import get_debug_logger
+
         debug_logger = get_debug_logger()
         system_prompt_length = len(system_prompt)
         debug_logger.log_agent_interaction(
@@ -283,20 +285,26 @@ class LocalPromptAPI(PromptAPIProtocol):
 
         return messages
 
-    
     def reset(self) -> None:
         pass
 
     def persist(self) -> None:
         if self._template is None:
             raise ValueError(f"[{self.__class__.__qualname__}] Template for {self._agent.__class__.__qualname__} is not generated yet")
-        res = self._store.create_snapshot(self._template, 
-                                    provenance={"source": "auto-generated", "reasoning": "auto-generated", "parent_version": None, "force_generate": self._force_generate}, 
-                                    metrics={})
+        res = self._store.create_snapshot(
+            self._template,
+            provenance={
+                "source": "auto-generated",
+                "reasoning": "auto-generated",
+                "parent_version": None,
+                "force_generate": self._force_generate,
+            },
+            metrics={},
+        )
         self._store.set_active(res.version)
-        logger.info(f"Prompt template persisted for {self._agent.__class__.__qualname__} and codec {self._codec.__qualname__} with version {res.version}")
-        
-
+        logger.info(
+            f"Prompt template persisted for {self._agent.__class__.__qualname__} and codec {self._codec.__qualname__} with version {res.version}"
+        )
 
     def load(self) -> str | None:
         snapshot = self._store.get_active(error_if_not_found=False)

@@ -34,11 +34,7 @@ class YieldAnalysisAgent(STARAgent):
     """
 
     def __init__(
-        self,
-        agent_id: str = "yield-analyst",
-        llm_provider: str = "anthropic",
-        model: str = "claude-3-5-sonnet-20241022",
-        **kwargs
+        self, agent_id: str = "yield-analyst", llm_provider: str = "anthropic", model: str = "claude-3-5-sonnet-20241022", **kwargs
     ):
         """
         Initialize YieldAnalysisAgent.
@@ -48,48 +44,24 @@ class YieldAnalysisAgent(STARAgent):
             llm_provider: LLM provider (anthropic, openai, etc.)
             model: Model name to use
         """
-        super().__init__(
-            agent_type="yield_analysis",
-            agent_id=agent_id,
-            llm_provider=llm_provider,
-            model=model,
-            **kwargs
-        )
+        super().__init__(agent_type="yield_analysis", agent_id=agent_id, llm_provider=llm_provider, model=model, **kwargs)
 
         # Add LLM resource
-        self.with_resources(
-            ConversationResource(
-                resource_id=f"{agent_id}-llm",
-                llm_provider=llm_provider,
-                model=model
-            )
-        )
+        self.with_resources(ConversationResource(resource_id=f"{agent_id}-llm", llm_provider=llm_provider, model=model))
 
         # Add domain-specific resources (ULTIMATE pattern)
         self.with_resources(
             TestDataResource(resource_id="test-data"),
             WaferMapResource(resource_id="wafer-map"),
             StatisticalAnalysisResource(resource_id="stats"),
-            HistoricalPatternResource(resource_id="historical-patterns")
+            HistoricalPatternResource(resource_id="historical-patterns"),
         )
 
         # Add analysis workflows
         self.with_workflows(
-            YieldParetoWorkflow(
-                workflow_id="pareto-analysis",
-                llm_provider=llm_provider,
-                model=model
-            ),
-            FailureCorrelationWorkflow(
-                workflow_id="correlation-analysis",
-                llm_provider=llm_provider,
-                model=model
-            ),
-            ROIPrioritizationWorkflow(
-                workflow_id="roi-prioritization",
-                llm_provider=llm_provider,
-                model=model
-            )
+            YieldParetoWorkflow(workflow_id="pareto-analysis", llm_provider=llm_provider, model=model),
+            FailureCorrelationWorkflow(workflow_id="correlation-analysis", llm_provider=llm_provider, model=model),
+            ROIPrioritizationWorkflow(workflow_id="roi-prioritization", llm_provider=llm_provider, model=model),
         )
 
     @property

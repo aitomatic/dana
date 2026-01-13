@@ -125,7 +125,7 @@ def main():
     # Ask user if they want to see the comparison
     print()
     user_input = input("Press Enter to see comparison without visible thinking (or 'q' to quit)...")
-    if user_input.lower() != 'q':
+    if user_input.lower() != "q":
         demo_without_visible_thinking()
 
     print()

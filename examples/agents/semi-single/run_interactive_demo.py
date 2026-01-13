@@ -61,11 +61,7 @@ def main():
 
     # Initialize agent
     print("\n🔧 Initializing YieldAnalysisAgent...")
-    agent = YieldAnalysisAgent(
-        agent_id="yield-analyst-001",
-        llm_provider="anthropic",
-        model="claude-3-5-sonnet-20241022"
-    )
+    agent = YieldAnalysisAgent(agent_id="yield-analyst-001", llm_provider="anthropic", model="claude-3-5-sonnet-20241022")
 
     print(f"✅ Agent initialized: {agent.agent_type} (ID: {agent.object_id})")
     print(f"   📊 Resources: {len(agent.available_resources)}")

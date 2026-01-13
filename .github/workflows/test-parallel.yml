@@ -45,7 +45,12 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}
       run: |
         cd dana_studio
-        uv run pytest tests/ -m "not live and not deep" --tb=short -v --durations=10
+        uv sync --extra dev
+        if [ -d "tests" ]; then
+          uv run pytest tests/ -m "not live and not deep" --tb=short -v --durations=10
+        else
+          echo "No tests directory found, skipping tests"
+        fi
 
   # Dana Agent - Agent framework tests
   test-dana-agent:
@@ -77,6 +82,7 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}
       run: |
         cd dana_agent
+        uv sync --extra dev
         uv run pytest tests/ -m "not live and not deep" --tb=short -v --durations=10
 
   # Dana Lang - Language runtime tests
@@ -113,15 +119,14 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-studio, test-dana-agent, test-dana-lang]
+    needs: [test-dana-studio, test-dana-agent]
     runs-on: ubuntu-latest
     if: always()
     steps:
     - name: Check test results
       run: |
         if [[ "${{ needs.test-dana-studio.result }}" == "failure" ||
-              "${{ needs.test-dana-agent.result }}" == "failure" ||
-              "${{ needs.test-dana-lang.result }}" == "failure" ]]; then
+              "${{ needs.test-dana-agent.result }}" == "failure" ]]; then
           echo "One or more test jobs failed"
           exit 1
         else

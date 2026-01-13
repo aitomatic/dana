@@ -142,117 +142,98 @@ if __name__ == "__main__":
     """
     import tempfile
     import shutil
-    
+
     print("=" * 80)
     print("CreateFileResource Usage Examples")
     print("=" * 80)
     print("NOTE: Per Cursor Agent Mode spec, CREATE_FILE only creates EMPTY files")
     print("=" * 80)
     print()
-    
+
     # Create a temporary directory for demo
     temp_dir = tempfile.mkdtemp()
     print(f"Created temporary workspace: {temp_dir}")
     print()
-    
+
     # Initialize the resource
     resource = CreateFileResource(workspace_root=temp_dir)
-    
+
     print("Example 1: Create a simple empty file")
     print("-" * 80)
-    result = resource.create(
-        relative_workspace_path="hello.txt"
-    )
+    result = resource.create(relative_workspace_path="hello.txt")
     print(f"File created successfully: {result['file_created_successfully']}")
     print(f"File already exists: {result['file_already_exists']}")
-    if result['file_created_successfully']:
+    if result["file_created_successfully"]:
         created_file = Path(temp_dir) / "hello.txt"
         print(f"File exists: {created_file.exists()}")
         print(f"File size: {created_file.stat().st_size} bytes (empty)")
     print()
-    
+
     print("Example 2: Create file with nested directories (auto-created)")
     print("-" * 80)
-    result = resource.create(
-        relative_workspace_path="src/components/Button.tsx"
-    )
+    result = resource.create(relative_workspace_path="src/components/Button.tsx")
     print(f"File created successfully: {result['file_created_successfully']}")
     print(f"File already exists: {result['file_already_exists']}")
-    if result['file_created_successfully']:
+    if result["file_created_successfully"]:
         created_file = Path(temp_dir) / "src/components/Button.tsx"
         print(f"File exists: {created_file.exists()}")
-        print(f"Parent directories created: src/components/")
+        print("Parent directories created: src/components/")
         print(f"File size: {created_file.stat().st_size} bytes (empty)")
     print()
-    
+
     print("Example 3: Try to create existing file")
     print("-" * 80)
-    result = resource.create(
-        relative_workspace_path="hello.txt"
-    )
+    result = resource.create(relative_workspace_path="hello.txt")
     print(f"File created successfully: {result['file_created_successfully']}")
     print(f"File already exists: {result['file_already_exists']}")
     print("Result: Cannot create - file already exists")
     print()
-    
+
     print("Example 4: Create multiple empty files")
     print("-" * 80)
-    files_to_create = [
-        "config/settings.json",
-        "config/database.conf",
-        "logs/app.log",
-        "logs/error.log"
-    ]
+    files_to_create = ["config/settings.json", "config/database.conf", "logs/app.log", "logs/error.log"]
     for file_path in files_to_create:
         result = resource.create(relative_workspace_path=file_path)
-        status = "✓" if result['file_created_successfully'] else "✗"
+        status = "✓" if result["file_created_successfully"] else "✗"
         print(f"{status} {file_path}")
     print()
-    
+
     print("Example 5: Handle invalid path (security check)")
     print("-" * 80)
-    result = resource.create(
-        relative_workspace_path="../outside_workspace.txt"
-    )
+    result = resource.create(relative_workspace_path="../outside_workspace.txt")
     print(f"File created successfully: {result['file_created_successfully']}")
     print(f"File already exists: {result['file_already_exists']}")
     print("Result: Path outside workspace - rejected")
     print()
-    
+
     print("Example 6: Create Python module structure")
     print("-" * 80)
-    python_files = [
-        "mypackage/__init__.py",
-        "mypackage/core.py",
-        "mypackage/utils.py",
-        "tests/__init__.py",
-        "tests/test_core.py"
-    ]
+    python_files = ["mypackage/__init__.py", "mypackage/core.py", "mypackage/utils.py", "tests/__init__.py", "tests/test_core.py"]
     for file_path in python_files:
         result = resource.create(relative_workspace_path=file_path)
-        if result['file_created_successfully']:
+        if result["file_created_successfully"]:
             print(f"Created: {file_path}")
     print()
-    
+
     # List all created files
     print("Summary: All files created in temporary workspace")
     print("-" * 80)
     for root, dirs, files in os.walk(temp_dir):
-        level = root.replace(temp_dir, '').count(os.sep)
-        indent = ' ' * 2 * level
-        print(f'{indent}{os.path.basename(root)}/')
-        sub_indent = ' ' * 2 * (level + 1)
+        level = root.replace(temp_dir, "").count(os.sep)
+        indent = " " * 2 * level
+        print(f"{indent}{os.path.basename(root)}/")
+        sub_indent = " " * 2 * (level + 1)
         for file in files:
             file_path = Path(root) / file
             size = file_path.stat().st_size
-            print(f'{sub_indent}{file} ({size} bytes)')
+            print(f"{sub_indent}{file} ({size} bytes)")
     print()
-    
+
     # Cleanup
     shutil.rmtree(temp_dir)
-    print(f"Cleaned up temporary workspace")
+    print("Cleaned up temporary workspace")
     print()
-    
+
     print("=" * 80)
     print("Usage in code (Cursor Agent Mode spec):")
     print("=" * 80)

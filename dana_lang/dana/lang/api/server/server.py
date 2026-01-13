@@ -15,6 +15,7 @@ from dana.lang.common.config import ConfigLoader
 from dana.lang.common.mixins.loggable import Loggable
 from fastapi import FastAPI
 
+
 def create_app():
     """Create FastAPI app with routers and static file serving"""
     app = FastAPI(title="Dana API Server", version="1.0.0")

@@ -45,20 +45,17 @@ class SourceRankingResource(BaseResource):
         "nature.com": 0.98,
         "science.org": 0.98,
         ".edu": 0.90,
-
         # Technical documentation
         "github.com": 0.85,
         "stackoverflow.com": 0.80,
         "developer.mozilla.org": 0.90,
         "docs.python.org": 0.95,
-
         # News and media
         "nytimes.com": 0.85,
         "reuters.com": 0.88,
         "bloomberg.com": 0.87,
         "techcrunch.com": 0.75,
         "arstechnica.com": 0.80,
-
         # Tech blogs
         "medium.com": 0.60,
         "dev.to": 0.60,
@@ -70,13 +67,7 @@ class SourceRankingResource(BaseResource):
 
     @tool_use
     @observable
-    def rank_by_quality(
-        self,
-        sources: list[dict[str, Any]],
-        query: str,
-        criteria: dict[str, float] | None = None,
-        **kwargs
-    ) -> DictParams:
+    def rank_by_quality(self, sources: list[dict[str, Any]], query: str, criteria: dict[str, float] | None = None, **kwargs) -> DictParams:
         """
         Rank sources by quality using multi-factor scoring.
 
@@ -99,44 +90,32 @@ class SourceRankingResource(BaseResource):
 
             # Default criteria weights
             if criteria is None:
-                criteria = {
-                    "relevance": 0.4,
-                    "authority": 0.3,
-                    "recency": 0.3
-                }
+                criteria = {"relevance": 0.4, "authority": 0.3, "recency": 0.3}
 
             ranked = []
             for source in sources:
                 # Calculate individual scores
                 relevance = self._calculate_relevance(source, query)
-                authority_result = self.assess_authority(
-                    url=source.get("url", ""),
-                    domain=source.get("domain", "")
-                )
+                authority_result = self.assess_authority(url=source.get("url", ""), domain=source.get("domain", ""))
                 authority = authority_result.get("authority_score", 0.5)
 
-                recency_result = self.check_recency(
-                    date=source.get("date", ""),
-                    content=source.get("content", "")
-                )
+                recency_result = self.check_recency(date=source.get("date", ""), content=source.get("content", ""))
                 recency = recency_result.get("recency_score", 0.5)
 
                 # Calculate weighted score
-                overall_score = (
-                    relevance * criteria["relevance"] +
-                    authority * criteria["authority"] +
-                    recency * criteria["recency"]
-                )
+                overall_score = relevance * criteria["relevance"] + authority * criteria["authority"] + recency * criteria["recency"]
 
-                ranked.append({
-                    **source,
-                    "scores": {
-                        "overall": round(overall_score, 3),
-                        "relevance": round(relevance, 3),
-                        "authority": round(authority, 3),
-                        "recency": round(recency, 3)
+                ranked.append(
+                    {
+                        **source,
+                        "scores": {
+                            "overall": round(overall_score, 3),
+                            "relevance": round(relevance, 3),
+                            "authority": round(authority, 3),
+                            "recency": round(recency, 3),
+                        },
                     }
-                })
+                )
 
             # Sort by overall score (descending)
             ranked.sort(key=lambda x: x["scores"]["overall"], reverse=True)
@@ -148,10 +127,7 @@ class SourceRankingResource(BaseResource):
                 "ranked_sources": ranked,
                 "total_sources": len(ranked),
                 "scoring_criteria": criteria,
-                "metadata": {
-                    "processing_time": round(processing_time, 3),
-                    "timestamp": time.time()
-                }
+                "metadata": {"processing_time": round(processing_time, 3), "timestamp": time.time()},
             }
 
         except Exception as e:
@@ -159,17 +135,12 @@ class SourceRankingResource(BaseResource):
                 "success": False,
                 "error": str(e),
                 "ranked_sources": sources,  # Return unranked as fallback
-                "total_sources": len(sources)
+                "total_sources": len(sources),
             }
 
     @tool_use
     @observable
-    def assess_authority(
-        self,
-        url: str,
-        domain: str | None = None,
-        **kwargs
-    ) -> DictParams:
+    def assess_authority(self, url: str, domain: str | None = None, **kwargs) -> DictParams:
         """
         Assess source authority and credibility.
 
@@ -228,7 +199,7 @@ class SourceRankingResource(BaseResource):
                 "authority_level": authority_level,
                 "reasoning": reasoning,
                 "domain": domain,
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
         except Exception as e:
@@ -238,17 +209,12 @@ class SourceRankingResource(BaseResource):
                 "authority_score": 0.5,  # Fallback neutral score
                 "authority_level": "unknown",
                 "reasoning": f"Error assessing authority: {str(e)}",
-                "domain": domain or "unknown"
+                "domain": domain or "unknown",
             }
 
     @tool_use
     @observable
-    def check_recency(
-        self,
-        date: str,
-        content: str | None = None,
-        **kwargs
-    ) -> DictParams:
+    def check_recency(self, date: str, content: str | None = None, **kwargs) -> DictParams:
         """
         Assess information freshness based on date.
 
@@ -278,7 +244,7 @@ class SourceRankingResource(BaseResource):
                     "recency_score": 0.5,  # Neutral
                     "recency_level": "unknown",
                     "days_old": None,
-                    "reasoning": "No publication date available"
+                    "reasoning": "No publication date available",
                 }
 
             # Parse date string to datetime
@@ -287,6 +253,7 @@ class SourceRankingResource(BaseResource):
                     pub_date = datetime.fromisoformat(date.replace("Z", "+00:00"))
                 else:  # Try common formats
                     from dateutil import parser
+
                     pub_date = parser.parse(date)
             except Exception:
                 # Date parsing failed
@@ -295,7 +262,7 @@ class SourceRankingResource(BaseResource):
                     "recency_score": 0.5,
                     "recency_level": "unknown",
                     "days_old": None,
-                    "reasoning": f"Could not parse date: {date}"
+                    "reasoning": f"Could not parse date: {date}",
                 }
 
             # Calculate days old
@@ -334,7 +301,7 @@ class SourceRankingResource(BaseResource):
                 "days_old": days_old,
                 "date": date,
                 "reasoning": reasoning,
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
         except Exception as e:
@@ -344,7 +311,7 @@ class SourceRankingResource(BaseResource):
                 "recency_score": 0.5,  # Fallback neutral
                 "recency_level": "unknown",
                 "days_old": None,
-                "reasoning": f"Error assessing recency: {str(e)}"
+                "reasoning": f"Error assessing recency: {str(e)}",
             }
 
     def _calculate_relevance(self, source: dict, query: str) -> float:

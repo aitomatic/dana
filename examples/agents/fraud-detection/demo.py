@@ -17,7 +17,6 @@ Example:
 import os
 import sys
 import argparse
-from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
@@ -162,7 +161,7 @@ def main():
         # Cleanup sample file if created
         if not args.file_path and os.path.exists("sample_invoice.txt"):
             os.remove("sample_invoice.txt")
-            print(f"\nCleaned up sample file: sample_invoice.txt")
+            print("\nCleaned up sample file: sample_invoice.txt")
 
         print_section("DEMO COMPLETED", "Fraud detection analysis finished successfully!")
         return 0

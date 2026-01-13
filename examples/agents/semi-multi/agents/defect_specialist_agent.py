@@ -38,13 +38,7 @@ class DefectSpecialistAgent(STARAgent):
     interact with end users directly.
     """
 
-    def __init__(
-        self,
-        agent_id: str = "defect-specialist",
-        llm_provider: str = "anthropic",
-        model: str = None,
-        **kwargs
-    ):
+    def __init__(self, agent_id: str = "defect-specialist", llm_provider: str = "anthropic", model: str = None, **kwargs):
         """
         Initialize DefectSpecialistAgent.
 
@@ -59,14 +53,12 @@ class DefectSpecialistAgent(STARAgent):
             agent_type="DefectSpecialistAgent",
             llm_provider=llm_provider,
             model=model or "claude-3-5-sonnet-20241022",
-            **kwargs
+            **kwargs,
         )
 
         # Conversation resource for technical analysis
         self.conversation = ConversationResource(
-            resource_id=f"{agent_id}-conversation",
-            llm_provider=llm_provider,
-            model=model or "claude-3-5-sonnet-20241022"
+            resource_id=f"{agent_id}-conversation", llm_provider=llm_provider, model=model or "claude-3-5-sonnet-20241022"
         )
 
         # Investigation workflow (will be added later)
@@ -106,7 +98,7 @@ class DefectSpecialistAgent(STARAgent):
         investigation_request = kwargs.get("caller_message", "")
         defect_data = kwargs.get("defect_data", {})
 
-        print(f"\n🔍 [DefectSpecialist] Beginning systematic investigation...")
+        print("\n🔍 [DefectSpecialist] Beginning systematic investigation...")
 
         # Parse defect data from investigation_request if not provided as structured data
         if not defect_data and investigation_request:
@@ -117,15 +109,12 @@ class DefectSpecialistAgent(STARAgent):
                 "pattern": "Circular clusters, ~5μm diameter",
                 "location": "Wafer edge, 120° sector, repeating",
                 "frequency": "15%",
-                "process_step": "Resist spray, Chamber 3"
+                "process_step": "Resist spray, Chamber 3",
             }
 
         # If we have investigation workflow, use it for deterministic execution
         if self.investigation_workflow:
-            result = self.investigation_workflow.execute(
-                defect_data=defect_data,
-                investigation_request=investigation_request
-            )
+            result = self.investigation_workflow.execute(defect_data=defect_data, investigation_request=investigation_request)
             return result
         else:
             # Fallback: use LLM directly (less systematic)
@@ -144,13 +133,9 @@ Provide structured findings:
 5. Confidence: HIGH/MEDIUM/LOW
 
 Be systematic and thorough.""",
-                conversation_history=[]
+                conversation_history=[],
             )
 
             return {
-                "result": {
-                    "investigation_findings": response.get("response", ""),
-                    "confidence": "MEDIUM",
-                    "method": "direct_llm_analysis"
-                }
+                "result": {"investigation_findings": response.get("response", ""), "confidence": "MEDIUM", "method": "direct_llm_analysis"}
             }

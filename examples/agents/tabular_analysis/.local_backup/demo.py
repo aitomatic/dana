@@ -20,19 +20,16 @@ def main():
     print("TabularAnalysisAgent Demo")
     print("=" * 80)
     print()
-    
+
     # Initialize agent with dataset directory
     dataset_dir = Path(__file__).parent / "dataset"
-    
-    print(f"🤖 Initializing agent...")
+
+    print("🤖 Initializing agent...")
     print(f"📁 Workspace: {dataset_dir}")
     print()
-    
-    agent = TabularAnalysisAgent(
-        workspace_root=str(dataset_dir),
-        model="gpt-4o-mini"
-    )
-    
+
+    agent = TabularAnalysisAgent(workspace_root=str(dataset_dir), model="gpt-4o-mini")
+
     print("Agent initialized successfully!")
     print()
     print("Available files in dataset:")
@@ -40,7 +37,7 @@ def main():
         if f.suffix in [".csv", ".xlsx", ".xls"]:
             print(f"  - {f.name}")
     print()
-    
+
     # Example query
     print("=" * 80)
     print("Example Query")
@@ -49,16 +46,15 @@ def main():
     print(f"\nUser: {query}")
     print("\nAgent is analyzing...")
     print("-" * 80)
-    
+
     # The agent will:
     # 1. Extract metadata from relevant files
     # 2. Analyze column names and types
     # 3. Suggest which file to use based on the query
-    
+
     response = agent.converse(query)
     print()
 
 
 if __name__ == "__main__":
     main()
-

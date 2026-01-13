@@ -1,5 +1,3 @@
-from dana.core.knowledge.prompts.codecs import CSXMLCodec
-
 import sys
 from pathlib import Path
 

@@ -55,12 +55,8 @@ class NovelDefectInvestigationWorkflow(BaseWorkflow):
         super().__init__(workflow_id=workflow_id, **kwargs)
 
         # Initialize resources
-        self.defect_database = DefectDatabaseResource(
-            resource_id=f"{workflow_id}-defect-db"
-        )
-        self.process_history = ProcessHistoryResource(
-            resource_id=f"{workflow_id}-process-history"
-        )
+        self.defect_database = DefectDatabaseResource(resource_id=f"{workflow_id}-defect-db")
+        self.process_history = ProcessHistoryResource(resource_id=f"{workflow_id}-process-history")
 
         # Attach resources to workflow
         self.with_resources(self.defect_database, self.process_history)
@@ -73,11 +69,7 @@ class NovelDefectInvestigationWorkflow(BaseWorkflow):
         if not self._step_agent_configured:
             # Give workflow_step_agent access to conversation resource
             self.workflow_step_agent.with_resources(
-                ConversationResource(
-                    resource_id=f"{self.workflow_id}-llm",
-                    llm_provider="anthropic",
-                    model="claude-3-5-sonnet-20241022"
-                )
+                ConversationResource(resource_id=f"{self.workflow_id}-llm", llm_provider="anthropic", model="claude-3-5-sonnet-20241022")
             )
             self._step_agent_configured = True
 
@@ -125,11 +117,7 @@ class NovelDefectInvestigationWorkflow(BaseWorkflow):
 
         # STEP 4: Hypothesis Generation (can't skip)
         print(f"💡 WORKFLOW [{self.workflow_id}] Step 4: Generating root cause hypotheses...")
-        hypotheses = self._generate_hypotheses(
-            pattern_analysis,
-            process_correlations,
-            historical_matches
-        )
+        hypotheses = self._generate_hypotheses(pattern_analysis, process_correlations, historical_matches)
 
         # STEP 5: Verification Plan (can't skip)
         print(f"✅ WORKFLOW [{self.workflow_id}] Step 5: Designing verification plan...")
@@ -150,7 +138,7 @@ class NovelDefectInvestigationWorkflow(BaseWorkflow):
             "hypotheses": hypotheses,
             "verification_plan": verification_plan,
             "confidence": confidence,
-            "processing_time": processing_time
+            "processing_time": processing_time,
         }
 
     def _characterize_pattern(self, defect_data: dict) -> dict:
@@ -167,10 +155,10 @@ class NovelDefectInvestigationWorkflow(BaseWorkflow):
         prompt = f"""Analyze this defect pattern and characterize it:
 
 Defect Information:
-- Type: {defect_data.get('defect_type', 'Unknown')}
-- Pattern: {defect_data.get('pattern', 'Unknown')}
-- Location: {defect_data.get('location', 'Unknown')}
-- Frequency: {defect_data.get('frequency', 'Unknown')}
+- Type: {defect_data.get("defect_type", "Unknown")}
+- Pattern: {defect_data.get("pattern", "Unknown")}
+- Location: {defect_data.get("location", "Unknown")}
+- Frequency: {defect_data.get("frequency", "Unknown")}
 
 Provide structured analysis:
 1. Morphology: Describe physical characteristics
@@ -189,7 +177,7 @@ Return JSON format."""
             "distribution": "Wafer edge, 120° sector, repeating pattern",
             "signature": "Spray nozzle splatter pattern",
             "severity": "MEDIUM - 15% wafer impact",
-            "analysis_detail": response_text
+            "analysis_detail": response_text,
         }
 
     def _correlate_process_changes(self, defect_data: dict) -> dict:
@@ -202,31 +190,29 @@ Return JSON format."""
         Returns:
             dict: Process correlations
         """
-        process_step = defect_data.get('process_step', 'Unknown')
+        process_step = defect_data.get("process_step", "Unknown")
 
         print(f"   ↳ Checking recent changes to {process_step}...")
 
         # Query process history resource
-        process_data = self.process_history._do_execute(
-            process_step=process_step,
-            chamber="Chamber 3",
-            lookback_days=30
-        )
+        process_data = self.process_history._do_execute(process_step=process_step, chamber="Chamber 3", lookback_days=30)
 
         # Use WorkflowStepAgent to analyze correlation strength
         recent_changes = process_data.get("all_changes", [])
         if recent_changes:
-            changes_summary = "\n".join([
-                f"- {c['days_ago']} days ago: {c['parameter']}: {c['old_value']} → {c['new_value']} (Reason: {c['reason']})"
-                for c in recent_changes
-            ])
+            changes_summary = "\n".join(
+                [
+                    f"- {c['days_ago']} days ago: {c['parameter']}: {c['old_value']} → {c['new_value']} (Reason: {c['reason']})"
+                    for c in recent_changes
+                ]
+            )
         else:
             changes_summary = "No recent changes found"
 
         prompt = f"""Analyze process correlations for this defect:
 
 Process Step: {process_step}
-Defect Pattern: {defect_data.get('pattern', 'Unknown')}
+Defect Pattern: {defect_data.get("pattern", "Unknown")}
 
 Recent Changes Found:
 {changes_summary}
@@ -249,36 +235,34 @@ Provide confidence level for each."""
         Returns:
             dict: Historical matches
         """
-        print(f"   ↳ Searching defect database for similar patterns...")
+        print("   ↳ Searching defect database for similar patterns...")
 
         # Query defect database resource
-        defect_pattern = pattern_analysis.get('morphology', 'Unknown')
-        historical_data = self.defect_database._do_execute(
-            defect_pattern=defect_pattern,
-            process_step="Resist spray",
-            min_similarity=0.4
-        )
+        defect_pattern = pattern_analysis.get("morphology", "Unknown")
+        historical_data = self.defect_database._do_execute(defect_pattern=defect_pattern, process_step="Resist spray", min_similarity=0.4)
 
         # Use WorkflowStepAgent for similarity assessment if needed
         matches = historical_data.get("all_matches", [])
         if matches:
-            matches_summary = "\n".join([
-                f"{i+1}. Case {m['case_id']} ({m['date']})\n"
-                f"   - Pattern: {m['pattern']}\n"
-                f"   - Root Cause: {m['root_cause']}\n"
-                f"   - Fix: {m['fix_action']}\n"
-                f"   - Similarity: {m['similarity_score']:.0%}"
-                for i, m in enumerate(matches[:3])  # Top 3 matches
-            ])
+            matches_summary = "\n".join(
+                [
+                    f"{i + 1}. Case {m['case_id']} ({m['date']})\n"
+                    f"   - Pattern: {m['pattern']}\n"
+                    f"   - Root Cause: {m['root_cause']}\n"
+                    f"   - Fix: {m['fix_action']}\n"
+                    f"   - Similarity: {m['similarity_score']:.0%}"
+                    for i, m in enumerate(matches[:3])  # Top 3 matches
+                ]
+            )
         else:
             matches_summary = "No historical matches found"
 
         prompt = f"""Assess historical pattern similarity:
 
 Current Pattern:
-- Morphology: {pattern_analysis.get('morphology', 'Unknown')}
-- Distribution: {pattern_analysis.get('distribution', 'Unknown')}
-- Signature: {pattern_analysis.get('signature', 'Unknown')}
+- Morphology: {pattern_analysis.get("morphology", "Unknown")}
+- Distribution: {pattern_analysis.get("distribution", "Unknown")}
+- Signature: {pattern_analysis.get("signature", "Unknown")}
 
 Historical Database Results:
 {matches_summary}
@@ -290,12 +274,7 @@ Which case is most similar? Assess relevance."""
         # Return the actual data from resource
         return historical_data
 
-    def _generate_hypotheses(
-        self,
-        pattern_analysis: dict,
-        process_correlations: dict,
-        historical_matches: dict
-    ) -> list:
+    def _generate_hypotheses(self, pattern_analysis: dict, process_correlations: dict, historical_matches: dict) -> list:
         """
         Generate root cause hypotheses using all gathered evidence.
 
@@ -336,21 +315,18 @@ For each hypothesis:
                 "evidence": [
                     "Pattern matches nozzle splatter signature",
                     "Timing correlates with pressure increase (2 days ago)",
-                    "Historical match: Case 2023-DEF-0142 (same pattern, same cause)"
+                    "Historical match: Case 2023-DEF-0142 (same pattern, same cause)",
                 ],
                 "confidence": "HIGH",
-                "verification": "Reduce pressure to baseline, inspect nozzle"
+                "verification": "Reduce pressure to baseline, inspect nozzle",
             },
             {
                 "rank": 2,
                 "root_cause": "New resist material lot has different viscosity",
-                "evidence": [
-                    "New lot started 1 week ago",
-                    "Viscosity change could cause spray issues"
-                ],
+                "evidence": ["New lot started 1 week ago", "Viscosity change could cause spray issues"],
                 "confidence": "MEDIUM",
-                "verification": "Compare resist lot specs, run with old lot"
-            }
+                "verification": "Compare resist lot specs, run with old lot",
+            },
         ]
 
     def _design_verification_plan(self, hypotheses: list) -> dict:
@@ -372,13 +348,13 @@ For each hypothesis:
                 "test": "Run 5 monitor wafers and inspect for defects",
                 "success_criteria": "No defects on monitor wafers",
                 "timeline": "2 hours",
-                "reversible": True
+                "reversible": True,
             },
             "secondary_verification": {
                 "action": "Inspect spray nozzle for clogging",
                 "test": "Visual inspection + flow rate measurement",
-                "timeline": "30 minutes"
-            }
+                "timeline": "30 minutes",
+            },
         }
 
     def _assess_confidence(self, hypotheses: list, historical_matches: dict) -> str:
@@ -398,8 +374,7 @@ For each hypothesis:
 
         top_hypothesis_confidence = hypotheses[0].get("confidence", "LOW")
         has_strong_historical_match = (
-            historical_matches.get("matches_found", False) and
-            historical_matches.get("best_match", {}).get("similarity_score", 0) > 0.7
+            historical_matches.get("matches_found", False) and historical_matches.get("best_match", {}).get("similarity_score", 0) > 0.7
         )
 
         if top_hypothesis_confidence == "HIGH" and has_strong_historical_match:

@@ -44,9 +44,7 @@ class EditFileResource(BaseResource):
     Follows Cursor Agent Mode EDIT_FILE specification (ID: 7)
     """
 
-    def __init__(
-        self, resource_id: str | None = None, workspace_root: str | None = None, auto_save: bool = True, **kwargs
-    ):
+    def __init__(self, resource_id: str | None = None, workspace_root: str | None = None, auto_save: bool = True, **kwargs):
         """
         Initialize the EditFileResource.
 
@@ -179,7 +177,7 @@ class EditFileResource(BaseResource):
                         "rejected": None,
                         "num_matches": None,
                     }
-                
+
                 result = self._search_replace(
                     original_content=original_content,
                     old_string=old_string,
@@ -371,17 +369,17 @@ if __name__ == "__main__":
     """
     import tempfile
     import shutil
-    
+
     print("=" * 80)
     print("EditFileResource Usage Examples")
     print("=" * 80)
     print()
-    
+
     # Create a temporary directory for demo
     temp_dir = tempfile.mkdtemp()
     print(f"Created temporary workspace: {temp_dir}")
     print()
-    
+
     # Create a demo file
     demo_file = Path(temp_dir) / "demo.py"
     demo_content = """def hello(name):
@@ -397,10 +395,10 @@ def goodbye(name):
     print("Original content:")
     print(demo_content)
     print()
-    
+
     # Initialize the resource
     resource = EditFileResource(workspace_root=temp_dir, auto_save=False)
-    
+
     print("Example 1: Search-and-replace (simple)")
     print("-" * 80)
     result = resource.edit(
@@ -416,7 +414,7 @@ def goodbye(name):
     print(f"Number of matches: {result.get('num_matches', 'N/A')}")
     print(f"Linter errors: {len(result['linter_errors'])}")
     print()
-    
+
     print("Example 2: Full content replacement")
     print("-" * 80)
     new_content = """# Updated file
@@ -435,7 +433,7 @@ def greet(name: str) -> None:
     print("New content:")
     print(new_content)
     print()
-    
+
     print("Example 3: Search-replace with whitespace-insensitive fallback")
     print("-" * 80)
     # Reset demo file
@@ -452,7 +450,7 @@ def greet(name: str) -> None:
     print(f"Applied: {result['is_applied']}")
     print(f"Failed: {result['apply_failed']}")
     print()
-    
+
     print("Example 4: Multiple matches with allow_multiple_matches")
     print("-" * 80)
     demo_file.write_text(demo_content)
@@ -469,7 +467,7 @@ def greet(name: str) -> None:
     print(f"Failed: {result['apply_failed']}")
     print(f"Number of matches: {result.get('num_matches', 'N/A')}")
     print()
-    
+
     print("Example 5: Fuzzy matching with use_did_you_mean_fuzzy_match")
     print("-" * 80)
     demo_file.write_text(demo_content)
@@ -478,21 +476,21 @@ def greet(name: str) -> None:
         language="python",
         blocking=True,
         contents="",
-        old_string='def hello(name):',  # Exact match
-        new_string='def hello(name: str):',
+        old_string="def hello(name):",  # Exact match
+        new_string="def hello(name: str):",
         use_did_you_mean_fuzzy_match=True,
     )
     print(f"Applied: {result['is_applied']}")
     print(f"Failed: {result['apply_failed']}")
-    if result['is_applied']:
+    if result["is_applied"]:
         print("Matched and replaced successfully with fuzzy matching")
     print()
-    
+
     # Cleanup
     shutil.rmtree(temp_dir)
-    print(f"Cleaned up temporary workspace")
+    print("Cleaned up temporary workspace")
     print()
-    
+
     print("=" * 80)
     print("Usage in code:")
     print("=" * 80)

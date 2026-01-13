@@ -135,8 +135,8 @@ def format_topic_section(topic_name: str, background: str, questions: list[str],
 *(No questions defined for this topic yet)*
 
 ---"""
-    
-    questions_text = "\n".join([f"{i+1}. {q}" for i, q in enumerate(questions)])
+
+    questions_text = "\n".join([f"{i + 1}. {q}" for i, q in enumerate(questions)])
 
     return f"""### {topic_name}
 **Background**: {background}
@@ -221,7 +221,7 @@ def write_template(template_path: str, content: str, backup: bool = True) -> Non
 def find_topic_fuzzy(topics: list[dict], topic_name: str) -> tuple[dict | None, str]:
     """
     Find topic by name with fuzzy matching support.
-    
+
     Returns:
         (topic, message) where:
         - topic: Matched topic dict or None
@@ -231,19 +231,19 @@ def find_topic_fuzzy(topics: list[dict], topic_name: str) -> tuple[dict | None, 
     for topic in topics:
         if topic["name"] == topic_name:
             return topic, f"✓ Exact match: {topic['name']}"
-    
+
     # Try case-insensitive exact match
     topic_name_lower = topic_name.lower()
     for topic in topics:
         if topic["name"].lower() == topic_name_lower:
             return topic, f"✓ Matched: {topic['name']}"
-    
+
     # Try substring matching
     matches = []
     for topic in topics:
         if topic_name_lower in topic["name"].lower():
             matches.append(topic)
-    
+
     if len(matches) == 1:
         return matches[0], f"✓ Matched: {matches[0]['name']}"
     elif len(matches) > 1:

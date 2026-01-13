@@ -12,7 +12,7 @@ import os
 import sys
 import re
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -68,7 +68,7 @@ class NormalizationResource(BaseResource):
         except Exception as e:
             return {"success": False, "normalized_data": {}, "error": f"Normalization failed: {str(e)}"}
 
-    def _extract_fields_with_llm(self, text: str) -> Dict[str, Any]:
+    def _extract_fields_with_llm(self, text: str) -> dict[str, Any]:
         """Use LLM to intelligently extract fields from text."""
         try:
             # Use the reason() method for LLM-powered extraction
@@ -111,11 +111,11 @@ class NormalizationResource(BaseResource):
 
             return result.get("fields", {})
 
-        except Exception as e:
+        except Exception:
             # Fallback to rule-based extraction
             return self._extract_fields_rule_based(text)
 
-    def _extract_fields_rule_based(self, text: str) -> Dict[str, Any]:
+    def _extract_fields_rule_based(self, text: str) -> dict[str, Any]:
         """Fallback rule-based field extraction."""
         fields = {}
 
@@ -156,7 +156,7 @@ class NormalizationResource(BaseResource):
 
         return fields
 
-    def _apply_normalization_rules(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_normalization_rules(self, data: dict[str, Any]) -> dict[str, Any]:
         """Apply normalization rules to extracted data."""
         normalized = data.copy()
 
