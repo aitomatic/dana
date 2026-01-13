@@ -64,7 +64,7 @@ class TestDanaAgent:
 
     def test_dana_agent_suite(self):
         """Run the full dana_agent test suite."""
-        exit_code = run_package_tests("dana_agent", ["--maxfail=10"])
+        exit_code = run_package_tests("dana_agent", ["-m", "not live and not deep", "--maxfail=10"])
         assert exit_code == 0, "dana_agent tests failed"
 
 
@@ -73,7 +73,7 @@ class TestDanaLang:
 
     def test_dana_lang_suite(self):
         """Run the full dana_lang test suite."""
-        exit_code = run_package_tests("dana_lang", ["--maxfail=10"])
+        exit_code = run_package_tests("dana_lang", ["-m", "not live and not deep", "--maxfail=10"])
         assert exit_code == 0, "dana_lang tests failed"
 
 
@@ -82,7 +82,7 @@ class TestDanaStudio:
 
     def test_dana_studio_suite(self):
         """Run the full dana_studio test suite."""
-        exit_code = run_package_tests("dana_studio", ["--maxfail=10"])
+        exit_code = run_package_tests("dana_studio", ["-m", "not live and not deep", "--maxfail=10"])
         assert exit_code == 0, "dana_studio tests failed"
 
 

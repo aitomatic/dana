@@ -193,6 +193,7 @@ class TestBasePromptEngineer:
             shutil.rmtree(temp_dir)
 
 
+@pytest.mark.live
 class TestResourcePromptEngineer:
     """Test ResourcePromptEngineer functionality."""
 
@@ -306,6 +307,7 @@ class TestResourcePromptEngineer:
             shutil.rmtree(temp_dir)
 
 
+@pytest.mark.live
 class TestResourcePromptEngineerWithToolUse:
     """Test ResourcePromptEngineer with @tool_use decorated methods."""
 
