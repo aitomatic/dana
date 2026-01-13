@@ -10,6 +10,7 @@ import sys
 import tempfile
 from unittest.mock import MagicMock, Mock
 
+import pytest
 
 # Mock the problematic import before any dana imports
 sys.modules["dana.core.knowledge.prompts.agent_prompt_engineer"] = MagicMock()
@@ -44,6 +45,7 @@ class MockResource(BaseResource):
         super().__init__(resource_type="test_resource", auto_register=False, **kwargs)
 
 
+@pytest.mark.live
 class TestPromptAPIRepositoryIntegration:
     """Integration tests for API → Engineer → Repository workflow."""
 
