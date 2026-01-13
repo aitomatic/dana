@@ -54,13 +54,13 @@ class PythonSandbox:
 ```
 
 Requirements:
-- [ ] Execute arbitrary Python code safely
-- [ ] Inject `context` variable with document text
-- [ ] Provide `llm_query(prompt, text)` function if llm_query_fn provided
-- [ ] Capture stdout, truncate to 10KB
-- [ ] Persist namespace variables across executions
-- [ ] Block dangerous operations (no os.system, subprocess, open for write, eval, exec)
-- [ ] Allow safe modules: re, json, math, collections, itertools, functools
+- [x] Execute arbitrary Python code safely
+- [x] Inject `context` variable with document text
+- [x] Provide `llm_query(prompt, text)` function if llm_query_fn provided
+- [x] Capture stdout, truncate to 10KB
+- [x] Persist namespace variables across executions
+- [x] Block dangerous operations (no os.system, subprocess, open for write, eval, exec)
+- [x] Allow safe modules: re, json, math, collections, itertools, functools
 
 ### 2. RLMResource (`dana_agent/dana/common/resource/rlm_resource.py`)
 
@@ -96,16 +96,16 @@ class RLMResource(BaseResource):
 ```
 
 Requirements:
-- [ ] Initialize with file path, create if doesn't exist
-- [ ] `query()` implements RLM loop:
+- [x] Initialize with file path, create if doesn't exist
+- [x] `query()` implements RLM loop:
   - Send system prompt instructing LLM to write Python
   - Execute code in PythonSandbox
   - Feed output back to LLM
   - Repeat until FINAL(answer) or FINAL_VAR(var) detected
   - Max 20 iterations
-- [ ] `append()` adds timestamped entry to file
-- [ ] `load_file()` reads file and appends to context
-- [ ] Use dana.common.llm.LLM for LLM calls
+- [x] `append()` adds timestamped entry to file
+- [x] `load_file()` reads file and appends to context
+- [x] Use dana.common.llm.LLM for LLM calls
 
 ### 3. System Prompt for RLM Query
 
@@ -146,22 +146,22 @@ Update checkboxes above as you complete each requirement.
 ## Tests Required
 
 Create `dana_agent/tests/unit/test_python_sandbox.py`:
-- [ ] test_basic_execution - print works
-- [ ] test_context_variable - context is accessible
-- [ ] test_context_slicing - can slice context
-- [ ] test_safe_modules_available - re, json, math work
-- [ ] test_namespace_persistence - variables persist across calls
-- [ ] test_llm_query_function - llm_query works when provided
-- [ ] test_output_truncation - long output truncated to 10KB
-- [ ] test_error_handling - errors captured in output
-- [ ] test_dangerous_builtins_blocked - eval, exec, open blocked
-- [ ] test_reset - reset clears namespace
+- [x] test_basic_execution - print works
+- [x] test_context_variable - context is accessible
+- [x] test_context_slicing - can slice context
+- [x] test_safe_modules_available - re, json, math work
+- [x] test_namespace_persistence - variables persist across calls
+- [x] test_llm_query_function - llm_query works when provided
+- [x] test_output_truncation - long output truncated to 10KB
+- [x] test_error_handling - errors captured in output
+- [x] test_dangerous_builtins_blocked - eval, exec, open blocked
+- [x] test_reset - reset clears namespace
 
 Create `dana_agent/tests/unit/test_rlm_resource.py`:
-- [ ] test_init_creates_file - creates file if missing
-- [ ] test_append - adds timestamped content
-- [ ] test_load_file - ingests file contents
-- [ ] test_query_basic - returns answer for simple query
+- [x] test_init_creates_file - creates file if missing
+- [x] test_append - adds timestamped content
+- [x] test_load_file - ingests file contents
+- [x] test_query_basic - returns answer for simple query
 
 Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py -v`
 
@@ -176,14 +176,13 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 
 ## Before Marking Complete
 
-- [ ] Review code for KISS/YAGNI compliance
-- [ ] Simplify any overly complex implementations
-- [ ] Remove unnecessary abstractions
-- [ ] Ensure code is readable and maintainable
+- [x] Review code for KISS/YAGNI compliance
+- [x] Simplify any overly complex implementations
+- [x] Remove unnecessary abstractions
+- [x] Ensure code is readable and maintainable
 
 ## When Complete
 
-Output in this file:
 <promise>DATA ACCESS COMPLETE</promise>
 
 ## References
