@@ -6,6 +6,66 @@ Provides a sandboxed Python execution environment with:
 - An optional `llm_query(prompt, text)` function for semantic sub-tasks
 - Safe modules: re, json, math, collections, itertools, functools
 - Blocked dangerous operations: os.system, subprocess, file writes, eval, exec
+
+API
+---
+
+.. code-block:: python
+
+    class PythonSandbox:
+        def __init__(self, llm_query_fn: Callable[[str, str], str] | None = None):
+            '''
+            Initialize the sandbox.
+
+            Args:
+                llm_query_fn: Optional function for LLM sub-queries.
+                             Signature: (prompt: str, text: str) -> str
+            '''
+
+        def execute(self, code: str, context: str) -> str:
+            '''
+            Execute code with `context` variable available.
+            Returns stdout (truncated to 10KB).
+
+            Available in namespace:
+            - context: str (the document text)
+            - llm_query(prompt, text): sub-LLM call for semantic tasks
+            - Safe modules: re, json, math, collections, itertools, functools
+            '''
+
+        def reset(self) -> None:
+            '''Clear the namespace, removing all persisted variables.'''
+
+Example
+-------
+
+.. code-block:: python
+
+    from dana.core.agent.components.python_sandbox import PythonSandbox
+
+    sandbox = PythonSandbox()
+
+    # Execute code with context variable
+    code = '''
+    import re
+    matches = re.findall(r'def (\\w+)', context)
+    print("Functions found:", matches)
+    '''
+    output = sandbox.execute(code, context="def foo(): pass\\ndef bar(): pass")
+    # output: "Functions found: ['foo', 'bar']"
+
+    # Variables persist across calls
+    sandbox.execute("results = []", context="")
+    sandbox.execute("results.append('found')", context="")
+    output = sandbox.execute("print(results)", context="")
+    # output: "['found']"
+
+    # With LLM sub-queries
+    def my_llm_query(prompt, text):
+        return "Summary: " + text[:50]
+
+    sandbox = PythonSandbox(llm_query_fn=my_llm_query)
+    output = sandbox.execute("print(llm_query('summarize', context))", context="Long text...")
 """
 
 import io

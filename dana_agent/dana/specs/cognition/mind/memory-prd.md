@@ -103,6 +103,52 @@ Reflection (separate component) processes stmemory into ltmemory.
 - Memory compression
 - Cross-session stmemory persistence
 
+## STARAgent Integration
+
+### Current State
+
+STARAgent has a `Timeline` component that serves a similar purpose to STMemory:
+
+| Aspect | Timeline | STMemory |
+|--------|----------|----------|
+| Purpose | Track conversation history | Track session events |
+| Storage | `TimelineEntry` objects | `MemoryEntry` objects |
+| Entry types | Rich types (USER_MESSAGE, AGENT_RESPONSE, TOOL_CALL, etc.) | Simple roles (user, agent, observation, system) |
+| Persistence | Saves to repository | In-memory only |
+| Token tracking | Yes | Yes (estimate) |
+
+### Integration Approach
+
+**Option A: Timeline wraps STMemory** (Recommended)
+- Timeline becomes a richer interface over STMemory
+- STMemory handles core storage, Timeline adds entry types and persistence
+- Minimal changes to STARAgent
+
+**Option B: Replace Timeline with STMemory**
+- Simpler architecture but loses Timeline's rich entry types
+- Would require adapting all Timeline usage in STARAgent
+
+**Option C: Parallel systems**
+- Keep both, sync between them
+- Most complex, not recommended
+
+### Integration Requirements
+
+1. **LTMemory in STARAgent**
+   ```python
+   class STARAgent:
+       def __init__(self, ..., ltmemory_path: str | None = None):
+           self._ltmemory = LTMemory(path=ltmemory_path) if ltmemory_path else None
+   ```
+
+2. **LTMemory for Context Building**
+   - ContextBuilder should query LTMemory for relevant past knowledge
+   - Include in system prompt or as separate context section
+
+3. **LTMemory for Reflection**
+   - Learner's retentive phase should persist insights to LTMemory
+   - Integrative phase should query LTMemory for connections
+
 ## Demo
 
 When Memory MVP is complete, we can demonstrate:

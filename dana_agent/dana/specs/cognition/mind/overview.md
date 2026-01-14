@@ -68,16 +68,34 @@ Access pattern depends on source size:
 
 Spec: [context-prd.md](./context-prd.md)
 
-## Implementation Order
+## Implementation Status
 
-1. Context - how to construct LLM input from sources
-2. Memory - stmemory/ltmemory storage and access
-3. Reflection - distillation phases
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Memory | ✅ Complete | STMemory + LTMemory implemented |
+| Context | ❌ Not started | ContextBuilder not implemented |
+| Reflection | ⚠️ Partial | Learner has 4 phases, but doesn't persist to LTMemory |
+
+## STARAgent Integration Status
+
+| Mind Component | STARAgent Equivalent | Integration |
+|----------------|---------------------|-------------|
+| STMemory | `Timeline` | ⚠️ Parallel implementations |
+| LTMemory | - | ❌ Not integrated |
+| ContextBuilder | `PromptEngineer` | ❌ Ad-hoc assembly |
+| Reflection | `Learner` | ⚠️ Missing LTMemory persistence |
+
+### Integration Priority
+
+1. **LTMemory → STARAgent**: Add `ltmemory_path` to constructor
+2. **Learner → LTMemory**: Wire retentive phase to persist memories
+3. **ContextBuilder**: Build and integrate with PromptEngineer
+4. **Timeline/STMemory**: Decide unification approach
 
 ## Specs
 
-| Component | PRD | Implementation |
-|-----------|-----|----------------|
-| Context | [context-prd.md](./context-prd.md) | [context-ralph.md](./context-ralph.md) |
-| Memory | [memory-prd.md](./memory-prd.md) | [memory-ralph.md](./memory-ralph.md) |
-| Reflection | [reflection-prd.md](./reflection-prd.md) | [reflection-ralph.md](./reflection-ralph.md) |
+| Component | PRD | Implementation | Status |
+|-----------|-----|----------------|--------|
+| Memory | [memory-prd.md](./memory-prd.md) | [memory-ralph.md](./memory-ralph.md) | ✅ |
+| Context | [context-prd.md](./context-prd.md) | [context-ralph.md](./context-ralph.md) | ❌ |
+| Reflection | [reflection-prd.md](./reflection-prd.md) | [reflection-ralph.md](./reflection-ralph.md) | ⚠️ |

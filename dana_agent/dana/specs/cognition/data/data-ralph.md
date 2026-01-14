@@ -1,5 +1,7 @@
 # Data Access - Implementation Spec
 
+**Status: ✅ COMPLETE**
+
 ## Goal
 Implement RLM-based access to external data sources for Dana agents. Enables querying large files (500K+ tokens) by having the LLM write Python code to explore them programmatically.
 
@@ -8,24 +10,56 @@ RLM (Recursive Language Model) treats large sources as external environments tha
 
 ## Demo
 
-When complete, run `examples/agents/rlm/example.py`:
+Run: `examples/cognition/data_rlm/query_large_codebase.py`
+
+### Without RLM (The Problem)
 
 ```python
-from dana.common.resource import RLMResource
+# WITHOUT RLM: Trying to query a 500K token codebase
+from dana.common.llm import LLM
 
-# Load a large codebase
-data = RLMResource(file="codebase.md")
-data.load_file("all_source.txt")  # 500K+ tokens
+codebase = open("huge_codebase.txt").read()  # 500K tokens
 
-# Query it
-print(data.query("What functions handle authentication?"))
-# Watch: LLM writes Python to search, finds answer in 3-5 iterations
-
-print(data.query("Summarize all error handling patterns"))
-# Watch: LLM uses llm_query() for semantic summarization
+llm = LLM()
+response = llm.chat([
+    {"role": "system", "content": "Answer questions about this codebase."},
+    {"role": "user", "content": f"Codebase:\n{codebase}\n\nWhat functions handle auth?"}
+])
+# ❌ ERROR: Context length exceeded (500K > 128K limit)
+# ❌ Even if it fit, you're paying for 500K input tokens every query
+# ❌ No way to search, slice, or explore programmatically
 ```
 
-**What you'll see**: The LLM iteratively writing Python code (`print(context[:3000])`, `re.findall(...)`, etc.) to explore the document until it finds the answer.
+### With RLM (The Solution)
+
+```python
+# WITH RLM: LLM writes Python to explore large documents
+from dana.common.resource import RLMResource
+
+data = RLMResource(file="codebase.md")
+data.load_file("huge_codebase.txt")  # 500K+ tokens - stays external!
+
+# Query it - LLM writes Python to search, not stuffing context
+answer = data.query("What functions handle authentication?")
+# ✅ Works with ANY size document
+# ✅ LLM writes: re.findall(r'def.*auth', context) to search
+# ✅ Only the ANSWER enters context, not the whole document
+# ✅ Typically finds answer in 3-5 iterations
+
+print(answer)
+# → "Authentication is handled by login(), verify_token(),
+#    and refresh_session() in src/auth/handlers.py..."
+```
+
+### What You'll See
+
+The LLM iteratively writes Python code to explore:
+```
+Iteration 1: print(context[:3000])           # Peek at structure
+Iteration 2: re.findall(r'def.*auth', ctx)   # Search for patterns
+Iteration 3: context[45000:48000]            # Extract relevant section
+Iteration 4: FINAL("Authentication is...")   # Return answer
+```
 
 ## MVP Requirements
 
@@ -129,17 +163,17 @@ Output Python code. When done, output ONE of:
 - FINAL_VAR(variable_name)
 ```
 
-### 4. Example (`examples/agents/rlm/`)
+### 4. Example (`examples/cognition/data_rlm/`)
 
-- `example.py` - Demo usage
-- `sample_context.md` - Sample large document
+- `query_large_codebase.py` - Demo querying a large codebase
+- `sample_codebase.md` - Sample large document (500K+ simulated)
 
 ## Current Progress
 
 Check these files to see what exists:
 - `dana_agent/dana/core/agent/components/python_sandbox.py`
 - `dana_agent/dana/common/resource/rlm_resource.py`
-- `examples/agents/rlm/`
+- `examples/cognition/data_rlm/`
 
 Update checkboxes above as you complete each requirement.
 
@@ -184,6 +218,21 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 ## When Complete
 
 <promise>DATA ACCESS COMPLETE</promise>
+
+## STARAgent Integration Status
+
+### Current Integration
+- ✅ RLMResource can be attached to STARAgent via `with_resources()`
+- ✅ Agents can invoke `query()`, `append()`, `load_file()` as tools
+- ✅ LTMemory uses RLMResource internally for large memory queries
+
+### Pending Integration (Requires ContextBuilder)
+- ❌ ContextBuilder should auto-query RLMResource when building context
+- ❌ STARAgent should register RLMResources with ContextBuilder
+
+### Files Implemented
+- `dana_agent/dana/core/agent/components/python_sandbox.py` ✅
+- `dana_agent/dana/common/resource/rlm_resource.py` ✅
 
 ## References
 
