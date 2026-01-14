@@ -250,7 +250,22 @@ class WARCaller:
 
 
 class ToolCaller(WARCaller):
-    """Component providing tool call execution and orchestration capabilities."""
+    """
+    Component providing tool call execution and orchestration capabilities.
+    
+    .. deprecated:: 
+        This is the LEGACY tool caller implementation. It uses regex-based parsing
+        which can be unreliable, especially with UUIDs/object_ids.
+        
+        **For new code, use CodecToolCaller instead** by passing a codec (e.g., CSXMLCodec)
+        to STARAgent initialization. CodecToolCaller provides:
+        - Structured XML parsing instead of regex heuristics
+        - Explicit handling of object_id vs class_name
+        - Better error messages when tools aren't found
+        - More reliable tool execution
+        
+        See: dana.core.knowledge.prompts.codecs for available codecs.
+    """
 
     def __init__(self, agent: STARAgent):
         """
@@ -1204,6 +1219,39 @@ Please provide the canonical XML format:
 
 
 class CodecToolCaller(WARCaller):
+    """
+    Component providing codec-based tool call execution and orchestration.
+    
+    This is the RECOMMENDED tool caller implementation. It uses structured XML parsing
+    via codecs (e.g., CSXMLCodec, KLXMLCodec) for reliable tool call extraction and
+    execution.
+    
+    Key advantages over the legacy ToolCaller:
+    - Structured XML parsing instead of regex heuristics
+    - Explicit handling of object_id vs class_name
+    - Better error messages when tools aren't found
+    - More reliable tool execution, especially with UUIDs
+    
+    Usage:
+        Automatically used when you pass a codec to STARAgent initialization:
+        
+        .. code-block:: python
+        
+            from dana.core.knowledge.prompts.codecs import CSXMLCodec
+            
+            class MyAgent(STARAgent):
+                def __init__(self, **kwargs):
+                    super().__init__(
+                        agent_type="my-agent",
+                        codec=CSXMLCodec,  # Enables CodecToolCaller
+                        **kwargs
+                    )
+    
+    See also:
+        - ToolCaller: Legacy implementation (deprecated)
+        - dana.core.knowledge.prompts.codecs: Available codec implementations
+    """
+    
     def __init__(self, agent: STARAgent, codec: type[AbstractCodec]):
         super().__init__(agent, self)
         self._agent = agent

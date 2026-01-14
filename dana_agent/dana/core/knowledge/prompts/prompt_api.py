@@ -84,6 +84,39 @@ Bias towards not asking the user for help if you can find the answer yourself.
 
 
 class LocalPromptAPI(PromptAPIProtocol):
+    """
+    Codec-aware prompt API implementation.
+    
+    This is the RECOMMENDED prompt management implementation. It provides codec-aware
+    prompt generation and tool signature formatting, working in conjunction with
+    CodecToolCaller for reliable tool execution.
+    
+    Key advantages over the legacy PromptEngineer:
+    - Codec-aware prompt management
+    - Structured tool signature formatting using codecs
+    - Better integration with the codec system
+    - More reliable tool call parsing
+    
+    Usage:
+        Automatically used when you pass a codec to STARAgent initialization:
+        
+        .. code-block:: python
+        
+            from dana.core.knowledge.prompts.codecs import CSXMLCodec
+            
+            class MyAgent(STARAgent):
+                def __init__(self, **kwargs):
+                    super().__init__(
+                        agent_type="my-agent",
+                        codec=CSXMLCodec,  # Enables LocalPromptAPI
+                        **kwargs
+                    )
+    
+    See also:
+        - PromptEngineer: Legacy implementation (deprecated)
+        - dana.core.knowledge.prompts.codecs: Available codec implementations
+    """
+    
     # If static prompt variables are provided, they will be replaced in the template, then save.
     # These variables will not be constructed dynamically next time.
     static_prompt_variables = ["identity"]

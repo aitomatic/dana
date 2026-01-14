@@ -350,6 +350,7 @@ class Timeline:
             TimelineEntryType.RESOURCE_RESULT,
             TimelineEntryType.WORKFLOW_RESULT,
             TimelineEntryType.UNKNOWN_TOOL_CALL,
+            TimelineEntryType.TOOL_CALL,  # Agent's tool calls are assistant actions
         ]:
             return "assistant"
         else:
@@ -365,11 +366,21 @@ class Timeline:
         Returns:
             Formatted content string
         """
+        content = entry.content
+
+        # Truncate large resource/workflow results to prevent context overflow
+        # Large results (like 50KB weather JSON) overwhelm the LLM
+        MAX_RESULT_CHARS = 4000
+        if entry.entry_type in [TimelineEntryType.RESOURCE_RESULT, TimelineEntryType.WORKFLOW_RESULT]:
+            content_str = str(content)
+            if len(content_str) > MAX_RESULT_CHARS:
+                content = content_str[:MAX_RESULT_CHARS] + f"\n... [truncated, total {len(content_str)} chars]"
+
         if entry.entry_type in [TimelineEntryType.USER_MESSAGE, TimelineEntryType.AGENT_RESPONSE]:
-            return entry.content
+            return str(content)
         else:
             label = entry._get_display_label()
-            return f"[{label}] {entry.content}"
+            return f"[{label}] {content}"
 
     def _estimate_tokens(self, messages: list[LLMMessage]) -> int:
         """

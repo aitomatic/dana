@@ -96,29 +96,38 @@ Implement a Context builder that:
 ## STARAgent Integration
 
 ### Current State
-- ❌ ContextBuilder not implemented
-- STARAgent's `PromptEngineer.build_llm_request()` builds context ad-hoc
-- No unified context assembly from multiple sources
+- ✅ ContextBuilder implemented and integrated
+- ✅ STARAgent's `PromptEngineer.build_llm_request()` uses ContextBuilder
+- ✅ Unified context assembly from Timeline, LTMemory, and RLMResources
 
-### Integration Plan
+### Integration Status
 
-ContextBuilder will replace ad-hoc context assembly in `PromptEngineer`:
+ContextBuilder is integrated in `PromptEngineer`:
 
 ```python
-# Current (ad-hoc in PromptEngineer)
-def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
-    # Manual assembly of system prompt + timeline
+# In PromptEngineer.build_llm_request()
+ctx = ContextBuilder(token_budget=timeline.max_context_tokens)
 
-# Target (with ContextBuilder)
-def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
-    ctx = ContextBuilder(token_budget=self.max_tokens)
-    ctx.add_source("timeline", timeline.to_text())
-    ctx.add_source("ltmemory", self._agent._ltmemory)  # if available
-    for resource in self._agent._rlm_resources:
-        ctx.add_source(resource.name, resource)
+# Timeline included as direct source
+if context_messages:
+    timeline_lines = ["<TIMELINE>"]
+    for msg in context_messages:
+        timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
+    timeline_lines.append("</TIMELINE>")
+    ctx.add_source("timeline", "\n".join(timeline_lines))
 
-    context = ctx.build(task=current_task)
-    # Assemble LLM messages from context
+# LTMemory added if available (RLM query)
+ltmemory = getattr(self._agent, "_ltmemory", None)
+if ltmemory is not None:
+    ctx.add_source("ltmemory", _TaggedQueryable(ltmemory, "LTMEMORY"))
+
+# RLMResources automatically registered
+for resource in self._agent._resources:
+    if hasattr(resource, "query") and hasattr(resource, "resource_id"):
+        ctx.add_source(resource.resource_id, _TaggedQueryable(resource, resource.resource_id.upper()))
+
+context = ctx.build(task=task)
+# Context assembled and included in LLM messages
 ```
 
 ### Integration Requirements

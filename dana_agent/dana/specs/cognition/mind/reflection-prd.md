@@ -139,9 +139,9 @@ STARAgent already has a `Learner` component (`dana.core.agent.components.learner
 | **4 Phases** | ✅ Has all 4 | ✅ Specifies all 4 |
 | **LLM-based** | ✅ DefaultLearner uses LLM | ✅ Required |
 | **stmemory input** | ⚠️ Uses Timeline | ✅ Uses STMemory |
-| **ltmemory output** | ❌ Does NOT persist | ✅ Persists to LTMemory |
-| **ltmemory query** | ❌ Does NOT query | ✅ Queries in Integrative |
-| **Standalone** | ❌ Coupled to STARAgent | ✅ Standalone class |
+| **ltmemory output** | ✅ Persists to LTMemory | ✅ Persists to LTMemory |
+| **ltmemory query** | ✅ Queries in RETENTIVE | ✅ Queries in Integrative |
+| **Standalone** | ✅ Reflection class exists | ✅ Standalone class |
 
 ### Integration Approach
 
