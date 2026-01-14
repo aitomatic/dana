@@ -206,7 +206,7 @@ cd dana_agent && uv run pytest tests/unit/test_context_builder.py -v
 ```
 
 Only if ALL tests pass, output exactly:
-<promise>CONTEXT BUILDER COMPLETE</promise>
+<promise>TASK COMPLETE</promise>
 
 ## STARAgent Integration
 

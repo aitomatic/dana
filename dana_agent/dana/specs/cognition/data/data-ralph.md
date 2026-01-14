@@ -244,7 +244,7 @@ cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test
 ```
 
 Only if ALL tests pass, output exactly:
-<promise>DATA ACCESS COMPLETE</promise>
+<promise>TASK COMPLETE</promise>
 
 ## STARAgent Integration Status
 

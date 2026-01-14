@@ -327,7 +327,7 @@ cd dana_agent && uv run pytest tests/unit/test_reflection.py tests/unit/test_sta
 ```
 
 Only if ALL tests pass, output exactly:
-<promise>REFLECTION COMPLETE</promise>
+<promise>TASK COMPLETE</promise>
 
 ## STARAgent Integration
 

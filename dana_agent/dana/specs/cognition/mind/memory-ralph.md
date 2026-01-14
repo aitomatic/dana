@@ -251,7 +251,7 @@ cd dana_agent && uv run pytest tests/unit/test_stmemory.py tests/unit/test_ltmem
 ```
 
 Only if ALL tests pass, output exactly:
-<promise>MEMORY COMPLETE</promise>
+<promise>TASK COMPLETE</promise>
 
 ## STARAgent Integration
 
