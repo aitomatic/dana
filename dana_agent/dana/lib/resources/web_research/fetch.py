@@ -37,12 +37,21 @@ class FetchResource(BaseResource):
         Fetch content from a single URL.
 
         Args:
-            url: URL to fetch
-            timeout: Request timeout in seconds
-            max_size: Maximum response size in bytes
+            url: URL to fetch (required)
+            timeout: Request timeout in seconds (default: 10s, rarely needs changing)
+            max_size: Maximum response size in bytes (default: 5MB, rarely needs changing)
+
+        IMPORTANT: The defaults are sensible for most use cases. Do NOT specify
+        timeout or max_size unless you have a specific reason. Most JSON APIs
+        and web pages work fine with the defaults.
 
         Returns:
-            Fetch result with content and metadata
+            Fetch result dict with:
+            - success: bool - whether fetch succeeded
+            - content: str - the fetched content
+            - status_code: int - HTTP status code
+            - content_type: str - MIME type
+            - error: str - error message if failed
         """
         return self.web_fetcher.fetch_url(url, timeout=timeout, max_size=max_size)
 
