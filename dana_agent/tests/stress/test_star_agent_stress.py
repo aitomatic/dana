@@ -994,3 +994,276 @@ def test_full_stress_suite():
     # Assert overall success rate
     passed = sum(1 for r in harness.results if r.success)
     assert passed >= len(scenarios) * 0.8, f"Success rate too low: {passed}/{len(scenarios)}"
+
+
+# =============================================================================
+# REAL-WORLD QUALITY & EFFICIENCY TESTS (Using Codec System)
+# =============================================================================
+
+@pytest.mark.live
+class TestRealWorldQualityEfficiency:
+    """
+    Real-world tests focusing on quality and efficiency metrics.
+
+    Uses HarnessAgent with codec system (CSXMLCodec) for reliable tool parsing.
+    Tests measure:
+    - Response quality (accuracy, relevance)
+    - Execution efficiency (time, tool calls)
+    """
+
+    @pytest.fixture
+    def harness_agent(self):
+        """Create HarnessAgent with codec system and FetchResource."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.lib.resources.web_research import FetchResource
+
+        agent = HarnessAgent(
+            agent_type="quality_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=3,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+        return agent
+
+    def _run_quality_test(self, agent, name: str, message: str, validator, max_time: float = 30.0):
+        """Run a test and return quality metrics."""
+        from dana.core.agent.timeline import TimelineEntryType
+
+        start = time.time()
+        result = agent.query(message=message)
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+
+        # Count tool calls
+        tool_calls = 0
+        if hasattr(agent, "_timeline") and agent._timeline:
+            tool_calls = len([e for e in agent._timeline.timeline
+                           if e.entry_type == TimelineEntryType.TOOL_CALL])
+
+        # Validate quality
+        quality_pass = validator(response) if validator else True
+
+        return {
+            "name": name,
+            "response": response,
+            "elapsed": elapsed,
+            "tool_calls": tool_calls,
+            "quality_pass": quality_pass,
+            "within_time": elapsed <= max_time,
+        }
+
+    def test_uuid_fetch_quality(self, harness_agent):
+        """Test: Fetch UUID and verify correct extraction."""
+        result = self._run_quality_test(
+            harness_agent,
+            "UUID Fetch",
+            "Fetch https://httpbin.org/uuid and tell me the exact UUID value.",
+            lambda r: "-" in r and len(r) > 30,  # UUID has dashes
+            max_time=15.0,
+        )
+
+        print(f"\n=== {result['name']} ===")
+        print(f"Time: {result['elapsed']:.1f}s (max: 15s)")
+        print(f"Tool calls: {result['tool_calls']}")
+        print(f"Response: {result['response'][:150]}...")
+        print(f"Quality: {'PASS' if result['quality_pass'] else 'FAIL'}")
+
+        assert result["quality_pass"], "Response should contain UUID with dashes"
+        assert result["within_time"], f"Should complete within 15s, took {result['elapsed']:.1f}s"
+        assert result["tool_calls"] <= 2, f"Should use at most 2 tool calls, used {result['tool_calls']}"
+
+    def test_json_api_quality(self, harness_agent):
+        """Test: Parse JSON API and extract specific field."""
+        result = self._run_quality_test(
+            harness_agent,
+            "JSON API Parse",
+            "Fetch https://jsonplaceholder.typicode.com/posts/1 and tell me the title of the post.",
+            lambda r: "sunt" in r.lower() or "title" in r.lower(),
+            max_time=15.0,
+        )
+
+        print(f"\n=== {result['name']} ===")
+        print(f"Time: {result['elapsed']:.1f}s")
+        print(f"Tool calls: {result['tool_calls']}")
+        print(f"Response: {result['response'][:150]}...")
+        print(f"Quality: {'PASS' if result['quality_pass'] else 'FAIL'}")
+
+        assert result["quality_pass"], "Response should mention title or contain 'sunt'"
+        assert result["tool_calls"] <= 2
+
+    def test_github_stars_quality(self, harness_agent):
+        """Test: Fetch GitHub repo and extract star count."""
+        result = self._run_quality_test(
+            harness_agent,
+            "GitHub Stars",
+            "Fetch https://api.github.com/repos/python/cpython and tell me how many stars it has.",
+            lambda r: any(c.isdigit() for c in r),  # Should contain numbers
+            max_time=15.0,
+        )
+
+        print(f"\n=== {result['name']} ===")
+        print(f"Time: {result['elapsed']:.1f}s")
+        print(f"Tool calls: {result['tool_calls']}")
+        print(f"Response: {result['response'][:150]}...")
+        print(f"Quality: {'PASS' if result['quality_pass'] else 'FAIL'}")
+
+        assert result["quality_pass"], "Response should contain star count (numbers)"
+        assert result["tool_calls"] <= 2
+
+    def test_weather_quality(self, harness_agent):
+        """Test: Fetch weather JSON and extract temperature."""
+        result = self._run_quality_test(
+            harness_agent,
+            "Weather Data",
+            "Fetch https://wttr.in/Tokyo?format=j1 and tell me the current temperature in Celsius.",
+            lambda r: any(c.isdigit() for c in r) and ("°" in r or "celsius" in r.lower() or "degrees" in r.lower() or "C" in r),
+            max_time=30.0,  # Weather API can be slow
+        )
+
+        print(f"\n=== {result['name']} ===")
+        print(f"Time: {result['elapsed']:.1f}s")
+        print(f"Tool calls: {result['tool_calls']}")
+        print(f"Response: {result['response'][:200]}...")
+        print(f"Quality: {'PASS' if result['quality_pass'] else 'FAIL'}")
+
+        assert result["quality_pass"], "Response should contain temperature with degrees"
+        assert result["tool_calls"] <= 2
+
+    def test_no_tool_needed(self, harness_agent):
+        """Test: Simple question requiring no tools."""
+        result = self._run_quality_test(
+            harness_agent,
+            "No Tool Needed",
+            "What is 15 * 8? Just give me the number.",
+            lambda r: "120" in r,
+            max_time=5.0,
+        )
+
+        print(f"\n=== {result['name']} ===")
+        print(f"Time: {result['elapsed']:.1f}s")
+        print(f"Tool calls: {result['tool_calls']}")
+        print(f"Response: {result['response'][:100]}...")
+        print(f"Quality: {'PASS' if result['quality_pass'] else 'FAIL'}")
+
+        assert result["quality_pass"], "Response should contain '120'"
+        assert result["tool_calls"] == 0, "Should not use any tools for math"
+        assert result["elapsed"] < 5.0, "Simple math should be fast"
+
+    def test_ip_address_quality(self, harness_agent):
+        """Test: Fetch and report IP address."""
+        result = self._run_quality_test(
+            harness_agent,
+            "IP Address",
+            "Fetch https://httpbin.org/ip and tell me the IP address.",
+            lambda r: "." in r and any(c.isdigit() for c in r),  # IP has dots and numbers
+            max_time=15.0,
+        )
+
+        print(f"\n=== {result['name']} ===")
+        print(f"Time: {result['elapsed']:.1f}s")
+        print(f"Tool calls: {result['tool_calls']}")
+        print(f"Response: {result['response'][:150]}...")
+        print(f"Quality: {'PASS' if result['quality_pass'] else 'FAIL'}")
+
+        assert result["quality_pass"], "Response should contain IP address"
+        assert result["tool_calls"] <= 2
+
+
+@pytest.mark.live
+def test_comprehensive_quality_efficiency_suite():
+    """
+    Run comprehensive quality and efficiency test suite.
+
+    This test runs all real-world scenarios and produces a summary report
+    with quality scores and efficiency metrics.
+    """
+    from tests.harness.harness_agent import HarnessAgent
+    from dana.lib.resources.web_research import FetchResource
+    from dana.core.agent.timeline import TimelineEntryType
+
+    print("\n" + "=" * 70)
+    print("COMPREHENSIVE QUALITY & EFFICIENCY TEST SUITE")
+    print("Using HarnessAgent with Codec System (CSXMLCodec)")
+    print("=" * 70)
+
+    tests = [
+        ("UUID Fetch", "Fetch https://httpbin.org/uuid and tell me the UUID.",
+         lambda r: "-" in r and len(r) > 30, 15.0),
+        ("JSON API", "Fetch https://jsonplaceholder.typicode.com/posts/1 and tell me the title.",
+         lambda r: "sunt" in r.lower() or "title" in r.lower(), 15.0),
+        ("GitHub Stars", "Fetch https://api.github.com/repos/python/cpython and tell me the star count.",
+         lambda r: any(c.isdigit() for c in r), 15.0),
+        ("Weather Tokyo", "Fetch https://wttr.in/Tokyo?format=j1 and tell me the temperature in Celsius.",
+         lambda r: any(c.isdigit() for c in r) and ("°" in r or "c" in r.lower()), 30.0),
+        ("IP Address", "Fetch https://httpbin.org/ip and tell me the IP address.",
+         lambda r: "." in r and any(c.isdigit() for c in r), 15.0),
+        ("No Tool Math", "What is 25 * 4?",
+         lambda r: "100" in r, 5.0),
+    ]
+
+    results = []
+
+    for name, message, validator, max_time in tests:
+        print(f"\nRunning: {name}...")
+
+        # Fresh agent for each test
+        agent = HarnessAgent(
+            agent_type="suite_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=3,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        start = time.time()
+        try:
+            result = agent.query(message=message)
+            elapsed = time.time() - start
+            response = result.get("response", "")
+
+            tool_calls = len([e for e in agent._timeline.timeline
+                            if e.entry_type == TimelineEntryType.TOOL_CALL])
+
+            quality_pass = validator(response)
+
+            results.append({
+                "name": name,
+                "elapsed": elapsed,
+                "tool_calls": tool_calls,
+                "quality": "PASS" if quality_pass else "FAIL",
+                "response": response[:100],
+            })
+        except Exception as e:
+            results.append({
+                "name": name,
+                "elapsed": time.time() - start,
+                "tool_calls": 0,
+                "quality": "ERROR",
+                "response": str(e)[:100],
+            })
+
+    # Print summary
+    print("\n" + "=" * 70)
+    print("RESULTS SUMMARY")
+    print("=" * 70)
+    print(f"{'Test':<20} {'Time':<10} {'Tools':<8} {'Quality':<10} Response")
+    print("-" * 70)
+
+    for r in results:
+        preview = r['response'][:30].replace('\n', ' ')
+        print(f"{r['name']:<20} {r['elapsed']:.1f}s      {r['tool_calls']:<8} {r['quality']:<10} {preview}...")
+
+    print("\n" + "=" * 70)
+    passed = sum(1 for r in results if r["quality"] == "PASS")
+    total_time = sum(r["elapsed"] for r in results)
+    print(f"Quality: {passed}/{len(results)} passed")
+    print(f"Total time: {total_time:.1f}s")
+    print(f"Average time: {total_time/len(results):.1f}s")
+    print("=" * 70)
+
+    # Assert success rate
+    assert passed >= len(results) * 0.8, f"Quality too low: {passed}/{len(results)}"

@@ -2,6 +2,9 @@
 HarnessAgent - Instrumented STARAgent for robustness testing.
 
 Wraps STARAgent with phase instrumentation, loop tracking, and fault injection.
+
+By default uses the codec system (CSXMLCodec) for reliable tool parsing.
+Pass codec=None to use the legacy system for backward compatibility testing.
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ from typing import Any
 from dana.common.protocols import DictParams
 from dana.core.agent.star_agent import STARAgent
 from dana.core.agent.base_star_agent import EXIT_STAR_LOOP_FLAG
+from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
 from .fault_injection import FaultInjector
 from .mocks.llm_client import MockLLMClient
@@ -63,12 +67,15 @@ class HarnessAgent(STARAgent):
         fault_injector: FaultInjector | None = None,
         agent_type: str = "test_harness",
         auto_register: bool = False,
+        codec: type | None = CSXMLCodec,  # Default to codec system for reliability
         **kwargs,
     ):
-        # Initialize with explicit _llm_client = None to avoid AttributeError
+        # Initialize with codec system by default for reliable tool parsing
+        # Pass codec=None to test legacy system
         super().__init__(
             agent_type=agent_type,
             auto_register=auto_register,
+            codec=codec,
             **kwargs,
         )
 
