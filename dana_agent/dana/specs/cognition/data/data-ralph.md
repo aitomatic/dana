@@ -275,3 +275,5 @@ for resource in self._agent._resources:
 
 - PRD: [data-prd.md](./data-prd.md)
 - Parent: [cognition overview](../overview.md)
+
+<promise>TASK COMPLETE</promise>
