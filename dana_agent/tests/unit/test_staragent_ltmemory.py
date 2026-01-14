@@ -13,7 +13,8 @@ class TestSTARAgentLTMemoryInit:
     """Tests for STARAgent LTMemory initialization."""
 
     @patch("dana.core.memory.ltmemory.RLMResource")
-    def test_staragent_with_ltmemory_path(self, mock_rlm_class):
+    @patch("dana.core.agent.star_agent.LLM")
+    def test_staragent_with_ltmemory_path(self, mock_llm_class, mock_rlm_class):
         """STARAgent creates LTMemory when ltmemory_path is provided."""
         from dana.core.agent.star_agent import STARAgent
         from dana.core.memory import LTMemory
@@ -28,7 +29,8 @@ class TestSTARAgentLTMemoryInit:
             assert isinstance(agent._ltmemory, LTMemory)
             assert agent._ltmemory.path == Path(tmpdir)
 
-    def test_staragent_without_ltmemory_path(self):
+    @patch("dana.core.agent.star_agent.LLM")
+    def test_staragent_without_ltmemory_path(self, mock_llm_class):
         """STARAgent does not create LTMemory when ltmemory_path is None."""
         from dana.core.agent.star_agent import STARAgent
 
