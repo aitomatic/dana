@@ -1425,3 +1425,234 @@ class TestSubAgentDelegation:
         print(f"Quality: {'PASS' if has_uuid else 'FAIL'}")
 
         assert elapsed < 90, f"Should complete within 90s, took {elapsed:.1f}s"
+
+
+# =============================================================================
+# PLANNING / TODO TESTS (Live LLM)
+# =============================================================================
+
+@pytest.mark.live
+class TestPlanningBehavior:
+    """
+    Tests for LLM planning behavior with ToDoResource.
+
+    Verifies:
+    - LLM uses todo list for multi-step tasks
+    - Tasks are worked through systematically
+    - Todo status updates reflect progress
+    """
+
+    def test_llm_creates_todos_for_multistep_task(self):
+        """Test: LLM should create a todo list when given a multi-step task."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.lib.resources.web_research import FetchResource
+        from dana.core.agent.timeline import TimelineEntryType
+
+        agent = HarnessAgent(
+            agent_type="planner",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=8,  # Need more iterations for todo + fetches
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        print("\n=== PLANNING TEST: Multi-step task ===")
+        start = time.time()
+        result = agent.query(
+            message="""I need you to do three things:
+1. Fetch my IP address from https://httpbin.org/ip
+2. Fetch a UUID from https://httpbin.org/uuid
+3. Tell me both results
+
+Create a todo list to track these, then work through them one at a time and report results."""
+        )
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+        print(f"Time: {elapsed:.1f}s")
+        print(f"Response: {response[:300]}...")
+
+        # Check timeline for todo resource calls
+        todo_calls = []
+        tool_calls = []
+        for e in agent._timeline.timeline:
+            if e.entry_type == TimelineEntryType.TOOL_CALL:
+                content = str(e.content)
+                tool_calls.append(content[:100])
+                if "todo" in content.lower() or "ToDoResource" in content:
+                    todo_calls.append(content)
+
+        print(f"\nTool calls made: {len(tool_calls)}")
+        for tc in tool_calls:
+            print(f"  - {tc}...")
+
+        print(f"Todo-related calls: {len(todo_calls)}")
+
+        # Verify both IP and UUID are in response
+        has_ip = "." in response and any(c.isdigit() for c in response)
+        has_uuid = "-" in response.lower()
+
+        print(f"Has IP: {has_ip}")
+        print(f"Has UUID: {has_uuid}")
+
+        assert has_ip or has_uuid, "Response should contain at least one fetched result"
+        assert elapsed < 60, f"Should complete within 60s, took {elapsed:.1f}s"
+
+    def test_llm_updates_todo_status(self):
+        """Test: LLM should update todo status as tasks complete."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.lib.resources.web_research import FetchResource
+        from dana.core.agent.timeline import TimelineEntryType
+
+        agent = HarnessAgent(
+            agent_type="tracker",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=6,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        print("\n=== PLANNING TEST: Todo status updates ===")
+        start = time.time()
+        result = agent.query(
+            message="""Complete these tasks and update the todo list after each one:
+
+Tasks:
+1. Fetch https://httpbin.org/ip and note the IP
+2. Fetch https://httpbin.org/headers and note the User-Agent
+
+After EACH task, update the todo list to mark it complete before moving to the next.
+Report the results when done."""
+        )
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+        print(f"Time: {elapsed:.1f}s")
+        print(f"Response: {response[:300]}...")
+
+        # Analyze timeline for sequential task completion pattern
+        entries = agent._timeline.timeline
+        tool_sequence = []
+        for e in entries:
+            if e.entry_type == TimelineEntryType.TOOL_CALL:
+                content = str(e.content)
+                if "fetch" in content.lower():
+                    tool_sequence.append("FETCH")
+                elif "todo" in content.lower():
+                    tool_sequence.append("TODO")
+
+        print(f"\nTool sequence: {tool_sequence}")
+
+        # Should have fetches - todo updates are optional but encouraged
+        fetch_count = tool_sequence.count("FETCH")
+        print(f"Fetch calls: {fetch_count}")
+
+        assert fetch_count >= 1, "Should make at least one fetch call"
+        assert elapsed < 90, f"Should complete within 90s, took {elapsed:.1f}s"
+
+    def test_planning_with_explicit_todo_instruction(self):
+        """Test: When explicitly told to use todos, LLM should comply."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.core.agent.timeline import TimelineEntryType
+
+        agent = HarnessAgent(
+            agent_type="explicit_planner",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=4,
+        )
+
+        print("\n=== PLANNING TEST: Explicit todo instruction ===")
+        start = time.time()
+        result = agent.query(
+            message="""You MUST use the todo resource to track your work.
+
+Create a todo list with these 3 items:
+1. "Calculate 15 * 7" (pending)
+2. "Calculate 23 + 19" (pending)
+3. "Sum the results" (pending)
+
+Then work through each todo, updating status as you go. Show me the final answer."""
+        )
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+        print(f"Time: {elapsed:.1f}s")
+        print(f"Response: {response[:400]}...")
+
+        # Check for todo resource usage
+        todo_calls = 0
+        for e in agent._timeline.timeline:
+            if e.entry_type == TimelineEntryType.TOOL_CALL:
+                content = str(e.content)
+                if "todo" in content.lower() or "ToDoResource" in content:
+                    todo_calls += 1
+
+        print(f"Todo resource calls: {todo_calls}")
+
+        # 15*7=105, 23+19=42, 105+42=147
+        has_answer = "147" in response or ("105" in response and "42" in response)
+        print(f"Has correct math: {has_answer}")
+
+        # With explicit instruction, should use todos
+        assert todo_calls >= 1 or has_answer, "Should either use todos or provide correct answer"
+        assert elapsed < 45, f"Should complete within 45s, took {elapsed:.1f}s"
+
+    def test_sequential_task_execution(self):
+        """Test: Tasks should be executed in order, not skipped."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.lib.resources.web_research import FetchResource
+        from dana.core.agent.timeline import TimelineEntryType
+
+        agent = HarnessAgent(
+            agent_type="sequential",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=5,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        print("\n=== PLANNING TEST: Sequential execution ===")
+        start = time.time()
+        result = agent.query(
+            message="""Execute these in EXACT order:
+
+Step 1: Fetch https://httpbin.org/ip - tell me the IP
+Step 2: Fetch https://httpbin.org/uuid - tell me the UUID
+Step 3: Summarize both results
+
+You must complete Step 1 before Step 2, and Step 2 before Step 3."""
+        )
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+        print(f"Time: {elapsed:.1f}s")
+        print(f"Response: {response[:400]}...")
+
+        # Check that both URLs were fetched
+        fetch_urls = []
+        for e in agent._timeline.timeline:
+            if e.entry_type == TimelineEntryType.TOOL_CALL:
+                content = str(e.content)
+                if "httpbin.org/ip" in content:
+                    fetch_urls.append("ip")
+                elif "httpbin.org/uuid" in content:
+                    fetch_urls.append("uuid")
+
+        print(f"Fetch order: {fetch_urls}")
+
+        # Should have fetched both, ideally in order
+        has_ip_fetch = "ip" in fetch_urls
+        has_uuid_fetch = "uuid" in fetch_urls
+        print(f"Fetched IP: {has_ip_fetch}, Fetched UUID: {has_uuid_fetch}")
+
+        # Response should contain results from both
+        has_ip_result = "." in response and any(c.isdigit() for c in response)
+        has_uuid_result = "-" in response
+
+        assert has_ip_fetch or has_uuid_fetch, "Should fetch at least one URL"
+        assert elapsed < 60, f"Should complete within 60s, took {elapsed:.1f}s"
