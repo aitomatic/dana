@@ -362,7 +362,15 @@ class ToolCaller(WARCaller):
                 # Phase 1: Try function_name as implicit target (e.g., "web-researcher")
                 # This handles cases where LLM provides function name without explicit target field
                 if function_name:
-                    pseudo_args = {"target": function_name} | arguments
+                    # Handle dot-separated format: "resource_id.method_name" or "uuid.method_name"
+                    if "." in function_name:
+                        parts = function_name.rsplit(".", 1)
+                        target = parts[0]
+                        method = parts[1] if len(parts) > 1 else "execute"
+                        # Our extracted target/method take precedence over any in arguments
+                        pseudo_args = arguments | {"target": target, "method": method}
+                    else:
+                        pseudo_args = arguments | {"target": function_name}
                     return self._handle_target_based_call(function_name, pseudo_args)
 
                 return self._create_unknown_function_error(function_name or "unknown")
