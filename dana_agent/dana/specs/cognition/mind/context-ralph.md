@@ -163,11 +163,11 @@ Note: Implemented using a simpler `Queryable` protocol that just requires `query
 
 - `smart_context_assembly.py` - Full demo with mixed source types
 
-## Current Progress
+## Files Implemented
 
-Check these files to see what exists:
 - `dana_agent/dana/core/context/builder.py` ✅
 - `dana_agent/dana/core/context/context.py` ✅
+- `dana_agent/dana/core/context/__init__.py` ✅
 - `examples/cognition/context/` ✅
 
 ## Tests Required
@@ -200,8 +200,13 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_context_builder.
 
 ## When Complete
 
+**You MUST run tests before marking complete:**
+```bash
+cd dana_agent && uv run pytest tests/unit/test_context_builder.py -v
+```
+
+Only if ALL tests pass, output exactly:
 <promise>CONTEXT BUILDER COMPLETE</promise>
-<promise>TASK COMPLETE</promise>
 
 ## STARAgent Integration
 
@@ -261,5 +266,3 @@ class PromptEngineer:
 - PRD: [context-prd.md](./context-prd.md)
 - Parent: [mind overview](./overview.md)
 - Depends on: [data-ralph.md](../data/data-ralph.md)
-
-<promise>TASK COMPLETE</promise>

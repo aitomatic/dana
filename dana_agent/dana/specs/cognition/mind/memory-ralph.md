@@ -193,15 +193,12 @@ Requirements:
 - `ltmemory_persistence.py` - Cross-session memory recall
 - `staragent_with_ltmemory.py` - STARAgent with LTMemory integration demo
 
-## Current Progress
+## Files Implemented
 
-Check these files to see what exists:
-- `dana_agent/dana/core/memory/stmemory.py`
-- `dana_agent/dana/core/memory/ltmemory.py`
-- `dana_agent/dana/core/memory/__init__.py`
-- `examples/cognition/memory/`
-
-Update checkboxes above as you complete each requirement.
+- `dana_agent/dana/core/memory/stmemory.py` ✅
+- `dana_agent/dana/core/memory/ltmemory.py` ✅
+- `dana_agent/dana/core/memory/__init__.py` ✅
+- `examples/cognition/memory/` ✅
 
 ## Tests Required
 
@@ -248,6 +245,12 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py test
 
 ## When Complete
 
+**You MUST run tests before marking complete:**
+```bash
+cd dana_agent && uv run pytest tests/unit/test_stmemory.py tests/unit/test_ltmemory.py tests/unit/test_staragent_ltmemory.py -v
+```
+
+Only if ALL tests pass, output exactly:
 <promise>MEMORY COMPLETE</promise>
 
 ## STARAgent Integration

@@ -1,6 +1,6 @@
 # Reflection - Implementation Spec
 
-**Status: ⚠️ PARTIAL** (Learner exists with 4 phases, but doesn't persist to LTMemory)
+**Status: ✅ COMPLETE**
 
 ## Goal
 
@@ -145,12 +145,12 @@ class Reflection:
 ```
 
 Requirements:
-- [ ] Run four phases in sequence
-- [ ] Pass stmemory timeline to phases
-- [ ] Query ltmemory in Integrative phase
-- [ ] Store final memories to ltmemory in Retentive phase
-- [ ] Return ReflectionResult with summary and phase outputs
-- [ ] Use dana.common.llm.LLM for LLM calls
+- [x] Run four phases in sequence
+- [x] Pass stmemory timeline to phases
+- [x] Query ltmemory in Integrative phase
+- [x] Store final memories to ltmemory in Retentive phase
+- [x] Return ReflectionResult with summary and phase outputs
+- [x] Use dana.common.llm.LLM for LLM calls
 
 ### 2. Phase Prompts
 
@@ -223,11 +223,11 @@ Output empty array [] if nothing worth storing.
 ```
 
 Requirements:
-- [ ] Acquisitive prompt extracts candidates
-- [ ] Episodic prompt creates narrative
-- [ ] Integrative prompt queries ltmemory for connections
-- [ ] Retentive prompt outputs JSON array of memories
-- [ ] Parse Retentive output as JSON
+- [x] Acquisitive prompt extracts candidates
+- [x] Episodic prompt creates narrative
+- [x] Integrative prompt queries ltmemory for connections
+- [x] Retentive prompt outputs JSON array of memories
+- [x] Parse Retentive output as JSON
 
 ### 3. ReflectionResult
 
@@ -240,35 +240,33 @@ class ReflectionResult:
 ```
 
 Requirements:
-- [ ] Capture output from each phase
-- [ ] Generate summary from phases
-- [ ] Track memories created
+- [x] Capture output from each phase
+- [x] Generate summary from phases
+- [x] Track memories created
 
 ## Example Files (`examples/cognition/reflection/`)
 
 - `session_learning.py` - Full reflection demo with all 4 phases
 - `learner_integration.py` - Shows Learner component using Reflection
 
-## Current Progress
+## Files Implemented
 
-Check these files to see what exists:
-- `dana_agent/dana/core/reflection/reflection.py`
-- `dana_agent/dana/core/reflection/__init__.py`
-- `examples/cognition/reflection/`
-
-Update checkboxes above as you complete each requirement.
+- `dana_agent/dana/core/reflection/reflection.py` ✅
+- `dana_agent/dana/core/reflection/__init__.py` ✅
+- `dana_agent/dana/core/agent/components/learner.py` ✅ (LTMemory integration)
+- `examples/cognition/reflection/` ✅
 
 ## Tests Required
 
 Create `dana_agent/tests/unit/test_reflection.py`:
-- [ ] test_run_all_phases - executes all four phases
-- [ ] test_acquisitive_phase - identifies candidates from timeline
-- [ ] test_episodic_phase - creates narrative summary
-- [ ] test_integrative_phase - queries ltmemory
-- [ ] test_retentive_phase - outputs valid JSON
-- [ ] test_stores_to_ltmemory - memories actually stored
-- [ ] test_empty_session - handles no noteworthy content
-- [ ] test_result_structure - ReflectionResult has all fields
+- [x] test_run_all_phases - executes all four phases
+- [x] test_acquisitive_phase - identifies candidates from timeline
+- [x] test_episodic_phase - creates narrative summary
+- [x] test_integrative_phase - queries ltmemory
+- [x] test_retentive_phase - outputs valid JSON
+- [x] test_stores_to_ltmemory - memories actually stored
+- [x] test_empty_session - handles no noteworthy content
+- [x] test_result_structure - ReflectionResult has all fields
 
 Run tests with: `cd dana_agent && uv run pytest tests/unit/test_reflection.py -v`
 
@@ -282,21 +280,26 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_reflection.py -v
 
 ## Before Marking Complete
 
-- [ ] Review code for KISS/YAGNI compliance
-- [ ] Simplify any overly complex implementations
-- [ ] Remove unnecessary abstractions
-- [ ] Ensure code is readable and maintainable
+- [x] Review code for KISS/YAGNI compliance
+- [x] Simplify any overly complex implementations
+- [x] Remove unnecessary abstractions
+- [x] Ensure code is readable and maintainable
 
 ## When Complete
 
-Output in this file:
+**You MUST run tests before marking complete:**
+```bash
+cd dana_agent && uv run pytest tests/unit/test_reflection.py tests/unit/test_staragent_ltmemory.py -v
+```
+
+Only if ALL tests pass, output exactly:
 <promise>REFLECTION COMPLETE</promise>
 
 ## STARAgent Integration
 
 ### Current State: Learner Component
 
-The `Learner` component at `dana.core.agent.components.learner` already implements reflection:
+The `Learner` component at `dana.core.agent.components.learner` implements reflection with full LTMemory integration:
 
 | Feature | Learner Status | Spec Requirement |
 |---------|---------------|------------------|
@@ -305,19 +308,19 @@ The `Learner` component at `dana.core.agent.components.learner` already implemen
 | Integrative phase | ✅ `_reflect_integrative()` | ✅ |
 | Retentive phase | ✅ `_reflect_retentive()` | ✅ |
 | LLM-based analysis | ✅ `DefaultLearner` uses LLM | ✅ |
-| Persist to LTMemory | ❌ Missing | ✅ Required |
-| Query LTMemory | ❌ Missing | ✅ Required |
-| Standalone Reflection class | ❌ Missing | Optional |
+| Persist to LTMemory | ✅ `_reflect_retentive()` stores memories | ✅ |
+| Query LTMemory | ✅ `query_learnings()` queries LTMemory | ✅ |
+| Standalone Reflection class | ✅ `dana.core.reflection.Reflection` | Optional |
 
 ### Integration Tasks
 
 | Task | Status | Description |
 |------|--------|-------------|
-| Wire Learner to LTMemory | ❌ Pending | Accept LTMemory reference |
-| Persist in retentive phase | ❌ Pending | Store memories to LTMemory |
-| Query in integrative phase | ❌ Pending | Query LTMemory for connections |
-| Add session end trigger | ❌ Pending | Trigger reflection at session end |
-| Create standalone Reflection | ❌ Optional | Decouple from STARAgent |
+| Wire Learner to LTMemory | ✅ Done | Accesses via `self._agent._ltmemory` |
+| Persist in retentive phase | ✅ Done | `_reflect_retentive()` calls `ltmemory.store()` |
+| Query in integrative phase | ✅ Done | `query_learnings()` calls `ltmemory.query()` |
+| Add session end trigger | ⏸️ Deferred | Reflection triggered per-turn, not session end |
+| Create standalone Reflection | ✅ Done | `dana.core.reflection.Reflection` class exists |
 
 ### Integration Code
 
@@ -372,14 +375,14 @@ class Reflection:
         return ReflectionResult(...)
 ```
 
-### Files to Modify (Option A)
-- `dana_agent/dana/core/agent/components/learner.py` - Add LTMemory integration
-
-### Files to Create (Option B)
-- `dana_agent/dana/core/reflection/__init__.py`
-- `dana_agent/dana/core/reflection/reflection.py`
-- `dana_agent/tests/unit/test_reflection.py`
-- `examples/cognition/reflection/session_learning.py`
+### Files Modified/Created
+- `dana_agent/dana/core/agent/components/learner.py` ✅ (LTMemory integration added)
+- `dana_agent/dana/core/reflection/__init__.py` ✅
+- `dana_agent/dana/core/reflection/reflection.py` ✅
+- `dana_agent/tests/unit/test_reflection.py` ✅
+- `dana_agent/tests/unit/test_staragent_ltmemory.py` ✅
+- `examples/cognition/reflection/session_learning.py` ✅
+- `examples/cognition/reflection/learner_integration.py` ✅
 
 ## References
 

@@ -168,14 +168,11 @@ Output Python code. When done, output ONE of:
 - `query_large_codebase.py` - Demo querying a large codebase
 - `sample_codebase.md` - Sample large document (500K+ simulated)
 
-## Current Progress
+## Files Implemented
 
-Check these files to see what exists:
-- `dana_agent/dana/core/agent/components/python_sandbox.py`
-- `dana_agent/dana/common/resource/rlm_resource.py`
-- `examples/cognition/data_rlm/`
-
-Update checkboxes above as you complete each requirement.
+- `dana_agent/dana/core/agent/components/python_sandbox.py` ✅
+- `dana_agent/dana/common/resource/rlm_resource.py` ✅
+- `examples/cognition/data_rlm/` ✅
 
 ## Tests Required
 
@@ -217,6 +214,12 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 
 ## When Complete
 
+**You MUST run tests before marking complete:**
+```bash
+cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py -v
+```
+
+Only if ALL tests pass, output exactly:
 <promise>DATA ACCESS COMPLETE</promise>
 
 ## STARAgent Integration Status
@@ -225,14 +228,8 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 - ✅ RLMResource can be attached to STARAgent via `with_resources()`
 - ✅ Agents can invoke `query()`, `append()`, `load_file()` as tools
 - ✅ LTMemory uses RLMResource internally for large memory queries
-
-### Pending Integration (Requires ContextBuilder)
-- ❌ ContextBuilder should auto-query RLMResource when building context
-- ❌ STARAgent should register RLMResources with ContextBuilder
-
-### Files Implemented
-- `dana_agent/dana/core/agent/components/python_sandbox.py` ✅
-- `dana_agent/dana/common/resource/rlm_resource.py` ✅
+- ✅ ContextBuilder supports RLMResource as queryable source
+- ✅ PromptEngineer uses ContextBuilder for context assembly
 
 ## References
 
