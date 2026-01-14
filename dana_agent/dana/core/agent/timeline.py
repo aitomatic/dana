@@ -34,6 +34,7 @@ class TimelineEntryType(Enum):
     WORKFLOW_RESULT = "workflow_result"
     UNKNOWN_TOOL_CALL = "unknown_tool_call"
     AGENT_LEARNING = "agent_learning"
+    TIMELINE_SUMMARY = "timeline_summary"  # Compressed history summary
 
 
 # Static mapping of entry types to display labels
@@ -46,7 +47,19 @@ ENTRY_CONFIG: Final = {
     TimelineEntryType.RESOURCE_RESULT: "Resource-to-Agent Result",
     TimelineEntryType.WORKFLOW_RESULT: "Workflow-to-Agent Result",
     TimelineEntryType.UNKNOWN_TOOL_CALL: "Unknown Tool-to-Agent Result",
+    TimelineEntryType.TIMELINE_SUMMARY: "Previous Context Summary",
 }
+
+
+@dataclass
+class TimelineConfig:
+    """Configuration for timeline compression and management."""
+
+    max_context_tokens: int = 4000
+    compression_threshold: float = 0.8  # Trigger compression at 80% of max tokens
+    compression_enabled: bool = True
+    min_entries_before_compress: int = 5  # Don't compress until we have at least this many entries
+    keep_recent_entries: int = 3  # Number of recent entries to preserve during compression
 
 
 @dataclass
@@ -209,6 +222,7 @@ class Timeline:
         max_context_tokens: int = 4000,
         agent: "BaseAgent | None" = None,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
+        config: TimelineConfig | None = None,
     ):
         """
         Initialize the Timeline.
@@ -216,10 +230,11 @@ class Timeline:
         Args:
             max_context_tokens: Maximum number of tokens to include in context
             agent: Agent instance (can be None, for backward compatibility)
-            codec: Codec class for path structure (can be None, for backward compatibility)
             repository_factory: Repository factory to create the repository
+            config: Optional TimelineConfig for compression settings
         """
-        self.max_context_tokens = max_context_tokens
+        self._config = config or TimelineConfig(max_context_tokens=max_context_tokens)
+        self.max_context_tokens = self._config.max_context_tokens
         self._agent = agent
         self.timeline: list[TimelineEntry] = []
 
@@ -523,3 +538,128 @@ class Timeline:
         # Yield entries from checkpoint onwards
         for i in range(checkpoint, len(all_entries)):
             yield all_entries[i]
+
+    # ============================================================================
+    # COMPRESSION METHODS
+    # ============================================================================
+
+    def needs_compression(self) -> bool:
+        """
+        Check if timeline compression is needed based on current token usage.
+
+        Returns:
+            True if compression should be triggered
+        """
+        if not self._config.compression_enabled:
+            return False
+
+        if len(self.timeline) < self._config.min_entries_before_compress:
+            return False
+
+        # Estimate current token usage
+        messages = self.to_llm_messages()
+        current_tokens = self._estimate_tokens(messages)
+        threshold = self._config.max_context_tokens * self._config.compression_threshold
+
+        return current_tokens > threshold
+
+    def _estimate_entries_tokens(self, entries: list[TimelineEntry]) -> int:
+        """
+        Estimate token count for timeline entries.
+
+        Args:
+            entries: List of TimelineEntry objects
+
+        Returns:
+            Estimated token count
+        """
+        total = 0
+        for entry in entries:
+            # Rough estimation: 1.3 tokens per word
+            total += len(entry.content.split()) * 1.3
+        return int(total)
+
+    def compress_old_entries(self, summary: str) -> int:
+        """
+        Compress old timeline entries into a summary entry.
+
+        This method replaces old entries with a single TIMELINE_SUMMARY entry,
+        preserving recent entries as configured.
+
+        Args:
+            summary: The summary text to use for the compressed entries
+
+        Returns:
+            Number of entries that were compressed
+        """
+        keep_recent = self._config.keep_recent_entries
+
+        if len(self.timeline) <= keep_recent:
+            return 0  # Nothing to compress
+
+        # Get entries to compress (all except recent N)
+        old_entries = self.timeline[:-keep_recent]
+        recent_entries = self.timeline[-keep_recent:]
+
+        if not old_entries:
+            return 0
+
+        # Create summary entry
+        summary_entry = TimelineEntry(
+            entry_type=TimelineEntryType.TIMELINE_SUMMARY,
+            content=f"[Previous context summary] {summary}",
+            timestamp=old_entries[0].timestamp,
+        )
+
+        # Replace timeline with summary + recent entries
+        compressed_count = len(old_entries)
+        self.timeline = [summary_entry] + recent_entries
+
+        logger.info(
+            f"Compressed {compressed_count} timeline entries into summary",
+            compressed_count=compressed_count,
+            remaining_entries=len(self.timeline),
+        )
+
+        return compressed_count
+
+    def get_entries_for_compression(self) -> list[TimelineEntry]:
+        """
+        Get the entries that would be compressed (for generating a summary).
+
+        Returns:
+            List of old entries that would be replaced by a summary
+        """
+        keep_recent = self._config.keep_recent_entries
+
+        if len(self.timeline) <= keep_recent:
+            return []
+
+        return self.timeline[:-keep_recent]
+
+    def build_compression_prompt(self) -> str | None:
+        """
+        Build a prompt for LLM-based compression of old entries.
+
+        Returns:
+            Prompt string for summarization, or None if compression not needed
+        """
+        entries_to_compress = self.get_entries_for_compression()
+
+        if not entries_to_compress:
+            return None
+
+        # Build entries text with truncation for very long entries
+        entries_text_parts = []
+        for entry in entries_to_compress:
+            content = entry.content[:500] + "..." if len(entry.content) > 500 else entry.content
+            entries_text_parts.append(f"[{entry.entry_type.value}] {content}")
+
+        entries_text = "\n".join(entries_text_parts)
+
+        return f"""Summarize this conversation history in 2-3 sentences,
+preserving key facts, decisions, tool calls and their results:
+
+{entries_text}
+
+Summary:"""

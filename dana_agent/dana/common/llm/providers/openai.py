@@ -15,6 +15,11 @@ logger = structlog.get_logger()
 class OpenAIProvider(LLMProvider):
     """OpenAI API provider."""
 
+    @property
+    def supports_native_tools(self) -> bool:
+        """OpenAI supports native function/tool calling."""
+        return True
+
     def __init__(self, api_key: str | None = None, model: str = "gpt-3.5-turbo", base_url: str | None = None):
         """
         Initialize OpenAI provider.
@@ -49,8 +54,14 @@ class OpenAIProvider(LLMProvider):
 
         self.client = AsyncOpenAI(**client_kwargs)
 
-    async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
-        """Send messages to OpenAI and get a response."""
+    async def chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> LLMResponse:
+        """Send messages to OpenAI and get a response.
+
+        Args:
+            messages: List of conversation messages
+            tools: Optional list of tool schemas for native function calling
+            **kwargs: Additional parameters passed to the API
+        """
         try:
             # Convert our message format to OpenAI format
             openai_messages = []
@@ -62,8 +73,20 @@ class OpenAIProvider(LLMProvider):
                 elif msg.role == "assistant":
                     openai_messages.append({"role": "assistant", "content": msg.content})
 
+            # Build request parameters
+            request_kwargs = {
+                "model": self.model,
+                "messages": openai_messages,
+                **kwargs
+            }
+
+            # Add tools if provided
+            if tools:
+                request_kwargs["tools"] = tools
+                request_kwargs["tool_choice"] = "auto"
+
             # Call OpenAI API
-            response = await self.client.chat.completions.create(model=self.model, messages=openai_messages, **kwargs)
+            response = await self.client.chat.completions.create(**request_kwargs)
 
             # Convert response to our format
             choice = response.choices[0]

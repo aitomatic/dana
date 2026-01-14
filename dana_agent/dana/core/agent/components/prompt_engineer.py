@@ -20,6 +20,7 @@ from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols.types import LearningPhase
+from dana.core.agent.components.tool_schema import generate_tool_schemas
 from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
 from dana.core.context import ContextBuilder
@@ -779,7 +780,11 @@ class PromptEngineer:
 
         # System prompt - use the sophisticated prompt from components
         system_prompt = self._get_system_prompt()
-        messages.append(LLMMessage(role="system", content=system_prompt))
+        messages.append(LLMMessage(
+            role="system",
+            content=system_prompt,
+            cache_control={"type": "ephemeral"}
+        ))
 
         # Use Timeline's LLM conversion with latest user message separation
         if timeline:
@@ -875,3 +880,15 @@ class PromptEngineer:
         )
 
         return messages
+
+    def build_tool_schemas(self) -> list[dict]:
+        """Build OpenAI-compatible tool schemas for native function calling.
+
+        Returns:
+            List of tool schema dictionaries for the agent's resources and workflows.
+        """
+        return generate_tool_schemas(
+            agents=getattr(self._agent, "_agents", []),
+            resources=getattr(self._agent, "_resources", []),
+            workflows=getattr(self._agent, "_workflows", []),
+        )

@@ -426,12 +426,22 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
 
+        # Check if provider supports native tool calling
+        native_tools = None
+        if hasattr(self.llm_client, "provider") and hasattr(self.llm_client.provider, "supports_native_tools"):
+            if self.llm_client.provider.supports_native_tools:
+                native_tools = self._prompt_engineer.build_tool_schemas()
+
         # Query LLM with retry logic for empty responses
         response, reasoning, tool_calls = None, None, None
         failed_tool_calls = []
         for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
             llm_response = self.llm_client.chat_response_sync(
-                llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0
+                llm_messages,
+                agent_id=self.object_id,
+                agent_type=self.agent_type,
+                temperature=0,
+                tools=native_tools,
             )
             response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 
@@ -678,13 +688,23 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
 
+        # Check if provider supports native tool calling
+        native_tools = None
+        if hasattr(self.llm_client, "provider") and hasattr(self.llm_client.provider, "supports_native_tools"):
+            if self.llm_client.provider.supports_native_tools:
+                native_tools = self._prompt_engineer.build_tool_schemas()
+
         # Query LLM with retry logic for empty responses (async)
         response, reasoning, tool_calls = None, None, None
         failed_tool_calls = []
         for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
             # Native async LLM call instead of chat_response_sync
             llm_response = await self.llm_client.chat_response(
-                llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0
+                llm_messages,
+                agent_id=self.object_id,
+                agent_type=self.agent_type,
+                temperature=0,
+                tools=native_tools,
             )
             response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 
