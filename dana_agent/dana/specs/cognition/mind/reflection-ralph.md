@@ -1,18 +1,48 @@
 # Reflection - Implementation Spec
 
+**Status: ⚠️ PARTIAL** (Learner exists with 4 phases, but doesn't persist to LTMemory)
+
 ## Goal
 
 Implement the Reflection process that distills stmemory into ltmemory through four phases: Acquisitive, Episodic, Integrative, Retentive.
 
 ## Demo
 
-When complete, run `examples/agents/reflection/example.py`:
+Run: `examples/cognition/reflection/session_learning.py`
+
+### Without Reflection (The Problem)
 
 ```python
+# WITHOUT REFLECTION: Agent "learns" but never remembers
+
+# Session 1: Fix deploy issue
+agent.run("The deploy is failing")
+# Agent discovers: "Missing DATABASE_URL in environment"
+# Agent fixes it. Session ends.
+
+# What got stored in memory?
+print(timeline.entries)  # All 50 conversation turns
+# ❌ Everything stored: user messages, tool calls, observations
+# ❌ No filtering - important lessons mixed with noise
+# ❌ No connection to past experiences
+# ❌ Tomorrow: agent sees same issue, starts from scratch
+
+# Session 2: Same issue!
+agent.run("Deploy is broken again")
+# ❌ No recall of "missing env vars cause deploy failures"
+# ❌ Agent rediscovers the same lesson
+# ❌ No pattern recognition: "This is the 3rd env var issue"
+```
+
+### With Reflection (The Solution)
+
+```python
+# WITH REFLECTION: Agent distills sessions into durable knowledge
+
 from dana.core.memory import STMemory, LTMemory
 from dana.core.reflection import Reflection
 
-# Simulate a session
+# Session happens...
 stmem = STMemory()
 stmem.append("user", "The deploy is failing")
 stmem.append("agent", "Checking CI logs...")
@@ -20,29 +50,54 @@ stmem.append("observation", "Missing env var: DATABASE_URL")
 stmem.append("agent", "Added to .env.example, deploy succeeded")
 stmem.append("user", "Thanks! Always forget that one")
 
-# Existing long-term memory
+# Session ends → Reflection runs
 ltmem = LTMemory(path="./memories/")
+reflection = Reflection()
+result = reflection.run(stmemory=stmem, ltmemory=ltmem)
 
-# Run reflection
-r = Reflection()
-result = r.run(stmemory=stmem, ltmemory=ltmem)
+# ✅ 4 phases distill the session:
+#    Acquisitive: "User feedback: 'always forget' = common issue"
+#    Episodic: "Fixed deploy by adding missing DATABASE_URL"
+#    Integrative: "3rd env var issue this month - pattern emerging"
+#    Retentive: Store lesson + pattern, skip noise
 
-# See what reflection produced
-print("=== Reflection Summary ===")
-print(result.summary)
+print(result.memories_created)
+# → [
+#     {"type": "lesson", "content": "Deploy failures often caused by missing env vars"},
+#     {"type": "pattern", "content": "Env var issues are recurring - suggest .env validation"}
+#   ]
 
-print("\n=== Phase Outputs ===")
-print(f"Acquisitive: {result.phases['acquisitive']}")
-print(f"Episodic: {result.phases['episodic']}")
-print(f"Integrative: {result.phases['integrative']}")
-print(f"Retentive: {result.phases['retentive']}")
-
-print(f"\n=== Memories Created: {len(result.memories_created)} ===")
-for mem in result.memories_created:
-    print(f"  [{mem['type']}] {mem['content'][:60]}...")
+# Session 2: Reflection pays off
+past = ltmem.query("deploy failures")
+# → "Deploy failures often caused by missing env vars"
+# ✅ Agent immediately checks env vars
+# ✅ Pattern recognition: "This matches a known recurring issue"
 ```
 
-**What you'll see**: Each phase analyzing the session, culminating in memories stored to ltmemory.
+### What You'll See
+
+```
+=== Reflection Phases ===
+
+Phase 1 - Acquisitive:
+  Candidates: [lesson: env var causes deploy fail, fact: DATABASE_URL needed]
+
+Phase 2 - Episodic:
+  Summary: "User had deploy failure. Agent found missing DATABASE_URL,
+            added to .env.example. User indicated this is a recurring issue."
+
+Phase 3 - Integrative:
+  Existing: "Previous session also had env var issue (API_KEY)"
+  Connection: "Pattern: 3rd env var issue → systemic problem"
+
+Phase 4 - Retentive:
+  Storing: 2 memories (lesson + pattern)
+  Skipping: Episode (similar to existing), fact (too specific)
+
+=== Result ===
+Memories created: 2
+LTMemory now has: 15 total memories
+```
 
 ## MVP Requirements
 
@@ -189,12 +244,17 @@ Requirements:
 - [ ] Generate summary from phases
 - [ ] Track memories created
 
+## Example Files (`examples/cognition/reflection/`)
+
+- `session_learning.py` - Full reflection demo with all 4 phases
+- `learner_integration.py` - Shows Learner component using Reflection
+
 ## Current Progress
 
 Check these files to see what exists:
 - `dana_agent/dana/core/reflection/reflection.py`
 - `dana_agent/dana/core/reflection/__init__.py`
-- `examples/agents/reflection/`
+- `examples/cognition/reflection/`
 
 Update checkboxes above as you complete each requirement.
 
@@ -232,9 +292,99 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_reflection.py -v
 Output in this file:
 <promise>REFLECTION COMPLETE</promise>
 
+## STARAgent Integration
+
+### Current State: Learner Component
+
+The `Learner` component at `dana.core.agent.components.learner` already implements reflection:
+
+| Feature | Learner Status | Spec Requirement |
+|---------|---------------|------------------|
+| Acquisitive phase | ✅ `_reflect_acquisitive()` | ✅ |
+| Episodic phase | ✅ `_reflect_episodic()` | ✅ |
+| Integrative phase | ✅ `_reflect_integrative()` | ✅ |
+| Retentive phase | ✅ `_reflect_retentive()` | ✅ |
+| LLM-based analysis | ✅ `DefaultLearner` uses LLM | ✅ |
+| Persist to LTMemory | ❌ Missing | ✅ Required |
+| Query LTMemory | ❌ Missing | ✅ Required |
+| Standalone Reflection class | ❌ Missing | Optional |
+
+### Integration Tasks
+
+| Task | Status | Description |
+|------|--------|-------------|
+| Wire Learner to LTMemory | ❌ Pending | Accept LTMemory reference |
+| Persist in retentive phase | ❌ Pending | Store memories to LTMemory |
+| Query in integrative phase | ❌ Pending | Query LTMemory for connections |
+| Add session end trigger | ❌ Pending | Trigger reflection at session end |
+| Create standalone Reflection | ❌ Optional | Decouple from STARAgent |
+
+### Integration Code
+
+```python
+# Option A: Enhance existing Learner (Recommended)
+# In learner.py
+
+class Learner:
+    def __init__(self, agent: "STARAgent", ...):
+        self._agent = agent
+        # LTMemory accessed via self._agent._ltmemory
+
+    def _reflect_integrative(self, trace_integrative: DictParams) -> DictParams:
+        # Query ltmemory for existing knowledge
+        existing_knowledge = ""
+        if self._agent._ltmemory:
+            existing_knowledge = self._agent._ltmemory.query(
+                "What do I know about similar tasks?"
+            )
+
+        # Include in LLM prompt for integration analysis
+        # ...
+
+    def _reflect_retentive(self, trace_retentive: DictParams) -> DictParams:
+        # Extract memories to store
+        memories = self._extract_memories_from_analysis(trace_retentive)
+
+        # Persist to LTMemory
+        if self._agent._ltmemory:
+            for memory in memories:
+                self._agent._ltmemory.store(memory)
+
+        return {"trace_learning": {"memories_stored": len(memories)}}
+```
+
+```python
+# Option B: Create standalone Reflection class
+# In dana.core.reflection.reflection
+
+class Reflection:
+    def run(self, stmemory: STMemory, ltmemory: LTMemory) -> ReflectionResult:
+        # Run all 4 phases
+        candidates = self._acquisitive(stmemory)
+        episode = self._episodic(stmemory)
+        integration = self._integrative(candidates, episode, ltmemory)
+        memories = self._retentive(candidates, episode, integration)
+
+        # Store to ltmemory
+        for memory in memories:
+            ltmemory.store(memory)
+
+        return ReflectionResult(...)
+```
+
+### Files to Modify (Option A)
+- `dana_agent/dana/core/agent/components/learner.py` - Add LTMemory integration
+
+### Files to Create (Option B)
+- `dana_agent/dana/core/reflection/__init__.py`
+- `dana_agent/dana/core/reflection/reflection.py`
+- `dana_agent/tests/unit/test_reflection.py`
+- `examples/cognition/reflection/session_learning.py`
+
 ## References
 
 - PRD: [reflection-prd.md](./reflection-prd.md)
 - Parent: [mind overview](./overview.md)
 - Depends on: [memory](./memory-ralph.md) (stmemory input, ltmemory output)
 - Depends on: dana.common.llm.LLM for phase execution
+- Related: `dana.core.agent.components.learner` (existing implementation)

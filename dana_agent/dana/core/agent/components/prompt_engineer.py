@@ -22,6 +22,7 @@ from dana.common.observable import observable
 from dana.common.protocols.types import LearningPhase
 from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
+from dana.core.context import ContextBuilder
 
 
 class PromptFormatter:
@@ -786,29 +787,55 @@ class PromptEngineer:
             timeline_messages = timeline.to_llm_messages(separate_latest_user=True)
 
             # Check if we have a latest user message (last message should be user role)
+            latest_user_message = None
             if timeline_messages and timeline_messages[-1].role == "user":
                 # Separate context from latest user message
                 context_messages = timeline_messages[:-1]
                 latest_user_message = timeline_messages[-1]
-
-                # Wrap context in structured format if we have context
-                if context_messages:
-                    timeline_lines = [
-                        "<CONTEXT>",
-                        self._get_prompt_section_for_tag("CONTEXT_INSTRUCTIONS", show_tag=False),
-                        "<TIMELINE>",
-                    ]
-                    for msg in context_messages:
-                        timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
-                    timeline_lines.extend(["</TIMELINE>", "</CONTEXT>"])
-                    timeline_content = "\n".join(timeline_lines)
-                    messages.append(LLMMessage(role="assistant", content=timeline_content))
-
-                # Add latest user message as separate user message
-                messages.append(latest_user_message)
             else:
-                # No latest user message, use all timeline messages
-                messages.extend(timeline_messages)
+                # No latest user message, use all timeline messages as context
+                context_messages = timeline_messages
+
+            task = ""
+            if latest_user_message:
+                task = latest_user_message.content
+            elif timeline_messages:
+                task = timeline_messages[-1].content
+
+            class _TaggedQueryable:
+                def __init__(self, source, tag: str):
+                    self._source = source
+                    self._tag = tag
+
+                def query(self, question: str) -> str:
+                    result = self._source.query(question)
+                    return f"<{self._tag}>\n{result}\n</{self._tag}>"
+
+            ctx = ContextBuilder(token_budget=timeline.max_context_tokens)
+            if context_messages:
+                timeline_lines = ["<TIMELINE>"]
+                for msg in context_messages:
+                    timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
+                timeline_lines.append("</TIMELINE>")
+                ctx.add_source("timeline", "\n".join(timeline_lines))
+
+            ltmemory = getattr(self._agent, "_ltmemory", None)
+            if ltmemory is not None:
+                ctx.add_source("ltmemory", _TaggedQueryable(ltmemory, "LTMEMORY"))
+
+            context = ctx.build(task=task)
+            if context.text:
+                context_lines = [
+                    "<CONTEXT>",
+                    self._get_prompt_section_for_tag("CONTEXT_INSTRUCTIONS", show_tag=False),
+                    context.text,
+                    "</CONTEXT>",
+                ]
+                messages.append(LLMMessage(role="assistant", content="\n".join(context_lines)))
+
+            # Add latest user message as separate user message
+            if latest_user_message:
+                messages.append(latest_user_message)
 
         latest_msg = messages[-1].content if messages else None
         if latest_msg:
@@ -816,6 +843,11 @@ class PromptEngineer:
                 related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
                 if related_acquisitive_learnings:
                     messages.append(LLMMessage(role="user", content=f"Learning from the past : {related_acquisitive_learnings}"))
+
+                # Query long-term memory for relevant past knowledge
+                related_retentive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.RETENTIVE)
+                if related_retentive_learnings:
+                    messages.append(LLMMessage(role="user", content=f"Relevant memories from past sessions: {related_retentive_learnings}"))
 
         # Hack: put the user state/locale here for now
         state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]

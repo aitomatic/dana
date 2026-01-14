@@ -1,50 +1,80 @@
 # Memory - Implementation Spec
 
+**Status: ✅ COMPLETE** (Core implementation and STARAgent integration done)
+
 ## Goal
 
 Implement a two-tier memory system for Dana agents: stmemory (session timeline) and ltmemory (persistent knowledge store).
 
 ## Demo
 
-When complete, run `examples/agents/memory/example.py`:
+Run: `examples/cognition/memory/agent_with_memory.py`
+
+### Without Memory (The Problem)
 
 ```python
+# WITHOUT MEMORY: Agent forgets everything between sessions
+
+# Session 1: Debug auth issue
+agent.run("Find the auth bug")
+# Agent discovers: "Token expiry not checked in refresh flow"
+# Agent fixes it successfully
+# Session ends... knowledge is LOST
+
+# Session 2: Same type of bug appears
+agent.run("Users are getting logged out unexpectedly")
+# ❌ Agent starts from scratch - doesn't remember the pattern
+# ❌ Wastes time rediscovering: "Oh, it's token expiry again"
+# ❌ No learning across sessions
+```
+
+### With Memory (The Solution)
+
+```python
+# WITH MEMORY: Agent remembers and learns
+
 from dana.core.memory import STMemory, LTMemory
 
-# === Short-term memory (session) ===
-stmem = STMemory(max_entries=100)
+# === Session 1 ===
+stmem = STMemory(max_entries=100)   # Track this session
+ltmem = LTMemory(path="./memories/") # Persist across sessions
 
-# Record session timeline
-stmem.append("user", "Find bugs in auth module")
+stmem.append("user", "Find the auth bug")
 stmem.append("agent", "Searching codebase...")
-stmem.append("observation", "Found 3 potential issues")
-stmem.append("agent", "Issue 1: Token expiry not checked")
+stmem.append("observation", "Token expiry not checked in refresh flow")
+stmem.append("agent", "Fixed by adding expiry validation")
 
-# Query recent history
-print(stmem.recent(3))
-# → [observation: Found 3..., agent: Issue 1...]
-
-print(f"Timeline entries: {len(stmem)}")
-print(f"Tokens estimate: {stmem.estimate_tokens()}")
-
-# === Long-term memory (persistent) ===
-ltmem = LTMemory(path="./agent_memory/")
-
-# Store a memory (typically done by Reflection)
+# End of session: Reflection stores lesson to ltmemory
 ltmem.store({
     "type": "lesson",
     "content": "Auth bugs often relate to token expiry edge cases",
-    "context": "debugging session",
-    "timestamp": "2024-01-15T10:30:00Z"
+    "context": "debugging session"
 })
 
-# Query memories (RLM for large stores)
-result = ltmem.query("What do I know about auth bugs?")
-print(result)
-# → "Based on past experience: Auth bugs often relate to..."
+# === Session 2 (days later) ===
+ltmem = LTMemory(path="./memories/")  # Same path = same memories
+
+# Agent queries past knowledge
+past = ltmem.query("What do I know about auth issues?")
+# ✅ Returns: "Auth bugs often relate to token expiry edge cases"
+# ✅ Agent immediately checks token expiry
+# ✅ Finds issue faster because it LEARNED from Session 1
 ```
 
-**What you'll see**: stmemory tracking session events, ltmemory persisting and recalling past lessons.
+### What You'll See
+
+```
+Session Timeline (STMemory):
+  [user] Find the auth bug
+  [agent] Searching codebase...
+  [observation] Token expiry not checked
+  [agent] Fixed by adding validation
+
+Stored Memories (LTMemory): 3 total
+  [lesson] Auth bugs often relate to token expiry...
+  [episode] Helped user debug logout issue...
+  [fact] Auth module uses JWT with 1hr expiry...
+```
 
 ## MVP Requirements
 
@@ -156,13 +186,20 @@ Requirements:
 - [x] Timestamped entries
 - [x] Separator between entries
 
+## Example Files (`examples/cognition/memory/`)
+
+- `agent_with_memory.py` - Full demo with STMemory + LTMemory
+- `stmemory_basics.py` - Session timeline tracking
+- `ltmemory_persistence.py` - Cross-session memory recall
+- `staragent_with_ltmemory.py` - STARAgent with LTMemory integration demo
+
 ## Current Progress
 
 Check these files to see what exists:
 - `dana_agent/dana/core/memory/stmemory.py`
 - `dana_agent/dana/core/memory/ltmemory.py`
 - `dana_agent/dana/core/memory/__init__.py`
-- `examples/agents/memory/`
+- `examples/cognition/memory/`
 
 Update checkboxes above as you complete each requirement.
 
@@ -185,7 +222,14 @@ Create `dana_agent/tests/unit/test_ltmemory.py`:
 - [x] test_creates_directory - creates path if missing
 - [x] test_count - returns memory count
 
-Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py tests/unit/test_ltmemory.py -v`
+Create `dana_agent/tests/unit/test_staragent_ltmemory.py`:
+- [x] test_staragent_with_ltmemory_path - STARAgent creates LTMemory
+- [x] test_staragent_without_ltmemory_path - STARAgent works without LTMemory
+- [x] test_reflect_retentive_stores_memories - Learner stores to LTMemory
+- [x] test_query_learnings_retentive_phase - Learner queries LTMemory
+- [x] test_default_learner_query_learnings - DefaultLearner queries LTMemory
+
+Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py tests/unit/test_ltmemory.py tests/unit/test_staragent_ltmemory.py -v`
 
 ## Success Criteria
 
@@ -205,6 +249,63 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py test
 ## When Complete
 
 <promise>MEMORY COMPLETE</promise>
+
+## STARAgent Integration
+
+### Current State
+- ✅ STMemory implemented at `dana.core.memory.stmemory`
+- ✅ LTMemory implemented at `dana.core.memory.ltmemory`
+- ✅ STARAgent accepts `ltmemory_path` parameter
+- ✅ Learner stores memories to LTMemory in RETENTIVE phase
+- ✅ PromptEngineer queries LTMemory for past knowledge
+- ⏸️ Timeline/STMemory unification deferred (both serve different purposes)
+
+### Integration Tasks
+
+| Task | Status | Description |
+|------|--------|-------------|
+| Add LTMemory to STARAgent | ✅ Done | Accept `ltmemory_path` in constructor |
+| Wire Learner to LTMemory | ✅ Done | Retentive phase persists to LTMemory |
+| Query LTMemory in context | ✅ Done | PromptEngineer includes past knowledge |
+| Timeline/STMemory unification | ⏸️ Deferred | Timeline for agent internals, STMemory for simple use cases |
+
+### Integration Code
+
+```python
+# In star_agent.py __init__
+from dana.core.memory import LTMemory
+
+class STARAgent:
+    def __init__(
+        self,
+        ...,
+        ltmemory_path: str | None = None,  # NEW
+    ):
+        # Existing timeline
+        self._timeline = Timeline(...)
+
+        # NEW: Long-term memory
+        if ltmemory_path:
+            self._ltmemory = LTMemory(path=ltmemory_path)
+        else:
+            self._ltmemory = None
+```
+
+```python
+# In learner.py _reflect_retentive
+def _reflect_retentive(self, trace_retentive: DictParams) -> DictParams:
+    # ... existing logic ...
+
+    # NEW: Persist to LTMemory if available
+    if hasattr(self._agent, '_ltmemory') and self._agent._ltmemory:
+        for memory in memories_to_store:
+            self._agent._ltmemory.store(memory)
+```
+
+### Files Implemented
+- `dana_agent/dana/core/memory/stmemory.py` ✅
+- `dana_agent/dana/core/memory/ltmemory.py` ✅
+- `dana_agent/dana/core/memory/__init__.py` ✅
 
 ## References
 

@@ -93,6 +93,49 @@ Implement a Context builder that:
 - Smart prioritization / relevance ranking
 - Caching of retrieved content
 
+## STARAgent Integration
+
+### Current State
+- ❌ ContextBuilder not implemented
+- STARAgent's `PromptEngineer.build_llm_request()` builds context ad-hoc
+- No unified context assembly from multiple sources
+
+### Integration Plan
+
+ContextBuilder will replace ad-hoc context assembly in `PromptEngineer`:
+
+```python
+# Current (ad-hoc in PromptEngineer)
+def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
+    # Manual assembly of system prompt + timeline
+
+# Target (with ContextBuilder)
+def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
+    ctx = ContextBuilder(token_budget=self.max_tokens)
+    ctx.add_source("timeline", timeline.to_text())
+    ctx.add_source("ltmemory", self._agent._ltmemory)  # if available
+    for resource in self._agent._rlm_resources:
+        ctx.add_source(resource.name, resource)
+
+    context = ctx.build(task=current_task)
+    # Assemble LLM messages from context
+```
+
+### Integration Requirements
+
+1. **Replace ad-hoc assembly in PromptEngineer**
+   - ContextBuilder becomes the standard way to assemble context
+   - PromptEngineer uses ContextBuilder internally
+
+2. **Support all source types**
+   - Timeline/STMemory (direct inclusion)
+   - LTMemory (RLM query for relevant past knowledge)
+   - RLMResource (RLM query for external data)
+
+3. **Token budget management**
+   - ContextBuilder tracks and respects token limits
+   - Prioritizes sources based on relevance and size
+
 ## Demo
 
 When Context MVP is complete, we can demonstrate:
