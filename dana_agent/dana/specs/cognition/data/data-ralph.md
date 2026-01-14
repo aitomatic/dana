@@ -243,8 +243,8 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py tests/unit/test_data_staragent_integration.py -v
 ```
 
-Only if ALL tests pass, output exactly:
-<promise>TASK COMPLETE</promise>
+Only if ALL tests pass, output the completion tag:
+`<promise>` + `TASK COMPLETE` + `</promise>`
 
 ## STARAgent Integration Status
 

@@ -205,8 +205,8 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_context_builder.
 cd dana_agent && uv run pytest tests/unit/test_context_builder.py -v
 ```
 
-Only if ALL tests pass, output exactly:
-<promise>TASK COMPLETE</promise>
+Only if ALL tests pass, output the completion tag:
+`<promise>` + `TASK COMPLETE` + `</promise>`
 
 ## STARAgent Integration
 

@@ -250,8 +250,8 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py test
 cd dana_agent && uv run pytest tests/unit/test_stmemory.py tests/unit/test_ltmemory.py tests/unit/test_staragent_ltmemory.py -v
 ```
 
-Only if ALL tests pass, output exactly:
-<promise>TASK COMPLETE</promise>
+Only if ALL tests pass, output the completion tag:
+`<promise>` + `TASK COMPLETE` + `</promise>`
 
 ## STARAgent Integration
 
