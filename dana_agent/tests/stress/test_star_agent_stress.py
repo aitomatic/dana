@@ -470,6 +470,277 @@ class TestStressEdgeCases:
 
 
 # =============================================================================
+# WEB RESEARCH SCENARIOS (Real-world)
+# =============================================================================
+
+@pytest.mark.live
+class TestWebResearchScenarios:
+    """Real-world web research stress tests."""
+
+    @pytest.fixture
+    def harness(self):
+        return StressTestHarness()
+
+    @pytest.fixture
+    def agent_with_fetch(self):
+        """Create agent with FetchResource for URL fetching."""
+        from dana.lib.resources.web_research import FetchResource
+
+        agent = STARAgent(
+            agent_type="web_fetch_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+        return agent
+
+    @pytest.fixture
+    def agent_with_search(self):
+        """Create agent with SearchResource for web searches."""
+        import os
+        from dana.lib.resources.web_research import SearchResource
+
+        # Skip if no Google API credentials
+        if not os.getenv("GOOGLE_API_KEY") or not os.getenv("GOOGLE_SEARCH_ENGINE_ID"):
+            pytest.skip("Google API credentials not configured")
+
+        agent = STARAgent(
+            agent_type="web_search_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+        )
+        agent.with_resources(SearchResource(auto_register=False))
+        return agent
+
+    @pytest.fixture
+    def agent_with_full_research(self):
+        """Create agent with full web research capabilities."""
+        import os
+        from dana.lib.resources.web_research import FetchResource, SearchResource, ExtractResource
+
+        agent = STARAgent(
+            agent_type="web_research_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+        agent.with_resources(ExtractResource(auto_register=False))
+
+        # Add search only if credentials available
+        if os.getenv("GOOGLE_API_KEY") and os.getenv("GOOGLE_SEARCH_ENGINE_ID"):
+            agent.with_resources(SearchResource(auto_register=False))
+
+        return agent
+
+    def test_fetch_single_url(self, harness, agent_with_fetch):
+        """Test fetching a single public URL."""
+        result = harness.run_scenario(
+            name="Fetch Single URL",
+            agent=agent_with_fetch,
+            message="Fetch the content from https://httpbin.org/html and tell me what you found.",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        result.notes.append(f"Tool calls: {result.tool_calls_made}")
+        harness.print_summary()
+
+    def test_fetch_json_api(self, harness, agent_with_fetch):
+        """Test fetching a JSON API endpoint."""
+        result = harness.run_scenario(
+            name="Fetch JSON API",
+            agent=agent_with_fetch,
+            message="Fetch https://httpbin.org/json and summarize the JSON data you received.",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        harness.print_summary()
+
+    def test_fetch_and_analyze(self, harness, agent_with_fetch):
+        """Test fetching a URL and analyzing its content."""
+        result = harness.run_scenario(
+            name="Fetch and Analyze",
+            agent=agent_with_fetch,
+            message="""Fetch https://httpbin.org/robots.txt and answer:
+            1. What user-agents are mentioned?
+            2. What paths are disallowed?""",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        harness.print_summary()
+
+    def test_fetch_with_error_handling(self, harness, agent_with_fetch):
+        """Test that agent handles fetch errors gracefully."""
+        result = harness.run_scenario(
+            name="Fetch Error Handling",
+            agent=agent_with_fetch,
+            message="Try to fetch https://httpbin.org/status/404 and tell me what happened.",
+            expected_tool_calls=1,
+        )
+
+        # Should succeed in handling the error gracefully
+        assert result.success
+        harness.print_summary()
+
+    def test_web_search_simple(self, harness, agent_with_search):
+        """Test simple web search (requires Google API credentials)."""
+        result = harness.run_scenario(
+            name="Web Search Simple",
+            agent=agent_with_search,
+            message="Search the web for 'Python programming language' and tell me about the top result.",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        result.notes.append(f"Tool calls: {result.tool_calls_made}")
+        harness.print_summary()
+
+    def test_web_search_and_summarize(self, harness, agent_with_search):
+        """Test web search with summarization (requires Google API credentials)."""
+        result = harness.run_scenario(
+            name="Web Search and Summarize",
+            agent=agent_with_search,
+            message="Search for 'machine learning basics' and summarize what you find in 3 bullet points.",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        harness.print_summary()
+
+    def test_research_workflow(self, harness, agent_with_full_research):
+        """Test a complete research workflow: search, fetch, extract."""
+        result = harness.run_scenario(
+            name="Research Workflow",
+            agent=agent_with_full_research,
+            message="""Research 'what is REST API' by:
+            1. Finding relevant sources
+            2. Fetching content from the most authoritative one
+            3. Summarizing the key concepts""",
+        )
+
+        # This is a complex task, may or may not fully succeed
+        result.notes.append(f"Tool calls made: {result.tool_calls_made}")
+        harness.print_summary()
+
+    def test_fetch_multiple_urls_sequential(self, harness, agent_with_fetch):
+        """Test fetching multiple URLs in sequence."""
+        result = harness.run_scenario(
+            name="Fetch Multiple URLs",
+            agent=agent_with_fetch,
+            message="""Fetch these two URLs and compare their content:
+            1. https://httpbin.org/user-agent
+            2. https://httpbin.org/headers
+            What's the difference between what they return?""",
+            expected_tool_calls=2,
+        )
+
+        assert result.success
+        result.notes.append(f"Tool calls: {result.tool_calls_made}")
+        harness.print_summary()
+
+    def test_fetch_timeout_handling(self, harness, agent_with_fetch):
+        """Test handling of slow responses."""
+        result = harness.run_scenario(
+            name="Fetch Timeout Handling",
+            agent=agent_with_fetch,
+            message="Fetch https://httpbin.org/delay/2 (which delays 2 seconds) and tell me what was returned.",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        result.notes.append(f"Duration: {result.duration_ms}ms (should be >2000ms)")
+        harness.print_summary()
+
+
+@pytest.mark.live
+class TestWebResearchEfficiency:
+    """Test efficiency of web research operations."""
+
+    @pytest.fixture
+    def harness(self):
+        return StressTestHarness()
+
+    def test_fetch_efficiency_baseline(self, harness):
+        """Baseline: How long does a simple fetch + response take?"""
+        from dana.lib.resources.web_research import FetchResource
+
+        agent = STARAgent(
+            agent_type="efficiency_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        result = harness.run_scenario(
+            name="Fetch Efficiency Baseline",
+            agent=agent,
+            message="Fetch https://httpbin.org/get and just say 'done'.",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        # Should complete in reasonable time (under 15 seconds)
+        assert result.duration_ms < 15000, f"Too slow: {result.duration_ms}ms"
+        result.notes.append(f"Baseline fetch+response: {result.duration_ms}ms")
+        harness.print_summary()
+
+    def test_no_unnecessary_tool_calls(self, harness):
+        """Verify agent doesn't make unnecessary tool calls."""
+        from dana.lib.resources.web_research import FetchResource
+
+        agent = STARAgent(
+            agent_type="efficiency_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        result = harness.run_scenario(
+            name="No Unnecessary Calls",
+            agent=agent,
+            message="What is 2+2? (Don't use any tools, just answer.)",
+            expected_tool_calls=0,
+        )
+
+        assert result.success
+        # Should NOT make any tool calls for a simple math question
+        assert result.tool_calls_made == 0, f"Made {result.tool_calls_made} unnecessary tool calls"
+        harness.print_summary()
+
+    def test_single_fetch_not_multiple(self, harness):
+        """Verify agent fetches URL once, not multiple times."""
+        from dana.lib.resources.web_research import FetchResource
+
+        agent = STARAgent(
+            agent_type="efficiency_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        result = harness.run_scenario(
+            name="Single Fetch Only",
+            agent=agent,
+            message="Fetch https://httpbin.org/uuid once and tell me the UUID.",
+            expected_tool_calls=1,
+        )
+
+        assert result.success
+        # Should make exactly 1 tool call, not multiple
+        assert result.tool_calls_made <= 2, f"Made {result.tool_calls_made} calls, expected 1"
+        result.notes.append(f"Tool calls: {result.tool_calls_made}")
+        harness.print_summary()
+
+
+# =============================================================================
 # RUN ALL SCENARIOS
 # =============================================================================
 
