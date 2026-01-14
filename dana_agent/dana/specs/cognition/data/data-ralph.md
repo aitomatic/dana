@@ -1,6 +1,6 @@
 # Data Access - Implementation Spec
 
-**Status: 🔄 IN PROGRESS** (STARAgent integration pending)
+**Status: ✅ COMPLETE**
 
 ## Goal
 Implement RLM-based access to external data sources for Dana agents. Enables querying large files (500K+ tokens) by having the LLM write Python code to explore them programmatically.
@@ -180,10 +180,10 @@ for resource in self._agent._resources:
 ```
 
 Requirements:
-- [ ] PromptEngineer iterates over `self._agent._resources`
-- [ ] Resources with `query()` method are added to ContextBuilder
-- [ ] RLMResources are auto-queried with current task when building context
-- [ ] Query results included in context (tagged with resource ID)
+- [x] PromptEngineer iterates over `self._agent._resources`
+- [x] Resources with `query()` method are added to ContextBuilder
+- [x] RLMResources are auto-queried with current task when building context
+- [x] Query results included in context (tagged with resource ID)
 
 ## Files Implemented
 
@@ -212,9 +212,9 @@ Create `dana_agent/tests/unit/test_rlm_resource.py`:
 - [x] test_query_basic - returns answer for simple query
 
 Create `dana_agent/tests/unit/test_data_staragent_integration.py`:
-- [ ] test_prompt_engineer_adds_rlm_resources - PromptEngineer registers RLMResources with ContextBuilder
-- [ ] test_rlm_resource_queried_with_task - RLMResource.query() called with current task
-- [ ] test_rlm_resource_result_in_context - Query result appears in built context
+- [x] test_prompt_engineer_adds_rlm_resources - PromptEngineer registers RLMResources with ContextBuilder
+- [x] test_rlm_resource_queried_with_task - RLMResource.query() called with current task
+- [x] test_rlm_resource_result_in_context - Query result appears in built context
 
 Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py tests/unit/test_data_staragent_integration.py -v`
 
@@ -234,7 +234,7 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 - [x] Simplify any overly complex implementations
 - [x] Remove unnecessary abstractions
 - [x] Ensure code is readable and maintainable
-- [ ] STARAgent integration implemented and tested
+- [x] STARAgent integration implemented and tested
 
 ## When Complete
 
@@ -253,11 +253,9 @@ Only if ALL tests pass, output the completion tag:
 - ✅ Agents can invoke `query()`, `append()`, `load_file()` as tools
 - ✅ LTMemory uses RLMResource internally for large memory queries
 - ✅ ContextBuilder class supports RLMResource as queryable source
-
-### Pending
-- ❌ PromptEngineer registers attached RLMResources with ContextBuilder
-- ❌ RLMResources auto-queried when building context
-- ❌ Integration tests added to test_context_builder.py
+- ✅ PromptEngineer registers attached RLMResources with ContextBuilder
+- ✅ RLMResources auto-queried when building context
+- ✅ Integration tests in test_data_staragent_integration.py
 
 ### Integration Code Required
 

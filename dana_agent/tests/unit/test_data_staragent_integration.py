@@ -16,6 +16,7 @@ class DummyTimeline:
     def __init__(self, messages: list[LLMMessage], max_context_tokens: int = 10000):
         self._messages = messages
         self.max_context_tokens = max_context_tokens
+        self.timeline = messages
 
     def to_llm_messages(self, separate_latest_user: bool = True) -> list[LLMMessage]:
         return self._messages
@@ -41,6 +42,8 @@ class DummyAgent:
         self._resources = resources
         self._ltmemory = None
         self._learner = None
+        self.object_id = "dummy-agent"
+        self.agent_type = "dummy"
 
 
 def _build_prompt_messages(monkeypatch: pytest.MonkeyPatch, resource: DummyResource, task: str) -> list[LLMMessage]:

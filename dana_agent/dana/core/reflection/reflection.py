@@ -66,7 +66,7 @@ Integration notes:
 Output: Final memories to store.
 Format as JSON array:
 [
-  {"type": "lesson|episode|fact|pattern", "content": "...", "context": "..."},
+  {{"type": "lesson|episode|fact|pattern", "content": "...", "context": "..."}},
   ...
 ]
 Output empty array [] if nothing worth storing.
