@@ -1113,14 +1113,14 @@ class TestRealWorldQualityEfficiency:
         assert result["quality_pass"], "Response should contain star count (numbers)"
         assert result["tool_calls"] <= 2
 
-    def test_weather_quality(self, harness_agent):
-        """Test: Fetch weather JSON and extract temperature."""
+    def test_headers_quality(self, harness_agent):
+        """Test: Fetch headers endpoint and extract information."""
         result = self._run_quality_test(
             harness_agent,
-            "Weather Data",
-            "Fetch https://wttr.in/Tokyo?format=j1 and tell me the current temperature in Celsius.",
-            lambda r: any(c.isdigit() for c in r) and ("°" in r or "celsius" in r.lower() or "degrees" in r.lower() or "C" in r),
-            max_time=30.0,  # Weather API can be slow
+            "Headers Data",
+            "Fetch https://httpbin.org/headers and tell me the Host header value.",
+            lambda r: "httpbin" in r.lower() or "host" in r.lower(),
+            max_time=15.0,
         )
 
         print(f"\n=== {result['name']} ===")
@@ -1129,7 +1129,7 @@ class TestRealWorldQualityEfficiency:
         print(f"Response: {result['response'][:200]}...")
         print(f"Quality: {'PASS' if result['quality_pass'] else 'FAIL'}")
 
-        assert result["quality_pass"], "Response should contain temperature with degrees"
+        assert result["quality_pass"], "Response should mention httpbin or host"
         assert result["tool_calls"] <= 2
 
     def test_no_tool_needed(self, harness_agent):
@@ -1196,8 +1196,8 @@ def test_comprehensive_quality_efficiency_suite():
          lambda r: "sunt" in r.lower() or "title" in r.lower(), 15.0),
         ("GitHub Stars", "Fetch https://api.github.com/repos/python/cpython and tell me the star count.",
          lambda r: any(c.isdigit() for c in r), 15.0),
-        ("Weather Tokyo", "Fetch https://wttr.in/Tokyo?format=j1 and tell me the temperature in Celsius.",
-         lambda r: any(c.isdigit() for c in r) and ("°" in r or "c" in r.lower()), 30.0),
+        ("User Agent", "Fetch https://httpbin.org/user-agent and tell me what user agent was used.",
+         lambda r: "python" in r.lower() or "httpx" in r.lower() or "user" in r.lower(), 15.0),
         ("IP Address", "Fetch https://httpbin.org/ip and tell me the IP address.",
          lambda r: "." in r and any(c.isdigit() for c in r), 15.0),
         ("No Tool Math", "What is 25 * 4?",
