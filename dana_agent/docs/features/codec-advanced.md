@@ -723,8 +723,9 @@ class MyAgent(STARAgent):
 
 **Key points:**
 - `codec` parameter accepts a codec **class** (not an instance)
-- Pass `CSXMLCodec` or `KLXMLCodec` (or your custom codec)
-- If `codec=None` (default), agent uses legacy format (backward compatibility)
+- Default is `CSXMLCodec` - codec system is now the default
+- Pass `CSXMLCodec` or `KLXMLCodec` (or your custom codec) for codec-based system
+- If explicitly set to `codec=None`, agent uses legacy format (deprecated, backward compatibility only)
 
 ### How Codec Affects Component Initialization
 
@@ -1419,24 +1420,35 @@ Are you just starting with codecs?
 
 ### Common Pitfalls
 
-**Pitfall 1: Forgetting to pass codec parameter**
+**Pitfall 1: Explicitly opting out to legacy system**
 
 ```python
-# ❌ WRONG - No codec, uses legacy format
+# ❌ WRONG - Explicitly opts out to deprecated legacy format
 class MyAgent(STARAgent):
     def __init__(self):
-        super().__init__(agent_type="my-agent")
+        super().__init__(
+            agent_type="my-agent",
+            codec=None  # ← Deprecated! Don't do this
+        )
 ```
 
 ```python
-# ✅ CORRECT - Codec enabled
+# ✅ CORRECT - Codec is now the default
+class MyAgent(STARAgent):
+    def __init__(self):
+        super().__init__(agent_type="my-agent")
+        # Codec system (CSXMLCodec) is automatically used
+```
+
+```python
+# ✅ ALSO CORRECT - Explicitly specify codec if desired
 from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
 class MyAgent(STARAgent):
     def __init__(self):
         super().__init__(
             agent_type="my-agent",
-            codec=CSXMLCodec  # ← Don't forget this!
+            codec=CSXMLCodec  # Explicit but not required
         )
 ```
 

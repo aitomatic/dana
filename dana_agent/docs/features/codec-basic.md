@@ -145,12 +145,11 @@ CSXMLCodec is Dana's general-purpose codec. It's the recommended starting point 
 
 ### Basic Example: FinancialAnalysisAgent
 
-Here's how to create an agent using CSXMLCodec:
+Here's how to create an agent (codecs are now the default!):
 
 ```python
 import os
 from dana.core.agent.star_agent import STARAgent
-from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
 class FinancialAnalysisAgent(STARAgent):
     def __init__(self, **kwargs):
@@ -164,7 +163,7 @@ class FinancialAnalysisAgent(STARAgent):
             llm_provider="openai",
             model="gpt-4.1-mini",
             prompt_path=prompt_path,
-            codec=CSXMLCodec,  # Enable codec-based communication
+            # codec=CSXMLCodec is now the default - no need to specify!
             **kwargs,
         )
 
@@ -282,7 +281,7 @@ That's it! Dana automatically handles the rest.
 from dana.core.knowledge.prompts.codecs import CSXMLCodec
 ```
 
-### Step 2: Pass Codec to STARAgent
+### Step 2: Codec is Now the Default!
 
 ```python
 class MyAgent(STARAgent):
@@ -290,13 +289,17 @@ class MyAgent(STARAgent):
         super().__init__(
             agent_type="my-agent",
             agent_id="my-agent-001",
-            codec=CSXMLCodec,  # ← Add this
+            # codec=CSXMLCodec is now the default - no need to specify!
             **kwargs
         )
 ```
 
+**Note:** Codecs are now the default. You only need to specify a codec if you want:
+- A different codec (e.g., `codec=KLXMLCodec`)
+- To explicitly opt-out to legacy system (not recommended): `codec=None`
+
 **Important:** Pass the codec **class**, not an instance:
-- ✅ `codec=CSXMLCodec`
+- ✅ `codec=CSXMLCodec` (or omit for default)
 - ❌ `codec=CSXMLCodec()` (don't instantiate)
 
 ### Step 3: Use Your Agent
@@ -337,7 +340,7 @@ I am a helpful assistant that answers questions clearly.
             agent_type="simple-agent",
             agent_id="simple-001",
             prompt_content=prompt_content,
-            codec=CSXMLCodec,  # Enable codec
+            # codec=CSXMLCodec is now the default - no need to specify!
             **kwargs
         )
 
@@ -350,9 +353,9 @@ print(result["response"])  # "4" (or reasoning + answer)
 ### Common Issues
 
 **Issue: Codec not working**
-- ✅ Check you're passing `codec=CSXMLCodec` (class, not instance)
+- ✅ Codecs are now the default - you don't need to pass `codec=CSXMLCodec` unless you want a different codec
 - ✅ Verify your LLM model supports structured output (GPT-4, Claude 3+)
-- ✅ Ensure codec is passed during `__init__`, not after
+- ✅ If you explicitly pass `codec=None`, you'll get a deprecation warning and legacy system
 
 **Issue: Tool calls not parsed**
 - ✅ Verify tool is registered: `agent.register_resource(MyResource())`
