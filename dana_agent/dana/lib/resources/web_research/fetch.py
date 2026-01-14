@@ -21,11 +21,14 @@ logger = logging.getLogger(__name__)
 class FetchResource(BaseResource):
     """Reusable fetch operations for workflow composition."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, resource_id: str = "fetch", **kwargs):
         """
         Initialize fetch components.
+
+        Args:
+            resource_id: ID for this resource (default: "fetch")
         """
-        super().__init__(**kwargs)
+        super().__init__(resource_id=resource_id, **kwargs)
         self.web_fetcher = WebFetcher()
 
     @tool_use
