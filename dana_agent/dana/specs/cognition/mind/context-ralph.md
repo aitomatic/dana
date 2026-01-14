@@ -1,38 +1,91 @@
 # Context - Implementation Spec
 
+**Status: ❌ NOT STARTED**
+
 ## Goal
 
 Implement a Context builder that assembles LLM context from multiple sources (Data, Memory), automatically selecting access patterns based on source size.
 
 ## Demo
 
-When complete, run `examples/agents/context/example.py`:
+Run: `examples/cognition/context/smart_context_assembly.py`
+
+### Without ContextBuilder (The Problem)
 
 ```python
-from dana.core.context import ContextBuilder
-from dana.common.resource import RLMResource
+# WITHOUT CONTEXTBUILDER: Manual, ad-hoc context assembly
 
-# Small source - direct inclusion
-stmemory = "User asked about auth. Discussed login flow."
+def build_context_manually(timeline, ltmemory, codebase, task):
+    context_parts = []
 
-# Large source - RLM access
-codebase = RLMResource(file="codebase.md")
-codebase.load_file("all_source.txt")  # 500K tokens
+    # 1. Timeline - just dump it
+    context_parts.append(timeline.to_text())  # 5K tokens
 
-# Build context
-ctx = ContextBuilder(token_budget=50000)
-ctx.add_source("stmemory", stmemory)
-ctx.add_source("codebase", codebase)
+    # 2. LTMemory - ??? How do we query it? How much to include?
+    # ❌ Can't just dump memories.md (might be huge)
+    # ❌ No automatic relevance filtering
+    memories = open("memories.md").read()
+    context_parts.append(memories[:10000])  # Arbitrary truncation
 
-context = ctx.build(task="Find security vulnerabilities in auth")
+    # 3. Codebase - definitely can't fit
+    # ❌ 500K tokens, context is only 128K
+    # ❌ Have to manually decide what's relevant
+    codebase_text = open("codebase.txt").read()
+    # Give up and skip it? Include random chunks?
 
-print(f"Tokens used: {context.tokens_used}")
-print(f"Sources: {context.sources_used}")
-print(context.text)
-# → Contains stmemory (direct) + RLM answer from codebase
+    # 4. Token budget - manual counting
+    # ❌ Easy to exceed limit
+    # ❌ No prioritization strategy
+
+    return "\n".join(context_parts)
+    # Result: Unreliable, inconsistent, often over budget
 ```
 
-**What you'll see**: stmemory included verbatim (small), codebase queried via RLM with task-relevant answer extracted.
+### With ContextBuilder (The Solution)
+
+```python
+# WITH CONTEXTBUILDER: Smart, automatic context assembly
+
+from dana.core.context import ContextBuilder
+from dana.core.memory import LTMemory
+from dana.common.resource import RLMResource
+
+# Register your sources
+ctx = ContextBuilder(token_budget=50000)
+ctx.add_source("timeline", timeline.to_text())           # Small → direct
+ctx.add_source("ltmemory", LTMemory("./memories/"))      # Large → RLM query
+ctx.add_source("codebase", RLMResource("codebase.md"))   # Huge → RLM query
+
+# Build context for the current task
+context = ctx.build(task="Find security vulnerabilities in auth")
+
+# ✅ Timeline included directly (fits budget)
+# ✅ LTMemory queried: "What do I know about auth security?"
+# ✅ Codebase queried: "What code handles auth?"
+# ✅ Token budget respected automatically
+# ✅ Only relevant information extracted
+
+print(f"Tokens: {context.tokens_used}/{context.budget}")  # 42000/50000
+print(f"Sources: {context.sources_used}")  # ['timeline', 'ltmemory', 'codebase']
+```
+
+### What You'll See
+
+```
+ContextBuilder assembling context for task: "Find auth vulnerabilities"
+
+Source: timeline (2,500 tokens)
+  → Direct inclusion (under budget)
+
+Source: ltmemory (queried via RLM)
+  → "Past sessions found token expiry bugs in auth module"
+
+Source: codebase (queried via RLM)
+  → "Auth handled by login(), verify_token() in src/auth/"
+
+Final context: 42,000 / 50,000 tokens
+Sources used: timeline, ltmemory, codebase
+```
 
 ## MVP Requirements
 
@@ -104,12 +157,18 @@ Requirements:
 - [ ] RLMResource already has query() method
 - [ ] Adapter calls query(task) for RLM sources
 
+## Example Files (`examples/cognition/context/`)
+
+- `smart_context_assembly.py` - Full demo with mixed source types
+- `token_budget_demo.py` - Shows budget management
+- `multi_source_demo.py` - Timeline + LTMemory + RLMResource
+
 ## Current Progress
 
 Check these files to see what exists:
 - `dana_agent/dana/core/context/builder.py`
 - `dana_agent/dana/core/context/context.py`
-- `examples/agents/context/`
+- `examples/cognition/context/`
 
 Update checkboxes above as you complete each requirement.
 
@@ -145,6 +204,59 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_context_builder.
 
 Output in this file:
 <promise>CONTEXT BUILDER COMPLETE</promise>
+
+## STARAgent Integration
+
+### Current State
+- ❌ ContextBuilder not implemented
+- ❌ Files do not exist: `dana_agent/dana/core/context/`
+- STARAgent uses `PromptEngineer.build_llm_request()` for ad-hoc context assembly
+
+### Integration Tasks
+
+| Task | Status | Description |
+|------|--------|-------------|
+| Create ContextBuilder | ❌ Pending | Implement `dana.core.context.builder` |
+| Create Context dataclass | ❌ Pending | Implement `dana.core.context.context` |
+| Integrate with PromptEngineer | ❌ Pending | Use ContextBuilder in `build_llm_request()` |
+| Support Timeline as source | ❌ Pending | Direct inclusion of Timeline entries |
+| Support LTMemory as source | ❌ Pending | RLM query for relevant memories |
+| Support RLMResource as source | ❌ Pending | RLM query for external data |
+
+### Integration Code
+
+```python
+# In prompt_engineer.py (or new context integration)
+from dana.core.context import ContextBuilder
+
+class PromptEngineer:
+    def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
+        # NEW: Use ContextBuilder
+        ctx = ContextBuilder(token_budget=self._agent._max_context_tokens)
+
+        # Add timeline (direct inclusion)
+        ctx.add_source("timeline", timeline.to_text())
+
+        # Add ltmemory if available (RLM query)
+        if self._agent._ltmemory:
+            ctx.add_source("ltmemory", self._agent._ltmemory)
+
+        # Build context with current task
+        context = ctx.build(task=self._extract_current_task(timeline))
+
+        # Assemble LLM messages
+        return [
+            LLMMessage(role="system", content=self.system_prompt),
+            LLMMessage(role="user", content=context.text)
+        ]
+```
+
+### Files to Create
+- `dana_agent/dana/core/context/__init__.py`
+- `dana_agent/dana/core/context/builder.py`
+- `dana_agent/dana/core/context/context.py`
+- `dana_agent/tests/unit/test_context_builder.py`
+- `examples/cognition/context/smart_context_assembly.py`
 
 ## References
 

@@ -128,6 +128,58 @@ Filters what actually gets stored:
 - Memory consolidation (merging related memories)
 - Phase customization per agent type
 
+## STARAgent Integration
+
+### Current State: Learner Component
+
+STARAgent already has a `Learner` component (`dana.core.agent.components.learner`) that implements the four reflection phases:
+
+| Aspect | Learner (Current) | Reflection (Spec) |
+|--------|-------------------|-------------------|
+| **4 Phases** | ✅ Has all 4 | ✅ Specifies all 4 |
+| **LLM-based** | ✅ DefaultLearner uses LLM | ✅ Required |
+| **stmemory input** | ⚠️ Uses Timeline | ✅ Uses STMemory |
+| **ltmemory output** | ❌ Does NOT persist | ✅ Persists to LTMemory |
+| **ltmemory query** | ❌ Does NOT query | ✅ Queries in Integrative |
+| **Standalone** | ❌ Coupled to STARAgent | ✅ Standalone class |
+
+### Integration Approach
+
+**Option A: Enhance Learner** (Recommended)
+- Add LTMemory persistence to Learner's retentive phase
+- Add LTMemory query to Learner's integrative phase
+- Keep Learner as STARAgent's interface to reflection
+
+**Option B: Replace Learner with Reflection**
+- Create standalone Reflection class per spec
+- Learner becomes thin wrapper calling Reflection
+- More modular but more refactoring
+
+### Key Integration Requirements
+
+1. **Learner must persist to LTMemory**
+   ```python
+   def _reflect_retentive(self, trace_retentive):
+       memories = self._extract_memories(trace_retentive)
+       if self._agent._ltmemory:
+           for memory in memories:
+               self._agent._ltmemory.store(memory)
+   ```
+
+2. **Learner must query LTMemory in integrative phase**
+   ```python
+   def _reflect_integrative(self, trace_integrative):
+       existing = ""
+       if self._agent._ltmemory:
+           existing = self._agent._ltmemory.query("relevant past experiences")
+       # Include existing in integration analysis
+   ```
+
+3. **Reflection triggers**
+   - Session end: `agent.end_session()` triggers reflection
+   - Explicit: `agent.reflect()` method
+   - Threshold: When stmemory/timeline exceeds size
+
 ## Demo
 
 When Reflection MVP is complete, we can demonstrate:

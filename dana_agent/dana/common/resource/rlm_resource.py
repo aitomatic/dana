@@ -29,13 +29,15 @@ Strategies:
 2. Search: `re.findall(pattern, context)` to find sections
 3. Slice: `context[start:end]` to extract portions
 4. Sub-query: `result = llm_query("summarize", chunk)` for semantic work
-5. Accumulate: Store results in variables (they persist)
+5. Accumulate: Store results in variables (they persist across iterations)
 
-Output Python code. When done, output ONE of:
-- FINAL(your_answer_string)
-- FINAL_VAR(variable_name)
+Output ONLY Python code. When you have found the answer, output:
+FINAL("your complete answer here as a string")
 
-IMPORTANT: Output ONLY Python code or FINAL/FINAL_VAR. No explanations."""
+Example final answer:
+FINAL("The auth functions are login(), verify_token(), and logout() in auth/handlers.py")
+
+IMPORTANT: Output ONLY Python code or FINAL("answer"). No explanations or markdown."""
 
 # Maximum iterations for RLM loop
 MAX_ITERATIONS = 20
@@ -107,7 +109,17 @@ class RLMResource(BaseResource):
 
     def _extract_final(self, response: str, sandbox: PythonSandbox) -> str | None:
         """Extract final answer from response if present."""
-        # Check for FINAL(answer)
+        # Check for FINAL("answer") or FINAL('answer') - quoted strings
+        # Use greedy match within quotes to handle parentheses in the answer
+        final_double = re.search(r'FINAL\("(.*)"\)', response, re.DOTALL)
+        if final_double:
+            return final_double.group(1).strip()
+
+        final_single = re.search(r"FINAL\('(.*)'\)", response, re.DOTALL)
+        if final_single:
+            return final_single.group(1).strip()
+
+        # Fallback: FINAL(answer) without quotes (simple case)
         final_match = re.search(r"FINAL\(([^)]+)\)", response)
         if final_match:
             return final_match.group(1).strip().strip("'\"")

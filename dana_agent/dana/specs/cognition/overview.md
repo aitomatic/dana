@@ -130,16 +130,146 @@ Context Builder
 
 ## Implementation Order
 
-| Order | Component | Depends On | Promise |
-|-------|-----------|------------|---------|
-| 1 | Data | - | `DATA ACCESS COMPLETE` |
-| 2 | Memory | Data (ltmemory uses RLM) | `MEMORY COMPLETE` |
-| 3 | Context | Data, Memory | `CONTEXT BUILDER COMPLETE` |
-| 4 | Reflection | Memory | `REFLECTION COMPLETE` |
+| Order | Component | Depends On | Status | Promise |
+|-------|-----------|------------|--------|---------|
+| 1 | Data | - | ✅ Complete | `DATA ACCESS COMPLETE` |
+| 2 | Memory | Data (ltmemory uses RLM) | ✅ Complete | `MEMORY COMPLETE` |
+| 3 | Context | Data, Memory | ❌ Not started | `CONTEXT BUILDER COMPLETE` |
+| 4 | Reflection | Memory | ❌ Not started | `REFLECTION COMPLETE` |
+| 5 | STARAgent Integration | All above | ❌ Not started | `STARAGENT COGNITION COMPLETE` |
+
+## STARAgent Integration
+
+The cognition architecture must be integrated into STARAgent to provide agents with memory, reflection, and intelligent context construction.
+
+### Current STARAgent State
+
+| STARAgent Component | Cognition Equivalent | Integration Status |
+|---------------------|---------------------|-------------------|
+| `Timeline` | STMemory | ⚠️ Parallel implementations - need unification |
+| `Learner` | Reflection | ⚠️ Has 4 phases but doesn't persist to LTMemory |
+| `PromptEngineer` | ContextBuilder | ⚠️ Ad-hoc context assembly, no ContextBuilder |
+| - | LTMemory | ❌ Not integrated |
+
+### Integration Requirements
+
+1. **Memory Integration**
+   - STARAgent should accept optional `STMemory` and `LTMemory` in constructor
+   - Timeline can wrap or replace STMemory (they serve similar purposes)
+   - LTMemory should be queryable during context building
+
+2. **Context Integration**
+   - `PromptEngineer.build_llm_request()` should use ContextBuilder internally
+   - ContextBuilder assembles from: Timeline/STMemory, LTMemory, registered Data sources
+
+3. **Reflection Integration**
+   - `Learner` should use `Reflection` for the distillation pipeline
+   - Retentive phase must persist to LTMemory
+   - Reflection should be triggered at session end or explicit request
+
+### Integration Points in STARAgent
+
+```python
+class STARAgent:
+    def __init__(self, ..., ltmemory_path: str | None = None):
+        # Existing
+        self._timeline = Timeline(...)
+        self._learner = learner
+
+        # NEW: Add LTMemory
+        self._ltmemory = LTMemory(path=ltmemory_path) if ltmemory_path else None
+
+        # NEW: ContextBuilder replaces ad-hoc assembly
+        self._context_builder = ContextBuilder(token_budget=max_context_tokens)
+
+    def _think(self, trace_percepts):
+        # Use ContextBuilder instead of PromptEngineer's ad-hoc assembly
+        context = self._context_builder.build(
+            task=current_task,
+            stmemory=self._timeline,
+            ltmemory=self._ltmemory,
+            data_sources=self._rlm_resources
+        )
+
+    def _reflect(self, trace_outputs):
+        # Learner should persist to LTMemory
+        if self._ltmemory and self._learner:
+            reflection = Reflection()
+            result = reflection.run(
+                stmemory=self._timeline,
+                ltmemory=self._ltmemory
+            )
+```
 
 ## Demo (Full System)
 
-When all components are complete:
+Run: `examples/cognition/full_system/cognitive_agent.py`
+
+### Without Cognition Architecture (The Problem)
+
+```python
+# WITHOUT COGNITION: Agent is stateless, context-limited, forgetful
+
+class BasicAgent:
+    def run(self, task):
+        # Problem 1: Can't query large data
+        codebase = open("huge_codebase.txt").read()  # 500K tokens
+        # ❌ Context overflow - can't fit in LLM window
+
+        # Problem 2: No memory across sessions
+        # ❌ Each session starts from scratch
+        # ❌ Same questions = same work redone
+
+        # Problem 3: No learning
+        # ❌ Mistakes repeated
+        # ❌ Patterns not recognized
+        # ❌ No improvement over time
+
+        # Problem 4: Manual context management
+        # ❌ Developer must decide what to include
+        # ❌ Token budget exceeded or wasted
+        # ❌ Relevant info often missed
+```
+
+### With Cognition Architecture (The Solution)
+
+```python
+# WITH COGNITION: Agent has memory, reflection, smart context
+
+from dana.core.agent import STARAgent
+from dana.core.memory import LTMemory
+from dana.common.resource import RLMResource
+
+# Create agent with cognition
+agent = STARAgent(
+    name="cognitive_agent",
+    ltmemory_path="./agent_memories/"  # Persistent memory!
+)
+
+# Attach large data sources (queried via RLM, not stuffed in context)
+agent.with_resources(RLMResource(file="huge_codebase.md"))
+
+# === Week 1: First auth bug ===
+agent.run("Find the auth bug")
+# ✅ RLM queries 500K codebase: "What handles auth?"
+# ✅ Agent finds: "Token expiry not checked"
+# ✅ Session ends → Reflection stores lesson to LTMemory
+
+# === Week 2: Similar bug ===
+agent.run("Users getting logged out unexpectedly")
+# ✅ ContextBuilder queries LTMemory: "What do I know about auth?"
+# ✅ Returns: "Auth bugs often relate to token expiry"
+# ✅ Agent checks expiry FIRST (learned from Week 1!)
+# ✅ Finds bug faster, stores new pattern
+
+# === Week 3: Pattern recognized ===
+agent.run("Another auth issue")
+# ✅ LTMemory: "3 token expiry issues → suggest systematic fix"
+# ✅ Agent proactively: "Should we add token validation middleware?"
+# ✅ Agent has EVOLVED from bug-fixer to problem-preventer
+```
+
+### Full Demo Code
 
 ```python
 from dana.core.memory import STMemory, LTMemory
@@ -147,33 +277,55 @@ from dana.core.context import ContextBuilder
 from dana.core.reflection import Reflection
 from dana.common.resource import RLMResource
 
-# === Session setup ===
+# === Session 1 ===
 stmem = STMemory(max_entries=100)
 ltmem = LTMemory(path="./memories/")
 codebase = RLMResource(file="codebase.md")
 
-# === During session ===
+# During session...
 stmem.append("user", "Find auth bugs")
-stmem.append("agent", "Searching...")
-# ... more interactions ...
+stmem.append("agent", "Searching codebase...")
+stmem.append("observation", "Token expiry not validated in refresh flow")
+stmem.append("agent", "Fixed by adding expiry check")
 
-# === Build context for LLM call ===
+# Build context for LLM (smart assembly)
 ctx = ContextBuilder(token_budget=50000)
-ctx.add_source("stmemory", stmem)
-ctx.add_source("ltmemory", ltmem)
-ctx.add_source("codebase", codebase)
+ctx.add_source("stmemory", stmem)         # Direct inclusion
+ctx.add_source("ltmemory", ltmem)         # RLM query
+ctx.add_source("codebase", codebase)      # RLM query
+context = ctx.build(task="Verify the fix is complete")
 
-context = ctx.build(task="Find authentication vulnerabilities")
-# → Assembles from all sources, respects budget
-
-# === End of session: reflect ===
+# End session → Reflect
 reflection = Reflection()
 result = reflection.run(stmemory=stmem, ltmemory=ltmem)
-# → Distills session into durable memories
+# → Stores: "lesson: token expiry bugs in auth module"
 
-# === Next session ===
-# ltmemory now contains lessons from previous session
-# Agent can recall: "Last time, auth bugs were in token validation..."
+# === Session 2 (next week) ===
+ltmem = LTMemory(path="./memories/")  # Same path = remembers!
+past_knowledge = ltmem.query("auth issues")
+# → Returns: "Token expiry bugs are common in auth module"
+# Agent now starts with this context!
 ```
 
-**Demo narrative**: "Agent with memory that persists, learns from experience, and efficiently queries large external data."
+### Examples Directory Structure
+
+```
+examples/cognition/
+├── data_rlm/
+│   ├── query_large_codebase.py      # RLM basics
+│   └── sample_codebase.md
+├── memory/
+│   ├── agent_with_memory.py         # STMemory + LTMemory
+│   ├── stmemory_basics.py
+│   └── ltmemory_persistence.py
+├── context/
+│   ├── smart_context_assembly.py    # ContextBuilder demo
+│   └── token_budget_demo.py
+├── reflection/
+│   ├── session_learning.py          # 4-phase reflection
+│   └── learner_integration.py
+└── full_system/
+    └── cognitive_agent.py           # Everything together
+```
+
+**Demo narrative**: "Watch an agent evolve from stateless tool to learning system that remembers, reflects, and improves."

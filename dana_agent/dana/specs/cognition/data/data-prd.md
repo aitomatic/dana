@@ -89,6 +89,36 @@ Implement RLM (Recursive Language Model) pattern: the LLM writes Python code to 
 - Streaming responses
 - Caching of intermediate results
 
+## STARAgent Integration
+
+### Current State
+- ✅ `RLMResource` is available as a tool that agents can use
+- ✅ Agents can attach RLMResource via `agent.with_resources(RLMResource(...))`
+- ❌ ContextBuilder (not yet implemented) should query RLMResource automatically
+
+### Integration Requirements
+
+1. **As Agent Tool** (Current - Working)
+   ```python
+   agent = STARAgent(...)
+   agent.with_resources(RLMResource(file="codebase.md"))
+   # Agent can call query(), append(), load_file() as tools
+   ```
+
+2. **As Context Source** (Future - Requires ContextBuilder)
+   ```python
+   # ContextBuilder should accept RLMResource as a data source
+   ctx = ContextBuilder(token_budget=50000)
+   ctx.add_source("codebase", RLMResource(file="codebase.md"))
+
+   # When building context, RLMResource is queried with task
+   context = ctx.build(task="Find auth bugs")
+   ```
+
+3. **For LTMemory Queries** (Current - Working)
+   - LTMemory internally uses RLMResource for querying large memory stores
+   - This is transparent to STARAgent
+
 ## Risks
 
 | Risk | Mitigation |
