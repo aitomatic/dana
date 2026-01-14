@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # bin/ralph.sh - True Ralph implementation (fresh context each iteration)
 # Works with: claude, codex, aider, or any CLI-based AI coder
 #
@@ -7,8 +7,10 @@
 
 set -euo pipefail
 
+# Selected coder (claude, codex, aider, etc.)
+RALPH_CODER="codex"
+
 # Defaults
-CLAUDE="claude --dangerously-skip-permissions --print"
 CODER="${RALPH_CODER:-claude}"
 SPEC_FILE=""
 MAX_ITER=20
@@ -111,25 +113,8 @@ run_coder() {
   local spec="$1"
   case "$CODER" in
     claude)
-	build_prompt "$spec" | $CLAUDE
-	;;
-    claude-json)
-      # Stream output with JSON parsing for real-time display
-      build_prompt "$spec" | claude --print --output-format stream-json --verbose 2>&1 | while IFS= read -r line; do
-        # Extract text from assistant messages
-        if echo "$line" | jq -e '.type == "assistant"' >/dev/null 2>&1; then
-          echo "$line" | jq -r '.message.content[]? | select(.type == "text") | .text // empty' 2>/dev/null
-        # Show tool use
-        elif echo "$line" | jq -e '.type == "tool_use"' >/dev/null 2>&1; then
-          tool_name=$(echo "$line" | jq -r '.tool // "unknown"' 2>/dev/null)
-          echo "[Tool: $tool_name]"
-        # Show final result
-        elif echo "$line" | jq -e '.type == "result"' >/dev/null 2>&1; then
-          echo ""
-          echo "--- Result ---"
-          echo "$line" | jq -r '.result // empty' 2>/dev/null
-        fi
-      done
+      #build_prompt "$spec" | claude --dangerously-skip-permissions --print
+      claude --dangerously-skip-permissions --print "$(build_prompt "$spec")"
       ;;
     codex)
       codex exec --full-auto "$(build_prompt "$spec")"
