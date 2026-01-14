@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash -
 # bin/ralph.sh - True Ralph implementation (fresh context each iteration)
 # Works with: claude, codex, aider, or any CLI-based AI coder
 #
@@ -94,7 +94,7 @@ run_coder() {
   local spec="$1"
   case "$CODER" in
     claude)
-	$CLAUDE < "$spec"
+	$CLAUDE --print < "$spec"
 	;;
     claude-json)
       # Stream output with JSON parsing for real-time display
