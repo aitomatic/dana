@@ -3,6 +3,100 @@ Long-term persistent memory for knowledge storage and retrieval.
 
 LTMemory stores memories in a markdown file and uses RLM (Recursive Language Model)
 pattern to query large memory stores that don't fit in context.
+
+API
+---
+
+.. code-block:: python
+
+    class LTMemory:
+        def __init__(self, path: str = "./memories/"):
+            '''Initialize with storage directory path.'''
+
+        def store(self, memory: dict) -> None:
+            '''
+            Persist a memory. Expected fields:
+            - type: str (lesson, episode, fact, pattern)
+            - content: str
+            - context: str (optional)
+            - timestamp: str (optional, auto-generated)
+            '''
+
+        def query(self, question: str) -> str:
+            '''
+            Query memories using RLM pattern.
+            Returns relevant memories as text.
+            '''
+
+        def count(self) -> int:
+            '''Number of stored memories.'''
+
+Example
+-------
+
+.. code-block:: python
+
+    from dana.core.memory import LTMemory
+
+    # Create persistent memory store
+    ltmem = LTMemory(path="./memories/")
+
+    # Store lessons learned
+    ltmem.store({
+        "type": "lesson",
+        "content": "Auth bugs often relate to token expiry edge cases",
+        "context": "debugging session"
+    })
+
+    ltmem.store({
+        "type": "episode",
+        "content": "Fixed N+1 query in user dashboard",
+        "context": "performance optimization"
+    })
+
+    # Query past knowledge (uses RLM for large memory stores)
+    answer = ltmem.query("What do I know about auth issues?")
+    # → "Auth bugs often relate to token expiry edge cases"
+
+    # Check count
+    print(f"Total memories: {ltmem.count()}")
+
+Memory Storage Format
+---------------------
+
+Memories are stored in human-readable markdown at ``{path}/memories.md``::
+
+    ## Memory [2024-01-15T10:30:00Z]
+    - **Type**: lesson
+    - **Context**: debugging session
+    - **Content**: Auth bugs often relate to token expiry edge cases
+
+    ---
+
+    ## Memory [2024-01-15T11:00:00Z]
+    - **Type**: episode
+    - **Context**: user request
+    - **Content**: User asked about performance. Found N+1 query issue.
+
+    ---
+
+STARAgent Integration
+---------------------
+
+When using with STARAgent, pass ``ltmemory_path`` to enable cross-session learning:
+
+.. code-block:: python
+
+    from dana.core.agent import STARAgent
+
+    agent = STARAgent(
+        agent_type="my_agent",
+        ltmemory_path="./memories/",  # Enable LTMemory
+    )
+
+    # Agent automatically:
+    # - Stores memories during RETENTIVE reflection phase
+    # - Queries past memories when building context
 """
 
 import re

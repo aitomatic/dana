@@ -4,6 +4,82 @@ RLM Resource - Recursive Language Model resource for querying large documents.
 Implements the RLM pattern where an LLM writes Python code to explore
 large documents that don't fit in context. The LLM iteratively writes
 code, receives output, and continues until it finds the answer.
+
+This enables querying documents of 500K+ tokens by treating them as external
+environments the LLM interacts with via code, rather than stuffing everything
+into the context window.
+
+API
+---
+
+.. code-block:: python
+
+    class RLMResource(BaseResource):
+        def __init__(
+            self,
+            file: str = "context.md",
+            llm_provider: str = "anthropic",
+            llm_model: str = "claude-sonnet-4-20250514"
+        ):
+            '''Initialize with file path, create if doesn't exist.'''
+
+        @tool
+        def query(self, question: str) -> str:
+            '''
+            Query the context using RLM pattern.
+            LLM writes Python code to search/analyze the context.
+            Returns answer extracted via FINAL(answer) or FINAL_VAR(var_name).
+            '''
+
+        @tool
+        def append(self, content: str, category: str = "note") -> str:
+            '''Append content to file with timestamp.'''
+
+        @tool
+        def load_file(self, path: str) -> str:
+            '''Load and append file contents to context.'''
+
+Example
+-------
+
+.. code-block:: python
+
+    from dana.common.resource import RLMResource
+
+    # Create resource with a context file
+    data = RLMResource(file="codebase.md")
+
+    # Load a large file (500K+ tokens - stays external!)
+    data.load_file("huge_codebase.txt")
+
+    # Query it - LLM writes Python to search, not stuffing context
+    answer = data.query("What functions handle authentication?")
+    # Works with ANY size document
+    # LLM writes: re.findall(r'def.*auth', context) to search
+    # Only the ANSWER enters context, not the whole document
+    # Typically finds answer in 3-5 iterations
+
+    print(answer)
+    # → "Authentication is handled by login(), verify_token(),
+    #    and refresh_session() in src/auth/handlers.py..."
+
+    # Append notes to the context
+    data.append("Found auth bug in token.py", category="note")
+
+How RLM Works
+-------------
+
+The LLM iteratively writes Python code to explore the document:
+
+1. ``print(context[:3000])`` - Peek at structure
+2. ``re.findall(r'def.*auth', ctx)`` - Search for patterns
+3. ``context[45000:48000]`` - Extract relevant section
+4. ``FINAL("Authentication is...")`` - Return answer
+
+The PythonSandbox provides:
+- ``context``: str - The full document
+- ``llm_query(prompt, text)``: Sub-LLM for semantic tasks
+- Modules: re, json, math, collections, itertools, functools
 """
 
 import re

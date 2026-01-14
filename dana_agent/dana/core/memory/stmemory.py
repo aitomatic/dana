@@ -3,6 +3,76 @@ Short-term memory for session timeline tracking.
 
 STMemory maintains a bounded timeline of session events (user messages,
 agent responses, observations, etc.) with automatic size management.
+
+API
+---
+
+.. code-block:: python
+
+    @dataclass
+    class MemoryEntry:
+        role: str        # user, agent, observation, system
+        content: str
+        timestamp: datetime
+
+    class STMemory:
+        def __init__(self, max_entries: int = 1000):
+            '''Initialize with maximum entry limit.'''
+
+        def append(self, role: str, content: str) -> None:
+            '''Add entry to timeline. Drops oldest if over limit.'''
+
+        def recent(self, n: int = 10) -> list[MemoryEntry]:
+            '''Get n most recent entries.'''
+
+        @property
+        def timeline(self) -> list[MemoryEntry]:
+            '''Full timeline of all entries.'''
+
+        def estimate_tokens(self) -> int:
+            '''Estimate token count for context building.'''
+
+        def clear(self) -> None:
+            '''Clear all entries.'''
+
+        def to_text(self) -> str:
+            '''Format timeline as text for context inclusion.'''
+
+        def __len__(self) -> int:
+            '''Return number of entries.'''
+
+Example
+-------
+
+.. code-block:: python
+
+    from dana.core.memory import STMemory
+
+    # Create session memory with limit
+    stmem = STMemory(max_entries=100)
+
+    # Track session events
+    stmem.append("user", "Find the auth bug")
+    stmem.append("agent", "Searching codebase...")
+    stmem.append("observation", "Token expiry not checked in refresh flow")
+    stmem.append("agent", "Fixed by adding expiry validation")
+
+    # Get recent entries
+    recent = stmem.recent(n=2)
+    # [MemoryEntry(role='observation', ...), MemoryEntry(role='agent', ...)]
+
+    # Format for context inclusion
+    print(stmem.to_text())
+    # [10:30:00] user: Find the auth bug
+    # [10:30:01] agent: Searching codebase...
+    # [10:30:02] observation: Token expiry not checked in refresh flow
+    # [10:30:03] agent: Fixed by adding expiry validation
+
+    # Check size
+    print(f"Entries: {len(stmem)}, ~{stmem.estimate_tokens()} tokens")
+
+    # Clear for new session
+    stmem.clear()
 """
 
 from dataclasses import dataclass, field
