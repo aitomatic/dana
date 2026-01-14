@@ -56,8 +56,11 @@ def _method_signature_to_schema(
     Returns:
         OpenAI-compatible tool schema dictionary
     """
-    # Build function name: object_id.method_name
-    function_name = f"{object_id}.{method_sig.name}"
+    # Build function name: object_id__method_name (OpenAI requires ^[a-zA-Z0-9_-]+$)
+    # Replace dots and other invalid chars with underscores
+    safe_object_id = object_id.replace(".", "_").replace("-", "_")
+    safe_method_name = method_sig.name.replace(".", "_").replace("-", "_")
+    function_name = f"{safe_object_id}__{safe_method_name}"
 
     # Build parameters schema
     properties = {}
@@ -108,7 +111,7 @@ def generate_resource_schemas(resources: list[ResourceProtocol]) -> list[dict]:
         resource_id = resource.object_id
 
         # Get all @tool_use decorated methods
-        tool_methods = Misc.get_tool_methods(resource)
+        tool_methods = Misc.extract_tool_use_methods(resource)
 
         for method_name, method in tool_methods:
             # Parse the method signature
