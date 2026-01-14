@@ -1,6 +1,6 @@
 # Reflection - Implementation Spec
 
-**Status: ✅ COMPLETE**
+**Status: 🔄 IN PROGRESS** (tests failing - bug in reflection.py)
 
 ## Goal
 
@@ -251,22 +251,54 @@ Requirements:
 
 ## Files Implemented
 
-- `dana_agent/dana/core/reflection/reflection.py` ✅
+- `dana_agent/dana/core/reflection/reflection.py` ⚠️ (has bug - see below)
 - `dana_agent/dana/core/reflection/__init__.py` ✅
 - `dana_agent/dana/core/agent/components/learner.py` ✅ (LTMemory integration)
 - `examples/cognition/reflection/` ✅
 
+## Bug to Fix
+
+**Location**: `dana_agent/dana/core/reflection/reflection.py` lines 53-73
+
+**Problem**: The `retentive` prompt template contains JSON example with curly braces:
+```python
+"retentive": """
+...
+Format as JSON array:
+[
+  {"type": "lesson|episode|fact|pattern", "content": "...", "context": "..."},
+  ...
+]
+...
+"""
+```
+
+Python's `.format()` interprets `{type}`, `{content}`, `{context}` as placeholders, causing `KeyError: '"type"'`.
+
+**Fix**: Escape curly braces by doubling them:
+```python
+"retentive": """
+...
+Format as JSON array:
+[
+  {{"type": "lesson|episode|fact|pattern", "content": "...", "context": "..."}},
+  ...
+]
+...
+"""
+```
+
 ## Tests Required
 
 Create `dana_agent/tests/unit/test_reflection.py`:
-- [x] test_run_all_phases - executes all four phases
-- [x] test_acquisitive_phase - identifies candidates from timeline
-- [x] test_episodic_phase - creates narrative summary
-- [x] test_integrative_phase - queries ltmemory
-- [x] test_retentive_phase - outputs valid JSON
-- [x] test_stores_to_ltmemory - memories actually stored
-- [x] test_empty_session - handles no noteworthy content
-- [x] test_result_structure - ReflectionResult has all fields
+- [ ] test_run_all_phases - executes all four phases
+- [ ] test_acquisitive_phase - identifies candidates from timeline
+- [ ] test_episodic_phase - creates narrative summary
+- [ ] test_integrative_phase - queries ltmemory
+- [ ] test_retentive_phase - outputs valid JSON
+- [ ] test_stores_to_ltmemory - memories actually stored
+- [ ] test_empty_session - handles no noteworthy content
+- [ ] test_result_structure - ReflectionResult has all fields
 
 Run tests with: `cd dana_agent && uv run pytest tests/unit/test_reflection.py -v`
 
@@ -280,10 +312,12 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_reflection.py -v
 
 ## Before Marking Complete
 
-- [x] Review code for KISS/YAGNI compliance
-- [x] Simplify any overly complex implementations
-- [x] Remove unnecessary abstractions
-- [x] Ensure code is readable and maintainable
+- [ ] Fix bug in reflection.py (escape JSON curly braces)
+- [ ] All tests pass
+- [ ] Review code for KISS/YAGNI compliance
+- [ ] Simplify any overly complex implementations
+- [ ] Remove unnecessary abstractions
+- [ ] Ensure code is readable and maintainable
 
 ## When Complete
 
