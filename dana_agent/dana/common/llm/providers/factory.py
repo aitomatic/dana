@@ -82,7 +82,14 @@ def create_provider(provider_name: str, model: str | None = None, **kwargs) -> L
 
         return OpenRouterProvider(model=model, **kwargs)
     elif provider_name == "llamastack":
-        from .llamastack import LlamaStackProvider
+        try:
+            from .llamastack import LlamaStackProvider
+        except ImportError as e:
+            raise ProviderError(
+                f"LlamaStack provider is not available: {e}. "
+                "Install llama-stack with: pip install llama-stack>=0.3.0 "
+                "or: uv add llama-stack>=0.3.0"
+            )
 
         return LlamaStackProvider(model=model, **kwargs)
     else:

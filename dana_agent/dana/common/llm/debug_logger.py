@@ -23,14 +23,19 @@ class LLMDebugLogger:
 
     def __init__(self):
         """Initialize the debug logger."""
-        self.log_dir = Path.home() / ".dana" / "logs"
-        self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.log_dir = self._resolve_log_dir()
 
         # Create separate log files for different types
-        self.request_log = self.log_dir / "llm_requests.jsonl"
-        self.response_log = self.log_dir / "llm_responses.jsonl"
-        self.agent_log = self.log_dir / "agent_interactions.jsonl"
-        self.error_log = self.log_dir / "errors.jsonl"
+        if self.log_dir is None:
+            self.request_log = None
+            self.response_log = None
+            self.agent_log = None
+            self.error_log = None
+        else:
+            self.request_log = self.log_dir / "llm_requests.jsonl"
+            self.response_log = self.log_dir / "llm_responses.jsonl"
+            self.agent_log = self.log_dir / "agent_interactions.jsonl"
+            self.error_log = self.log_dir / "errors.jsonl"
 
     def log_request(
         self, provider: str, model: str, messages: list[LLMMessage], agent_id: str | None = None, agent_type: str | None = None, **kwargs
@@ -209,7 +214,7 @@ class LLMDebugLogger:
         self._write_log_entry(self.error_log, log_entry)
         logger.error("Error logged", context=context, error_type=type(error).__name__)
 
-    def _write_log_entry(self, log_file: Path, entry: dict[str, Any]):
+    def _write_log_entry(self, log_file: Path | None, entry: dict[str, Any]):
         """
         Write a log entry to a JSONL file.
 
@@ -217,6 +222,8 @@ class LLMDebugLogger:
             log_file: Path to the log file
             entry: Log entry dictionary
         """
+        if log_file is None:
+            return
         try:
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -231,6 +238,9 @@ class LLMDebugLogger:
         Returns:
             Dictionary with log statistics
         """
+        if self.log_dir is None:
+            return {"log_directory": None, "log_files": {}}
+
         stats = {"log_directory": str(self.log_dir), "log_files": {}}
 
         for log_file in [self.request_log, self.response_log, self.agent_log, self.error_log]:
@@ -251,6 +261,9 @@ class LLMDebugLogger:
         Args:
             days_to_keep: Number of days of logs to keep
         """
+        if self.log_dir is None:
+            return
+
         cutoff_time = datetime.now().timestamp() - (days_to_keep * 24 * 60 * 60)
 
         for log_file in self.log_dir.glob("*.jsonl"):
@@ -260,6 +273,22 @@ class LLMDebugLogger:
                     logger.info("Cleaned up old log file", file=str(log_file))
                 except Exception as e:
                     logger.error("Failed to cleanup log file", file=str(log_file), error=str(e))
+
+    def _resolve_log_dir(self) -> Path | None:
+        candidates = [
+            Path.home() / ".dana" / "logs",
+            Path.cwd() / ".dana" / "logs",
+        ]
+
+        for candidate in candidates:
+            try:
+                candidate.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                continue
+            else:
+                return candidate
+
+        return None
 
 
 # Global instance

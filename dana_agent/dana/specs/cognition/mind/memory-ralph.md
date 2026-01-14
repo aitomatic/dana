@@ -1,6 +1,6 @@
 # Memory - Implementation Spec
 
-**Status: ✅ COMPLETE** (Core implementation and STARAgent integration done)
+**Status: ✅ COMPLETE**
 
 ## Goal
 
@@ -193,15 +193,12 @@ Requirements:
 - `ltmemory_persistence.py` - Cross-session memory recall
 - `staragent_with_ltmemory.py` - STARAgent with LTMemory integration demo
 
-## Current Progress
+## Files Implemented
 
-Check these files to see what exists:
-- `dana_agent/dana/core/memory/stmemory.py`
-- `dana_agent/dana/core/memory/ltmemory.py`
-- `dana_agent/dana/core/memory/__init__.py`
-- `examples/cognition/memory/`
-
-Update checkboxes above as you complete each requirement.
+- `dana_agent/dana/core/memory/stmemory.py` ✅
+- `dana_agent/dana/core/memory/ltmemory.py` ✅
+- `dana_agent/dana/core/memory/__init__.py` ✅
+- `examples/cognition/memory/` ✅
 
 ## Tests Required
 
@@ -248,7 +245,13 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py test
 
 ## When Complete
 
-<promise>MEMORY COMPLETE</promise>
+**You MUST run tests before marking complete:**
+```bash
+cd dana_agent && uv run pytest tests/unit/test_stmemory.py tests/unit/test_ltmemory.py tests/unit/test_staragent_ltmemory.py -v
+```
+
+Only if ALL tests pass, output the completion tag:
+`<promise>` + `TASK COMPLETE` + `</promise>`
 
 ## STARAgent Integration
 
@@ -257,7 +260,8 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py test
 - ✅ LTMemory implemented at `dana.core.memory.ltmemory`
 - ✅ STARAgent accepts `ltmemory_path` parameter
 - ✅ Learner stores memories to LTMemory in RETENTIVE phase
-- ✅ PromptEngineer queries LTMemory for past knowledge
+- ✅ LocalPromptAPI (codec system - DEFAULT) queries LTMemory for past knowledge
+- ⚠️ PromptEngineer is deprecated - all new code must use LocalPromptAPI with codecs
 - ⏸️ Timeline/STMemory unification deferred (both serve different purposes)
 
 ### Integration Tasks
@@ -266,7 +270,7 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_stmemory.py test
 |------|--------|-------------|
 | Add LTMemory to STARAgent | ✅ Done | Accept `ltmemory_path` in constructor |
 | Wire Learner to LTMemory | ✅ Done | Retentive phase persists to LTMemory |
-| Query LTMemory in context | ✅ Done | PromptEngineer includes past knowledge |
+| Query LTMemory in context | ✅ Done | LocalPromptAPI (codec system) includes past knowledge |
 | Timeline/STMemory unification | ⏸️ Deferred | Timeline for agent internals, STMemory for simple use cases |
 
 ### Integration Code
@@ -312,3 +316,5 @@ def _reflect_retentive(self, trace_retentive: DictParams) -> DictParams:
 - PRD: [memory-prd.md](./memory-prd.md)
 - Parent: [mind overview](./overview.md)
 - Depends on: [data-ralph.md](../data/data-ralph.md) (RLM for ltmemory queries)
+
+<promise>TASK COMPLETE</promise>

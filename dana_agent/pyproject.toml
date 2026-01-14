@@ -234,8 +234,11 @@ module = "dana.core.lang.interpreter.*"
 disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 markers = [
     "windows_console: marks tests that require Windows console features (deselect with '-m \"not windows_console\"')",
+    "live: marks tests that use live LLM calls (deselect with '-m \"not live\"')",
+    "harness: marks robustness harness tests that require mock LLM infrastructure (deselect with '-m \"not harness\"')",
 ]
 
 [dependency-groups]

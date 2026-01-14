@@ -21,11 +21,14 @@ logger = logging.getLogger(__name__)
 class FetchResource(BaseResource):
     """Reusable fetch operations for workflow composition."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, resource_id: str = "fetch", **kwargs):
         """
         Initialize fetch components.
+
+        Args:
+            resource_id: ID for this resource (default: "fetch")
         """
-        super().__init__(**kwargs)
+        super().__init__(resource_id=resource_id, **kwargs)
         self.web_fetcher = WebFetcher()
 
     @tool_use
@@ -34,12 +37,21 @@ class FetchResource(BaseResource):
         Fetch content from a single URL.
 
         Args:
-            url: URL to fetch
-            timeout: Request timeout in seconds
-            max_size: Maximum response size in bytes
+            url: URL to fetch (required)
+            timeout: Request timeout in seconds (default: 10s, rarely needs changing)
+            max_size: Maximum response size in bytes (default: 5MB, rarely needs changing)
+
+        IMPORTANT: The defaults are sensible for most use cases. Do NOT specify
+        timeout or max_size unless you have a specific reason. Most JSON APIs
+        and web pages work fine with the defaults.
 
         Returns:
-            Fetch result with content and metadata
+            Fetch result dict with:
+            - success: bool - whether fetch succeeded
+            - content: str - the fetched content
+            - status_code: int - HTTP status code
+            - content_type: str - MIME type
+            - error: str - error message if failed
         """
         return self.web_fetcher.fetch_url(url, timeout=timeout, max_size=max_size)
 

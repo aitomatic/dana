@@ -150,6 +150,7 @@
         "name": "LlamaStack",
         "priority": 75,
         "base_url": "http://localhost:8321",
+        "api_key_env": "LLAMA_STACK_API_KEY",
         "base_url_env": "LLAMA_STACK_URL",
         "default_model": "meta-llama/Llama-3.2-3B-Instruct",
         "models": {

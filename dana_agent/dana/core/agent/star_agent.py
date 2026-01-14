@@ -21,6 +21,7 @@ from dana.common.protocols.types import LearningPhase
 from dana.core.resource.todo import ToDoResource
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
+from ..knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
 from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, LearnerProtocol, PromptEngineer, State, ToolCaller
@@ -51,7 +52,7 @@ class STARAgent(BaseSTARAgent):
         max_context_tokens: int = 4000,
         auto_register: bool = True,
         registry=None,
-        codec=None,
+        codec: type[AbstractCodec] | None = CSXMLCodec,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
         prompt_api: PromptAPIProtocol | None = None,
         observer: ObserverProtocol | None = None,
@@ -71,7 +72,16 @@ class STARAgent(BaseSTARAgent):
             max_context_tokens: Maximum tokens for timeline context
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
-            codec: Codec class to use for new prompt/tool system (if None, uses old system)
+            codec: Codec class to use for prompt/tool system (default: CSXMLCodec).
+                - Default (CSXMLCodec): Uses new system (CodecToolCaller and LocalPromptAPI).
+                  This is the recommended approach for reliable tool parsing and execution.
+                  Provides structured XML parsing and explicit handling of object_id vs class_name.
+                - If explicitly set to None: Uses legacy system (ToolCaller and PromptEngineer).
+                  This is deprecated and only maintained for backward compatibility.
+                  The legacy system uses regex-based parsing which can be unreliable,
+                  especially with UUIDs/object_ids.
+                - Can also use other codecs (e.g., KLXMLCodec) for different formats.
+                  See dana.core.knowledge.prompts.codecs for available codecs.
             ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
             **kwargs: Additional arguments passed to components
         """
@@ -84,7 +94,8 @@ class STARAgent(BaseSTARAgent):
         }
         super().__init__(**kwargs)
 
-        # Initialize LLM
+        # Initialize LLM (lazy - only created when first accessed)
+        self._llm_client = None  # Explicit init to avoid __getattr__ interception
         self._llm_config = {
             "provider": llm_provider,
             "model": model,
@@ -92,16 +103,37 @@ class STARAgent(BaseSTARAgent):
 
         self._session_id = str(uuid4())
         # Conditional component initialization based on codec
+        # IMPORTANT: Codec selection determines which system is used:
+        #   - Default (codec=CSXMLCodec): Uses CodecToolCaller and LocalPromptAPI (NEW - DEFAULT)
+        #     This is the recommended system for reliable tool parsing and execution.
+        #     It provides structured XML parsing and explicit handling of object_id vs class_name.
+        #   - Explicit opt-out (codec=None): Uses ToolCaller and PromptEngineer (LEGACY - DEPRECATED)
+        #     This system uses regex-based parsing which can be unreliable, especially
+        #     with UUIDs/object_ids. Only use for backward compatibility.
         self._repository_factory = repository_factory
         self._codec = codec
+        
+        # Issue deprecation warning if explicitly opting out to legacy system
+        if codec is None:
+            import warnings
+            warnings.warn(
+                "codec=None is deprecated. The codec system (CSXMLCodec) is now the default. "
+                "The legacy system (ToolCaller/PromptEngineer) will be removed in a future version. "
+                "Remove codec=None to use the recommended codec system, or explicitly pass "
+                "codec=CSXMLCodec if you need to be explicit.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+        
         if codec is not None:
-            # Use new PromptEngineerManager and CodecToolCaller
+            # NEW SYSTEM: Use codec-based components
             from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
 
             self._prompt_engineer = prompt_api or LocalPromptAPI(self, codec=codec, repository_factory=self._repository_factory)
             self._tool_caller = CodecToolCaller(self, codec=codec)
         else:
-            # Use old PromptEngineer and ToolCaller (backward compatibility)
+            # LEGACY SYSTEM: Use old components (backward compatibility only)
+            # NOTE: This system is deprecated. Use codecs for new code.
             self._prompt_engineer = PromptEngineer(self)
             self._tool_caller = ToolCaller(self)
 
@@ -426,12 +458,22 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
 
+        # Check if provider supports native tool calling
+        native_tools = None
+        if hasattr(self.llm_client, "provider") and hasattr(self.llm_client.provider, "supports_native_tools"):
+            if self.llm_client.provider.supports_native_tools:
+                native_tools = self._prompt_engineer.build_tool_schemas()
+
         # Query LLM with retry logic for empty responses
         response, reasoning, tool_calls = None, None, None
         failed_tool_calls = []
         for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
             llm_response = self.llm_client.chat_response_sync(
-                llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0
+                llm_messages,
+                agent_id=self.object_id,
+                agent_type=self.agent_type,
+                temperature=0,
+                tools=native_tools,
             )
             response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 
@@ -678,13 +720,23 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
 
+        # Check if provider supports native tool calling
+        native_tools = None
+        if hasattr(self.llm_client, "provider") and hasattr(self.llm_client.provider, "supports_native_tools"):
+            if self.llm_client.provider.supports_native_tools:
+                native_tools = self._prompt_engineer.build_tool_schemas()
+
         # Query LLM with retry logic for empty responses (async)
         response, reasoning, tool_calls = None, None, None
         failed_tool_calls = []
         for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
             # Native async LLM call instead of chat_response_sync
             llm_response = await self.llm_client.chat_response(
-                llm_messages, agent_id=self.object_id, agent_type=self.agent_type, temperature=0
+                llm_messages,
+                agent_id=self.object_id,
+                agent_type=self.agent_type,
+                temperature=0,
+                tools=native_tools,
             )
             response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 

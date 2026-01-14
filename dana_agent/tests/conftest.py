@@ -13,6 +13,10 @@ import pytest
 # This must be done before any imports that might trigger Langfuse initialization
 os.environ["LANGFUSE_ENABLED"] = "false"
 
+# Skip harness tests by default (they require mock LLM infrastructure)
+# Run them explicitly with: pytest tests/harness/ -v
+collect_ignore_glob = ["harness/*"]
+
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:

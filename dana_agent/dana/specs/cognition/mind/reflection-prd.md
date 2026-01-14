@@ -106,6 +106,16 @@ Filters what actually gets stored:
 - Total reflection time < 30s for typical session
 - Idempotent (re-running doesn't duplicate memories)
 
+### Codec Independence
+
+Reflection's LLM calls are **independent of the STARAgent codec system**. The codec system (CSXMLCodec, CodecToolCaller, LocalPromptAPI) is used for agent-user interaction and tool calling. Reflection's internal phases are simple LLM queries that don't require tool calling or structured response formats.
+
+| Component | Uses Codec? | Reason |
+|-----------|-------------|--------|
+| STARAgent (tool calling) | ✅ Yes | Needs structured parsing for tool invocations |
+| Reflection (4 phases) | ❌ No | Simple text prompts, no tool calling |
+| RLM queries | ❌ No | Python sandbox execution, not LLM tool calling |
+
 ## Success Metrics
 
 1. **Signal-to-noise**: ltmemory contains useful, not redundant memories
@@ -139,9 +149,9 @@ STARAgent already has a `Learner` component (`dana.core.agent.components.learner
 | **4 Phases** | ✅ Has all 4 | ✅ Specifies all 4 |
 | **LLM-based** | ✅ DefaultLearner uses LLM | ✅ Required |
 | **stmemory input** | ⚠️ Uses Timeline | ✅ Uses STMemory |
-| **ltmemory output** | ❌ Does NOT persist | ✅ Persists to LTMemory |
-| **ltmemory query** | ❌ Does NOT query | ✅ Queries in Integrative |
-| **Standalone** | ❌ Coupled to STARAgent | ✅ Standalone class |
+| **ltmemory output** | ✅ Persists to LTMemory | ✅ Persists to LTMemory |
+| **ltmemory query** | ✅ Queries in RETENTIVE | ✅ Queries in Integrative |
+| **Standalone** | ✅ Reflection class exists | ✅ Standalone class |
 
 ### Integration Approach
 
