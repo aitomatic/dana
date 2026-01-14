@@ -1,10 +1,19 @@
 """
 Pytest fixtures for STARAgent robustness testing harness.
+
+NOTE: All tests in this directory are marked with @pytest.mark.harness
+and are excluded from CI by default. Run locally with:
+    pytest tests/harness/ -v
+Or include in full test run with:
+    pytest tests/ -m "harness"
 """
 
 from __future__ import annotations
 
 import pytest
+
+# Mark all tests in this directory as harness tests (excluded from CI by default)
+pytestmark = pytest.mark.harness
 
 from dana.core.resource.base_resource import BaseResource
 from dana.core.workflow.base_workflow import BaseWorkflow
