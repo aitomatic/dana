@@ -70,6 +70,11 @@ class HarnessAgent(STARAgent):
         codec: type | None = CSXMLCodec,  # Default to codec system for reliability
         **kwargs,
     ):
+        # IMPORTANT: Set mock LLM BEFORE super().__init__() because the parent
+        # class may access llm_client during initialization, and our property
+        # override needs _mock_llm to be defined to return the mock.
+        self._mock_llm = mock_llm
+
         # Initialize with codec system by default for reliable tool parsing
         # Pass codec=None to test legacy system
         super().__init__(
@@ -79,8 +84,7 @@ class HarnessAgent(STARAgent):
             **kwargs,
         )
 
-        # Override LLM client if mock provided
-        self._mock_llm = mock_llm
+        # Also set _llm_client directly for any code that bypasses the property
         if mock_llm is not None:
             self._llm_client = mock_llm
 
