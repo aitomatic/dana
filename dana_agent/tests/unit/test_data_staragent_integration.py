@@ -1,13 +1,14 @@
 """Tests for Data/RLMResource STARAgent integration.
 
 These tests verify that RLMResources attached to STARAgent via with_resources()
-are automatically queried when building context in PromptEngineer.
+are automatically queried when building context in LocalPromptAPI (codec system).
 """
 
 import pytest
 
-from dana.core.agent.components.prompt_engineer import PromptEngineer
 from dana.common.llm.types import LLMMessage
+from dana.core.knowledge.prompts import LocalPromptAPI
+from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
 
 class DummyTimeline:
@@ -36,30 +37,32 @@ class DummyResource:
 
 
 class DummyAgent:
-    """Minimal agent for PromptEngineer tests."""
+    """Minimal agent for LocalPromptAPI tests."""
 
     def __init__(self, resources: list[DummyResource]):
         self._resources = resources
+        self._agents = []
+        self._workflows = []
         self._ltmemory = None
         self._learner = None
         self.object_id = "dummy-agent"
         self.agent_type = "dummy"
+        self._codec = CSXMLCodec
 
 
 def _build_prompt_messages(monkeypatch: pytest.MonkeyPatch, resource: DummyResource, task: str) -> list[LLMMessage]:
     agent = DummyAgent([resource])
-    engineer = PromptEngineer(agent)
-    monkeypatch.setattr(PromptEngineer, "_get_system_prompt", lambda self: "SYSTEM")
-    monkeypatch.setattr(PromptEngineer, "_get_prompt_section_for_tag", lambda self, tag, show_tag=True: "")
+    prompt_api = LocalPromptAPI(agent, codec=CSXMLCodec)
+    monkeypatch.setattr(LocalPromptAPI, "system_prompt", property(lambda self: "SYSTEM"))
     timeline = DummyTimeline([LLMMessage(role="user", content=task)])
-    return engineer.build_llm_request(timeline)
+    return prompt_api.build_llm_request(timeline)
 
 
-class TestPromptEngineerRLMResources:
-    """Tests for PromptEngineer RLM resource integration."""
+class TestLocalPromptAPIRLMResources:
+    """Tests for LocalPromptAPI RLM resource integration."""
 
-    def test_prompt_engineer_adds_rlm_resources(self, monkeypatch: pytest.MonkeyPatch):
-        """PromptEngineer should add RLMResources to ContextBuilder."""
+    def test_local_prompt_api_adds_rlm_resources(self, monkeypatch: pytest.MonkeyPatch):
+        """LocalPromptAPI should add RLMResources to ContextBuilder."""
         resource = DummyResource(resource_id="docs", response="Docs content")
 
         messages = _build_prompt_messages(monkeypatch, resource, task="Find auth")

@@ -1,6 +1,6 @@
-# Data Access - Implementation Spec
+**Status: ⚠️ IN PROGRESS** (Tests blocked: `uv run` panics in this environment)
 
-**Status: ⚠️ IN PROGRESS** (Needs update for codec system - PromptEngineer deprecated)
+# Data Access - Implementation Spec
 
 ## Goal
 Implement RLM-based access to external data sources for Dana agents. Enables querying large files (500K+ tokens) by having the LLM write Python code to explore them programmatically.
@@ -285,5 +285,3 @@ for resource in self._agent._resources:
 
 - PRD: [data-prd.md](./data-prd.md)
 - Parent: [cognition overview](../overview.md)
-
-<promise>TASK COMPLETE</promise>
