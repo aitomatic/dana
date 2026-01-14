@@ -73,24 +73,32 @@ Spec: [context-prd.md](./context-prd.md)
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Memory | ✅ Complete | STMemory + LTMemory implemented |
-| Context | ✅ Complete | ContextBuilder implemented and integrated in PromptEngineer |
+| Context | ✅ Complete | ContextBuilder implemented and integrated in LocalPromptAPI (with codec) |
 | Reflection | ✅ Complete | Integrated via Learner (persists to LTMemory), standalone Reflection class also available |
 
 ## STARAgent Integration Status
+
+STARAgent supports two modes based on whether a codec is provided:
+
+| Mode | Prompt System | Tool Caller | Status |
+|------|---------------|-------------|--------|
+| **With codec** | `LocalPromptAPI` | `CodecToolCaller` | ✅ Primary (recommended) |
+| **Without codec** | `PromptEngineer` | `ToolCaller` | ⚠️ Legacy only |
 
 | Mind Component | STARAgent Equivalent | Integration |
 |----------------|---------------------|-------------|
 | STMemory | `Timeline` | ⚠️ Parallel implementations (both serve different purposes) |
 | LTMemory | `_ltmemory` | ✅ Integrated via `ltmemory_path` parameter |
-| ContextBuilder | `PromptEngineer` | ✅ Integrated - used in `build_llm_request()` |
+| ContextBuilder | `LocalPromptAPI` | ✅ Integrated - used in `build_llm_request()` (with codec) |
 | Reflection | `Learner` | ✅ Integrated - persists to LTMemory in RETENTIVE phase |
 
 ### Integration Details
 
 1. **LTMemory → STARAgent**: ✅ Complete - `ltmemory_path` parameter in constructor
 2. **Learner → LTMemory**: ✅ Complete - RETENTIVE phase persists memories
-3. **ContextBuilder**: ✅ Complete - Integrated in PromptEngineer
+3. **ContextBuilder**: ✅ Complete - Integrated in LocalPromptAPI (when using codec)
 4. **Timeline/STMemory**: ⚠️ Both exist - Timeline for agent internals, STMemory for simple use cases
+5. **Codec System**: ✅ CSXMLCodec provides structured LLM communication format
 
 ## Specs
 

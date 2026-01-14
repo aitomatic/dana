@@ -142,13 +142,24 @@ Context Builder
 
 The cognition architecture must be integrated into STARAgent to provide agents with memory, reflection, and intelligent context construction.
 
+### Codec System Architecture
+
+STARAgent supports two modes based on whether a codec is provided:
+
+| Mode | Components | Status |
+|------|------------|--------|
+| **With codec** (recommended) | `LocalPromptAPI` + `CodecToolCaller` + `CSXMLCodec` | ✅ Primary path |
+| **Without codec** (legacy) | `PromptEngineer` + `ToolCaller` | ⚠️ Backward compatibility only |
+
+**The codec system is the preferred approach.** It provides structured LLM communication via `CSXMLCodec`, which defines both the format instructions for the LLM and the parsing logic for responses.
+
 ### Current STARAgent State
 
 | STARAgent Component | Cognition Equivalent | Integration Status |
 |---------------------|---------------------|-------------------|
 | `Timeline` | STMemory | ⚠️ Parallel implementations - both serve different purposes |
 | `Learner` | Reflection | ✅ Integrated - persists to LTMemory in RETENTIVE phase |
-| `PromptEngineer` | ContextBuilder | ✅ Integrated - uses ContextBuilder for context assembly |
+| `LocalPromptAPI` | ContextBuilder | ✅ Integrated - uses ContextBuilder for context assembly (with codec) |
 | `_ltmemory` | LTMemory | ✅ Integrated - initialized via `ltmemory_path` parameter |
 
 ### Integration Requirements
@@ -158,9 +169,11 @@ The cognition architecture must be integrated into STARAgent to provide agents w
    - Timeline can wrap or replace STMemory (they serve similar purposes)
    - LTMemory should be queryable during context building
 
-2. **Context Integration**
-   - `PromptEngineer.build_llm_request()` should use ContextBuilder internally
+2. **Context Integration (Codec System)**
+   - `LocalPromptAPI.build_llm_request()` uses ContextBuilder internally
    - ContextBuilder assembles from: Timeline/STMemory, LTMemory, registered Data sources
+   - Codec provides format instructions via `codec.get_instruction()`
+   - Tools are formatted via `codec.construct()` for each tool signature
 
 3. **Reflection Integration**
    - `Learner` should use `Reflection` for the distillation pipeline
@@ -170,26 +183,37 @@ The cognition architecture must be integrated into STARAgent to provide agents w
 ### Integration Points in STARAgent
 
 ```python
+from dana.core.knowledge.prompts.codecs import CSXMLCodec
+
 class STARAgent:
-    def __init__(self, ..., ltmemory_path: str | None = None):
+    def __init__(
+        self,
+        ...,
+        codec=CSXMLCodec,  # Enable codec system (recommended)
+        ltmemory_path: str | None = None
+    ):
         # Existing
         self._timeline = Timeline(...)
         self._learner = learner
+        self._codec = codec
 
         # NEW: Add LTMemory
         self._ltmemory = LTMemory(path=ltmemory_path) if ltmemory_path else None
 
-        # NEW: ContextBuilder replaces ad-hoc assembly
-        self._context_builder = ContextBuilder(token_budget=max_context_tokens)
+        # Codec-aware prompt and tool handling
+        if codec is not None:
+            # NEW SYSTEM (recommended)
+            self._prompt_engineer = LocalPromptAPI(self, codec=codec, ...)
+            self._tool_caller = CodecToolCaller(self, codec=codec)
+        else:
+            # LEGACY SYSTEM (backward compatibility)
+            self._prompt_engineer = PromptEngineer(self)
+            self._tool_caller = ToolCaller(self)
 
     def _think(self, trace_percepts):
-        # Use ContextBuilder instead of PromptEngineer's ad-hoc assembly
-        context = self._context_builder.build(
-            task=current_task,
-            stmemory=self._timeline,
-            ltmemory=self._ltmemory,
-            data_sources=self._rlm_resources
-        )
+        # LocalPromptAPI uses ContextBuilder internally
+        # Codec formats tool instructions and parses responses
+        context = self._prompt_engineer.build_llm_request(self._timeline)
 
     def _reflect(self, trace_outputs):
         # Learner should persist to LTMemory
@@ -239,10 +263,12 @@ class BasicAgent:
 from dana.core.agent import STARAgent
 from dana.core.memory import LTMemory
 from dana.common.resource import RLMResource
+from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
-# Create agent with cognition
+# Create agent with cognition and codec system
 agent = STARAgent(
     name="cognitive_agent",
+    codec=CSXMLCodec,  # Enable structured LLM communication
     ltmemory_path="./agent_memories/"  # Persistent memory!
 )
 

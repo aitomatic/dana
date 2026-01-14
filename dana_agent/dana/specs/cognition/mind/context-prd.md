@@ -95,17 +95,27 @@ Implement a Context builder that:
 
 ## STARAgent Integration
 
+### Codec System Architecture
+
+STARAgent supports two modes. **The codec system is recommended:**
+
+| Mode | Prompt Component | Status |
+|------|------------------|--------|
+| **With codec** | `LocalPromptAPI` + `CSXMLCodec` | ✅ Primary (recommended) |
+| **Without codec** | `PromptEngineer` | ⚠️ Legacy only |
+
 ### Current State
 - ✅ ContextBuilder implemented and integrated
-- ✅ STARAgent's `PromptEngineer.build_llm_request()` uses ContextBuilder
+- ✅ STARAgent's `LocalPromptAPI.build_llm_request()` uses ContextBuilder (with codec)
 - ✅ Unified context assembly from Timeline, LTMemory, and RLMResources
+- ✅ Codec provides format instructions via `codec.get_instruction()`
 
 ### Integration Status
 
-ContextBuilder is integrated in `PromptEngineer`:
+ContextBuilder is integrated in `LocalPromptAPI` (when using codec system):
 
 ```python
-# In PromptEngineer.build_llm_request()
+# In LocalPromptAPI.build_llm_request() - with codec
 ctx = ContextBuilder(token_budget=timeline.max_context_tokens)
 
 # Timeline included as direct source
@@ -127,14 +137,18 @@ for resource in self._agent._resources:
         ctx.add_source(resource.resource_id, _TaggedQueryable(resource, resource.resource_id.upper()))
 
 context = ctx.build(task=task)
-# Context assembled and included in LLM messages
+
+# Codec adds format instructions and tool signatures
+# - codec.get_instruction() provides response format rules
+# - codec.construct() formats each tool's signature
 ```
 
 ### Integration Requirements
 
-1. **Replace ad-hoc assembly in PromptEngineer**
-   - ContextBuilder becomes the standard way to assemble context
-   - PromptEngineer uses ContextBuilder internally
+1. **Use LocalPromptAPI with codec (recommended)**
+   - ContextBuilder assembles context from sources
+   - LocalPromptAPI adds codec format instructions
+   - CodecToolCaller parses structured responses
 
 2. **Support all source types**
    - Timeline/STMemory (direct inclusion)
@@ -144,6 +158,11 @@ context = ctx.build(task=task)
 3. **Token budget management**
    - ContextBuilder tracks and respects token limits
    - Prioritizes sources based on relevance and size
+
+4. **Codec integration**
+   - `CSXMLCodec.get_instruction()` provides LLM format rules
+   - `CSXMLCodec.construct()` formats tool signatures
+   - `CSXMLCodec.parse_response()` extracts thinking, response, tool calls
 
 ## Demo
 
