@@ -19,15 +19,39 @@ def _install_structlog_shim() -> None:
 
         shim = types.ModuleType("structlog")
 
-        def get_logger(name: str | None = None) -> logging.Logger:
+        class _BoundLogger:
+            def __init__(self, logger: logging.Logger) -> None:
+                self._logger = logger
+
+            def bind(self, **_kwargs: object) -> "_BoundLogger":
+                return self
+
+            def _format(self, message: str, **kwargs: object) -> str:
+                if not kwargs:
+                    return message
+                return f"{message} {kwargs}"
+
+            def debug(self, message: str, **kwargs: object) -> None:
+                self._logger.debug(self._format(message, **kwargs))
+
+            def info(self, message: str, **kwargs: object) -> None:
+                self._logger.info(self._format(message, **kwargs))
+
+            def warning(self, message: str, **kwargs: object) -> None:
+                self._logger.warning(self._format(message, **kwargs))
+
+            def error(self, message: str, **kwargs: object) -> None:
+                self._logger.error(self._format(message, **kwargs))
+
+        def get_logger(name: str | None = None) -> _BoundLogger:
             logging.basicConfig(level=logging.INFO)
-            return logging.getLogger(name or "dana")
+            return _BoundLogger(logging.getLogger(name or "dana"))
 
         def configure(*_args: object, **_kwargs: object) -> None:
             return None
 
-        def make_filtering_bound_logger(_level: int) -> type[logging.Logger]:
-            return logging.Logger
+        def make_filtering_bound_logger(_level: int) -> type[_BoundLogger]:
+            return _BoundLogger
 
         shim.get_logger = get_logger
         shim.configure = configure
