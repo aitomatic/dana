@@ -15,6 +15,15 @@ logger = structlog.get_logger()
 class GroqProvider(LLMProvider):
     """Groq API provider for fast inference."""
 
+    @property
+    def supports_native_tools(self) -> bool:
+        """Groq supports native function/tool calling via OpenAI-compatible API.
+
+        NOTE: Disabled until we properly implement the tool result flow.
+        See OpenAIProvider.supports_native_tools for details.
+        """
+        return False
+
     def __init__(self, api_key: str | None = None, model: str = "llama3-8b-8192", base_url: str | None = None):
         """
         Initialize Groq provider.
@@ -48,8 +57,14 @@ class GroqProvider(LLMProvider):
 
         self.client = AsyncOpenAI(**client_kwargs)
 
-    async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
-        """Send messages to Groq and get a response."""
+    async def chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> LLMResponse:
+        """Send messages to Groq and get a response.
+
+        Args:
+            messages: List of conversation messages
+            tools: Optional list of tool schemas for native function calling
+            **kwargs: Additional parameters passed to the API
+        """
         try:
             # Convert our message format to OpenAI format
             openai_messages = []
@@ -61,8 +76,20 @@ class GroqProvider(LLMProvider):
                 elif msg.role == "assistant":
                     openai_messages.append({"role": "assistant", "content": msg.content})
 
+            # Build request parameters
+            request_kwargs = {
+                "model": self.model,
+                "messages": openai_messages,
+                **kwargs
+            }
+
+            # Add tools if provided
+            if tools:
+                request_kwargs["tools"] = tools
+                request_kwargs["tool_choice"] = "auto"
+
             # Call Groq API (OpenAI-compatible)
-            response = await self.client.chat.completions.create(model=self.model, messages=openai_messages, **kwargs)
+            response = await self.client.chat.completions.create(**request_kwargs)
 
             # Convert response to our format
             choice = response.choices[0]

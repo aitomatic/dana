@@ -1,6 +1,6 @@
-# Context - Implementation Spec
-
 **Status: ✅ COMPLETE**
+
+# Context - Implementation Spec
 
 ## Goal
 
@@ -163,11 +163,11 @@ Note: Implemented using a simpler `Queryable` protocol that just requires `query
 
 - `smart_context_assembly.py` - Full demo with mixed source types
 
-## Current Progress
+## Files Implemented
 
-Check these files to see what exists:
 - `dana_agent/dana/core/context/builder.py` ✅
 - `dana_agent/dana/core/context/context.py` ✅
+- `dana_agent/dana/core/context/__init__.py` ✅
 - `examples/cognition/context/` ✅
 
 ## Tests Required
@@ -200,15 +200,30 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_context_builder.
 
 ## When Complete
 
-<promise>CONTEXT BUILDER COMPLETE</promise>
-<promise>TASK COMPLETE</promise>
+**You MUST run tests before marking complete:**
+```bash
+cd dana_agent && uv run pytest tests/unit/test_context_builder.py -v
+```
+
+Only if ALL tests pass, output the completion tag:
+`<promise>` + `TASK COMPLETE` + `</promise>`
 
 ## STARAgent Integration
+
+### Codec System Architecture
+
+**IMPORTANT: Codecs are now the DEFAULT. PromptEngineer is deprecated.**
+
+| Mode | Components | Status |
+|------|------------|--------|
+| **Default (with codec)** | `LocalPromptAPI` + `CodecToolCaller` + `CSXMLCodec` | ✅ DEFAULT - Use this |
+| **Legacy (codec=None)** | `PromptEngineer` + `ToolCaller` | ⚠️ DEPRECATED - Do not use |
 
 ### Current State
 - ✅ ContextBuilder implemented
 - ✅ Files exist: `dana_agent/dana/core/context/`
-- ✅ PromptEngineer uses ContextBuilder for context assembly
+- ✅ LocalPromptAPI uses ContextBuilder for context assembly (codec system - DEFAULT)
+- ⚠️ PromptEngineer is deprecated - all new code must use LocalPromptAPI with codecs
 
 ### Integration Tasks
 
@@ -216,20 +231,26 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_context_builder.
 |------|--------|-------------|
 | Create ContextBuilder | ✅ Complete | Implement `dana.core.context.builder` |
 | Create Context dataclass | ✅ Complete | Implement `dana.core.context.context` |
-| Integrate with PromptEngineer | ✅ Complete | Use ContextBuilder in `build_llm_request()` |
+| Integrate with LocalPromptAPI | ✅ Complete | Use ContextBuilder in `build_llm_request()` (with codec) |
 | Support Timeline as source | ✅ Complete | Direct inclusion of Timeline entries (as string) |
 | Support LTMemory as source | ✅ Complete | RLM query for relevant memories |
 | Support RLMResource as source | ✅ Complete | RLM query for external data |
+| Codec format instructions | ✅ Complete | `codec.get_instruction()` added to system prompt |
 
 ### Integration Code
 
 ```python
-# In prompt_engineer.py (or new context integration)
+# In LocalPromptAPI (with codec system - recommended)
 from dana.core.context import ContextBuilder
+from dana.core.knowledge.prompts.codecs import CSXMLCodec
 
-class PromptEngineer:
+class LocalPromptAPI:
+    def __init__(self, agent, codec=CSXMLCodec, ...):
+        self._agent = agent
+        self._codec = codec
+
     def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
-        # NEW: Use ContextBuilder
+        # Use ContextBuilder for smart context assembly
         ctx = ContextBuilder(token_budget=self._agent._max_context_tokens)
 
         # Add timeline (direct inclusion)
@@ -242,11 +263,32 @@ class PromptEngineer:
         # Build context with current task
         context = ctx.build(task=self._extract_current_task(timeline))
 
-        # Assemble LLM messages
+        # Codec provides format instructions
+        format_instruction = self._codec.get_instruction()
+
+        # Codec formats tool signatures
+        tools_prompt = self._build_tools_prompt()  # uses codec.construct()
+
+        # Assemble LLM messages with codec instructions
         return [
-            LLMMessage(role="system", content=self.system_prompt),
+            LLMMessage(role="system", content=f"{self.system_prompt}\n\n{format_instruction}\n\n{tools_prompt}"),
             LLMMessage(role="user", content=context.text)
         ]
+```
+
+### Response Parsing (CodecToolCaller)
+
+```python
+# CodecToolCaller uses codec for structured parsing
+class CodecToolCaller:
+    def __init__(self, agent, codec=CSXMLCodec):
+        self._codec = codec
+
+    def parse_llm_response(self, response: LLMResponse):
+        # Codec parses structured response
+        parsed = self._codec.parse_response(response.content)
+        # Returns: thinking, response, tool_calls
+        return parsed.response, parsed.thinking, parsed.tool_calls
 ```
 
 ### Files Created

@@ -42,58 +42,60 @@ Valid output = one XML block only.
 - Exactly one <response> block, well-formed XML.
 - type=final → no tool_calls.
 - type=in_progress → ≥1 valid tool_call.
-- Target ID exists in AVAILABLE_TOOLS.
-- Method & arguments match METHOD_TEMPLATES.
+- Target ID exists EXACTLY as shown in AVAILABLE_TOOLS.
+- Method name matches the method signature in AVAILABLE_TOOLS.
 - If tool fails → include fallback call.
 </FORMAT_RULES>
 
 <ROUTING_RULES>
-- Facts, definitions, weather → workflow: google-lookup.execute
-- Verified factual data → workflow: fact-finding.execute
-- Multi-source or comparative research → resource: web-search.search
-- Multi-step or uncertain path → resource: workflow-selector.select_workflow
-- Complex tasks needing memory/planning → resource: todo-resource.write
+Choose the right tool type based on task complexity:
+- Simple data retrieval → Use a Resource (direct method call)
+- Multi-step processes → Use a Workflow (orchestrated execution)
+- Complex reasoning/delegation → Use an Agent (autonomous handling)
+
+Always check AVAILABLE_TOOLS for exact IDs and method names before making tool calls.
 </ROUTING_RULES>
 
-<METHOD_TEMPLATES>
-google-lookup → <method>execute</method> { "query": "..." }
-fact-finding → <method>execute</method> { "query": "...", "sources": ["official","reputable"] }
-web-search → <method>search</method> { "query": "...", "max_results": 5 }
-web-researcher → <method>invoke</method> <arguments><message>...</message></arguments>
-todo-resource → <method>write</method> { "todos": [...] }
-workflow-selector → <method>select_workflow</method> { "request": "...", "target_url": null }
-</METHOD_TEMPLATES>
+<TOOL_USAGE_RULES>
+CRITICAL: You must use the EXACT tool IDs from the AVAILABLE_TOOLS section.
+- Do NOT invent tool names like "fetch-weather" or "get-data"
+- Use the exact ID shown in AVAILABLE_TOOLS (e.g., if it says "FetchResource", use "FetchResource")
+- The target id must match exactly what appears in AVAILABLE_TOOLS
+- Method names must match the method signatures shown (e.g., fetch_url, search, execute)
+</TOOL_USAGE_RULES>
 
-<AVAILABLE_TOOLS>
-todo-resource (Resource): Task tracking via write(todos)
-web-search (Resource): Google Custom Search via search(query,max_results)
-google-lookup (Workflow): Quick factual lookups via execute(query)
-fact-finding (Workflow): Verified factual answers via execute(query,sources)
-workflow-selector (Resource): Auto-select workflow via select_workflow(request)
-web-researcher (Agent): Multi-source synthesis via invoke(message)
-</AVAILABLE_TOOLS>
 
 <EXAMPLES>
-✓ IN-PROGRESS
+Example 1: Using a resource to fetch data (IN-PROGRESS response)
 <response>
   <type>in_progress</type>
-  <reasoning>Need live data.</reasoning>
-  <content>Fetching Osaka weather...</content>
+  <reasoning>Need to fetch live data from URL.</reasoning>
+  <content>Fetching the requested data...</content>
   <tool_calls>
     <tool_call>
-      <target type="workflow" id="google-lookup"/>
-      <method>execute</method>
-      <arguments>{ "query": "Osaka current weather" }</arguments>
+      <target type="resource" id="[EXACT_ID_FROM_AVAILABLE_TOOLS]"/>
+      <method>[method_name_from_signature]</method>
+      <arguments>{ "param": "value" }</arguments>
     </tool_call>
   </tool_calls>
 </response>
 
-✓ FINAL
+Example 2: Answering directly without tools (FINAL response)
 <response>
   <type>final</type>
-  <reasoning>Lookup returned successfully.</reasoning>
-  <content>Current weather in Osaka: 22°C, clear skies.</content>
+  <reasoning>I can answer this from my knowledge.</reasoning>
+  <content>The answer is...</content>
 </response>
+
+Example 3: After tool returns result (FINAL response)
+<response>
+  <type>final</type>
+  <reasoning>Tool returned the data successfully.</reasoning>
+  <content>Based on the fetched data: [summary of result]</content>
+</response>
+
+IMPORTANT: Replace [EXACT_ID_FROM_AVAILABLE_TOOLS] with the actual ID from AVAILABLE_TOOLS.
+For example, if AVAILABLE_TOOLS shows "FetchResource.fetch_url(url)", use id="FetchResource" and method="fetch_url".
 </EXAMPLES>
 
 <CONTEXT>

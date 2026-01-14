@@ -74,6 +74,14 @@ class LLMResponse:
 class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
 
+    @property
+    def supports_native_tools(self) -> bool:
+        """Whether this provider supports native function/tool calling.
+
+        Override in providers that support OpenAI-compatible tool calling.
+        """
+        return False
+
     @abstractmethod
     async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
         """Send messages to the LLM and get a response."""

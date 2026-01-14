@@ -10,6 +10,7 @@ from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols import Persistable, PrivatePromptsProtocol, PublicPromptsProtocol
 from dana.core.agent.timeline import Timeline
+from dana.core.context import ContextBuilder
 from dana.core.knowledge.prompts.codecs import AbstractCodec
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory, RepositoryType
 
@@ -84,6 +85,39 @@ Bias towards not asking the user for help if you can find the answer yourself.
 
 
 class LocalPromptAPI(PromptAPIProtocol):
+    """
+    Codec-aware prompt API implementation.
+    
+    This is the RECOMMENDED prompt management implementation. It provides codec-aware
+    prompt generation and tool signature formatting, working in conjunction with
+    CodecToolCaller for reliable tool execution.
+    
+    Key advantages over the legacy PromptEngineer:
+    - Codec-aware prompt management
+    - Structured tool signature formatting using codecs
+    - Better integration with the codec system
+    - More reliable tool call parsing
+    
+    Usage:
+        Automatically used when you pass a codec to STARAgent initialization:
+        
+        .. code-block:: python
+        
+            from dana.core.knowledge.prompts.codecs import CSXMLCodec
+            
+            class MyAgent(STARAgent):
+                def __init__(self, **kwargs):
+                    super().__init__(
+                        agent_type="my-agent",
+                        codec=CSXMLCodec,  # Enables LocalPromptAPI
+                        **kwargs
+                    )
+    
+    See also:
+        - PromptEngineer: Legacy implementation (deprecated)
+        - dana.core.knowledge.prompts.codecs: Available codec implementations
+    """
+    
     # If static prompt variables are provided, they will be replaced in the template, then save.
     # These variables will not be constructed dynamically next time.
     static_prompt_variables = ["identity"]
@@ -248,15 +282,38 @@ class LocalPromptAPI(PromptAPIProtocol):
                 context_messages = timeline_messages[:-1]
                 latest_user_message = timeline_messages[-1]
 
+                task = latest_user_message.content
+                class _TaggedQueryable:
+                    def __init__(self, source, tag: str):
+                        self._source = source
+                        self._tag = tag
+
+                    def query(self, question: str) -> str:
+                        result = self._source.query(question)
+                        return f"<{self._tag}>\n{result}\n</{self._tag}>"
+
+                ctx = ContextBuilder(token_budget=getattr(timeline, "max_context_tokens", 100000))
+                ltmemory = getattr(self._agent, "_ltmemory", None)
+                if ltmemory is not None:
+                    ctx.add_source("ltmemory", _TaggedQueryable(ltmemory, "LTMEMORY"))
+
+                for resource in getattr(self._agent, "_resources", []):
+                    if hasattr(resource, "query") and hasattr(resource, "resource_id"):
+                        ctx.add_source(resource.resource_id, _TaggedQueryable(resource, resource.resource_id.upper()))
+
+                context = ctx.build(task=task)
+
                 # Wrap context in structured format if we have context
-                if context_messages:
-                    timeline_lines = [
-                        "<CONTEXT>",
-                        "<TIMELINE>",
-                    ]
-                    for msg in context_messages:
-                        timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
-                    timeline_lines.extend(["</TIMELINE>", "</CONTEXT>"])
+                if context_messages or context.text:
+                    timeline_lines = ["<CONTEXT>"]
+                    if context_messages:
+                        timeline_lines.append("<TIMELINE>")
+                        for msg in context_messages:
+                            timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
+                        timeline_lines.append("</TIMELINE>")
+                    if context.text:
+                        timeline_lines.append(context.text)
+                    timeline_lines.append("</CONTEXT>")
                     timeline_content = "\n".join(timeline_lines)
                     messages.append(LLMMessage(role="assistant", content=timeline_content))
 
