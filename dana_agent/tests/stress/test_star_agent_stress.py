@@ -143,7 +143,7 @@ class TestSingleAgentScenarios:
 
         assert result.success
         assert result.duration_ms < 10000  # Should complete in < 10s
-        assert "paris" in result.response_length > 0 or result.response_length > 0
+        assert result.response_length > 0  # Should have a non-empty response
         harness.print_summary()
 
     def test_simple_query_openai(self, harness, openai_agent):

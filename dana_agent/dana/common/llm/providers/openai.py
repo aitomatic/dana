@@ -17,8 +17,19 @@ class OpenAIProvider(LLMProvider):
 
     @property
     def supports_native_tools(self) -> bool:
-        """OpenAI supports native function/tool calling."""
-        return True
+        """OpenAI supports native function/tool calling.
+
+        NOTE: Disabled until we properly implement the tool result flow.
+        OpenAI requires tool results to be sent back with role="tool" and
+        tool_call_id, but we currently send them as role="assistant" which
+        confuses the LLM and causes excessive retries.
+
+        TODO: Implement proper native tool result flow:
+        1. Store tool_call_id when parsing native tool calls
+        2. Send tool results with role="tool" and matching tool_call_id
+        3. Include the assistant message with tool_calls in the conversation
+        """
+        return False
 
     def __init__(self, api_key: str | None = None, model: str = "gpt-3.5-turbo", base_url: str | None = None):
         """

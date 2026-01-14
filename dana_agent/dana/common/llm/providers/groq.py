@@ -17,8 +17,12 @@ class GroqProvider(LLMProvider):
 
     @property
     def supports_native_tools(self) -> bool:
-        """Groq supports native function/tool calling via OpenAI-compatible API."""
-        return True
+        """Groq supports native function/tool calling via OpenAI-compatible API.
+
+        NOTE: Disabled until we properly implement the tool result flow.
+        See OpenAIProvider.supports_native_tools for details.
+        """
+        return False
 
     def __init__(self, api_key: str | None = None, model: str = "llama3-8b-8192", base_url: str | None = None):
         """
