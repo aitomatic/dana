@@ -823,6 +823,10 @@ class PromptEngineer:
             if ltmemory is not None:
                 ctx.add_source("ltmemory", _TaggedQueryable(ltmemory, "LTMEMORY"))
 
+            for resource in self._agent._resources:
+                if hasattr(resource, "query") and hasattr(resource, "resource_id"):
+                    ctx.add_source(resource.resource_id, _TaggedQueryable(resource, resource.resource_id.upper()))
+
             context = ctx.build(task=task)
             if context.text:
                 context_lines = [

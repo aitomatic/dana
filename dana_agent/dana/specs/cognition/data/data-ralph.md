@@ -211,12 +211,12 @@ Create `dana_agent/tests/unit/test_rlm_resource.py`:
 - [x] test_load_file - ingests file contents
 - [x] test_query_basic - returns answer for simple query
 
-Add to `dana_agent/tests/unit/test_context_builder.py`:
+Create `dana_agent/tests/unit/test_data_staragent_integration.py`:
 - [ ] test_prompt_engineer_adds_rlm_resources - PromptEngineer registers RLMResources with ContextBuilder
 - [ ] test_rlm_resource_queried_with_task - RLMResource.query() called with current task
 - [ ] test_rlm_resource_result_in_context - Query result appears in built context
 
-Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py tests/unit/test_context_builder.py -v`
+Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py tests/unit/test_data_staragent_integration.py -v`
 
 ## Success Criteria
 
@@ -240,7 +240,7 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 
 **You MUST run tests before marking complete:**
 ```bash
-cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py tests/unit/test_context_builder.py -v
+cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py tests/unit/test_data_staragent_integration.py -v
 ```
 
 Only if ALL tests pass, output exactly:
