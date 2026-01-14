@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # Defaults
-CLAUDE="claude --dangerously-skip-permissions"
+CLAUDE="claude --dangerously-skip-permissions --print"
 CODER="${RALPH_CODER:-claude}"
 SPEC_FILE=""
 MAX_ITER=20
@@ -89,16 +89,33 @@ if [[ ! -f "$SPEC_FILE" ]]; then
   exit 1
 fi
 
+# Build prompt with Ralph instructions prepended
+build_prompt() {
+  local spec="$1"
+  cat <<EOF
+You are running inside a Ralph loop (iteration $i of $MAX_ITER).
+
+IMPORTANT: When the task described below is FULLY COMPLETE, you MUST signal completion by writing this exact line to the spec file or any project file:
+<promise>$PROMISE</promise>
+
+If the task is NOT yet complete, do NOT write the promise tag. Just make progress and the loop will continue.
+
+---
+
+$(cat "$spec")
+EOF
+}
+
 # Coder-specific invocation
 run_coder() {
   local spec="$1"
   case "$CODER" in
     claude)
-	$CLAUDE < "$spec"
+	build_prompt "$spec" | $CLAUDE
 	;;
     claude-json)
       # Stream output with JSON parsing for real-time display
-      cat "$spec" | claude --print --output-format stream-json --verbose 2>&1 | while IFS= read -r line; do
+      build_prompt "$spec" | claude --print --output-format stream-json --verbose 2>&1 | while IFS= read -r line; do
         # Extract text from assistant messages
         if echo "$line" | jq -e '.type == "assistant"' >/dev/null 2>&1; then
           echo "$line" | jq -r '.message.content[]? | select(.type == "text") | .text // empty' 2>/dev/null
@@ -115,14 +132,14 @@ run_coder() {
       done
       ;;
     codex)
-      codex < "$spec"
+      codex exec --full-auto "$(build_prompt "$spec")"
       ;;
     aider)
-      aider --message "$(cat "$spec")"
+      aider --message "$(build_prompt "$spec")"
       ;;
     *)
       # Custom: assume it's a command that accepts stdin
-      $CODER < "$spec"
+      build_prompt "$spec" | $CODER
       ;;
   esac
 }
