@@ -817,6 +817,11 @@ class PromptEngineer:
                 if related_acquisitive_learnings:
                     messages.append(LLMMessage(role="user", content=f"Learning from the past : {related_acquisitive_learnings}"))
 
+                # Query long-term memory for relevant past knowledge
+                related_retentive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.RETENTIVE)
+                if related_retentive_learnings:
+                    messages.append(LLMMessage(role="user", content=f"Relevant memories from past sessions: {related_retentive_learnings}"))
+
         # Hack: put the user state/locale here for now
         state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]
         state_info_content = "\n".join(state_info)

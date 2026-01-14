@@ -139,16 +139,55 @@ class Learner:
         """
         Reflect on retention (long-term learning).
 
+        Persists key learnings to LTMemory if available on the agent.
+
         Args:
-            trace_retentive: Long-term learning data
+            trace_retentive: Long-term learning data containing:
+              - caller_message (str): Original caller message
+              - response (str): Agent response
+              - tool_calls (list): Tool calls made
+              - tool_results (list): Tool results received
 
         Returns:
             trace_learning: Retained learning insights
         """
-        # Basic retention reflection - can be overridden by subclasses
+        timestamp = datetime.now()
+        memories_stored = 0
+
+        # Check if agent has LTMemory
+        ltmemory = getattr(self._agent, "_ltmemory", None)
+        if ltmemory is not None:
+            # Extract and store key learnings
+            caller_message = trace_retentive.get("caller_message", "")
+            response = trace_retentive.get("response", "")
+            tool_results = trace_retentive.get("tool_results", [])
+
+            # Store episode memory if we have meaningful content
+            if caller_message and response:
+                ltmemory.store({
+                    "type": "episode",
+                    "content": f"User asked: {caller_message[:200]}... Agent responded with {len(tool_results)} tool calls.",
+                    "context": "session interaction",
+                    "timestamp": timestamp.isoformat(),
+                })
+                memories_stored += 1
+
+            # Store any patterns from tool usage
+            if tool_results and len(tool_results) > 0:
+                tool_types = [r.get("type", "unknown") for r in tool_results if isinstance(r, dict)]
+                if tool_types:
+                    ltmemory.store({
+                        "type": "pattern",
+                        "content": f"Successfully used tools: {', '.join(set(tool_types))}",
+                        "context": "tool usage pattern",
+                        "timestamp": timestamp.isoformat(),
+                    })
+                    memories_stored += 1
+
         trace_learning = {
-            "retentive_summary": "Long-term learning retention",
-            "timestamp": datetime.now().isoformat(),
+            "retentive_summary": f"Long-term learning retention - stored {memories_stored} memories",
+            "memories_stored": memories_stored,
+            "timestamp": timestamp.isoformat(),
         }
         return {"trace_learning": trace_learning}
 
@@ -181,6 +220,27 @@ class Learner:
             return None
 
     def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
+        """
+        Query learnings from memory.
+
+        For RETENTIVE phase, queries LTMemory if available.
+
+        Args:
+            query: Question to search for
+            phase: Learning phase to query (optional)
+
+        Returns:
+            Relevant learnings as text, or None
+        """
+        if phase == LearningPhase.RETENTIVE:
+            ltmemory = getattr(self._agent, "_ltmemory", None)
+            if ltmemory is not None:
+                try:
+                    result = ltmemory.query(query)
+                    if result and result != "No memories stored yet.":
+                        return result
+                except Exception as e:
+                    logger.warning(f"Failed to query LTMemory: {e}")
         return None
 
     def _load_feedback(self) -> Any:
@@ -715,16 +775,63 @@ Provide your analysis in the markdown format specified above."""
         """
         Reflect on retention (long-term learning).
 
+        Persists key learnings to LTMemory if available on the agent.
+        Uses LLM to extract meaningful insights from the session.
+
         Args:
-            trace_retentive: Long-term learning data
+            trace_retentive: Long-term learning data containing:
+              - caller_message (str): Original caller message
+              - response (str): Agent response
+              - tool_calls (list): Tool calls made
+              - tool_results (list): Tool results received
 
         Returns:
             trace_learning: Retained learning insights
         """
-        # Basic retention reflection - can be overridden by subclasses
+        timestamp = datetime.now()
+        memories_stored = 0
+
+        # Check if agent has LTMemory
+        ltmemory = getattr(self._agent, "_ltmemory", None)
+        if ltmemory is not None:
+            # Extract and store key learnings
+            caller_message = trace_retentive.get("caller_message", "")
+            response = trace_retentive.get("response", "")
+            tool_calls = trace_retentive.get("tool_calls", [])
+            tool_results = trace_retentive.get("tool_results", [])
+
+            # Store episode memory if we have meaningful content
+            if caller_message and response:
+                episode_content = f"User asked: {caller_message[:200]}"
+                if tool_calls:
+                    tool_names = [tc.get("function", "unknown") for tc in tool_calls if isinstance(tc, dict)]
+                    episode_content += f" Used tools: {', '.join(tool_names[:5])}"
+                episode_content += f" Response: {response[:200]}"
+
+                ltmemory.store({
+                    "type": "episode",
+                    "content": episode_content,
+                    "context": "session interaction",
+                    "timestamp": timestamp.isoformat(),
+                })
+                memories_stored += 1
+
+            # Store any patterns from tool usage
+            if tool_results and len(tool_results) > 0:
+                tool_types = [r.get("type", "unknown") for r in tool_results if isinstance(r, dict)]
+                if tool_types:
+                    ltmemory.store({
+                        "type": "pattern",
+                        "content": f"Successfully used tools: {', '.join(set(tool_types))}",
+                        "context": "tool usage pattern",
+                        "timestamp": timestamp.isoformat(),
+                    })
+                    memories_stored += 1
+
         trace_learning = {
-            "retentive_summary": "Long-term learning retention",
-            "timestamp": datetime.now().isoformat(),
+            "retentive_summary": f"Long-term learning retention - stored {memories_stored} memories",
+            "memories_stored": memories_stored,
+            "timestamp": timestamp.isoformat(),
         }
         return {"trace_learning": trace_learning}
 
@@ -755,6 +862,27 @@ Provide your analysis in the markdown format specified above."""
             return None
 
     def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
+        """
+        Query learnings from memory.
+
+        For RETENTIVE phase, queries LTMemory if available.
+
+        Args:
+            query: Question to search for
+            phase: Learning phase to query (optional)
+
+        Returns:
+            Relevant learnings as text, or None
+        """
+        if phase == LearningPhase.RETENTIVE:
+            ltmemory = getattr(self._agent, "_ltmemory", None)
+            if ltmemory is not None:
+                try:
+                    result = ltmemory.query(query)
+                    if result and result != "No memories stored yet.":
+                        return result
+                except Exception as e:
+                    logger.warning(f"Failed to query LTMemory: {e}")
         return None
 
     def _load_feedback(self) -> Any:

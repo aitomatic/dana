@@ -56,6 +56,7 @@ class STARAgent(BaseSTARAgent):
         prompt_api: PromptAPIProtocol | None = None,
         observer: ObserverProtocol | None = None,
         learner: LearnerProtocol | None = None,
+        ltmemory_path: str | None = None,
         **kwargs,
     ):
         """
@@ -71,6 +72,7 @@ class STARAgent(BaseSTARAgent):
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
             codec: Codec class to use for new prompt/tool system (if None, uses old system)
+            ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
             **kwargs: Additional arguments passed to components
         """
         # Initialize base class first (handles registration)
@@ -110,6 +112,18 @@ class STARAgent(BaseSTARAgent):
         self._learner = learner
         if self._learner is not None:
             self._learner._agent = self
+
+        # Initialize long-term memory if path provided
+        if ltmemory_path:
+            from dana.core.memory import LTMemory
+
+            self._ltmemory = LTMemory(
+                path=ltmemory_path,
+                llm_provider=llm_provider or "anthropic",
+                llm_model=model or "claude-sonnet-4-20250514",
+            )
+        else:
+            self._ltmemory = None
 
         # Determine storage_config for timeline and event_log
 
