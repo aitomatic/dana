@@ -1337,9 +1337,14 @@ class CodecToolCaller(WARCaller):
                 f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}",
             )
 
+        # Auto-replace query with aquery for agents in async context
+        actual_method_name = method_name
+        if obj_info["type"] == "agent" and method_name == "query":
+            actual_method_name = "aquery"
+
         # Method signature validation and conversion to the expected type
-        if hasattr(obj_info["object"], method_name):
-            method = getattr(obj_info["object"], method_name)
+        if hasattr(obj_info["object"], actual_method_name):
+            method = getattr(obj_info["object"], actual_method_name)
             arguments = self._validate_n_cast_method_arguments(method, arguments)
 
             try:
@@ -1354,18 +1359,18 @@ class CodecToolCaller(WARCaller):
                     result = await method(**arguments)
                 else:
                     result = method(**arguments)
-                return self._create_tool_success(obj_info["type"], f"{identifier}.{method_name}", result)
+                return self._create_tool_success(obj_info["type"], f"{identifier}.{actual_method_name}", result)
             except Exception as e:
                 return self._create_tool_error(
                     "execution_error",
-                    f"{identifier}.{method_name}",
-                    f"Error executing call {identifier}.{method_name}: {str(e)}\n{traceback.format_exc()}",
+                    f"{identifier}.{actual_method_name}",
+                    f"Error executing call {identifier}.{actual_method_name}: {str(e)}\n{traceback.format_exc()}",
                 )
         else:
             return self._create_tool_error(
                 "method_not_found",
-                f"{identifier}.{method_name}",
-                f"Method '{method_name}' not found in object '{identifier}'\n{traceback.format_exc()}",
+                f"{identifier}.{actual_method_name}",
+                f"Method '{actual_method_name}' not found in object '{identifier}'\n{traceback.format_exc()}",
             )
 
     def _validate_n_cast_method_arguments(self, method: Callable, arguments: dict[str, Any]) -> dict[str, Any]:
