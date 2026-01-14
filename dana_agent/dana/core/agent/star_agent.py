@@ -94,7 +94,8 @@ class STARAgent(BaseSTARAgent):
         }
         super().__init__(**kwargs)
 
-        # Initialize LLM
+        # Initialize LLM (lazy - only created when first accessed)
+        self._llm_client = None  # Explicit init to avoid __getattr__ interception
         self._llm_config = {
             "provider": llm_provider,
             "model": model,
