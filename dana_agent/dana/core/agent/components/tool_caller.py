@@ -36,8 +36,14 @@ class WARCaller:
     def __init__(self, agent: STARAgent, tool_caller: ToolCaller | None = None):
         """Initialize with agent reference."""
         self._agent = agent
-        self._llm = agent.llm_client  # TODO: maintain our own LLM (maybe local?)
+        # NOTE: Don't access agent.llm_client here - it triggers lazy LLM creation
+        # which breaks mock injection in tests. Access via property when needed.
         self._tool_caller = tool_caller
+
+    @property
+    def _llm(self):
+        """Lazy access to agent's LLM client."""
+        return self._agent.llm_client
 
     def execute_call(self, arguments: dict[str, Any], object_type: str, id_key: str, default_method: str | None = None) -> dict[str, Any]:
         """
@@ -1617,6 +1623,13 @@ class CodecToolCaller(WARCaller):
         Returns:
             Dictionary with "type" and "object" keys, or None if not found
         """
+        # Search in agents first (check object_id and agent_type)
+        for agent in self._agent.available_agents:
+            if (hasattr(agent, "object_id") and agent.object_id == object_id) or (
+                hasattr(agent, "agent_type") and agent.agent_type == object_id
+            ):
+                return {"type": "agent", "object": agent}
+
         # Search in resources (check both object_id and resource_id)
         for resource in self._agent.available_resources:
             if (hasattr(resource, "object_id") and resource.object_id == object_id) or (
@@ -1631,7 +1644,7 @@ class CodecToolCaller(WARCaller):
             ):
                 return {"type": "workflow", "object": workflow}
 
-        # Search in agents (check object_id via registry)
+        # Fallback: Search in agents via registry (for registered agents)
         self._agent.ensure_registered()
         registry = self._agent._registry
         if registry and object_id in registry._items:

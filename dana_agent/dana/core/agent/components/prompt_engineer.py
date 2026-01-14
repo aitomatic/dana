@@ -677,8 +677,14 @@ class PromptEngineer:
         descriptions = []
         for a in agents:
             desc = a.public_description
-            # If using text_flattened format, desc already has hyphens
-            descriptions.append(f"- {a.agent_type} (ID: {a.object_id}): {desc}")
+            # Include method signature so LLM knows how to call it
+            # Agents are called via query(message="...") method
+            # Use agent_type as the ID for tool calls
+            descriptions.append(
+                f"- Agent ID: {a.agent_type}\n"
+                f"  Methods: query(message: str) - Send a message to this agent\n"
+                f"  Description: {desc}"
+            )
         return "\n".join(descriptions)
 
     @property

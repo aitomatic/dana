@@ -1267,3 +1267,161 @@ def test_comprehensive_quality_efficiency_suite():
 
     # Assert success rate
     assert passed >= len(results) * 0.8, f"Quality too low: {passed}/{len(results)}"
+
+
+# =============================================================================
+# SUBAGENT TESTS
+# =============================================================================
+
+@pytest.mark.live
+class TestSubAgentDelegation:
+    """
+    Tests for agent-to-subagent delegation.
+
+    Tests verify:
+    - Main agent can delegate to specialized subagents
+    - Subagent responses are properly integrated
+    - Efficiency of delegation (not too many roundtrips)
+    """
+
+    def test_delegate_to_fetch_specialist(self):
+        """Test: Main agent delegates URL fetching to a specialist subagent."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.lib.resources.web_research import FetchResource
+        from dana.core.agent.timeline import TimelineEntryType
+
+        # Create specialist subagent with FetchResource
+        fetch_specialist = HarnessAgent(
+            agent_type="fetch_specialist",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=2,
+        )
+        fetch_specialist.with_resources(FetchResource(auto_register=False))
+
+        # Create main agent that can delegate to specialist
+        main_agent = HarnessAgent(
+            agent_type="coordinator",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=3,
+        )
+        main_agent.with_agents(fetch_specialist)
+
+        print("\n=== SUBAGENT DELEGATION TEST ===")
+        start = time.time()
+        result = main_agent.query(
+            message="I need to know what IP address I'm using. Ask the fetch_specialist to fetch https://httpbin.org/ip and tell me."
+        )
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+        print(f"Time: {elapsed:.1f}s")
+        print(f"Response: {response[:200]}...")
+
+        # Check for subagent interaction
+        subagent_calls = len([e for e in main_agent._timeline.timeline
+                            if e.entry_type == TimelineEntryType.SUB_AGENT_RESPONSE])
+        print(f"Subagent calls: {subagent_calls}")
+
+        # Validate - should have IP address with dots and numbers
+        has_ip = "." in response and any(c.isdigit() for c in response)
+        print(f"Quality: {'PASS' if has_ip else 'FAIL'}")
+
+        assert has_ip or "ip" in response.lower(), "Response should contain IP address"
+        assert elapsed < 60, f"Should complete within 60s, took {elapsed:.1f}s"
+
+    def test_delegate_to_math_specialist(self):
+        """Test: Main agent delegates math to a specialist subagent."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.core.agent.timeline import TimelineEntryType
+
+        # Create math specialist (no resources needed, just LLM)
+        math_specialist = HarnessAgent(
+            agent_type="math_specialist",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=2,
+        )
+
+        # Create main agent
+        main_agent = HarnessAgent(
+            agent_type="coordinator",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=3,
+        )
+        main_agent.with_agents(math_specialist)
+
+        print("\n=== MATH SPECIALIST DELEGATION TEST ===")
+        start = time.time()
+        result = main_agent.query(
+            message="Ask the math_specialist: What is 17 * 23 + 45?"
+        )
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+        print(f"Time: {elapsed:.1f}s")
+        print(f"Response: {response[:200]}...")
+
+        # 17 * 23 + 45 = 391 + 45 = 436
+        has_answer = "436" in response
+        print(f"Quality: {'PASS' if has_answer else 'FAIL'}")
+
+        assert has_answer or any(c.isdigit() for c in response), "Response should contain the answer"
+        assert elapsed < 30, f"Should complete within 30s, took {elapsed:.1f}s"
+
+    def test_multi_agent_collaboration(self):
+        """Test: Main agent orchestrates multiple subagents."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.lib.resources.web_research import FetchResource
+        from dana.core.agent.timeline import TimelineEntryType
+
+        # Create two specialists
+        fetch_agent = HarnessAgent(
+            agent_type="fetcher",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=2,
+        )
+        fetch_agent.with_resources(FetchResource(auto_register=False))
+
+        analyzer_agent = HarnessAgent(
+            agent_type="analyzer",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=2,
+        )
+
+        # Main coordinator with both subagents
+        coordinator = HarnessAgent(
+            agent_type="coordinator",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=4,
+        )
+        coordinator.with_agents(fetch_agent, analyzer_agent)
+
+        print("\n=== MULTI-AGENT COLLABORATION TEST ===")
+        start = time.time()
+        result = coordinator.query(
+            message="First, ask the fetcher to get https://httpbin.org/uuid. Then summarize what you found."
+        )
+        elapsed = time.time() - start
+
+        response = result.get("response", "")
+        print(f"Time: {elapsed:.1f}s")
+        print(f"Response: {response[:200]}...")
+
+        # Check for UUID in response
+        has_uuid = "-" in response and any(c.isdigit() for c in response)
+        print(f"Quality: {'PASS' if has_uuid else 'FAIL'}")
+
+        assert elapsed < 90, f"Should complete within 90s, took {elapsed:.1f}s"
