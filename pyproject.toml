@@ -209,6 +209,7 @@ markers = [
     "requires_api_keys: marks tests as requiring API keys (skip in CI without keys)",
     "windows_console: marks tests that require Windows console features",
     "harness: marks robustness harness tests that require mock LLM infrastructure",
+    "deep: marks tests as deep/comprehensive tests (deselect with '-m \"not deep\"')",
 ]
 
 # Database Migration Tool FOR DANA STUDIO
