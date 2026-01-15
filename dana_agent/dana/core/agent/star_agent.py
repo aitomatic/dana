@@ -58,6 +58,8 @@ class STARAgent(BaseSTARAgent):
         observer: ObserverProtocol | None = None,
         learner: LearnerProtocol | None = None,
         ltmemory_path: str | None = None,
+        enable_skills: bool = True,
+        skills_output_dir: str = "./skill_output",
         **kwargs,
     ):
         """
@@ -83,6 +85,8 @@ class STARAgent(BaseSTARAgent):
                 - Can also use other codecs (e.g., KLXMLCodec) for different formats.
                   See dana.core.knowledge.prompts.codecs for available codecs.
             ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
+            enable_skills: Whether to enable Claude Code skills resource discovery
+            skills_output_dir: Directory to use for skill output files
             **kwargs: Additional arguments passed to components
         """
         # Initialize base class first (handles registration)
@@ -181,6 +185,13 @@ class STARAgent(BaseSTARAgent):
             self._event_log = None
 
         self.with_resources(ToDoResource(resource_id="todo-resource"))
+
+        if enable_skills:
+            from dana.core.skills import ClaudeCodeSkills
+
+            skills = ClaudeCodeSkills(output_dir=skills_output_dir)
+            if skills.enabled:
+                self.with_resources(skills)
 
     def set_session_id(self, session_id: str) -> None:
         """Set the session id for the agent."""

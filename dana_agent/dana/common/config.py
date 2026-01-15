@@ -26,6 +26,18 @@ except ModuleNotFoundError:
 logger = structlog.get_logger()
 
 
+def _safe_log(logger_obj, level: str, message: str, **kwargs) -> None:
+    """Log with kwargs when supported, otherwise append key-value pairs."""
+    log_method = getattr(logger_obj, level)
+    try:
+        log_method(message, **kwargs)
+    except TypeError:
+        if kwargs:
+            details = " ".join(f"{key}={value}" for key, value in kwargs.items())
+            message = f"{message} {details}"
+        log_method(message)
+
+
 class ConfigManager:
     """Manages LLM provider configurations."""
 
@@ -64,13 +76,13 @@ class ConfigManager:
             if self.config_path.exists():
                 with open(self.config_path) as f:
                     config = json.load(f)
-                logger.info("Loaded configuration", path=str(self.config_path))
+                _safe_log(logger, "info", "Loaded configuration", path=str(self.config_path))
                 return config
             else:
-                logger.warning("Config file not found", path=str(self.config_path))
+                _safe_log(logger, "warning", "Config file not found", path=str(self.config_path))
                 return {"providers": {}}
         except Exception as e:
-            logger.error("Failed to load config", error=str(e), path=str(self.config_path))
+            _safe_log(logger, "error", "Failed to load config", error=str(e), path=str(self.config_path))
             return {"providers": {}}
 
     def get_provider_config(self, provider: str) -> dict[str, Any] | None:
