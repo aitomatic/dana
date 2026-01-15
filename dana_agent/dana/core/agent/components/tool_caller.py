@@ -36,8 +36,14 @@ class WARCaller:
     def __init__(self, agent: STARAgent, tool_caller: ToolCaller | None = None):
         """Initialize with agent reference."""
         self._agent = agent
-        self._llm = agent.llm_client  # TODO: maintain our own LLM (maybe local?)
+        # NOTE: Don't access agent.llm_client here - it triggers lazy LLM creation
+        # which breaks mock injection in tests. Access via property when needed.
         self._tool_caller = tool_caller
+
+    @property
+    def _llm(self):
+        """Lazy access to agent's LLM client."""
+        return self._agent.llm_client
 
     def execute_call(self, arguments: dict[str, Any], object_type: str, id_key: str, default_method: str | None = None) -> dict[str, Any]:
         """
@@ -250,7 +256,22 @@ class WARCaller:
 
 
 class ToolCaller(WARCaller):
-    """Component providing tool call execution and orchestration capabilities."""
+    """
+    Component providing tool call execution and orchestration capabilities.
+    
+    .. deprecated:: 
+        This is the LEGACY tool caller implementation. It uses regex-based parsing
+        which can be unreliable, especially with UUIDs/object_ids.
+        
+        **For new code, use CodecToolCaller instead** by passing a codec (e.g., CSXMLCodec)
+        to STARAgent initialization. CodecToolCaller provides:
+        - Structured XML parsing instead of regex heuristics
+        - Explicit handling of object_id vs class_name
+        - Better error messages when tools aren't found
+        - More reliable tool execution
+        
+        See: dana.core.knowledge.prompts.codecs for available codecs.
+    """
 
     def __init__(self, agent: STARAgent):
         """
@@ -362,7 +383,15 @@ class ToolCaller(WARCaller):
                 # Phase 1: Try function_name as implicit target (e.g., "web-researcher")
                 # This handles cases where LLM provides function name without explicit target field
                 if function_name:
-                    pseudo_args = {"target": function_name} | arguments
+                    # Handle dot-separated format: "resource_id.method_name" or "uuid.method_name"
+                    if "." in function_name:
+                        parts = function_name.rsplit(".", 1)
+                        target = parts[0]
+                        method = parts[1] if len(parts) > 1 else "execute"
+                        # Our extracted target/method take precedence over any in arguments
+                        pseudo_args = arguments | {"target": target, "method": method}
+                    else:
+                        pseudo_args = arguments | {"target": function_name}
                     return self._handle_target_based_call(function_name, pseudo_args)
 
                 return self._create_unknown_function_error(function_name or "unknown")
@@ -1196,6 +1225,39 @@ Please provide the canonical XML format:
 
 
 class CodecToolCaller(WARCaller):
+    """
+    Component providing codec-based tool call execution and orchestration.
+    
+    This is the RECOMMENDED tool caller implementation. It uses structured XML parsing
+    via codecs (e.g., CSXMLCodec, KLXMLCodec) for reliable tool call extraction and
+    execution.
+    
+    Key advantages over the legacy ToolCaller:
+    - Structured XML parsing instead of regex heuristics
+    - Explicit handling of object_id vs class_name
+    - Better error messages when tools aren't found
+    - More reliable tool execution, especially with UUIDs
+    
+    Usage:
+        Automatically used when you pass a codec to STARAgent initialization:
+        
+        .. code-block:: python
+        
+            from dana.core.knowledge.prompts.codecs import CSXMLCodec
+            
+            class MyAgent(STARAgent):
+                def __init__(self, **kwargs):
+                    super().__init__(
+                        agent_type="my-agent",
+                        codec=CSXMLCodec,  # Enables CodecToolCaller
+                        **kwargs
+                    )
+    
+    See also:
+        - ToolCaller: Legacy implementation (deprecated)
+        - dana.core.knowledge.prompts.codecs: Available codec implementations
+    """
+    
     def __init__(self, agent: STARAgent, codec: type[AbstractCodec]):
         super().__init__(agent, self)
         self._agent = agent
@@ -1561,6 +1623,13 @@ class CodecToolCaller(WARCaller):
         Returns:
             Dictionary with "type" and "object" keys, or None if not found
         """
+        # Search in agents first (check object_id and agent_type)
+        for agent in self._agent.available_agents:
+            if (hasattr(agent, "object_id") and agent.object_id == object_id) or (
+                hasattr(agent, "agent_type") and agent.agent_type == object_id
+            ):
+                return {"type": "agent", "object": agent}
+
         # Search in resources (check both object_id and resource_id)
         for resource in self._agent.available_resources:
             if (hasattr(resource, "object_id") and resource.object_id == object_id) or (
@@ -1575,7 +1644,7 @@ class CodecToolCaller(WARCaller):
             ):
                 return {"type": "workflow", "object": workflow}
 
-        # Search in agents (check object_id via registry)
+        # Fallback: Search in agents via registry (for registered agents)
         self._agent.ensure_registered()
         registry = self._agent._registry
         if registry and object_id in registry._items:

@@ -73,29 +73,37 @@ Spec: [context-prd.md](./context-prd.md)
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Memory | ✅ Complete | STMemory + LTMemory implemented |
-| Context | ❌ Not started | ContextBuilder not implemented |
-| Reflection | ⚠️ Partial | Learner has 4 phases, but doesn't persist to LTMemory |
+| Context | ✅ Complete | ContextBuilder implemented and integrated in LocalPromptAPI (with codec) |
+| Reflection | ✅ Complete | Integrated via Learner (persists to LTMemory), standalone Reflection class also available |
 
 ## STARAgent Integration Status
 
+STARAgent supports two modes based on whether a codec is provided:
+
+| Mode | Prompt System | Tool Caller | Status |
+|------|---------------|-------------|--------|
+| **With codec** | `LocalPromptAPI` | `CodecToolCaller` | ✅ Primary (recommended) |
+| **Without codec** | `PromptEngineer` | `ToolCaller` | ⚠️ Legacy only |
+
 | Mind Component | STARAgent Equivalent | Integration |
 |----------------|---------------------|-------------|
-| STMemory | `Timeline` | ⚠️ Parallel implementations |
-| LTMemory | - | ❌ Not integrated |
-| ContextBuilder | `PromptEngineer` | ❌ Ad-hoc assembly |
-| Reflection | `Learner` | ⚠️ Missing LTMemory persistence |
+| STMemory | `Timeline` | ⚠️ Parallel implementations (both serve different purposes) |
+| LTMemory | `_ltmemory` | ✅ Integrated via `ltmemory_path` parameter |
+| ContextBuilder | `LocalPromptAPI` | ✅ Integrated - used in `build_llm_request()` (with codec) |
+| Reflection | `Learner` | ✅ Integrated - persists to LTMemory in RETENTIVE phase |
 
-### Integration Priority
+### Integration Details
 
-1. **LTMemory → STARAgent**: Add `ltmemory_path` to constructor
-2. **Learner → LTMemory**: Wire retentive phase to persist memories
-3. **ContextBuilder**: Build and integrate with PromptEngineer
-4. **Timeline/STMemory**: Decide unification approach
+1. **LTMemory → STARAgent**: ✅ Complete - `ltmemory_path` parameter in constructor
+2. **Learner → LTMemory**: ✅ Complete - RETENTIVE phase persists memories
+3. **ContextBuilder**: ✅ Complete - Integrated in LocalPromptAPI (when using codec)
+4. **Timeline/STMemory**: ⚠️ Both exist - Timeline for agent internals, STMemory for simple use cases
+5. **Codec System**: ✅ CSXMLCodec provides structured LLM communication format
 
 ## Specs
 
 | Component | PRD | Implementation | Status |
 |-----------|-----|----------------|--------|
 | Memory | [memory-prd.md](./memory-prd.md) | [memory-ralph.md](./memory-ralph.md) | ✅ |
-| Context | [context-prd.md](./context-prd.md) | [context-ralph.md](./context-ralph.md) | ❌ |
-| Reflection | [reflection-prd.md](./reflection-prd.md) | [reflection-ralph.md](./reflection-ralph.md) | ⚠️ |
+| Context | [context-prd.md](./context-prd.md) | [context-ralph.md](./context-ralph.md) | ✅ |
+| Reflection | [reflection-prd.md](./reflection-prd.md) | [reflection-ralph.md](./reflection-ralph.md) | ✅ |

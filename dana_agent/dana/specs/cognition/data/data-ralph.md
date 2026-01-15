@@ -1,6 +1,6 @@
-# Data Access - Implementation Spec
+**Status: ⚠️ IN PROGRESS** (Tests blocked: `uv run` panics in this environment)
 
-**Status: ✅ COMPLETE**
+# Data Access - Implementation Spec
 
 ## Goal
 Implement RLM-based access to external data sources for Dana agents. Enables querying large files (500K+ tokens) by having the LLM write Python code to explore them programmatically.
@@ -168,22 +168,26 @@ Output Python code. When done, output ONE of:
 - `query_large_codebase.py` - Demo querying a large codebase
 - `sample_codebase.md` - Sample large document (500K+ simulated)
 
-### 5. STARAgent Integration (`dana_agent/dana/core/agent/components/prompt_engineer.py`)
+### 5. STARAgent Integration (`dana_agent/dana/core/knowledge/prompts/prompt_api.py`)
 
-PromptEngineer must auto-register RLMResources with ContextBuilder so they are queried when building context.
+**IMPORTANT: Use LocalPromptAPI (codec system), NOT PromptEngineer (deprecated)**
+
+LocalPromptAPI must auto-register RLMResources with ContextBuilder so they are queried when building context.
 
 ```python
-# In prompt_engineer.py build_llm_request(), after adding ltmemory:
+# In LocalPromptAPI.build_llm_request(), after adding ltmemory:
+# Codecs are now the DEFAULT - LocalPromptAPI is used automatically
 for resource in self._agent._resources:
     if hasattr(resource, 'query'):  # RLMResource or similar queryable
         ctx.add_source(resource.resource_id, resource)
 ```
 
 Requirements:
-- [x] PromptEngineer iterates over `self._agent._resources`
+- [x] LocalPromptAPI (codec system - DEFAULT) iterates over `self._agent._resources`
 - [x] Resources with `query()` method are added to ContextBuilder
 - [x] RLMResources are auto-queried with current task when building context
 - [x] Query results included in context (tagged with resource ID)
+- ⚠️ PromptEngineer is deprecated - do not use for new implementations
 
 ## Files Implemented
 
@@ -212,9 +216,10 @@ Create `dana_agent/tests/unit/test_rlm_resource.py`:
 - [x] test_query_basic - returns answer for simple query
 
 Create `dana_agent/tests/unit/test_data_staragent_integration.py`:
-- [x] test_prompt_engineer_adds_rlm_resources - PromptEngineer registers RLMResources with ContextBuilder
+- [x] test_local_prompt_api_adds_rlm_resources - LocalPromptAPI (codec system) registers RLMResources with ContextBuilder
 - [x] test_rlm_resource_queried_with_task - RLMResource.query() called with current task
 - [x] test_rlm_resource_result_in_context - Query result appears in built context
+- ⚠️ Tests must use codec system (default) - PromptEngineer is deprecated
 
 Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.py tests/unit/test_rlm_resource.py tests/unit/test_data_staragent_integration.py -v`
 
@@ -227,6 +232,7 @@ Run tests with: `cd dana_agent && uv run pytest tests/unit/test_python_sandbox.p
 5. RLMResource.load_file() ingests files
 6. Example runs and demonstrates querying a large document
 7. **STARAgent Integration**: RLMResources attached via `with_resources()` are auto-queried when building context
+8. **Codec System**: Integration uses LocalPromptAPI (codec system - DEFAULT), NOT PromptEngineer (deprecated)
 
 ## Before Marking Complete
 
@@ -253,16 +259,20 @@ Only if ALL tests pass, output the completion tag:
 - ✅ Agents can invoke `query()`, `append()`, `load_file()` as tools
 - ✅ LTMemory uses RLMResource internally for large memory queries
 - ✅ ContextBuilder class supports RLMResource as queryable source
-- ✅ PromptEngineer registers attached RLMResources with ContextBuilder
+- ✅ LocalPromptAPI (codec system - DEFAULT) registers attached RLMResources with ContextBuilder
 - ✅ RLMResources auto-queried when building context
 - ✅ Integration tests in test_data_staragent_integration.py
+- ⚠️ PromptEngineer is deprecated - all implementations must use LocalPromptAPI with codecs
 
 ### Integration Code Required
 
-In `dana_agent/dana/core/agent/components/prompt_engineer.py`, in `build_llm_request()` after line 824 (where ltmemory is added):
+**IMPORTANT: Use LocalPromptAPI (codec system), NOT PromptEngineer (deprecated)**
+
+In `dana_agent/dana/core/knowledge/prompts/prompt_api.py`, in `LocalPromptAPI.build_llm_request()` after adding ltmemory:
 
 ```python
 # Add RLMResources attached to agent
+# Codecs are now the DEFAULT - LocalPromptAPI is used automatically
 for resource in self._agent._resources:
     if hasattr(resource, 'query') and hasattr(resource, 'resource_id'):
         ctx.add_source(

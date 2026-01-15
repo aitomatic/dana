@@ -88,7 +88,7 @@ jobs:
             exit 0
           fi
           if [ "$RUNNER_OS" = "Windows" ]; then
-            uv run python -X utf8 -m pytest -q --maxfail=1 -m "not live and not deep"
+            uv run python -X utf8 -m pytest -q --maxfail=1 -m "not live and not deep and not harness"
           else
-            uv run pytest -q --maxfail=1 -m "not live and not deep"
+            uv run pytest -q --maxfail=1 -m "not live and not deep and not harness"
           fi

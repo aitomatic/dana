@@ -9,7 +9,18 @@ import os
 from pathlib import Path
 from typing import Any
 
-import structlog
+try:
+    import structlog
+except ModuleNotFoundError:
+    import logging
+
+    class _StructLogShim:
+        @staticmethod
+        def get_logger() -> logging.Logger:
+            logging.basicConfig(level=logging.INFO)
+            return logging.getLogger("dana")
+
+    structlog = _StructLogShim()
 
 
 logger = structlog.get_logger()

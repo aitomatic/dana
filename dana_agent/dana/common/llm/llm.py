@@ -6,7 +6,18 @@ A simple, clean interface for interacting with any LLM provider.
 Follows KISS principle with just the essential methods most clients need.
 """
 
-import structlog
+try:
+    import structlog
+except ModuleNotFoundError:
+    import logging
+
+    class _StructLogShim:
+        @staticmethod
+        def get_logger() -> logging.Logger:
+            logging.basicConfig(level=logging.INFO)
+            return logging.getLogger("dana")
+
+    structlog = _StructLogShim()
 
 from ..config import config_manager
 from .providers.factory import create_provider

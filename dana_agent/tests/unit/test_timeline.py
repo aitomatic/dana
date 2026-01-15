@@ -195,13 +195,20 @@ class TestTimeline:
         assert "message number 9" in messages[-1].content
 
     def test_to_llm_messages_default_role(self, timeline):
-        """Test LLM message conversion with custom default role."""
-        timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.TOOL_CALL, content="Tool call"))
+        """Test LLM message conversion with custom default role.
+
+        Note: Only entry types not explicitly mapped use the default_role:
+        - USER_MESSAGE → always "user"
+        - TOOL_CALL, AGENT_*, etc. → always "assistant"
+        - FAILED_TOOL_CALL, TIMELINE_SUMMARY → use default_role
+        """
+        # Use FAILED_TOOL_CALL which uses the default_role (not explicitly mapped)
+        timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.FAILED_TOOL_CALL, content="Failed tool call"))
 
         messages = timeline.to_llm_messages(default_role="system")
         assert len(messages) == 1
         assert messages[0].role == "system"
-        assert messages[0].content == "[TimelineEntryType.TOOL_CALL] Tool call"
+        assert messages[0].content == "[TimelineEntryType.FAILED_TOOL_CALL] Failed tool call"
 
     def test_to_llm_messages_empty_timeline(self, timeline):
         """Test LLM message conversion with empty timeline."""

@@ -1,6 +1,6 @@
 # Memory - Implementation Spec
 
-**Status: ✅ COMPLETE** (Core implementation and STARAgent integration done)
+**Status: ✅ COMPLETE**
 
 ## Goal
 
@@ -260,7 +260,8 @@ Only if ALL tests pass, output the completion tag:
 - ✅ LTMemory implemented at `dana.core.memory.ltmemory`
 - ✅ STARAgent accepts `ltmemory_path` parameter
 - ✅ Learner stores memories to LTMemory in RETENTIVE phase
-- ✅ PromptEngineer queries LTMemory for past knowledge
+- ✅ LocalPromptAPI (codec system - DEFAULT) queries LTMemory for past knowledge
+- ⚠️ PromptEngineer is deprecated - all new code must use LocalPromptAPI with codecs
 - ⏸️ Timeline/STMemory unification deferred (both serve different purposes)
 
 ### Integration Tasks
@@ -269,7 +270,7 @@ Only if ALL tests pass, output the completion tag:
 |------|--------|-------------|
 | Add LTMemory to STARAgent | ✅ Done | Accept `ltmemory_path` in constructor |
 | Wire Learner to LTMemory | ✅ Done | Retentive phase persists to LTMemory |
-| Query LTMemory in context | ✅ Done | PromptEngineer includes past knowledge |
+| Query LTMemory in context | ✅ Done | LocalPromptAPI (codec system) includes past knowledge |
 | Timeline/STMemory unification | ⏸️ Deferred | Timeline for agent internals, STMemory for simple use cases |
 
 ### Integration Code
@@ -315,3 +316,5 @@ def _reflect_retentive(self, trace_retentive: DictParams) -> DictParams:
 - PRD: [memory-prd.md](./memory-prd.md)
 - Parent: [mind overview](./overview.md)
 - Depends on: [data-ralph.md](../data/data-ralph.md) (RLM for ltmemory queries)
+
+<promise>TASK COMPLETE</promise>

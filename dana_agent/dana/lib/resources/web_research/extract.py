@@ -19,11 +19,14 @@ logger = logging.getLogger(__name__)
 class ExtractResource(BaseResource):
     """Reusable extraction operations for workflow composition."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, resource_id: str = "extract", **kwargs):
         """
         Initialize extract components.
+
+        Args:
+            resource_id: ID for this resource (default: "extract")
         """
-        super().__init__(**kwargs)
+        super().__init__(resource_id=resource_id, **kwargs)
         self.content_extractor = ContentExtractor()
 
     @observable
