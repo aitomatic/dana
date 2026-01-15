@@ -95,37 +95,60 @@ Implement a Context builder that:
 
 ## STARAgent Integration
 
+### Codec System Architecture
+
+STARAgent supports two modes. **The codec system is recommended:**
+
+| Mode | Prompt Component | Status |
+|------|------------------|--------|
+| **With codec** | `LocalPromptAPI` + `CSXMLCodec` | ✅ Primary (recommended) |
+| **Without codec** | `PromptEngineer` | ⚠️ Legacy only |
+
 ### Current State
-- ❌ ContextBuilder not implemented
-- STARAgent's `PromptEngineer.build_llm_request()` builds context ad-hoc
-- No unified context assembly from multiple sources
+- ✅ ContextBuilder implemented and integrated
+- ✅ STARAgent's `LocalPromptAPI.build_llm_request()` uses ContextBuilder (with codec)
+- ✅ Unified context assembly from Timeline, LTMemory, and RLMResources
+- ✅ Codec provides format instructions via `codec.get_instruction()`
 
-### Integration Plan
+### Integration Status
 
-ContextBuilder will replace ad-hoc context assembly in `PromptEngineer`:
+ContextBuilder is integrated in `LocalPromptAPI` (when using codec system):
 
 ```python
-# Current (ad-hoc in PromptEngineer)
-def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
-    # Manual assembly of system prompt + timeline
+# In LocalPromptAPI.build_llm_request() - with codec
+ctx = ContextBuilder(token_budget=timeline.max_context_tokens)
 
-# Target (with ContextBuilder)
-def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
-    ctx = ContextBuilder(token_budget=self.max_tokens)
-    ctx.add_source("timeline", timeline.to_text())
-    ctx.add_source("ltmemory", self._agent._ltmemory)  # if available
-    for resource in self._agent._rlm_resources:
-        ctx.add_source(resource.name, resource)
+# Timeline included as direct source
+if context_messages:
+    timeline_lines = ["<TIMELINE>"]
+    for msg in context_messages:
+        timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
+    timeline_lines.append("</TIMELINE>")
+    ctx.add_source("timeline", "\n".join(timeline_lines))
 
-    context = ctx.build(task=current_task)
-    # Assemble LLM messages from context
+# LTMemory added if available (RLM query)
+ltmemory = getattr(self._agent, "_ltmemory", None)
+if ltmemory is not None:
+    ctx.add_source("ltmemory", _TaggedQueryable(ltmemory, "LTMEMORY"))
+
+# RLMResources automatically registered
+for resource in self._agent._resources:
+    if hasattr(resource, "query") and hasattr(resource, "resource_id"):
+        ctx.add_source(resource.resource_id, _TaggedQueryable(resource, resource.resource_id.upper()))
+
+context = ctx.build(task=task)
+
+# Codec adds format instructions and tool signatures
+# - codec.get_instruction() provides response format rules
+# - codec.construct() formats each tool's signature
 ```
 
 ### Integration Requirements
 
-1. **Replace ad-hoc assembly in PromptEngineer**
-   - ContextBuilder becomes the standard way to assemble context
-   - PromptEngineer uses ContextBuilder internally
+1. **Use LocalPromptAPI with codec (recommended)**
+   - ContextBuilder assembles context from sources
+   - LocalPromptAPI adds codec format instructions
+   - CodecToolCaller parses structured responses
 
 2. **Support all source types**
    - Timeline/STMemory (direct inclusion)
@@ -135,6 +158,11 @@ def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
 3. **Token budget management**
    - ContextBuilder tracks and respects token limits
    - Prioritizes sources based on relevance and size
+
+4. **Codec integration**
+   - `CSXMLCodec.get_instruction()` provides LLM format rules
+   - `CSXMLCodec.construct()` formats tool signatures
+   - `CSXMLCodec.parse_response()` extracts thinking, response, tool calls
 
 ## Demo
 

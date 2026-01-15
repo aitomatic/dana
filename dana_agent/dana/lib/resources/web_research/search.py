@@ -22,11 +22,14 @@ logger = logging.getLogger(__name__)
 class SearchResource(BaseResource):
     """Reusable search operations for workflow composition."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, resource_id: str = "search", **kwargs):
         """
         Initialize search components.
+
+        Args:
+            resource_id: ID for this resource (default: "search")
         """
-        super().__init__(**kwargs)
+        super().__init__(resource_id=resource_id, **kwargs)
         self.web_fetcher = WebFetcher()
 
     @tool_use

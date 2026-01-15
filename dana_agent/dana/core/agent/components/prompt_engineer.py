@@ -20,6 +20,7 @@ from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols.types import LearningPhase
+from dana.core.agent.components.tool_schema import generate_tool_schemas
 from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
 from dana.core.context import ContextBuilder
@@ -168,7 +169,22 @@ class PromptFormatter:
 
 
 class PromptEngineer:
-    """Component providing XML-based prompt files with section-level inheritance."""
+    """
+    Component providing XML-based prompt files with section-level inheritance.
+    
+    .. deprecated::
+        This is the LEGACY prompt engineer implementation. It is maintained for
+        backward compatibility but is not recommended for new code.
+        
+        **For new code, use LocalPromptAPI instead** by passing a codec (e.g., CSXMLCodec)
+        to STARAgent initialization. LocalPromptAPI provides:
+        - Codec-aware prompt management
+        - Structured tool signature formatting
+        - Better integration with the codec system
+        - More reliable tool call parsing
+        
+        See: dana.core.knowledge.prompts.codecs for available codecs.
+    """
 
     # Compiled regex pattern for tag extraction (performance optimization)
     _START_TAG_PATTERN = re.compile(r"<(\w+)>")
@@ -661,8 +677,14 @@ class PromptEngineer:
         descriptions = []
         for a in agents:
             desc = a.public_description
-            # If using text_flattened format, desc already has hyphens
-            descriptions.append(f"- {a.agent_type} (ID: {a.object_id}): {desc}")
+            # Include method signature so LLM knows how to call it
+            # Agents are called via query(message="...") method
+            # Use agent_type as the ID for tool calls
+            descriptions.append(
+                f"- Agent ID: {a.agent_type}\n"
+                f"  Methods: query(message: str) - Send a message to this agent\n"
+                f"  Description: {desc}"
+            )
         return "\n".join(descriptions)
 
     @property
@@ -779,7 +801,11 @@ class PromptEngineer:
 
         # System prompt - use the sophisticated prompt from components
         system_prompt = self._get_system_prompt()
-        messages.append(LLMMessage(role="system", content=system_prompt))
+        messages.append(LLMMessage(
+            role="system",
+            content=system_prompt,
+            cache_control={"type": "ephemeral"}
+        ))
 
         # Use Timeline's LLM conversion with latest user message separation
         if timeline:
@@ -793,8 +819,16 @@ class PromptEngineer:
                 context_messages = timeline_messages[:-1]
                 latest_user_message = timeline_messages[-1]
             else:
-                # No latest user message, use all timeline messages as context
+                # No latest user message at the end - find the original user query from timeline
+                # This happens after tool execution when is_latest_user_message flag was cleared
                 context_messages = timeline_messages
+
+                # Find the first USER_MESSAGE entry to use as the question
+                from dana.core.agent.timeline import TimelineEntryType
+                for entry in timeline.timeline:
+                    if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+                        latest_user_message = LLMMessage(role="user", content=entry.content)
+                        break
 
             task = ""
             if latest_user_message:
@@ -837,26 +871,35 @@ class PromptEngineer:
                 ]
                 messages.append(LLMMessage(role="assistant", content="\n".join(context_lines)))
 
-            # Add latest user message as separate user message
+            # Build combined user message with question, learnings, and state
+            user_parts = []
+
+            # Add the user's question
             if latest_user_message:
-                messages.append(latest_user_message)
+                user_parts.append(latest_user_message.content)
 
-        latest_msg = messages[-1].content if messages else None
-        if latest_msg:
-            if self._agent._learner is not None:
-                related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
-                if related_acquisitive_learnings:
-                    messages.append(LLMMessage(role="user", content=f"Learning from the past : {related_acquisitive_learnings}"))
+                # If there's tool context, add instruction to use it
+                if context_messages:
+                    user_parts.append("\n[Based on the tool results above, please provide your final answer.]")
 
-                # Query long-term memory for relevant past knowledge
-                related_retentive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.RETENTIVE)
-                if related_retentive_learnings:
-                    messages.append(LLMMessage(role="user", content=f"Relevant memories from past sessions: {related_retentive_learnings}"))
+        # Add learnings if available
+        latest_msg = user_parts[0] if user_parts else (messages[-1].content if messages else None)
+        if latest_msg and self._agent._learner is not None:
+            related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
+            if related_acquisitive_learnings:
+                user_parts.append(f"\nLearning from the past: {related_acquisitive_learnings}")
 
-        # Hack: put the user state/locale here for now
+            related_retentive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.RETENTIVE)
+            if related_retentive_learnings:
+                user_parts.append(f"\nRelevant memories from past sessions: {related_retentive_learnings}")
+
+        # Add state info
         state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]
-        state_info_content = "\n".join(state_info)
-        messages.append(LLMMessage(role="user", content=state_info_content))
+        user_parts.append("\n".join(state_info))
+
+        # Add combined user message (avoid consecutive user messages)
+        if user_parts:
+            messages.append(LLMMessage(role="user", content="\n".join(user_parts)))
 
         # Debug logging - log message building
         debug_logger = get_debug_logger()
@@ -875,3 +918,15 @@ class PromptEngineer:
         )
 
         return messages
+
+    def build_tool_schemas(self) -> list[dict]:
+        """Build OpenAI-compatible tool schemas for native function calling.
+
+        Returns:
+            List of tool schema dictionaries for the agent's resources and workflows.
+        """
+        return generate_tool_schemas(
+            agents=getattr(self._agent, "_agents", []),
+            resources=getattr(self._agent, "_resources", []),
+            workflows=getattr(self._agent, "_workflows", []),
+        )
