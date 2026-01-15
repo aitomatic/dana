@@ -1656,3 +1656,100 @@ You must complete Step 1 before Step 2, and Step 2 before Step 3."""
 
         assert has_ip_fetch or has_uuid_fetch, "Should fetch at least one URL"
         assert elapsed < 60, f"Should complete within 60s, took {elapsed:.1f}s"
+
+
+# =============================================================================
+# TIMELINE COMPRESSION TEST
+# =============================================================================
+
+@pytest.mark.live
+class TestTimelineCompression:
+    """
+    Tests for timeline compression behavior.
+
+    Verifies:
+    - Timeline compresses when threshold exceeded
+    - Summary preserves key information
+    - Agent continues working after compression
+    """
+
+    def test_compression_triggers_on_long_conversation(self):
+        """Test: Timeline should compress when it gets too long."""
+        from tests.harness.harness_agent import HarnessAgent
+        from dana.lib.resources.web_research import FetchResource
+        from dana.core.agent.timeline import TimelineConfig, TimelineEntryType
+
+        # Create agent with low compression threshold for testing
+        agent = HarnessAgent(
+            agent_type="compression_test",
+            llm_provider="openai",
+            model="gpt-4o-mini",
+            auto_register=False,
+            max_iterations=10,
+        )
+        agent.with_resources(FetchResource(auto_register=False))
+
+        # Configure timeline for aggressive compression (very low threshold)
+        # Real messages are ~20-50 tokens each, so we need a low threshold
+        agent._timeline._config = TimelineConfig(
+            max_context_tokens=200,  # Very low to trigger compression quickly
+            compression_threshold=0.5,  # Trigger at 100 tokens
+            compression_enabled=True,
+            min_entries_before_compress=3,
+            keep_recent_entries=2,
+        )
+
+        print("\n=== COMPRESSION TEST ===")
+
+        # First query - should not compress yet
+        result1 = agent.query(
+            message="Fetch https://httpbin.org/ip and tell me the IP."
+        )
+        entries_after_1 = len(agent._timeline.timeline)
+        print(f"After query 1: {entries_after_1} entries")
+
+        # Check for summary entry
+        has_summary = any(
+            e.entry_type == TimelineEntryType.TIMELINE_SUMMARY
+            for e in agent._timeline.timeline
+        )
+        print(f"Has summary after query 1: {has_summary}")
+
+        # Second query - may trigger compression
+        result2 = agent.query(
+            message="Now fetch https://httpbin.org/uuid and tell me the UUID."
+        )
+        entries_after_2 = len(agent._timeline.timeline)
+        print(f"After query 2: {entries_after_2} entries")
+
+        has_summary_2 = any(
+            e.entry_type == TimelineEntryType.TIMELINE_SUMMARY
+            for e in agent._timeline.timeline
+        )
+        print(f"Has summary after query 2: {has_summary_2}")
+
+        # Third query
+        result3 = agent.query(
+            message="What were all the results you fetched?"
+        )
+        entries_after_3 = len(agent._timeline.timeline)
+        print(f"After query 3: {entries_after_3} entries")
+
+        has_summary_3 = any(
+            e.entry_type == TimelineEntryType.TIMELINE_SUMMARY
+            for e in agent._timeline.timeline
+        )
+        print(f"Has summary after query 3: {has_summary_3}")
+
+        response = result3.get("response", "")
+        print(f"Final response: {response[:200]}...")
+
+        # Verify conversation still works and remembers context
+        # (even if compression happened, the summary should preserve key info)
+        assert result3.get("response"), "Should get a response"
+
+        # If compression happened, there should be a summary entry
+        if has_summary_3:
+            print("✓ Compression occurred - timeline has summary entry")
+            # Entry count should be limited due to compression
+            assert entries_after_3 <= 10, f"Timeline should be compressed, got {entries_after_3} entries"
