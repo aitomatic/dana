@@ -6,6 +6,45 @@
 # Self-reference happens through FILES, not conversation history.
 #
 # ============================================================================
+# WORKFLOW: PRD → RALPH → IMPLEMENTATION
+# ============================================================================
+#
+# The Ralph workflow follows a strict process:
+#
+#   1. Write PRD (Product Requirements Document)
+#      - Describes WHAT the feature does and WHY it's needed
+#      - Human-authored or AI-assisted
+#      - Location: specs/feature-prd.md
+#
+#   2. Generate RALPH spec from PRD
+#      - Describes HOW to implement (technical specification)
+#      - Generated using: ralph.sh --init specs/feature-prd.md
+#      - Output: specs/feature-ralph.md
+#
+#   3. Run implementation loop
+#      - Executes: ralph.sh specs/feature-ralph.md
+#      - AI coder implements until:
+#         <promise>TASK COMPLETE</promise>
+#
+#
+# ============================================================================
+# DIRECTORY CONVENTION
+# ============================================================================
+#
+# All PRD and RALPH files should be placed in the specs/ directory:
+#
+#   specs/
+#   ├── feature-a-prd.md      # PRD for feature A
+#   ├── feature-a-ralph.md    # Generated RALPH spec for feature A
+#   ├── feature-b-prd.md      # PRD for feature B
+#   ├── feature-b-ralph.md    # Generated RALPH spec for feature B
+#   └── ...
+#
+# Naming convention:
+#   - PRD files:   <feature-name>-prd.md
+#   - RALPH files: <feature-name>-ralph.md
+#
+# ============================================================================
 # RALPH.MD FILE PATTERN AND REQUIREMENTS
 # ============================================================================
 #
@@ -16,7 +55,7 @@
 #    - Every ralph.md MUST have a corresponding prd.md file
 #    - The PRD (Product Requirements Document) describes WHAT and WHY
 #    - The ralph.md (Implementation Spec) describes HOW
-#    - Naming convention: if ralph.md is "feature-ralph.md", 
+#    - Naming convention: if ralph.md is "feature-ralph.md",
 #      the PRD must be "feature-prd.md" in the same directory
 #
 # 2. REQUIRED SECTIONS IN RALPH.MD
@@ -61,7 +100,7 @@
 #       - Test commands that MUST be run
 #       - Instructions for outputting completion tag
 #       - Format: Only if ALL tests pass, output:
-#         `<promise>` + `TASK COMPLETE` + `</promise>`
+#         <promise>TASK COMPLETE</promise>
 #
 #    j. References
 #       - Link to PRD: `- PRD: [feature-prd.md](./feature-prd.md)`
@@ -69,10 +108,12 @@
 #       - Dependencies on other ralph.md files (if applicable)
 #
 # 3. EXIT CONDITIONS
-#    - Completion is signaled by writing: <promise>TASK COMPLETE</promise>
+#    - Completion is signaled by writing:
+#	    <promise>TASK COMPLETE</promise>
 #    - This tag must appear in the spec file or any recently modified file
 #    - The promise text can be customized via --promise flag
 #    - Tests MUST pass before completion tag is written
+#    - Do not output this tag at all if not complete. It may be detected by accident.
 #
 # 4. DEPENDENCIES
 #    - If implementation depends on other ralph.md specs, list them
@@ -111,38 +152,83 @@ CODER="${RALPH_CODER:-claude}"
 SPEC_FILE=""
 MAX_ITER=20
 PROMISE="TASK COMPLETE"
+INIT_MODE=false
+RUN_AFTER_INIT=false
 
 usage() {
   cat <<EOF
-Usage: ralph.sh [OPTIONS] SPEC_FILE
+Usage: ralph.sh [OPTIONS] FILE
+       ralph.sh --init [OPTIONS] PRD_FILE
 
 True Ralph loop - fresh context each iteration, self-reference via files only.
 
-Options:
-  -c, --coder CODER      AI coder to use (default: claude)
+MODES:
+
+  Implementation mode (default):
+    ralph.sh specs/feature-ralph.md
+    Runs the implementation loop on an existing ralph.md spec.
+
+  Init mode (generate ralph.md from PRD):
+    ralph.sh --init specs/feature-prd.md
+    Generates specs/feature-ralph.md from the PRD using the AI coder.
+
+  Init + Run mode:
+    ralph.sh --init --run specs/feature-prd.md
+    Generates ralph.md, then immediately runs implementation loop.
+
+OPTIONS:
+
+  -i, --init             Generate ralph.md from a PRD file
+  -r, --run              After --init, immediately run implementation loop
+  -c, --coder CODER      AI coder to use (default: ${RALPH_CODER:-claude})
                          Supported: claude, codex, aider, custom
   -n, --max-iterations N Max iterations (default: 20)
   -p, --promise TEXT     Completion promise (default: "TASK COMPLETE")
   -h, --help             Show this help
 
-Environment:
+ENVIRONMENT:
+
   RALPH_CODER            Default coder (overridden by --coder)
 
-Examples:
-  ralph.sh specs/rlm.md
-  ralph.sh -c codex -n 10 specs/rlm.md
-  ralph.sh --coder aider --promise "ALL TESTS PASS" specs/rlm.md
+WORKFLOW:
 
-How it works:
-  1. Each iteration invokes the coder with FRESH context (no history)
-  2. Coder sees its previous work in FILES and git history
-  3. Coder updates files, checks progress against spec
-  4. Loop continues until <promise>TEXT</promise> found or max iterations
+  1. Write PRD:           specs/feature-prd.md (WHAT and WHY)
+  2. Generate RALPH:      ralph.sh --init specs/feature-prd.md
+  3. Run implementation:  ralph.sh specs/feature-ralph.md
 
-To signal completion, the coder should output in any file:
-  <promise>YOUR_PROMISE_TEXT</promise>
+DIRECTORY CONVENTION:
 
-RALPH.MD FILE REQUIREMENTS:
+  All specs should be in the specs/ directory:
+    specs/feature-prd.md      # Product Requirements (human-written)
+    specs/feature-ralph.md    # Implementation Spec (generated)
+
+EXAMPLES:
+
+  # Generate ralph.md from PRD
+  ralph.sh --init specs/skill-integration-prd.md
+
+  # Generate and immediately run implementation
+  ralph.sh --init --run specs/skill-integration-prd.md
+
+  # Run implementation on existing ralph.md
+  ralph.sh specs/skill-integration-ralph.md
+
+  # Use specific coder with custom iterations
+  ralph.sh -c claude -n 10 specs/feature-ralph.md
+
+HOW IT WORKS:
+
+  Implementation loop:
+    1. Each iteration invokes the coder with FRESH context (no history)
+    2. Coder sees its previous work in FILES and git history
+    3. Coder updates files, checks progress against spec
+    4. Loop continues until <promise>TEXT</promise> found or max iterations
+
+  To signal completion, the coder should write to any file:
+    <promise>YOUR_PROMISE_TEXT</promise>
+
+RALPH.MD REQUIREMENTS:
+
   - Must have corresponding prd.md file (describes WHAT/WHY)
   - Required sections: Goal, Demo, MVP Requirements, Files Implemented,
     Tests Required, Success Criteria, Before Marking Complete, When Complete,
@@ -159,6 +245,14 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -h|--help)
       usage
+      ;;
+    -i|--init)
+      INIT_MODE=true
+      shift
+      ;;
+    -r|--run)
+      RUN_AFTER_INIT=true
+      shift
       ;;
     -c|--coder)
       CODER="$2"
@@ -184,17 +278,242 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Validate spec file
+# Validate input file
 if [[ -z "$SPEC_FILE" ]]; then
-  echo "Error: No spec file provided" >&2
+  echo "Error: No file provided" >&2
   echo "Usage: ralph.sh [OPTIONS] SPEC_FILE" >&2
+  echo "       ralph.sh --init [OPTIONS] PRD_FILE" >&2
   exit 1
 fi
 
 if [[ ! -f "$SPEC_FILE" ]]; then
-  echo "Error: Spec file not found: $SPEC_FILE" >&2
+  echo "Error: File not found: $SPEC_FILE" >&2
   exit 1
 fi
+
+# Validate --run requires --init
+if [[ "$RUN_AFTER_INIT" == "true" && "$INIT_MODE" != "true" ]]; then
+  echo "Error: --run requires --init" >&2
+  exit 1
+fi
+
+# ============================================================================
+# INIT MODE: Generate ralph.md from PRD
+# ============================================================================
+
+# Derive ralph.md path from PRD path
+get_ralph_path() {
+  local prd_path="$1"
+  local dir=$(dirname "$prd_path")
+  local basename=$(basename "$prd_path")
+
+  # Replace -prd.md with -ralph.md
+  if [[ "$basename" =~ -prd\.md$ ]]; then
+    echo "$dir/${basename%-prd.md}-ralph.md"
+  elif [[ "$basename" == "prd.md" ]]; then
+    echo "$dir/ralph.md"
+  else
+    # Fallback: just append -ralph before .md
+    echo "$dir/${basename%.md}-ralph.md"
+  fi
+}
+
+# Build prompt for generating ralph.md from PRD
+build_init_prompt() {
+  local prd_file="$1"
+  local ralph_file="$2"
+  cat <<'INIT_PROMPT_HEADER'
+You are generating a RALPH implementation spec from a PRD (Product Requirements Document).
+
+The PRD describes WHAT and WHY. Your job is to create a ralph.md that describes HOW.
+
+OUTPUT REQUIREMENTS:
+You MUST write the ralph.md file to the specified path. Do not just output it to the console.
+
+RALPH.MD STRUCTURE:
+The ralph.md file MUST contain these sections in order:
+
+```markdown
+# <Feature Name> - Implementation Spec
+
+**Status: ⚠️ IN PROGRESS**
+
+## Goal
+
+<Clear statement of what will be implemented, derived from PRD>
+
+## Demo
+
+### Without <Feature> (The Problem)
+<Show the current pain point>
+
+### With <Feature> (The Solution)
+<Show how it works after implementation>
+
+### What You'll See
+<Expected output/behavior>
+
+## MVP Requirements
+
+<Detailed technical requirements with checkboxes>
+- [ ] Requirement 1
+- [ ] Requirement 2
+...
+
+## Files Implemented
+
+<List of files to create/modify>
+- `path/to/file.py` ❌
+- `path/to/other.py` ❌
+...
+
+## Tests Required
+
+<Test specifications>
+- [ ] Test case 1
+- [ ] Test case 2
+...
+
+Command to run tests:
+```bash
+<test command>
+```
+
+## Success Criteria
+
+1. <Criterion 1>
+2. <Criterion 2>
+...
+
+## Before Marking Complete
+
+- [ ] All tests pass
+- [ ] Code follows existing patterns
+- [ ] No unnecessary complexity (KISS)
+- [ ] No over-engineering (YAGNI)
+- [ ] Code is documented where non-obvious
+
+## When Complete
+
+Run these commands to verify:
+```bash
+<verification commands>
+```
+
+Only if ALL tests pass, write this line to the ralph.md file:
+<promise>$task_complete$</promise>
+
+except replace "$task_complete$" with "TASK COMPLETE".
+
+## References
+
+- PRD: [<feature>-prd.md](./<feature>-prd.md)
+```
+
+IMPORTANT:
+- Be specific and actionable in requirements
+- Include code snippets showing expected interfaces
+- List ALL files that need to be created or modified
+- Include specific test cases, not just "write tests"
+- Success criteria should be measurable
+- Reference the PRD in the References section
+
+INIT_PROMPT_HEADER
+
+  echo "---"
+  echo ""
+  echo "PRD FILE: $prd_file"
+  echo "OUTPUT FILE: $ralph_file (you MUST write to this file)"
+  echo ""
+  echo "PRD CONTENT:"
+  echo ""
+  cat "$prd_file"
+}
+
+# Run init mode - generate ralph.md from PRD
+run_init_coder() {
+  local prd_file="$1"
+  local ralph_file="$2"
+  local prompt=$(build_init_prompt "$prd_file" "$ralph_file")
+
+  case "$CODER" in
+    claude)
+      claude --dangerously-skip-permissions --print "$prompt"
+      ;;
+    codex)
+      codex exec --full-auto "$prompt"
+      ;;
+    aider)
+      aider --message "$prompt"
+      ;;
+    *)
+      echo "$prompt" | $CODER
+      ;;
+  esac
+}
+
+# Handle init mode
+if [[ "$INIT_MODE" == "true" ]]; then
+  PRD_FILE="$SPEC_FILE"
+  RALPH_FILE=$(get_ralph_path "$PRD_FILE")
+
+  echo "═══════════════════════════════════════════════════════════"
+  echo "  Ralph Init Mode"
+  echo "═══════════════════════════════════════════════════════════"
+  echo "  Coder:      $CODER"
+  echo "  PRD:        $PRD_FILE"
+  echo "  Output:     $RALPH_FILE"
+  echo "═══════════════════════════════════════════════════════════"
+  echo ""
+
+  # Check if ralph.md already exists
+  if [[ -f "$RALPH_FILE" ]]; then
+    echo "⚠️  Warning: $RALPH_FILE already exists"
+    read -p "   Overwrite? [y/N] " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      echo "Aborted."
+      exit 1
+    fi
+  fi
+
+  echo "🔄 Generating ralph.md from PRD..."
+  echo ""
+
+  run_init_coder "$PRD_FILE" "$RALPH_FILE"
+
+  # Verify the file was created
+  if [[ ! -f "$RALPH_FILE" ]]; then
+    echo ""
+    echo "═══════════════════════════════════════════════════════════"
+    echo "  ❌ Error: ralph.md was not created"
+    echo "  Expected: $RALPH_FILE"
+    echo "═══════════════════════════════════════════════════════════"
+    exit 1
+  fi
+
+  echo ""
+  echo "═══════════════════════════════════════════════════════════"
+  echo "  ✅ Generated: $RALPH_FILE"
+  echo "═══════════════════════════════════════════════════════════"
+
+  # If --run flag, continue to implementation
+  if [[ "$RUN_AFTER_INIT" == "true" ]]; then
+    echo ""
+    echo "  Continuing to implementation loop..."
+    echo ""
+    SPEC_FILE="$RALPH_FILE"
+  else
+    echo ""
+    echo "  Next step: ralph.sh $RALPH_FILE"
+    echo ""
+    exit 0
+  fi
+fi
+
+# ============================================================================
+# IMPLEMENTATION MODE: Run the Ralph loop
+# ============================================================================
 
 # Validate ralph.md file structure
 validate_ralph_spec() {
@@ -307,6 +626,40 @@ build_prompt() {
   cat <<EOF
 You are running inside a Ralph loop (iteration $i of $MAX_ITER).
 
+=============================================================================
+CRITICAL: TEST-FIRST WORKFLOW (follow this sequence every iteration)
+=============================================================================
+
+1. RUN TESTS FIRST (before any implementation)
+   - Find the test command in "Tests Required" or "When Complete" section
+   - Run it BEFORE making any changes
+   - This shows current state: what passes, what fails
+   - If no tests exist yet, write them first
+
+2. ANALYZE RESULTS
+   - Which tests pass? (previous work is intact)
+   - Which tests fail? (what needs implementation)
+   - What are the error messages? (guides your implementation)
+
+3. IMPLEMENT
+   - Fix failing tests
+   - Add missing functionality
+   - Make targeted changes based on test failures
+
+4. RUN TESTS AGAIN
+   - Verify your changes fixed the failures
+   - Ensure no regressions (previously passing tests still pass)
+
+5. ASSESS COMPLETION
+   - ALL tests pass (including live tests if specified)? → Write promise tag
+   - Some tests fail? → Do NOT write promise, loop continues
+
+TEST EXECUTION ORDER (gated - stop if any gate fails):
+   Unit tests (fast) → Integration tests → Live tests (if specified)
+Do NOT run live/expensive tests until unit and integration tests pass.
+
+=============================================================================
+
 RALPH.MD FILE STRUCTURE REQUIREMENTS:
 This spec file should follow the established ralph.md pattern:
 1. Must have corresponding prd.md file (describes WHAT/WHY, this file describes HOW)
@@ -336,13 +689,12 @@ IMPLEMENTATION GUIDANCE:
 - The goal is efficient, clean implementation that meets the spec requirements
 
 COMPLETION INSTRUCTIONS:
-When the task described below is FULLY COMPLETE, you MUST:
-1. Run all required tests (see "When Complete" section)
-2. Verify all success criteria are met
-3. Only if ALL tests pass, write this exact line to the spec file or any project file:
+When ALL tests pass (unit, integration, and live if specified), you MUST:
+1. Verify all success criteria are met
+2. Write this exact line to the spec file or any project file:
    <promise>$PROMISE</promise>
 
-If the task is NOT yet complete, do NOT write the promise tag. Just make progress and the loop will continue.
+If ANY tests fail, do NOT write the promise tag. Make progress and the loop will continue.
 
 ---
 
@@ -379,6 +731,7 @@ check_promise() {
   fi
   # Check in recently modified files (last 5 minutes)
   if find . -type f -mmin -5 -exec grep -l "<promise>$PROMISE</promise>" {} \; 2>/dev/null | head -1 | grep -q .; then
+    find . -type f -mmin -5 -exec grep -l "<promise>$PROMISE</promise>" {}
     return 0
   fi
   return 1
