@@ -368,6 +368,81 @@ class STARAgent(BaseSTARAgent):
         return magic_method
 
     # ============================================================================
+    # TIMELINE COMPRESSION
+    # ============================================================================
+
+    def _maybe_compress_timeline(self, timeline: Timeline) -> None:
+        """
+        Compress timeline if it exceeds the configured threshold.
+
+        Uses the LLM to summarize old entries, preserving recent context.
+        This prevents unbounded context growth in long conversations.
+        """
+        if not timeline.needs_compression():
+            return
+
+        compression_prompt = timeline.build_compression_prompt()
+        if not compression_prompt:
+            return
+
+        try:
+            # Use a quick LLM call to summarize old entries
+            from dana.common.llm.types import LLMMessage
+
+            summary_response = self.llm_client.chat_response_sync(
+                [LLMMessage(role="user", content=compression_prompt)],
+                agent_id=self.object_id,
+                agent_type=self.agent_type,
+                temperature=0,
+            )
+
+            summary = summary_response.content.strip() if summary_response.content else ""
+
+            if summary:
+                compressed_count = timeline.compress_old_entries(summary)
+                logger.info(
+                    "Timeline compressed",
+                    agent_id=self.object_id,
+                    compressed_entries=compressed_count,
+                    summary_length=len(summary),
+                )
+        except Exception as e:
+            # Don't fail the main operation if compression fails
+            logger.warning("Timeline compression failed", error=str(e))
+
+    async def _maybe_compress_timeline_async(self, timeline: Timeline) -> None:
+        """Async version of _maybe_compress_timeline."""
+        if not timeline.needs_compression():
+            return
+
+        compression_prompt = timeline.build_compression_prompt()
+        if not compression_prompt:
+            return
+
+        try:
+            from dana.common.llm.types import LLMMessage
+
+            summary_response = await self.llm_client.chat_response(
+                [LLMMessage(role="user", content=compression_prompt)],
+                agent_id=self.object_id,
+                agent_type=self.agent_type,
+                temperature=0,
+            )
+
+            summary = summary_response.content.strip() if summary_response.content else ""
+
+            if summary:
+                compressed_count = timeline.compress_old_entries(summary)
+                logger.info(
+                    "Timeline compressed",
+                    agent_id=self.object_id,
+                    compressed_entries=compressed_count,
+                    summary_length=len(summary),
+                )
+        except Exception as e:
+            logger.warning("Timeline compression failed", error=str(e))
+
+    # ============================================================================
     # STAR PATTERN IMPLEMENTATION (BaseSTARAgent abstract methods)
     # ============================================================================
 
@@ -454,6 +529,9 @@ class STARAgent(BaseSTARAgent):
 
         timeline: Timeline = trace_percepts.get("timeline", self._timeline)
         trace_percepts.pop("timeline", None)
+
+        # Check if timeline needs compression before building messages
+        self._maybe_compress_timeline(timeline)
 
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
@@ -716,6 +794,9 @@ class STARAgent(BaseSTARAgent):
 
         timeline: Timeline = trace_percepts.get("timeline", self._timeline)
         trace_percepts.pop("timeline", None)
+
+        # Check if timeline needs compression before building messages
+        await self._maybe_compress_timeline_async(timeline)
 
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
