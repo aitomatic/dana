@@ -2,13 +2,16 @@
 Common functionality for all first-class types: Agent, Workflow, Resource.
 """
 
+from __future__ import annotations
+
 import inspect
 import json
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 import xml.etree.ElementTree as ET
 
-from .llm import LLM
+if TYPE_CHECKING:
+    from .llm import LLM
 from .protocols import Notifier
 from .protocols.types import DictParams, Identifiable
 from .protocols.war import IS_TOOL_USE, ResourceProtocol, WARProtocol
@@ -87,6 +90,8 @@ class BaseWAR(Notifier, Identifiable, WARProtocol):
     def llm_client(self) -> LLM:
         """Get the LLM client."""
         if self._llm_client is None:
+            from .llm import LLM
+
             self._llm_client = LLM()
         return self._llm_client
 

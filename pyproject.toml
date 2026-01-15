@@ -193,6 +193,24 @@ ignore_errors = true
 module = "dana.core.lang.interpreter.*"
 disallow_untyped_defs = true
 
+# =============================================================================
+# Pytest Configuration
+# =============================================================================
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "functional: marks tests as functional tests",
+    "regression: marks tests as regression tests",
+    "slow: marks tests as slow running",
+    "provider: marks tests for specific providers",
+    "live: marks tests as live tests that involve live resources (LLMs)",
+    "requires_api_keys: marks tests as requiring API keys (skip in CI without keys)",
+    "windows_console: marks tests that require Windows console features",
+    "harness: marks robustness harness tests that require mock LLM infrastructure",
+]
+
 # Database Migration Tool FOR DANA STUDIO
 [tool.alembic]
 
