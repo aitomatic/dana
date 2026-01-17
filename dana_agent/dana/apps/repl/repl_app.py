@@ -10,6 +10,7 @@ A streamlined REPL that provides an enhanced Python environment with:
 """
 
 import asyncio
+import logging
 import os
 import sys
 import traceback
@@ -37,8 +38,15 @@ except ImportError:
 class AdanaREPLApp:
     """Adana interactive REPL application."""
 
-    def __init__(self):
-        """Initialize the Adana REPL."""
+    def __init__(self, verbose: bool = False):
+        """Initialize the Adana REPL.
+
+        Args:
+            verbose: If True, enable debug/info logging. Default is False (quiet).
+        """
+        self._verbose = verbose
+        self._configure_logging(verbose)
+
         # Handle Windows console environment issues
         if sys.platform == "win32":
             # Fix for Windows CI/CD environments that may have xterm-256color TERM
@@ -94,6 +102,13 @@ class AdanaREPLApp:
             "__name__": "__main__",
             "__builtins__": __builtins__,
         }
+
+        # Initialize environment (loads .env, installs shims)
+        try:
+            from dana.__init__ import init_environment
+            init_environment()
+        except ImportError:
+            pass
 
         # Import Adana core classes
         try:
@@ -173,6 +188,24 @@ class AdanaREPLApp:
         namespace["logging"] = logging
 
         return namespace
+
+    def _configure_logging(self, verbose: bool) -> None:
+        """Configure logging level.
+
+        Args:
+            verbose: If True, enable INFO level. If False, suppress to WARNING.
+        """
+        level = logging.INFO if verbose else logging.WARNING
+        logging.basicConfig(level=level, format="%(message)s", force=True)
+
+        # Also configure structlog if available
+        try:
+            import structlog
+            structlog.configure(
+                wrapper_class=structlog.make_filtering_bound_logger(level),
+            )
+        except (ImportError, AttributeError):
+            pass
 
     def _get_style(self):
         """Get the prompt_toolkit style for syntax highlighting.
@@ -284,6 +317,13 @@ Type Python code to execute it.
         elif cmd in ("exit", "quit"):
             return False
 
+        elif cmd == "verbose":
+            self._verbose = not self._verbose
+            self._configure_logging(self._verbose)
+            status = "enabled" if self._verbose else "disabled"
+            print(f"Verbose logging {status}")
+            return True
+
         else:
             print(f"Unknown command: {line}")
             print("Type /help for available commands")
@@ -291,10 +331,12 @@ Type Python code to execute it.
 
     def _show_help(self):
         """Show help information."""
-        print("""
+        verbose_status = "on" if self._verbose else "off"
+        print(f"""
 Adana REPL Commands:
   /help      - Show this help message
   /imports   - Show all pre-imported modules and classes
+  /verbose   - Toggle verbose logging (currently {verbose_status})
   /exit      - Exit the REPL
 
 Python Features:

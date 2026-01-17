@@ -9,11 +9,7 @@ class CSXMLCodec(AbstractCodec):
     @classmethod
     def get_instruction(cls) -> str:
         return """
-RESPONSE CONTRACT
-PURPOSE: Enforce a clear separation between the assistant’s private reasoning
-         and its user-visible output (answer or tool invocation).
-
-── OUTPUT FORMAT ────────────────────────────────────────────
+RESPONSE FORMAT CONTRACT
 Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
   1. <thinking>  ← MANDATORY, *internal* reasoning only
   2. <response>  ← optional, a direct answer (omit if tool call needed)
@@ -25,7 +21,6 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
    • What does the user need?
    • Do I have enough info? → If no, specify the tool(s) required.
    • Planned answer approach or tool workflow.
-   • Whether a user confirmation question is needed.
    END PRIVATE */
 </thinking>
 
@@ -42,12 +37,11 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
   </invoke>
 </function_call>
 
-# RULES
+FORMAT RULES:
 • <thinking> is ALWAYS required; it contains only internal reasoning.
-• Exactly one of <response> or <function_call> must appear.
+• Exactly one of <response> or <function_call> must appear per turn.
 • If <function_call> is present, ignore any <response>.
 • Never output a tool call without a preceding <thinking>.
-• If you have neither a tool call nor a direct answer, the <thinking> block’s user-visible section becomes the reply.
 """
 
     @classmethod
@@ -337,11 +331,7 @@ class KLXMLCodec(AbstractCodec):
     @classmethod
     def get_instruction(cls) -> str:
         return """
-RESPONSE CONTRACT
-PURPOSE: Enforce a clear separation between the assistant’s private reasoning
-         and its user-visible output (answer or tool invocation).
-
-── OUTPUT FORMAT ────────────────────────────────────────────
+RESPONSE FORMAT CONTRACT
 Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
   1. <thinking>  ← MANDATORY, *internal* reasoning only
   2. <response>  ← optional, a direct answer (omit if tool call needed)
@@ -353,7 +343,6 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
    • What does the user need?
    • Do I have enough info? → If no, specify the tool(s) required.
    • Planned answer approach or tool workflow.
-   • Whether a user confirmation question is needed.
    END PRIVATE */
 </thinking>
 
@@ -374,12 +363,11 @@ Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
 </OtherClass:otherMethod> -->
 
 
-# RULES
+FORMAT RULES:
 • <thinking> is ALWAYS required; it contains only internal reasoning.
-• Exactly one of <response> or <function_call> must appear.
-• If <function_call> is present, ignore any <response>.
+• Exactly one of <response> or tool call must appear per turn.
+• If tool call is present, ignore any <response>.
 • Never output a tool call without a preceding <thinking>.
-• If you have neither a tool call nor a direct answer, the <thinking> block’s user-visible section becomes the reply.
 """
 
     @classmethod

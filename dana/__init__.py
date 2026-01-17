@@ -1,22 +1,31 @@
 """
-Dana Agent - Domain-Aware Neurosymbolic Agents
+Local import shim for `dana` when running from the repo root.
 
-This package provides the core agent framework for building and managing
-specialized AI agents with domain-specific knowledge and capabilities.
+This makes `import dana` resolve to `dana_agent/dana` without requiring
+manual PYTHONPATH tweaks.
 """
 
+from __future__ import annotations
+
+from importlib import import_module
 import sys
 import types
+import logging
+from pathlib import Path
 
-from dotenv import find_dotenv, load_dotenv
+
+_pkg_root = Path(__file__).resolve().parent
+_agent_pkg = _pkg_root.parent / "dana_agent" / "dana"
+_pkg_paths = globals().setdefault("__path__", [])
+
+if _agent_pkg.exists():
+    _pkg_paths.append(str(_agent_pkg))
 
 
 def _install_structlog_shim() -> None:
     try:
         import structlog  # noqa: F401
     except ModuleNotFoundError:
-        import logging
-
         shim = types.ModuleType("structlog")
 
         class _BoundLogger:
@@ -84,18 +93,15 @@ def _install_langfuse_shim() -> None:
         sys.modules["langfuse"] = shim
 
 
-def init_environment(verbose: bool = False):
-    """Load environment variables from .env file.
+_install_structlog_shim()
+_install_langfuse_shim()
 
-    Args:
-        verbose: If True, print status messages. Default is False (quiet).
-    """
-    _install_structlog_shim()
-    _install_langfuse_shim()
-    dotenv_path = find_dotenv()
-    if verbose:
-        print(f"Loading environment variables from {dotenv_path}")
-    if dotenv_path:
-        load_dotenv(dotenv_path)
-    else:
-        load_dotenv()
+_common = import_module("dana.common")
+_core = import_module("dana.core")
+
+LLM = _common.LLM
+LLMMessage = _common.LLMMessage
+LLMResponse = _common.LLMResponse
+STARAgent = _core.STARAgent
+
+__all__ = ["LLM", "LLMMessage", "LLMResponse", "STARAgent"]

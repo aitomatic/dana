@@ -166,6 +166,26 @@ class ClaudeCodeSkills(BaseResource):
 
         return "\n".join([f"- {skill['name']}: {skill['description']}" for skill in self._skills])
 
+    def _home_writable(self) -> bool:
+        home = Path.home()
+        if not os.access(home, os.W_OK):
+            return False
+        config_path = home / ".claude.json"
+        if config_path.exists() and not os.access(config_path, os.W_OK):
+            return False
+        test_path = home / f".claude_write_test_{os.getpid()}"
+        try:
+            with open(test_path, "w", encoding="utf-8"):
+                pass
+            test_path.unlink(missing_ok=True)
+        except OSError:
+            try:
+                test_path.unlink()
+            except OSError:
+                pass
+            return False
+        return True
+
     def _sync_claude_config_dir(self, target_dir: Path) -> None:
         """Populate a writable Claude config dir with config and skills."""
         source_home = Path.home()
@@ -244,6 +264,110 @@ class ClaudeCodeSkills(BaseResource):
         """Whether Claude Code session persistence is disabled."""
         return self._disable_session_persistence
 
+    def _build_execution_env(self) -> tuple[dict, str | None]:
+        """Build environment variables for Claude Code subprocess.
+
+        Returns:
+            Tuple of (env dict without API key, extracted API key or None)
+        """
+        env = dict(os.environ)
+        api_key = env.pop("ANTHROPIC_API_KEY", None)
+        env.setdefault("CLAUDE_CODE_DISABLE_ATTACHMENTS", "1")
+        env.setdefault("CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL", "true")
+        env.setdefault("CHOKIDAR_USEPOLLING", "1")
+        env.setdefault("CHOKIDAR_INTERVAL", "500")
+        env.setdefault("WATCHPACK_POLLING", "true")
+        return env, api_key
+
+    def _build_command(self, prompt: str, output_path: Path, env: dict) -> list[str]:
+        """Build the Claude CLI command with appropriate flags.
+
+        Args:
+            prompt: The prompt to send to Claude
+            output_path: Path for output files and config
+            env: Environment dict to modify if using custom config dir
+
+        Returns:
+            Command list ready for subprocess
+        """
+        cmd = ["claude", "--dangerously-skip-permissions"]
+
+        if self._disable_session_persistence:
+            cmd.append("--no-session-persistence")
+
+        use_config_dir = self._disable_session_persistence or not self._home_writable()
+        if use_config_dir:
+            claude_config_dir = output_path.resolve() / ".claude_config"
+            claude_config_dir.mkdir(parents=True, exist_ok=True)
+            self._sync_claude_config_dir(claude_config_dir)
+            self._sync_keychain_credentials(claude_config_dir)
+            env["CLAUDE_CONFIG_DIR"] = str(claude_config_dir)
+            env["HOME"] = str(claude_config_dir)
+
+        cmd.extend(["-p", prompt])
+        return cmd
+
+    def _get_preexec_fn(self):
+        """Get preexec function to raise file descriptor limits on Unix."""
+        if os.name == "nt":
+            return None
+
+        def _raise_nofile_limit() -> None:
+            try:
+                import resource
+
+                soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+                target = min(max(soft, 16384), hard)
+                if target > soft:
+                    resource.setrlimit(resource.RLIMIT_NOFILE, (target, hard))
+            except Exception:
+                pass
+
+        return _raise_nofile_limit
+
+    def _run_claude_subprocess(
+        self,
+        cmd: list[str],
+        env: dict,
+        cwd: str,
+        preexec_fn,
+    ) -> subprocess.CompletedProcess:
+        """Run Claude Code subprocess with given parameters."""
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=self._timeout,
+            cwd=cwd,
+            preexec_fn=preexec_fn,
+        )
+
+    def _extract_error_output(self, result: subprocess.CompletedProcess) -> str:
+        """Extract error output from subprocess result."""
+        if result.stderr:
+            return result.stderr
+        if result.returncode != 0:
+            return result.stdout
+        return ""
+
+    def _should_retry_with_api_key(self, result: subprocess.CompletedProcess, api_key: str | None) -> bool:
+        """Check if we should retry with ANTHROPIC_API_KEY."""
+        if result.returncode == 0 or not api_key:
+            return False
+
+        error_output = self._extract_error_output(result)
+        retry_triggers = ("Invalid API key", "Please run /login", "Connection error")
+        return any(trigger in error_output for trigger in retry_triggers)
+
+    def _build_result_dict(self, result: subprocess.CompletedProcess) -> dict:
+        """Build standard result dictionary from subprocess result."""
+        return {
+            "success": result.returncode == 0,
+            "output": result.stdout,
+            "error": self._extract_error_output(result),
+        }
+
     @tool_use
     def execute(self, task: str, context: str = "") -> dict:
         """Execute a task using Claude Code skills.
@@ -280,40 +404,24 @@ class ClaudeCodeSkills(BaseResource):
                 "error": "No skills available. Install skills in ~/.claude/skills/",
             }
 
-        prompt = task
-        if context:
-            prompt = f"Context from our conversation:\n{context}\n\nTask: {task}"
-
+        prompt = f"Context from our conversation:\n{context}\n\nTask: {task}" if context else task
         output_path = Path(self._output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        env = dict(os.environ)
-        env.pop("ANTHROPIC_API_KEY", None)
+        env, api_key = self._build_execution_env()
+        cmd = self._build_command(prompt, output_path, env)
+        cwd = str(output_path)
+        preexec_fn = self._get_preexec_fn()
 
         try:
-            cmd = ["claude", "--dangerously-skip-permissions"]
-            if getattr(self, "_disable_session_persistence", False):
-                cmd.append("--no-session-persistence")
-                claude_config_dir = output_path.resolve() / ".claude_config"
-                claude_config_dir.mkdir(parents=True, exist_ok=True)
-                self._sync_claude_config_dir(claude_config_dir)
-                self._sync_keychain_credentials(claude_config_dir)
-                env["CLAUDE_CONFIG_DIR"] = str(claude_config_dir)
-            cmd.extend(["-p", prompt])
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                env=env,
-                timeout=self._timeout,
-                cwd=str(output_path),
-            )
-            error_output = result.stderr if result.stderr else (result.stdout if result.returncode != 0 else "")
-            return {
-                "success": result.returncode == 0,
-                "output": result.stdout,
-                "error": error_output,
-            }
+            result = self._run_claude_subprocess(cmd, env, cwd, preexec_fn)
+
+            if self._should_retry_with_api_key(result, api_key):
+                env["ANTHROPIC_API_KEY"] = api_key
+                result = self._run_claude_subprocess(cmd, env, cwd, preexec_fn)
+
+            return self._build_result_dict(result)
+
         except subprocess.TimeoutExpired:
             return {
                 "success": False,
