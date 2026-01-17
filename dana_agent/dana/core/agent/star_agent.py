@@ -40,7 +40,7 @@ class STARAgent(BaseSTARAgent):
     """STARAgent implementation using composition-based architecture."""
 
     # Configuration constants
-    MAX_EMPTY_RESPONSE_RETRIES = 3  # Maximum retries when LLM returns empty response with no tool calls
+    MAX_EMPTY_RESPONSE_RETRIES = 5  # Maximum retries when LLM returns empty response or premature stop
 
     def __init__(
         self,
@@ -60,6 +60,7 @@ class STARAgent(BaseSTARAgent):
         ltmemory_path: str | None = None,
         enable_skills: bool = True,
         skills_output_dir: str = "./skill_output",
+        enable_web_search: bool = True,
         **kwargs,
     ):
         """
@@ -74,14 +75,15 @@ class STARAgent(BaseSTARAgent):
             max_context_tokens: Maximum tokens for timeline context
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
+            enable_web_search: Whether to enable web search resource (default: True).
+                Provides search() and fetch_url() methods without requiring API keys.
             codec: Codec class to use for prompt/tool system (default: CSXMLCodec).
                 - Default (CSXMLCodec): Uses new system (CodecToolCaller and LocalPromptAPI).
                   This is the recommended approach for reliable tool parsing and execution.
                   Provides structured XML parsing and explicit handling of object_id vs class_name.
                 - If explicitly set to None: Uses legacy system (ToolCaller and PromptEngineer).
-                  This is deprecated and only maintained for backward compatibility.
-                  The legacy system uses regex-based parsing which can be unreliable,
-                  especially with UUIDs/object_ids.
+                  Available for backward compatibility. The legacy system uses regex-based
+                  parsing which can be unreliable, especially with UUIDs/object_ids.
                 - Can also use other codecs (e.g., KLXMLCodec) for different formats.
                   See dana.core.knowledge.prompts.codecs for available codecs.
             ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
@@ -108,27 +110,15 @@ class STARAgent(BaseSTARAgent):
         self._session_id = str(uuid4())
         # Conditional component initialization based on codec
         # IMPORTANT: Codec selection determines which system is used:
-        #   - Default (codec=CSXMLCodec): Uses CodecToolCaller and LocalPromptAPI (NEW - DEFAULT)
+        #   - Default (codec=CSXMLCodec): Uses CodecToolCaller and LocalPromptAPI (DEFAULT)
         #     This is the recommended system for reliable tool parsing and execution.
         #     It provides structured XML parsing and explicit handling of object_id vs class_name.
-        #   - Explicit opt-out (codec=None): Uses ToolCaller and PromptEngineer (LEGACY - DEPRECATED)
+        #   - Explicit opt-out (codec=None): Uses ToolCaller and PromptEngineer (LEGACY)
         #     This system uses regex-based parsing which can be unreliable, especially
-        #     with UUIDs/object_ids. Only use for backward compatibility.
+        #     with UUIDs/object_ids. Available for backward compatibility.
         self._repository_factory = repository_factory
         self._codec = codec
-        
-        # Issue deprecation warning if explicitly opting out to legacy system
-        if codec is None:
-            import warnings
-            warnings.warn(
-                "codec=None is deprecated. The codec system (CSXMLCodec) is now the default. "
-                "The legacy system (ToolCaller/PromptEngineer) will be removed in a future version. "
-                "Remove codec=None to use the recommended codec system, or explicitly pass "
-                "codec=CSXMLCodec if you need to be explicit.",
-                DeprecationWarning,
-                stacklevel=2
-            )
-        
+
         if codec is not None:
             # NEW SYSTEM: Use codec-based components
             from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
@@ -185,6 +175,14 @@ class STARAgent(BaseSTARAgent):
             self._event_log = None
 
         self.with_resources(ToDoResource(resource_id="todo-resource"))
+
+        if enable_web_search:
+            try:
+                from dana.core.resource.simple_search import SimpleWebSearch
+
+                self.with_resources(SimpleWebSearch(resource_id="web-search"))
+            except ImportError:
+                pass  # Web search not available
 
         if enable_skills:
             from dana.core.skills import ClaudeCodeSkills
@@ -518,6 +516,22 @@ class STARAgent(BaseSTARAgent):
 
         return super()._see(trace_inputs)
 
+    def _format_tool_call_as_xml(self, tool_call: DictParams) -> str:
+        """Format a tool call dict as XML for consistent LLM context.
+
+        This ensures the LLM sees tool calls in the same XML format it should
+        produce, rather than Python dict format which it might mimic.
+        """
+        func = tool_call.get("function", "unknown:unknown")
+        args = tool_call.get("arguments", {})
+
+        # Build XML parameters
+        params_xml = ""
+        for key, value in args.items():
+            params_xml += f'<parameter name="{key}">{value}</parameter>'
+
+        return f'<function_call><invoke name="{func}">{params_xml}</invoke></function_call>'
+
     @observable
     def _think(self, trace_percepts: DictParams) -> DictParams:
         """
@@ -569,6 +583,48 @@ class STARAgent(BaseSTARAgent):
             # Retry if both response and tool_calls are empty
             has_content = response and response.strip()
             has_tool_calls = tool_calls and len(tool_calls) > 0
+
+            # Detect premature stop: LLM said "I will..." but didn't call a tool
+            # This catches the case where autonomy instructions weren't followed
+            if has_content and not has_tool_calls:
+                premature_stop_patterns = [
+                    # "I will/need to do X" patterns (should DO it, not say it)
+                    "i will now", "i will fetch", "i will search", "i will get",
+                    "i will correct", "i will try", "i will look", "i will perform",
+                    "i will proceed", "i need to fetch", "i need to search", "i need to get",
+                    "i'll now", "i'll fetch", "i'll search", "i'll get", "i'll try",
+                    "i'm going to", "i am going to",
+                    "proceeding to", "let me fetch", "let me get", "let me search",
+                    "let me try", "let's try", "let me correct", "let me look",
+                    "next, i will", "next i will", "now i will", "now i'll",
+                    "initiating", "try that again", "try again",
+                    # Internal thoughts leaked (should be in <thinking> not response)
+                    "[agent's internal thoughts]", "internal thoughts",
+                    # Lazy "here's a link" patterns (should fetch and extract, not punt to user)
+                    "you can check", "you can visit", "you can view", "you can see",
+                    "visit this link", "check this link", "available at",
+                    "here's where you can", "here is where you can",
+                    "i recommend visiting", "i suggest visiting",
+                ]
+                response_lower = response.lower()
+                is_premature_stop = any(pattern in response_lower for pattern in premature_stop_patterns)
+
+                if is_premature_stop and attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
+                    from dana.common.llm.types import LLMMessage
+
+                    correction_message = LLMMessage(
+                        role="user",
+                        content=(
+                            "⚠️ WRONG! Your response describes what you will do, not the actual result. "
+                            "You MUST either: (1) call a tool with <function_call>, or (2) give the final answer. "
+                            "If current source isn't working, TRY A DIFFERENT ONE (e.g., Google Finance instead of Yahoo). "
+                            "DO NOT give up - keep trying until you have the actual answer."
+                        )
+                    )
+                    llm_messages.append(correction_message)
+                    logger.warning("Detected premature stop pattern, retrying with correction", attempt=attempt + 1)
+                    continue
+
             if has_content or has_tool_calls:
                 break
             elif reasoning and "error" in reasoning.lower():
@@ -622,7 +678,7 @@ class STARAgent(BaseSTARAgent):
                 timeline.add_entry(
                     TimelineEntry(
                         entry_type=TimelineEntryType.TOOL_CALL,
-                        content=str(tool_call),
+                        content=self._format_tool_call_as_xml(tool_call),
                     )
                 )
 
@@ -696,20 +752,42 @@ class STARAgent(BaseSTARAgent):
                         )
                     )
 
-            # Add a synthetic user message to prompt the agent to respond based on tool results
-            # This ensures the next THINK phase has a user message to respond to
-            # last_command_message = ""
-            # for entry in self._timeline.timeline[::-1]:
-            #     if entry.entry_type == TimelineEntryType.USER_MESSAGE:
-            #         last_command_message = entry.content and "Please provide a response" not in entry.content
-            #         break
-            # self._timeline.add_entry(
-            #     TimelineEntry(
-            #         entry_type=TimelineEntryType.USER_MESSAGE,
-            #         content=f"Please provide a response based on the tool results above to answer : {last_command_message}",
-            #         is_latest_user_message=True,
-            #     )
-            # )
+            # Add a system reminder to continue if task is not complete
+            # Find original user request
+            original_request = ""
+            for entry in self._timeline.timeline:
+                if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+                    original_request = entry.content
+                    break
+
+            # Count completed tool calls to estimate progress
+            tool_call_count = sum(
+                1 for entry in self._timeline.timeline
+                if entry.entry_type == TimelineEntryType.TOOL_CALL
+            )
+
+            # Estimate expected steps based on sequential action patterns
+            # "search then fetch" = 2 steps, "search, then process, then save" = 3 steps
+            request_lower = original_request.lower()
+            # Count occurrences of step separators (avoiding overlap)
+            import re
+            step_separators = re.findall(r'\bthen\b|\bafter that\b|\bnext\b|\bfinally\b', request_lower)
+            expected_steps = 1 + len(step_separators)
+            # Cap expected_steps at a reasonable maximum
+            expected_steps = min(expected_steps, 5)
+
+            # Only add reminder if we haven't completed all expected steps
+            if tool_call_count < expected_steps:
+                remaining = expected_steps - tool_call_count
+                self._timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                        content=f"[MULTI-STEP TASK - {remaining} STEP(S) REMAINING] "
+                        f"Completed {tool_call_count}/{expected_steps} steps. "
+                        "I MUST call the next tool using this EXACT XML format: "
+                        '<function_call><invoke name="resource-id:method"><parameter name="param">value</parameter></invoke></function_call>',
+                    )
+                )
 
         # Output parameter checking
         assert isinstance(tool_results, list)
@@ -835,6 +913,48 @@ class STARAgent(BaseSTARAgent):
             # Retry if both response and tool_calls are empty
             has_content = response and response.strip()
             has_tool_calls = tool_calls and len(tool_calls) > 0
+
+            # Detect premature stop: LLM said "I will..." but didn't call a tool
+            # This catches the case where autonomy instructions weren't followed
+            if has_content and not has_tool_calls:
+                premature_stop_patterns = [
+                    # "I will/need to do X" patterns (should DO it, not say it)
+                    "i will now", "i will fetch", "i will search", "i will get",
+                    "i will correct", "i will try", "i will look", "i will perform",
+                    "i will proceed", "i need to fetch", "i need to search", "i need to get",
+                    "i'll now", "i'll fetch", "i'll search", "i'll get", "i'll try",
+                    "i'm going to", "i am going to",
+                    "proceeding to", "let me fetch", "let me get", "let me search",
+                    "let me try", "let's try", "let me correct", "let me look",
+                    "next, i will", "next i will", "now i will", "now i'll",
+                    "initiating", "try that again", "try again",
+                    # Internal thoughts leaked (should be in <thinking> not response)
+                    "[agent's internal thoughts]", "internal thoughts",
+                    # Lazy "here's a link" patterns (should fetch and extract, not punt to user)
+                    "you can check", "you can visit", "you can view", "you can see",
+                    "visit this link", "check this link", "available at",
+                    "here's where you can", "here is where you can",
+                    "i recommend visiting", "i suggest visiting",
+                ]
+                response_lower = response.lower()
+                is_premature_stop = any(pattern in response_lower for pattern in premature_stop_patterns)
+
+                if is_premature_stop and attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
+                    from dana.common.llm.types import LLMMessage
+
+                    correction_message = LLMMessage(
+                        role="user",
+                        content=(
+                            "⚠️ WRONG! Your response describes what you will do, not the actual result. "
+                            "You MUST either: (1) call a tool with <function_call>, or (2) give the final answer. "
+                            "If current source isn't working, TRY A DIFFERENT ONE (e.g., Google Finance instead of Yahoo). "
+                            "DO NOT give up - keep trying until you have the actual answer."
+                        )
+                    )
+                    llm_messages.append(correction_message)
+                    logger.warning("Detected premature stop pattern, retrying with correction", attempt=attempt + 1)
+                    continue
+
             if has_content or has_tool_calls:
                 break
             elif reasoning and "error" in reasoning.lower():
@@ -888,7 +1008,7 @@ class STARAgent(BaseSTARAgent):
                 timeline.add_entry(
                     TimelineEntry(
                         entry_type=TimelineEntryType.TOOL_CALL,
-                        content=str(tool_call),
+                        content=self._format_tool_call_as_xml(tool_call),
                     )
                 )
 

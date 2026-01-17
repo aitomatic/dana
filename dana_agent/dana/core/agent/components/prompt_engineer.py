@@ -169,22 +169,7 @@ class PromptFormatter:
 
 
 class PromptEngineer:
-    """
-    Component providing XML-based prompt files with section-level inheritance.
-    
-    .. deprecated::
-        This is the LEGACY prompt engineer implementation. It is maintained for
-        backward compatibility but is not recommended for new code.
-        
-        **For new code, use LocalPromptAPI instead** by passing a codec (e.g., CSXMLCodec)
-        to STARAgent initialization. LocalPromptAPI provides:
-        - Codec-aware prompt management
-        - Structured tool signature formatting
-        - Better integration with the codec system
-        - More reliable tool call parsing
-        
-        See: dana.core.knowledge.prompts.codecs for available codecs.
-    """
+    """Component providing XML-based prompt files with section-level inheritance."""
 
     # Compiled regex pattern for tag extraction (performance optimization)
     _START_TAG_PATTERN = re.compile(r"<(\w+)>")

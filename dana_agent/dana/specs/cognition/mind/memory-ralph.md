@@ -261,7 +261,6 @@ Only if ALL tests pass, output the completion tag:
 - ✅ STARAgent accepts `ltmemory_path` parameter
 - ✅ Learner stores memories to LTMemory in RETENTIVE phase
 - ✅ LocalPromptAPI (codec system - DEFAULT) queries LTMemory for past knowledge
-- ⚠️ PromptEngineer is deprecated - all new code must use LocalPromptAPI with codecs
 - ⏸️ Timeline/STMemory unification deferred (both serve different purposes)
 
 ### Integration Tasks
