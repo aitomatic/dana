@@ -256,22 +256,7 @@ class WARCaller:
 
 
 class ToolCaller(WARCaller):
-    """
-    Component providing tool call execution and orchestration capabilities.
-    
-    .. deprecated:: 
-        This is the LEGACY tool caller implementation. It uses regex-based parsing
-        which can be unreliable, especially with UUIDs/object_ids.
-        
-        **For new code, use CodecToolCaller instead** by passing a codec (e.g., CSXMLCodec)
-        to STARAgent initialization. CodecToolCaller provides:
-        - Structured XML parsing instead of regex heuristics
-        - Explicit handling of object_id vs class_name
-        - Better error messages when tools aren't found
-        - More reliable tool execution
-        
-        See: dana.core.knowledge.prompts.codecs for available codecs.
-    """
+    """Component providing tool call execution and orchestration capabilities."""
 
     def __init__(self, agent: STARAgent):
         """
