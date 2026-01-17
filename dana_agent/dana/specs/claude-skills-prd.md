@@ -582,6 +582,7 @@ rm -rf temp
 5. Skill filtering works for specialized agents
 6. Graceful handling when Claude Code is not installed or no skills found
 7. Default enabled with zero configuration when Claude Code is available
+8. **E2E via STARAgent**: Given a user query, STARAgent autonomously decides to use Claude skills and generates output files
 
 ## File Structure
 
