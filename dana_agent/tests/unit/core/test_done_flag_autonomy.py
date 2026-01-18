@@ -43,13 +43,17 @@ def make_json_response(done: bool, response: str | None = None, tool_calls: list
 
 
 def make_agent(mock_llm: MockLLM, resources=None) -> STARAgent:
+    from dana.core.runtime.default import DefaultRuntime
+
+    # Pass mock LLM directly to runtime to avoid any provider initialization
+    runtime = DefaultRuntime(llm=mock_llm)
     agent = STARAgent(
         agent_type="test",
         auto_register=False,
         enable_web_search=False,
         enable_skills=False,
+        runtime=runtime,
     )
-    agent.llm_client = mock_llm
     if resources:
         agent.with_resources(*resources)
     return agent

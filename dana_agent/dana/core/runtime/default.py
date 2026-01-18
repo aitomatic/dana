@@ -235,6 +235,9 @@ class DefaultRuntime(AgentRuntime):
         reasoning = None
         if content:
             parsed_json = self._extract_json(content)
+            if not parsed_json:
+                # Log first 500 chars of unparseable content for debugging
+                logger.warning("Failed to parse JSON from LLM response", content_preview=content[:500] if len(content) > 500 else content)
             if parsed_json:
                 reasoning = parsed_json.get("reasoning")
                 # Extract todo_list from JSON
