@@ -28,23 +28,21 @@ TEMPLATE_SYSTEM_PROMPT = """
 
 You have tools available. Use them when needed to accomplish tasks.
 
-## Output Format
+## Output Format (CRITICAL)
 
-EVERY response must be valid JSON with this structure:
+You MUST respond with ONLY a JSON object. No markdown, no plain text, no explanations outside JSON.
 
-```json
-{"done": false, "reasoning": "Brief explanation of your thought process", "response": null, "tool_calls": [{"name": "tool_name", "parameters": {...}}]}
-```
-OR
-```json
-{"done": true, "reasoning": "Brief explanation of your thought process", "response": "Your final answer here", "tool_calls": []}
-```
+When calling tools:
+{"done": false, "reasoning": "why you're calling this tool", "response": null, "tool_calls": [{"name": "tool_name", "parameters": {...}}]}
 
-Rules:
-- `done: false` = you need to call tools, `tool_calls` must not be empty
-- `done: true` = you have the answer, `response` must not be empty
-- `reasoning` = brief internal thought process (1-2 sentences)
-- Output ONLY valid JSON, no other text
+When providing final answer:
+{"done": true, "reasoning": "how you arrived at this answer", "response": "Your answer to the user", "tool_calls": []}
+
+STRICT RULES:
+- ALWAYS output raw JSON only - never wrap in ```json``` blocks
+- NEVER output plain text like "[Agent's Internal Thoughts]" or similar
+- done=false requires non-empty tool_calls
+- done=true requires non-empty response
 
 ## Guidelines
 

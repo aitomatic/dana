@@ -116,6 +116,9 @@ class OpenAIProvider(LLMProvider):
             if tools:
                 request_kwargs["tools"] = tools
                 request_kwargs["tool_choice"] = "auto"
+            else:
+                # When not using native tools, enable JSON mode for reliable formatting
+                request_kwargs["response_format"] = {"type": "json_object"}
 
             # Call OpenAI API
             response = await self.client.chat.completions.create(**request_kwargs)
