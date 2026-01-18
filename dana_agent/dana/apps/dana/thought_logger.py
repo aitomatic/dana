@@ -85,9 +85,10 @@ class ThoughtLogger(Notifiable):
             reasoning = trace_thoughts.get("reasoning")
             tool_calls = trace_thoughts.get("tool_calls", [])
 
-            if response and len(response) > 0:
+            # Display if we have response OR reasoning
+            if (response and len(response) > 0) or reasoning:
                 # Extract more informative content from response
-                think_summary = self._extract_think_summary(response, reasoning, tool_calls)
+                think_summary = self._extract_think_summary(response or "", reasoning, tool_calls)
                 self._display_phase(agent_id, "💭 THINK", think_summary)
 
         # ACT phase - outputs
