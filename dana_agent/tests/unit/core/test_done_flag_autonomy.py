@@ -54,6 +54,8 @@ def make_agent(mock_llm: MockLLM, resources=None) -> STARAgent:
         enable_skills=False,
         runtime=runtime,
     )
+    # Also set agent's llm_client for any code paths that access it directly
+    agent._llm_client = mock_llm
     if resources:
         agent.with_resources(*resources)
     return agent
