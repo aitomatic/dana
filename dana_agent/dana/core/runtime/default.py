@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import os
 import re
 import traceback
+from datetime import datetime
 from typing import Any
 
 import structlog
@@ -133,6 +135,10 @@ class DefaultRuntime(AgentRuntime):
     def build_prompt(self, agent, timeline, learned_context: str | None = None) -> list[LLMMessage]:
         self._agent = agent
         messages = []
+
+        # Inject ephemeral runtime context (time, user, timezone)
+        if timeline:
+            timeline.set_context(self._get_runtime_context())
 
         system_prompt = self._build_system_prompt(agent)
         messages.append(LLMMessage(role="system", content=system_prompt))
@@ -302,6 +308,57 @@ class DefaultRuntime(AgentRuntime):
         if self._agent is not None:
             self._agent.llm_client = self._llm
         return self._llm
+
+    # Cache for IP geolocation (doesn't change during session)
+    _cached_location: dict[str, str] | None = None
+
+    def _get_runtime_context(self) -> dict[str, Any]:
+        """Get runtime context info for the current query.
+
+        Returns:
+            Dictionary with timestamp, timezone, user, and location info.
+        """
+        now = datetime.now().astimezone()
+        context = {
+            "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "timezone": now.tzname() or "UTC",
+            "user": os.environ.get("USER") or os.environ.get("USERNAME") or "unknown",
+        }
+
+        # Add location from IP geolocation (cached)
+        location = self._get_ip_location()
+        if location:
+            context["location"] = location
+
+        return context
+
+    def _get_ip_location(self) -> str | None:
+        """Get location from IP geolocation (cached).
+
+        Uses ip-api.com which is free and doesn't require an API key.
+        Results are cached for the session since location doesn't change.
+
+        Returns:
+            Location string like "San Francisco, California, US" or None on failure.
+        """
+        if DefaultRuntime._cached_location is not None:
+            return DefaultRuntime._cached_location.get("location")
+
+        try:
+            import urllib.request
+            import json
+
+            with urllib.request.urlopen("http://ip-api.com/json/?fields=city,regionName,country", timeout=2) as response:
+                data = json.loads(response.read().decode())
+                if data.get("city"):
+                    location = f"{data.get('city', '')}, {data.get('regionName', '')}, {data.get('country', '')}"
+                    DefaultRuntime._cached_location = {"location": location}
+                    return location
+        except Exception:
+            # Fail silently - location is optional
+            DefaultRuntime._cached_location = {"location": None}
+
+        return None
 
     def _build_native_tools_if_supported(self, agent) -> None:
         """Build native tool schemas if the LLM provider supports native tool calling."""

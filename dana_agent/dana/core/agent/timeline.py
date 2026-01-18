@@ -35,6 +35,7 @@ class TimelineEntryType(Enum):
     UNKNOWN_TOOL_CALL = "unknown_tool_call"
     AGENT_LEARNING = "agent_learning"
     TIMELINE_SUMMARY = "timeline_summary"  # Compressed history summary
+    CONTEXT = "context"  # Ephemeral runtime context (time, user, location)
 
 
 # Static mapping of entry types to display labels
@@ -48,6 +49,7 @@ ENTRY_CONFIG: Final = {
     TimelineEntryType.WORKFLOW_RESULT: "Workflow-to-Agent Result",
     TimelineEntryType.UNKNOWN_TOOL_CALL: "Unknown Tool-to-Agent Result",
     TimelineEntryType.TIMELINE_SUMMARY: "Previous Context Summary",
+    TimelineEntryType.CONTEXT: "Runtime Context",
 }
 
 
@@ -75,6 +77,7 @@ class TimelineEntry:
         is_latest_user_message: Whether this is the latest user message
         tool_call_id: For tool results, the ID linking back to the original tool call (OpenAI native tools)
         tool_calls: For assistant messages, the native tool calls array (OpenAI native tools)
+        ephemeral: If True, entry is not persisted and only exists for current query
     """
 
     entry_type: TimelineEntryType
@@ -84,6 +87,7 @@ class TimelineEntry:
     is_latest_user_message: bool = False
     tool_call_id: str | None = None  # For linking tool results to their calls
     tool_calls: list | None = None  # For assistant messages with native tool calls
+    ephemeral: bool = False  # Ephemeral entries are not persisted
 
     def _get_entry_config(self) -> str:
         """
@@ -266,6 +270,42 @@ class Timeline:
         """
         self.timeline.append(entry)
 
+    def set_context(self, context: dict[str, Any]) -> None:
+        """
+        Set or replace the ephemeral runtime context entry.
+
+        This removes any existing CONTEXT entry and adds a fresh one.
+        The context entry is ephemeral (not persisted) and provides
+        runtime information like current time, user, and timezone.
+
+        Args:
+            context: Dictionary with context info (e.g., timestamp, user, timezone)
+        """
+        # Remove any existing CONTEXT entries
+        self.timeline = [e for e in self.timeline if e.entry_type != TimelineEntryType.CONTEXT]
+
+        # Format context for display
+        context_parts = []
+        if "timestamp" in context:
+            context_parts.append(f"Current time: {context['timestamp']}")
+        if "timezone" in context:
+            context_parts.append(f"Timezone: {context['timezone']}")
+        if "location" in context:
+            context_parts.append(f"Location: {context['location']}")
+        if "user" in context:
+            context_parts.append(f"User: {context['user']}")
+
+        content = " | ".join(context_parts) if context_parts else str(context)
+
+        # Insert at the beginning of the timeline
+        context_entry = TimelineEntry(
+            entry_type=TimelineEntryType.CONTEXT,
+            content=content,
+            metadata=context,
+            ephemeral=True,
+        )
+        self.timeline.insert(0, context_entry)
+
     def to_llm_messages(
         self, max_tokens: int | None = None, default_role: str = "user", separate_latest_user: bool = False
     ) -> list[LLMMessage]:
@@ -378,6 +418,8 @@ class Timeline:
         """
         if entry.entry_type == TimelineEntryType.USER_MESSAGE:
             return "user"
+        elif entry.entry_type == TimelineEntryType.CONTEXT:
+            return "system"
         elif entry.entry_type in [
             TimelineEntryType.AGENT_RESPONSE,
             TimelineEntryType.AGENT_THOUGHTS,
@@ -540,14 +582,18 @@ class Timeline:
         """
         Save timeline for a session.
 
+        Ephemeral entries (like CONTEXT) are excluded from persistence.
+
         Args:
             session_id: Session identifier
         """
         if self._repository is None:
             raise ValueError("Cannot save timeline: repository is None. Initialize Timeline with repository or agent.")
 
-        self._repository.save(session_id, self.timeline)
-        logger.info(f"Saved timeline with {len(self.timeline)} entries for session {session_id}")
+        # Filter out ephemeral entries before saving
+        persistent_entries = [e for e in self.timeline if not e.ephemeral]
+        self._repository.save(session_id, persistent_entries)
+        logger.info(f"Saved timeline with {len(persistent_entries)} entries for session {session_id} (excluded {len(self.timeline) - len(persistent_entries)} ephemeral)")
 
     def read_since(self, checkpoint: int) -> Iterator[TimelineEntry]:
         """
