@@ -8,11 +8,18 @@ from dana.common.llm.types import LLMMessage
 
 
 @dataclass
+class TodoItem:
+    content: str
+    status: str  # "pending", "in_progress", "completed"
+
+
+@dataclass
 class ParsedResponse:
     done: bool | None
     reasoning: str | None
     response: str | None
     tool_calls: list[dict[str, Any]]
+    todo_list: list[TodoItem] | None = None
 
 
 class AgentRuntime(ABC):
@@ -49,13 +56,17 @@ class AgentRuntime(ABC):
         return LLMMessage(
             role="user",
             content=(
-                "Invalid format. Reply with ONLY valid JSON:\n"
-                '{"done": false, "reasoning": "...", "response": null, "tool_calls": [{"name": "...", "parameters": {...}}]}\n'
-                "OR\n"
-                '{"done": true, "reasoning": "...", "response": "your answer", "tool_calls": []}\n'
-                "Rules: done=false requires tool_calls. done=true requires response."
+                "Invalid format. Reply with ONLY valid JSON:\n\n"
+                "If you NEED more information, call a tool:\n"
+                '{"done": false, "reasoning": "...", "response": null, "tool_calls": [{"name": "...", "parameters": {...}}]}\n\n'
+                "If you HAVE all the information needed, provide your answer:\n"
+                '{"done": true, "reasoning": "...", "response": "your synthesized answer", "tool_calls": []}\n\n'
+                "RULES:\n"
+                "- done=false REQUIRES tool_calls (which SPECIFIC tool are you calling?)\n"
+                "- done=true REQUIRES response (provide your answer)\n"
+                "- If you have the data needed to answer, set done=true and write your answer"
             ),
         )
 
 
-__all__ = ["AgentRuntime", "ParsedResponse"]
+__all__ = ["AgentRuntime", "ParsedResponse", "TodoItem"]

@@ -17,7 +17,7 @@ from dana.common.protocols.types import LearningPhase
 from dana.common.utils.misc import Misc
 from dana.core.agent.components.tool_schema import generate_tool_schemas
 from dana.core.context import ContextBuilder
-from dana.core.runtime import AgentRuntime, ParsedResponse
+from dana.core.runtime import AgentRuntime, ParsedResponse, TodoItem
 
 
 logger = structlog.get_logger()
@@ -32,23 +32,40 @@ You have tools available. Use them when needed to accomplish tasks.
 
 You MUST respond with ONLY a JSON object. No markdown, no plain text, no explanations outside JSON.
 
-When calling tools:
-{"done": false, "reasoning": "why you're calling this tool", "response": null, "tool_calls": [{"name": "tool_name", "parameters": {...}}]}
+When calling tools (need more information):
+{"done": false, "reasoning": "why you're calling this tool", "response": null, "tool_calls": [{"name": "tool_name", "parameters": {...}}], "todo_list": [{"content": "Current task", "status": "in_progress"}, {"content": "Next task", "status": "pending"}]}
 
-When providing final answer:
-{"done": true, "reasoning": "how you arrived at this answer", "response": "Your answer to the user", "tool_calls": []}
+When providing final answer (have all needed information):
+{"done": true, "reasoning": "how you arrived at this answer", "response": "Your synthesized answer to the user", "tool_calls": [], "todo_list": [{"content": "All tasks completed", "status": "completed"}]}
+
+## WHEN TO SET done=true vs done=false
+
+- **done=false**: You need to call a tool to GET more information (search, fetch, query, etc.)
+- **done=true**: You HAVE all the information needed and are ready to PROVIDE the answer
+
+IMPORTANT: After gathering data from tools, if you can answer the question with the information you have, set done=true and write your analysis/synthesis in the response field. Only set done=false if you need to call a SPECIFIC tool - not just to "think" or "analyze".
+
+## TODO LIST RULES
+
+1. **todo_list is ALWAYS required** - track your progress on multi-step tasks
+2. **Exactly ONE todo should be "in_progress"** at any time when working
+3. **Mark todos "completed" immediately** after finishing each task
+4. **Add new todos** as you discover sub-tasks during execution
+5. **Keep todos specific and actionable** - clear descriptions of what to do
+6. **Valid statuses**: "pending", "in_progress", "completed"
 
 STRICT RULES:
 - ALWAYS output raw JSON only - never wrap in ```json``` blocks
 - NEVER output plain text like "[Agent's Internal Thoughts]" or similar
-- done=false requires non-empty tool_calls
-- done=true requires non-empty response
+- done=false REQUIRES non-empty tool_calls (you must specify what tool to call)
+- done=true REQUIRES non-empty response (you must provide your answer)
 
 ## Guidelines
 
 - Be PERSISTENT: try 2-3 different approaches before giving up
 - Be THOROUGH: gather complete information before responding
 - NEVER mention tool names to users
+- Match your response length to the user's request: short questions get concise answers, but requests for essays, reports, detailed explanations, or specific word counts should receive appropriately lengthy responses. When in doubt, err on the side of being more complete.
 
 ## Available Tools
 
@@ -199,12 +216,13 @@ class DefaultRuntime(AgentRuntime):
     @observable
     def parse_response(self, raw: str) -> ParsedResponse:
         if raw is None:
-            return ParsedResponse(done=None, reasoning=None, response=None, tool_calls=[])
+            return ParsedResponse(done=None, reasoning=None, response=None, tool_calls=[], todo_list=None)
 
         content = raw.strip()
         done = None
         response_text = None
         tool_calls: list[dict[str, Any]] = []
+        todo_list: list[TodoItem] | None = None
 
         # Check for native tool calls from the LLM response (API-level)
         has_native_tool_calls = False
@@ -219,6 +237,16 @@ class DefaultRuntime(AgentRuntime):
             parsed_json = self._extract_json(content)
             if parsed_json:
                 reasoning = parsed_json.get("reasoning")
+                # Extract todo_list from JSON
+                json_todo_list = parsed_json.get("todo_list", [])
+                if json_todo_list:
+                    todo_list = []
+                    for item in json_todo_list:
+                        if isinstance(item, dict):
+                            todo_list.append(TodoItem(
+                                content=item.get("content", ""),
+                                status=item.get("status", "pending"),
+                            ))
                 # Only extract done/response/tool_calls from JSON if no native tool calls
                 if not has_native_tool_calls:
                     done = parsed_json.get("done")
@@ -243,6 +271,7 @@ class DefaultRuntime(AgentRuntime):
             reasoning=reasoning,
             response=response_text if response_text else None,
             tool_calls=tool_calls,
+            todo_list=todo_list,
         )
 
     @observable
