@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
 import inspect
 import os
 import re
 import traceback
-from datetime import datetime
 from typing import Any
 
 import structlog
@@ -33,16 +33,17 @@ You have tools available. Use them when needed to accomplish tasks.
 EVERY response must be valid JSON with this structure:
 
 ```json
-{"done": false, "response": null, "tool_calls": [{"name": "tool_name", "parameters": {...}}]}
+{"done": false, "reasoning": "Brief explanation of your thought process", "response": null, "tool_calls": [{"name": "tool_name", "parameters": {...}}]}
 ```
 OR
 ```json
-{"done": true, "response": "Your final answer here", "tool_calls": []}
+{"done": true, "reasoning": "Brief explanation of your thought process", "response": "Your final answer here", "tool_calls": []}
 ```
 
 Rules:
 - `done: false` = you need to call tools, `tool_calls` must not be empty
 - `done: true` = you have the answer, `response` must not be empty
+- `reasoning` = brief internal thought process (1-2 sentences)
 - Output ONLY valid JSON, no other text
 
 ## Guidelines
@@ -54,43 +55,6 @@ Rules:
 ## Available Tools
 
 {{available_tools_prompt}}
-"""
-
-
-OUTPUT_INSTRUCTIONS = """
-RESPONSE FORMAT CONTRACT
-Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
-  1. <thinking>  <- MANDATORY, *internal* reasoning only
-  2. <response>  <- optional, a direct answer (omit if tool call needed)
-  3. <function_call> <- optional, external-tool invocation
-
-<thinking>
-/* PRIVATE - NOT SHOWN TO USER
-   Brief analysis (about 50-150 words):
-   - What does the user need?
-   - Do I have enough info? -> If no, specify the tool(s) required.
-   - Planned answer approach or tool workflow.
-   END PRIVATE */
-</thinking>
-
-<!-- BRANCH A: DIRECT ANSWER (no tool call) -->
-<response>
-  <!-- Visible answer, clarification question, or next-step guidance. -->
-</response>
-
-<!-- BRANCH B: TOOL CALL (no <response>) -->
-<function_call>
-  <invoke name="ClassName:methodName">
-    <parameter name="parameterName">value</parameter>
-    <!-- Add more <parameter> tags as needed -->
-  </invoke>
-</function_call>
-
-FORMAT RULES:
-- <thinking> is ALWAYS required; it contains only internal reasoning.
-- Exactly one of <response> or <function_call> must appear per turn.
-- If <function_call> is present, ignore any <response>.
-- Never output a tool call without a preceding <thinking>.
 """
 
 
@@ -118,9 +82,6 @@ class DefaultRuntime(AgentRuntime):
 
     def set_llm(self, llm: LLM) -> None:
         self._llm = llm
-
-    def get_output_instructions(self) -> str:
-        return OUTPUT_INSTRUCTIONS.strip()
 
     def public_description(self, agent) -> str:
         return inspect.getdoc(agent.__class__) or f"{agent.agent_type} agent."
@@ -237,8 +198,6 @@ class DefaultRuntime(AgentRuntime):
 
     @observable
     def parse_response(self, raw: str) -> ParsedResponse:
-        import json as json_module
-
         if raw is None:
             return ParsedResponse(done=None, reasoning=None, response=None, tool_calls=[])
 
@@ -255,10 +214,12 @@ class DefaultRuntime(AgentRuntime):
             done = False  # Native tool calls mean we're not done
 
         # Try to parse JSON from content
+        reasoning = None
         if not has_native_tool_calls and content:
             parsed_json = self._extract_json(content)
             if parsed_json:
                 done = parsed_json.get("done")
+                reasoning = parsed_json.get("reasoning")
                 response_text = parsed_json.get("response")
                 json_tool_calls = parsed_json.get("tool_calls", [])
                 if json_tool_calls:
@@ -274,7 +235,7 @@ class DefaultRuntime(AgentRuntime):
 
         return ParsedResponse(
             done=done,
-            reasoning=None,
+            reasoning=reasoning,
             response=response_text if response_text else None,
             tool_calls=tool_calls,
         )
@@ -345,8 +306,8 @@ class DefaultRuntime(AgentRuntime):
             return DefaultRuntime._cached_location.get("location")
 
         try:
-            import urllib.request
             import json
+            import urllib.request
 
             with urllib.request.urlopen("http://ip-api.com/json/?fields=city,regionName,country", timeout=2) as response:
                 data = json.loads(response.read().decode())
@@ -492,7 +453,7 @@ class DefaultRuntime(AgentRuntime):
             return None
 
         # Try to find JSON in markdown code block
-        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
+        json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.DOTALL)
         if json_match:
             try:
                 return json_module.loads(json_match.group(1))
@@ -537,6 +498,7 @@ class DefaultRuntime(AgentRuntime):
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[dict[str, Any]]:
         import json
+
         tool_call_dicts = []
         for llm_tool_call in llm_tool_calls:
             try:
@@ -616,7 +578,6 @@ class DefaultRuntime(AgentRuntime):
     def _validate_n_cast_method_arguments(self, method, arguments: dict[str, Any]) -> dict[str, Any]:
         import json
         import types
-        from typing import Any as TypingAny
         from typing import Union, get_origin
 
         try:
@@ -625,7 +586,7 @@ class DefaultRuntime(AgentRuntime):
             return arguments
         for param in signature.parameters:
             if param.type_object and param.name in arguments:
-                if param.type_object is TypingAny:
+                if param.type_object is Any:
                     continue
 
                 origin = get_origin(param.type_object)
@@ -641,14 +602,14 @@ class DefaultRuntime(AgentRuntime):
                 for hinted_type in hinted_types:
                     if hinted_type is type(None):
                         continue
-                    if hinted_type is TypingAny:
+                    if hinted_type is Any:
                         break
 
                     type_origin = get_origin(hinted_type)
                     if type_origin is None:
                         type_origin = hinted_type
 
-                    if type_origin is not TypingAny and isinstance(arguments[param.name], type_origin):
+                    if type_origin is not Any and isinstance(arguments[param.name], type_origin):
                         break
 
                     if type_origin in (str, int, float):

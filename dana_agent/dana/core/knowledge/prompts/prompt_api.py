@@ -112,38 +112,6 @@ Bias towards not asking the user for help if you can find the answer yourself.
 # Available tools:
 {{available_tools_prompt}}
 </available_tools>
-
-<output_format>
-## STRICT OUTPUT FORMAT
-
-Every response MUST follow this exact XML structure:
-
-```xml
-<done>false</done>
-<function_call>
-<invoke name="tool-name:method">
-<parameter name="param">value</parameter>
-</invoke>
-</function_call>
-<response></response>
-```
-OR
-```xml
-<done>true</done>
-<function_call></function_call>
-<response>Final answer with actual data</response>
-```
-
-## CRITICAL RULES
-
-1. **<done> is ALWAYS required** - must be literal `true` or `false`
-2. **done=false** → non-empty `<function_call>` and empty `<response>`
-3. **done=true** → non-empty `<response>` and empty `<function_call>`
-4. **NEVER output plain text** without these tags
-
-If you need more data, set `<done>false</done>` and call a tool.
-If you have the actual answer, set `<done>true</done>` and respond.
-</output_format>
 """
 
 

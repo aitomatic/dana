@@ -32,10 +32,6 @@ class AgentRuntime(ABC):
     def execute_tools(self, agent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         raise NotImplementedError
 
-    @abstractmethod
-    def get_output_instructions(self) -> str:
-        raise NotImplementedError
-
     def validate_done_output(self, done: bool | None, has_tool_calls: bool, has_response: bool) -> str:
         if done is None:
             return "retry"
@@ -54,9 +50,9 @@ class AgentRuntime(ABC):
             role="user",
             content=(
                 "Invalid format. Reply with ONLY valid JSON:\n"
-                '{"done": false, "response": null, "tool_calls": [{"name": "...", "parameters": {...}}]}\n'
+                '{"done": false, "reasoning": "...", "response": null, "tool_calls": [{"name": "...", "parameters": {...}}]}\n'
                 "OR\n"
-                '{"done": true, "response": "your answer", "tool_calls": []}\n'
+                '{"done": true, "reasoning": "...", "response": "your answer", "tool_calls": []}\n'
                 "Rules: done=false requires tool_calls. done=true requires response."
             ),
         )

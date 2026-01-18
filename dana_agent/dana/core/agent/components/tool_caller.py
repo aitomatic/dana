@@ -255,8 +255,13 @@ class WARCaller:
             return self._create_tool_error("agent", object_id, f"Error calling agent {object_id}: {str(e)}")
 
 
-class ToolCaller(WARCaller):
-    """Component providing tool call execution and orchestration capabilities."""
+class LegacyToolCaller(WARCaller):
+    """
+    Legacy component providing tool call execution and orchestration capabilities.
+
+    DEPRECATED: This class is only used by LegacyRuntime. New code should use
+    DefaultRuntime which handles tool execution internally.
+    """
 
     def __init__(self, agent: STARAgent):
         """
@@ -1301,38 +1306,15 @@ Please provide the canonical XML format:
             return self._create_tool_error("parsing", target or "unknown", f"Fault-tolerant parsing failed: {str(e)}")
 
 
-class CodecToolCaller(WARCaller):
+class LegacyCodecToolCaller(WARCaller):
     """
-    Component providing codec-based tool call execution and orchestration.
-    
-    This is the RECOMMENDED tool caller implementation. It uses structured XML parsing
-    via codecs (e.g., CSXMLCodec, KLXMLCodec) for reliable tool call extraction and
-    execution.
-    
-    Key advantages over the legacy ToolCaller:
-    - Structured XML parsing instead of regex heuristics
-    - Explicit handling of object_id vs class_name
-    - Better error messages when tools aren't found
-    - More reliable tool execution, especially with UUIDs
-    
-    Usage:
-        Automatically used when you pass a codec to STARAgent initialization:
-        
-        .. code-block:: python
-        
-            from dana.core.knowledge.prompts.codecs import CSXMLCodec
-            
-            class MyAgent(STARAgent):
-                def __init__(self, **kwargs):
-                    super().__init__(
-                        agent_type="my-agent",
-                        codec=CSXMLCodec,  # Enables CodecToolCaller
-                        **kwargs
-                    )
-    
-    See also:
-        - ToolCaller: Legacy implementation (deprecated)
-        - dana.core.knowledge.prompts.codecs: Available codec implementations
+    Legacy component providing codec-based tool call execution and orchestration.
+
+    DEPRECATED: This class is no longer used. DefaultRuntime handles tool execution
+    internally without requiring a separate ToolCaller class.
+
+    This was previously the recommended tool caller when using the codec system,
+    but has been superseded by DefaultRuntime's integrated approach.
     """
     
     def __init__(self, agent: STARAgent, codec: type[AbstractCodec]):
@@ -1867,3 +1849,8 @@ class CodecToolCaller(WARCaller):
         for workflow in self._agent.available_workflows:
             class_names.append(workflow.__class__.__name__)
         return sorted(set(class_names))
+
+
+# Backward-compatible aliases (deprecated)
+ToolCaller = LegacyToolCaller
+CodecToolCaller = LegacyCodecToolCaller

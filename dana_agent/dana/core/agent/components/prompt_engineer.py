@@ -168,8 +168,13 @@ class PromptFormatter:
             return "\n".join(lines)
 
 
-class PromptEngineer:
-    """Component providing XML-based prompt files with section-level inheritance."""
+class LegacyPromptEngineer:
+    """
+    Legacy component providing XML-based prompt files with section-level inheritance.
+
+    DEPRECATED: This class is only used by LegacyRuntime. New code should use
+    DefaultRuntime which handles prompt generation internally.
+    """
 
     # Compiled regex pattern for tag extraction (performance optimization)
     _START_TAG_PATTERN = re.compile(r"<(\w+)>")
@@ -915,3 +920,7 @@ class PromptEngineer:
             resources=getattr(self._agent, "_resources", []),
             workflows=getattr(self._agent, "_workflows", []),
         )
+
+
+# Backward-compatible alias (deprecated)
+PromptEngineer = LegacyPromptEngineer

@@ -24,9 +24,6 @@ class LegacyRuntime(AgentRuntime):
     def set_llm(self, llm: LLM) -> None:
         self._llm = llm
 
-    def get_output_instructions(self) -> str:
-        return ""
-
     def public_description(self, agent) -> str:
         self._ensure_components(agent)
         return self._prompt_engineer.public_description

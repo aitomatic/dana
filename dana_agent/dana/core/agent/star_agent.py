@@ -121,6 +121,14 @@ class STARAgent(BaseSTARAgent):
 
         if runtime is None:
             if codec is None:
+                # codec=None explicitly triggers LegacyRuntime (deprecated)
+                if codec_provided:
+                    warnings.warn(
+                        "codec=None is deprecated and will be removed in a future version. "
+                        "LegacyRuntime is no longer maintained. Use DefaultRuntime instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
                 from dana.core.runtime.legacy import LegacyRuntime
 
                 runtime = LegacyRuntime()
@@ -128,12 +136,12 @@ class STARAgent(BaseSTARAgent):
                 from dana.core.runtime.default import DefaultRuntime
 
                 runtime = DefaultRuntime(provider=llm_provider, model=model)
-            if codec_provided:
-                warnings.warn(
-                    "The codec parameter is deprecated; pass runtime=... instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
+                if codec_provided:
+                    warnings.warn(
+                        "The codec parameter is deprecated; pass runtime=... instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
         else:
             if codec_provided:
                 warnings.warn(
