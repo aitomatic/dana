@@ -213,20 +213,25 @@ class DefaultRuntime(AgentRuntime):
             has_native_tool_calls = True
             done = False  # Native tool calls mean we're not done
 
-        # Try to parse JSON from content
+        # Try to parse JSON from content (even with native tools - may contain reasoning)
         reasoning = None
-        if not has_native_tool_calls and content:
+        if content:
             parsed_json = self._extract_json(content)
             if parsed_json:
-                done = parsed_json.get("done")
                 reasoning = parsed_json.get("reasoning")
-                response_text = parsed_json.get("response")
-                json_tool_calls = parsed_json.get("tool_calls", [])
-                if json_tool_calls:
-                    for tc in json_tool_calls:
-                        name = tc.get("name", "")
-                        params = tc.get("parameters", {})
-                        tool_calls.append({"function": name, "arguments": params})
+                # Only extract done/response/tool_calls from JSON if no native tool calls
+                if not has_native_tool_calls:
+                    done = parsed_json.get("done")
+                    response_text = parsed_json.get("response")
+                    json_tool_calls = parsed_json.get("tool_calls", [])
+                    if json_tool_calls:
+                        for tc in json_tool_calls:
+                            name = tc.get("name", "")
+                            params = tc.get("parameters", {})
+                            tool_calls.append({"function": name, "arguments": params})
+            elif has_native_tool_calls:
+                # With native tools, plain text content is the LLM's reasoning/explanation
+                reasoning = content
 
         # If using native tools and LLM returns plain text (no JSON, no tool calls), treat as final response
         if self._native_tools and done is None and not tool_calls and content:
@@ -370,32 +375,25 @@ class DefaultRuntime(AgentRuntime):
         return prompts
 
     def _format_signature(self, signature) -> str:
+        import json
+
         identifier = signature.object_id or signature.class_name or "Unknown"
-        lines = [
-            f"### {identifier}:{signature.name}",
-            f"Description: {signature.description}",
-            "Parameters:",
-            self._parameters_to_str(signature.parameters),
-            "Usage:",
-            self._usage_example(signature, identifier),
-        ]
-        return "\n".join(lines)
+        tool_name = f"{identifier}:{signature.name}"
 
-    def _parameters_to_str(self, parameters) -> str:
-        text = ""
-        for parameter in parameters:
-            required = "(required)" if not parameter.has_default else ""
-            text += f"- {parameter.name}: {required} {parameter.description}\n"
-        return text
+        # Build compact parameter list
+        param_parts = []
+        for p in signature.parameters:
+            req = " (required)" if not p.has_default else ""
+            param_parts.append(f"  - {p.name}{req}: {p.description}")
+        params_str = "\n".join(param_parts) if param_parts else "  (none)"
 
-    def _usage_example(self, signature, identifier: str | None = None) -> str:
-        identifier = identifier or signature.object_id or signature.class_name or "Unknown"
-        lines = [f'<invoke name="{identifier}:{signature.name}">']
-        for parameter in signature.parameters:
-            example = parameter.example if parameter.example else parameter.description
-            lines.append(f'<parameter name="{parameter.name}">{example}</parameter>')
-        lines.append("</invoke>")
-        return "<function_call>\n" + "\n".join(lines) + "\n</function_call>"
+        # Build JSON usage example matching output format
+        params_example = {}
+        for p in signature.parameters:
+            params_example[p.name] = p.example if p.example else f"<{p.name}>"
+        usage = json.dumps({"name": tool_name, "parameters": params_example})
+
+        return f"**{tool_name}**: {signature.description}\n{params_str}\nExample: {usage}"
 
     def _log_prompt_build(self, agent, system_prompt: str, timeline, messages: list[LLMMessage]) -> None:
         from dana.common.llm.debug_logger import get_debug_logger
