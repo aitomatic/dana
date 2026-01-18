@@ -5,16 +5,23 @@ from typing import Any
 from dana.common.llm.llm import LLM
 from dana.common.llm.types import LLMMessage, LLMResponse
 from dana.common.observable import observable
-from dana.core.agent.components import PromptEngineer, ToolCaller
+from dana.core.agent.components import LegacyPromptEngineer, LegacyToolCaller
 from dana.core.runtime import AgentRuntime, ParsedResponse
 
 
 class LegacyRuntime(AgentRuntime):
+    """
+    Legacy runtime using XML-based prompts and separate ToolCaller.
+
+    DEPRECATED: Use DefaultRuntime instead. This runtime is maintained only
+    for backward compatibility with code that explicitly uses codec=None.
+    """
+
     def __init__(self, llm: LLM | None = None):
         self._llm = llm
         self._agent = None
-        self._prompt_engineer: PromptEngineer | None = None
-        self._tool_caller: ToolCaller | None = None
+        self._prompt_engineer: LegacyPromptEngineer | None = None
+        self._tool_caller: LegacyToolCaller | None = None
         self._last_llm_response: LLMResponse | None = None
 
     @property
@@ -100,5 +107,5 @@ class LegacyRuntime(AgentRuntime):
         if self._agent is agent and self._prompt_engineer and self._tool_caller:
             return
         self._agent = agent
-        self._prompt_engineer = PromptEngineer(agent)
-        self._tool_caller = ToolCaller(agent)
+        self._prompt_engineer = LegacyPromptEngineer(agent)
+        self._tool_caller = LegacyToolCaller(agent)
