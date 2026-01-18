@@ -66,7 +66,7 @@ class DefaultRuntime(AgentRuntime):
         max_tokens: int | None = None,
         llm: LLM | None = None,
         provider: str = "anthropic",
-        use_native_tools: bool = True,
+        use_native_tools: bool = False,
     ):
         self._model = model
         self._temperature = temperature
