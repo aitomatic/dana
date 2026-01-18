@@ -5,10 +5,16 @@ from dana.core.resource.base_resource import BaseResource
 
 
 class MockLLM:
+    """Mock LLM that mimics the real LLM interface."""
+
     def __init__(self, responses):
         self._responses = list(responses)
         self.call_count = 0
         self.calls = []
+        # Add attributes that DefaultRuntime checks
+        self.provider = None
+        self.provider_name = "mock"
+        self.model = "mock-model"
 
     def chat_response_sync(self, messages, **kwargs):
         self.call_count += 1
@@ -16,6 +22,10 @@ class MockLLM:
         if not self._responses:
             raise AssertionError("MockLLM response queue exhausted")
         return self._responses.pop(0)
+
+    async def chat_response(self, messages, **kwargs):
+        """Async version for compatibility."""
+        return self.chat_response_sync(messages, **kwargs)
 
 
 class MockResource(BaseResource):
