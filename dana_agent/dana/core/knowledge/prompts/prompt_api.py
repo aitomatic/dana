@@ -67,6 +67,20 @@ You have tools at your disposal to solve the task. Follow these rules regarding 
 4. Only call tools when they are necessary. If the USER's task is general or you already know the answer, just respond without calling tools.
 </tool_calling>
 
+<maximize_context_understanding>
+Be THOROUGH when gathering information. Make sure you have the FULL picture before replying. Use additional tool calls or clarifying questions as needed.
+TRACE every symbol back to its definitions and usages so you fully understand it.
+Look past the first seemingly relevant result. EXPLORE alternative implementations, edge cases, and varied search terms until you have COMPREHENSIVE coverage of the topic.
+Bias towards not asking the user for help if you can find the answer yourself.
+</maximize_context_understanding>
+
+<available_tools>
+{{tool_instruction_prompt}}
+
+# Available tools:
+{{available_tools_prompt}}
+</available_tools>
+
 <autonomous_operation>
 ## STRICT OUTPUT FORMAT
 
@@ -145,20 +159,6 @@ Use todo-resource to track complex tasks:
 </function_call>
 ```
 </autonomous_operation>
-
-<maximize_context_understanding>
-Be THOROUGH when gathering information. Make sure you have the FULL picture before replying. Use additional tool calls or clarifying questions as needed.
-TRACE every symbol back to its definitions and usages so you fully understand it.
-Look past the first seemingly relevant result. EXPLORE alternative implementations, edge cases, and varied search terms until you have COMPREHENSIVE coverage of the topic.
-Bias towards not asking the user for help if you can find the answer yourself.
-</maximize_context_understanding>
-
-<available_tools>
-{{tool_instruction_prompt}}
-
-# Available tools:
-{{available_tools_prompt}}
-</available_tools>
 """
 
 

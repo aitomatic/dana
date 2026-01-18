@@ -106,4 +106,4 @@ class TestAgentSystemPromptIncludesAutonomy:
 
         # Subclass should also have autonomy
         assert "<autonomous_operation>" in system_prompt
-        assert "AUTONOMOUS agent" in system_prompt
+        assert "STRICT OUTPUT FORMAT" in system_prompt
