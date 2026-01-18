@@ -1,6 +1,6 @@
 # AgentRuntime Refactor - Implementation Spec
 
-**Status: ⚠️ IN PROGRESS**
+**Status: ✅ COMPLETE**
 
 ## Goal
 
@@ -77,28 +77,28 @@ response, reasoning, tool_calls, done = self._tool_caller.parse_llm_response(llm
 
 ### Phase 1: Core AgentRuntime Abstraction
 
-- [ ] Create `dana/core/runtime/__init__.py` with:
-  - [ ] `ParsedResponse` dataclass with fields: `done`, `reasoning`, `response`, `tool_calls`
-  - [ ] `AgentRuntime` abstract base class with methods:
-    - [ ] `build_prompt(agent, timeline, learned_context=None) -> list[LLMMessage]`
-    - [ ] `call_llm(messages) -> str`
-    - [ ] `parse_response(raw) -> ParsedResponse`
-    - [ ] `execute_tools(agent, tool_calls) -> list[dict]`
-    - [ ] `get_output_instructions() -> str`
+- [x] Create `dana/core/runtime/__init__.py` with:
+  - [x] `ParsedResponse` dataclass with fields: `done`, `reasoning`, `response`, `tool_calls`
+  - [x] `AgentRuntime` abstract base class with methods:
+    - [x] `build_prompt(agent, timeline, learned_context=None) -> list[LLMMessage]`
+    - [x] `call_llm(messages) -> str`
+    - [x] `parse_response(raw) -> ParsedResponse`
+    - [x] `execute_tools(agent, tool_calls) -> list[dict]`
+    - [x] `get_output_instructions() -> str`
 
-- [ ] Create `dana/core/runtime/anthropic.py` with `AnthropicRuntime`:
-  - [ ] `__init__(model, temperature, max_tokens, llm=None)` - owns LLM instance
-  - [ ] Migrate prompt building from `LocalPromptAPI`
-  - [ ] Migrate LLM calling (currently in star_agent._think)
-  - [ ] Migrate response parsing from `CodecToolCaller.parse_llm_response`
-  - [ ] Migrate tool execution from `CodecToolCaller.execute_tool_calls`
-  - [ ] Include done-flag validation logic
+- [x] Create `dana/core/runtime/anthropic.py` with `AnthropicRuntime`:
+  - [x] `__init__(model, temperature, max_tokens, llm=None)` - owns LLM instance
+  - [x] Migrate prompt building from `LocalPromptAPI`
+  - [x] Migrate LLM calling (currently in star_agent._think)
+  - [x] Migrate response parsing from `CodecToolCaller.parse_llm_response`
+  - [x] Migrate tool execution from `CodecToolCaller.execute_tool_calls`
+  - [x] Include done-flag validation logic
 
-- [ ] Update `dana/core/agent/star_agent.py`:
-  - [ ] Add `runtime` parameter to `__init__`
-  - [ ] Default to `AnthropicRuntime()` when no runtime provided
-  - [ ] Store as `self._runtime`
-  - [ ] Update `_think()` to use runtime methods:
+- [x] Update `dana/core/agent/star_agent.py`:
+  - [x] Add `runtime` parameter to `__init__`
+  - [x] Default to `AnthropicRuntime()` when no runtime provided
+  - [x] Store as `self._runtime`
+  - [x] Update `_think()` to use runtime methods:
     ```python
     messages = self._runtime.build_prompt(self, timeline)
     raw = self._runtime.call_llm(messages)
@@ -106,52 +106,52 @@ response, reasoning, tool_calls, done = self._tool_caller.parse_llm_response(llm
     if not parsed.done:
         results = self._runtime.execute_tools(self, parsed.calls)
     ```
-  - [ ] Deprecate `codec` parameter (map to runtime internally with warning)
+  - [x] Deprecate `codec` parameter (map to runtime internally with warning)
 
 ### Phase 2: Backward Compatibility
 
-- [ ] Create `dana/core/runtime/legacy.py` with `LegacyRuntime`:
-  - [ ] Wraps existing `PromptEngineer` and `ToolCaller` for `codec=None` case
-  - [ ] Allows gradual migration
+- [x] Create `dana/core/runtime/legacy.py` with `LegacyRuntime`:
+  - [x] Wraps existing `PromptEngineer` and `ToolCaller` for `codec=None` case
+  - [x] Allows gradual migration
 
-- [ ] Ensure old code still works:
-  - [ ] `STARAgent(agent_type="x", codec=CSXMLCodec)` → uses `AnthropicRuntime`
-  - [ ] `STARAgent(agent_type="x", codec=None)` → uses `LegacyRuntime`
-  - [ ] `STARAgent(agent_type="x")` → uses `AnthropicRuntime` (new default)
+- [x] Ensure old code still works:
+  - [x] `STARAgent(agent_type="x", codec=CSXMLCodec)` → uses `AnthropicRuntime`
+  - [x] `STARAgent(agent_type="x", codec=None)` → uses `LegacyRuntime`
+  - [x] `STARAgent(agent_type="x")` → uses `AnthropicRuntime` (new default)
 
 ### Phase 3: Remove Local Disk Caching
 
-- [ ] Remove prompt template caching from runtime (was in LocalPromptAPI)
-- [ ] Prompts are built fresh each time
-- [ ] Learned context comes from Learner, not cached templates
-- [ ] Delete `.dana/dana_agent/*/prompts/system_prompt_template/` cache files in tests
+- [x] Remove prompt template caching from runtime (was in LocalPromptAPI)
+- [x] Prompts are built fresh each time
+- [x] Learned context comes from Learner, not cached templates
+- [x] Delete `.dana/dana_agent/*/prompts/system_prompt_template/` cache files in tests
 
 ## Files Implemented
 
 | File | Status | Description |
 |------|--------|-------------|
-| `dana/core/runtime/__init__.py` | ❌ | AgentRuntime base class, ParsedResponse |
-| `dana/core/runtime/anthropic.py` | ❌ | AnthropicRuntime implementation |
-| `dana/core/runtime/legacy.py` | ❌ | LegacyRuntime for backward compat |
-| `dana/core/agent/star_agent.py` | ❌ | Update to use runtime |
-| `dana/core/runtime/tests/test_agent_runtime.py` | ❌ | Unit tests |
+| `dana/core/runtime/__init__.py` | ✅ | AgentRuntime base class, ParsedResponse |
+| `dana/core/runtime/anthropic.py` | ✅ | AnthropicRuntime implementation |
+| `dana/core/runtime/legacy.py` | ✅ | LegacyRuntime for backward compat |
+| `dana/core/agent/star_agent.py` | ✅ | Update to use runtime |
+| `dana/core/runtime/tests/test_agent_runtime.py` | ✅ | Unit tests |
 
 ## Tests Required
 
 Create `dana/core/runtime/tests/test_agent_runtime.py`:
 
-- [ ] `test_parsed_response_dataclass` - ParsedResponse has correct fields
-- [ ] `test_anthropic_runtime_initialization` - Creates with defaults
-- [ ] `test_anthropic_runtime_initialization_custom_llm` - Accepts injected LLM
-- [ ] `test_anthropic_runtime_build_prompt` - Returns list of LLMMessage
-- [ ] `test_anthropic_runtime_parse_response_done_true` - Parses done=true correctly
-- [ ] `test_anthropic_runtime_parse_response_done_false` - Parses done=false correctly
-- [ ] `test_anthropic_runtime_parse_response_with_tool_calls` - Extracts tool calls
-- [ ] `test_anthropic_runtime_execute_tools` - Executes and returns results
-- [ ] `test_star_agent_with_runtime_parameter` - Accepts runtime parameter
-- [ ] `test_star_agent_default_runtime` - Uses AnthropicRuntime by default
-- [ ] `test_star_agent_deprecated_codec_parameter` - codec still works with warning
-- [ ] `test_think_uses_runtime_methods` - _think() calls runtime.build_prompt, call_llm, etc.
+- [x] `test_parsed_response_dataclass` - ParsedResponse has correct fields
+- [x] `test_anthropic_runtime_initialization` - Creates with defaults
+- [x] `test_anthropic_runtime_initialization_custom_llm` - Accepts injected LLM
+- [x] `test_anthropic_runtime_build_prompt` - Returns list of LLMMessage
+- [x] `test_anthropic_runtime_parse_response_done_true` - Parses done=true correctly
+- [x] `test_anthropic_runtime_parse_response_done_false` - Parses done=false correctly
+- [x] `test_anthropic_runtime_parse_response_with_tool_calls` - Extracts tool calls
+- [x] `test_anthropic_runtime_execute_tools` - Executes and returns results
+- [x] `test_star_agent_with_runtime_parameter` - Accepts runtime parameter
+- [x] `test_star_agent_default_runtime` - Uses AnthropicRuntime by default
+- [x] `test_star_agent_deprecated_codec_parameter` - codec still works with warning
+- [x] `test_think_uses_runtime_methods` - _think() calls runtime.build_prompt, call_llm, etc.
 
 Command to run tests:
 ```bash
@@ -177,14 +177,14 @@ pytest dana_agent/tests/unit/test_autonomy_in_template.py -v
 
 ## Before Marking Complete
 
-- [ ] All tests pass (new and existing)
-- [ ] Uses structlog logger (not print)
-- [ ] Follows existing code patterns (check star_agent.py, tool_caller.py)
-- [ ] No unnecessary complexity (KISS)
-- [ ] No over-engineering (YAGNI)
-- [ ] Deprecation warning for `codec` parameter uses `warnings.warn`
-- [ ] ParsedResponse uses `@dataclass` decorator
-- [ ] AgentRuntime uses `ABC` and `@abstractmethod`
+- [x] All tests pass (new and existing)
+- [x] Uses structlog logger (not print)
+- [x] Follows existing code patterns (check star_agent.py, tool_caller.py)
+- [x] No unnecessary complexity (KISS)
+- [x] No over-engineering (YAGNI)
+- [x] Deprecation warning for `codec` parameter uses `warnings.warn`
+- [x] ParsedResponse uses `@dataclass` decorator
+- [x] AgentRuntime uses `ABC` and `@abstractmethod`
 
 ## When Complete
 

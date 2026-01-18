@@ -15,12 +15,12 @@ import structlog
 
 
 def _load_env():
-    """Load environment variables from .env file."""
+    """Load environment variables from .env file (overrides existing env vars)."""
     dotenv_path = find_dotenv()
     if dotenv_path:
-        load_dotenv(dotenv_path)
+        load_dotenv(dotenv_path, override=True)
     else:
-        load_dotenv()
+        load_dotenv(override=True)
 
 
 # Load .env automatically when dana_app is imported

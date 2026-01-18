@@ -19,17 +19,12 @@ class OpenAIProvider(LLMProvider):
     def supports_native_tools(self) -> bool:
         """OpenAI supports native function/tool calling.
 
-        NOTE: Disabled until we properly implement the tool result flow.
-        OpenAI requires tool results to be sent back with role="tool" and
-        tool_call_id, but we currently send them as role="assistant" which
-        confuses the LLM and causes excessive retries.
-
-        TODO: Implement proper native tool result flow:
-        1. Store tool_call_id when parsing native tool calls
-        2. Send tool results with role="tool" and matching tool_call_id
-        3. Include the assistant message with tool_calls in the conversation
+        The tool result flow is now properly implemented:
+        1. tool_call_id is stored when parsing native tool calls
+        2. Tool results are sent with role="tool" and matching tool_call_id
+        3. Assistant messages with tool_calls are properly formatted
         """
-        return False
+        return True
 
     def __init__(self, api_key: str | None = None, model: str = "gpt-3.5-turbo", base_url: str | None = None):
         """
@@ -81,8 +76,34 @@ class OpenAIProvider(LLMProvider):
                     openai_messages.append({"role": "system", "content": msg.content})
                 elif msg.role == "user":
                     openai_messages.append({"role": "user", "content": msg.content})
+                elif msg.role == "tool":
+                    # Tool result message - requires tool_call_id
+                    openai_messages.append({
+                        "role": "tool",
+                        "tool_call_id": msg.tool_call_id,
+                        "content": msg.content,
+                    })
                 elif msg.role == "assistant":
-                    openai_messages.append({"role": "assistant", "content": msg.content})
+                    # Check if this assistant message has native tool_calls
+                    if msg.tool_calls:
+                        # Format tool_calls for OpenAI API
+                        formatted_tool_calls = []
+                        for tc in msg.tool_calls:
+                            formatted_tool_calls.append({
+                                "id": tc.get("tool_call_id", ""),
+                                "type": "function",
+                                "function": {
+                                    "name": tc.get("function", ""),
+                                    "arguments": str(tc.get("arguments", {})),
+                                },
+                            })
+                        openai_messages.append({
+                            "role": "assistant",
+                            "content": msg.content or None,
+                            "tool_calls": formatted_tool_calls,
+                        })
+                    else:
+                        openai_messages.append({"role": "assistant", "content": msg.content})
 
             # Build request parameters
             request_kwargs = {
@@ -104,9 +125,10 @@ class OpenAIProvider(LLMProvider):
             message = choice.message
 
             # Handle both text responses and function calls
-            if hasattr(message, "tool_calls") and message.tool_calls and choice.finish_reason == "tool_calls":
+            # Note: finish_reason can be "tool_calls" or "stop" depending on model version
+            if hasattr(message, "tool_calls") and message.tool_calls:
                 # Pass through function calls for base_agent to handle
-                content = ""
+                content = message.content or ""
                 tool_calls = message.tool_calls
             else:
                 # Standard text response

@@ -408,6 +408,20 @@ class LocalPromptAPI(PromptAPIProtocol):
     def reset(self) -> None:
         pass
 
+    def build_tool_schemas(self) -> list[dict]:
+        """Build OpenAI-compatible tool schemas for native function calling.
+
+        Returns:
+            List of tool schema dictionaries for the agent's resources and workflows.
+        """
+        from dana.core.agent.components.prompt_engineer import generate_tool_schemas
+
+        return generate_tool_schemas(
+            agents=getattr(self._agent, "_agents", []),
+            resources=getattr(self._agent, "_resources", []),
+            workflows=getattr(self._agent, "_workflows", []),
+        )
+
     def persist(self) -> None:
         if self._template is None:
             raise ValueError(f"[{self.__class__.__qualname__}] Template for {self._agent.__class__.__qualname__} is not generated yet")

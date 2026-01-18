@@ -1,0 +1,175 @@
+import pytest
+
+from dana.common.llm.types import LLMMessage
+from dana.core.agent.star_agent import STARAgent
+from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.core.resource.base_resource import BaseResource
+from dana.core.runtime import AgentRuntime, ParsedResponse
+from dana.core.runtime.default import DefaultRuntime
+
+
+def test_parsed_response_dataclass():
+    parsed = ParsedResponse(
+        done=True,
+        reasoning="reason",
+        response="answer",
+        tool_calls=[{"function": "Tool:call", "arguments": {}}],
+    )
+
+    assert parsed.done is True
+    assert parsed.reasoning == "reason"
+    assert parsed.response == "answer"
+    assert parsed.tool_calls == [{"function": "Tool:call", "arguments": {}}]
+
+
+def test_default_runtime_initialization():
+    runtime = DefaultRuntime()
+
+    assert runtime.llm is None
+    assert runtime._temperature == 0
+    assert runtime._max_tokens is None
+
+
+def test_default_runtime_initialization_custom_llm():
+    class DummyLLM:
+        pass
+
+    llm = DummyLLM()
+    runtime = DefaultRuntime(llm=llm)
+
+    assert runtime.llm is llm
+
+
+def test_default_runtime_build_prompt():
+    agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False)
+    runtime = DefaultRuntime()
+    timeline = Timeline(agent=agent)
+    timeline.add_entry(
+        TimelineEntry(
+            entry_type=TimelineEntryType.USER_MESSAGE,
+            content="Hello",
+            is_latest_user_message=True,
+        )
+    )
+
+    messages = runtime.build_prompt(agent, timeline)
+
+    assert isinstance(messages, list)
+    assert messages
+    assert isinstance(messages[0], LLMMessage)
+
+
+def test_default_runtime_parse_response_done_true():
+    runtime = DefaultRuntime()
+    raw = '{"done": true, "response": "Done", "tool_calls": []}'
+
+    parsed = runtime.parse_response(raw)
+
+    assert parsed.done is True
+    assert parsed.response == "Done"
+    assert parsed.tool_calls == []
+
+
+def test_default_runtime_parse_response_done_false():
+    runtime = DefaultRuntime()
+    raw = '{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {}}]}'
+
+    parsed = runtime.parse_response(raw)
+
+    assert parsed.done is False
+    assert parsed.response is None
+    assert parsed.tool_calls == [{"function": "Tool:run", "arguments": {}}]
+
+
+def test_default_runtime_parse_response_with_tool_calls():
+    runtime = DefaultRuntime()
+    raw = '{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {"message": "hi"}}]}'
+
+    parsed = runtime.parse_response(raw)
+
+    assert parsed.done is False
+    assert parsed.tool_calls == [{"function": "Tool:run", "arguments": {"message": "hi"}}]
+
+
+def test_default_runtime_execute_tools():
+    class EchoResource(BaseResource):
+        def __init__(self):
+            super().__init__(resource_type="echo", resource_id="echo", auto_register=False)
+
+        def echo(self, message: str) -> str:
+            return f"echo:{message}"
+
+    agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False)
+    resource = EchoResource()
+    agent.with_resources(resource)
+
+    runtime = DefaultRuntime()
+    results = runtime.execute_tools(agent, [{"function": "EchoResource:echo", "arguments": {"message": "hi"}}])
+
+    assert results[0]["success"] is True
+    assert results[0]["result"] == "echo:hi"
+
+
+def test_star_agent_with_runtime_parameter():
+    runtime = DefaultRuntime()
+    agent = STARAgent(agent_type="runtime-test", runtime=runtime, auto_register=False, enable_web_search=False, enable_skills=False)
+
+    assert agent._runtime is runtime
+
+
+def test_star_agent_default_runtime():
+    agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False)
+
+    assert isinstance(agent._runtime, DefaultRuntime)
+
+
+def test_star_agent_deprecated_codec_parameter():
+    from dana.core.knowledge.prompts.codecs import CSXMLCodec
+
+    with pytest.warns(DeprecationWarning):
+        STARAgent(
+            agent_type="runtime-test",
+            codec=CSXMLCodec,
+            auto_register=False,
+            enable_web_search=False,
+            enable_skills=False,
+        )
+
+
+def test_think_uses_runtime_methods():
+    class TrackingRuntime(AgentRuntime):
+        def __init__(self):
+            self.calls = []
+            self._count = 0
+
+        def build_prompt(self, agent, timeline, learned_context=None):
+            self.calls.append("build_prompt")
+            return [LLMMessage(role="system", content="system"), LLMMessage(role="user", content="hello")]
+
+        def call_llm(self, messages):
+            self.calls.append("call_llm")
+            self._count += 1
+            if self._count == 1:
+                return '{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {}}]}'
+            return '{"done": true, "response": "ok", "tool_calls": []}'
+
+        def parse_response(self, raw):
+            self.calls.append("parse_response")
+            if '"done": false' in raw:
+                return ParsedResponse(done=False, reasoning=None, response=None, tool_calls=[{"function": "Tool:run", "arguments": {}}])
+            return ParsedResponse(done=True, reasoning=None, response="ok", tool_calls=[])
+
+        def execute_tools(self, agent, tool_calls):
+            self.calls.append("execute_tools")
+            return []
+
+        def get_output_instructions(self):
+            return ""
+
+    runtime = TrackingRuntime()
+    agent = STARAgent(agent_type="runtime-test", runtime=runtime, auto_register=False, enable_web_search=False, enable_skills=False)
+
+    agent.query(message="hello")
+
+    assert runtime.calls[:4] == ["build_prompt", "call_llm", "parse_response", "execute_tools"]
+    assert "execute_tools" in runtime.calls

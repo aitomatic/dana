@@ -72,7 +72,7 @@ class AnthropicProvider(LLMProvider):
             request_kwargs = {
                 "model": self.model,
                 "messages": anthropic_messages,
-                "max_tokens": kwargs.get("max_tokens", 1000),
+                "max_tokens": kwargs.get("max_tokens") or 4096,
             }
 
             # Add system message if present (with cache_control support)

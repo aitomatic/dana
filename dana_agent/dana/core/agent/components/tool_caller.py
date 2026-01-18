@@ -273,8 +273,18 @@ class ToolCaller(WARCaller):
     # ============================================================================
 
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Execute parsed tool calls from LLM response."""
-        return [self._execute_single_call(call) for call in parsed_tool_calls]
+        """Execute parsed tool calls from LLM response.
+
+        Preserves tool_call_id in results for OpenAI native tool calling support.
+        """
+        results = []
+        for call in parsed_tool_calls:
+            result = self._execute_single_call(call)
+            # Preserve tool_call_id for OpenAI native tool support
+            if "tool_call_id" in call:
+                result["tool_call_id"] = call["tool_call_id"]
+            results.append(result)
+        return results
 
     # ============================================================================
     # TOOL CALL EXECUTION
@@ -417,7 +427,8 @@ class ToolCaller(WARCaller):
             return None, None, [], None
 
         # Work with a copy to avoid mutating the input
-        content = llm_response.content.strip()
+        # Handle None content (common with native tool calls)
+        content = (llm_response.content or "").strip()
 
         result_response = None
         result_reasoning = None
@@ -432,8 +443,14 @@ class ToolCaller(WARCaller):
                     if content:
                         content = content.strip()
                 else:
-                    # Structured (JSON) tool calls
+                    # Structured (JSON) tool calls - native OpenAI format
                     result_tool_calls.extend(self._to_tool_call_dicts(llm_response.tool_calls))
+                    # For native tool calls, automatically set done=False since LLM wants to execute tools
+                    # Check if these are native tool calls (have tool_call_id)
+                    if any(tc.get("tool_call_id") for tc in result_tool_calls):
+                        done = False
+                        result_response = content  # Preserve any content from the response
+                        return result_response, result_reasoning, result_tool_calls, done
 
             done_text = self._extract_content_between_xml_tags(content, "done")
             if done_text is not None:
@@ -931,11 +948,16 @@ Please provide the canonical XML format:
                 return self._filter_valid_tool_calls(xml_tool_calls)
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
-        """Convert structured function calls to our internal format."""
+        """Convert structured function calls to our internal format.
+
+        Preserves tool_call_id for OpenAI native tool calling support.
+        """
         tool_call_dicts = []
 
         for llm_tool_call in llm_tool_calls:
             try:
+                # Get tool_call_id for OpenAI native tool support
+                tool_call_id = getattr(llm_tool_call, 'id', None)
                 function_name = llm_tool_call.function.name
                 arguments = llm_tool_call.function.arguments
 
@@ -944,10 +966,17 @@ Please provide the canonical XML format:
                     # Note: For XML format, outer_function_name is ignored and replaced
                     # with function names from nested XML structure
                     parsed_calls = self._detect_format_and_extract_tool_calls(arguments, function_name)
+                    # Attach tool_call_id to each parsed call
+                    for call in parsed_calls:
+                        if tool_call_id:
+                            call["tool_call_id"] = tool_call_id
                     tool_call_dicts.extend(parsed_calls)
                 else:
                     # Non-string arguments (already parsed) - use outer function name
-                    tool_call_dicts.append({"function": function_name, "arguments": arguments})
+                    call_dict = {"function": function_name, "arguments": arguments}
+                    if tool_call_id:
+                        call_dict["tool_call_id"] = tool_call_id
+                    tool_call_dicts.append(call_dict)
 
             except Exception:
                 continue
@@ -1336,7 +1365,17 @@ class CodecToolCaller(WARCaller):
             return None, None, [], None
 
         # Work with a copy to avoid mutating the input
-        content = llm_response.content.strip()
+        # Handle None content (common with native tool calls)
+        content = (llm_response.content or "").strip()
+
+        # Handle native tool calls (OpenAI format) FIRST - before checking XML done flag
+        # Native tool calls have tool_call_id and don't use XML format
+        if llm_response.tool_calls:
+            native_tool_calls = self._to_tool_call_dicts(llm_response.tool_calls)
+            if native_tool_calls and any(tc.get("tool_call_id") for tc in native_tool_calls):
+                # For native tool calls, automatically set done=False
+                return content, None, native_tool_calls, False
+
         done = self._extract_done_flag(content)
         try:
             if done is not None:
@@ -1463,16 +1502,24 @@ class CodecToolCaller(WARCaller):
         return None
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
-        """Convert structured function calls to our internal format."""
+        """Convert structured function calls to our internal format.
+
+        Preserves tool_call_id for OpenAI native tool calling support.
+        """
         tool_call_dicts = []
 
         for llm_tool_call in llm_tool_calls:
             try:
+                # Get tool_call_id for OpenAI native tool support
+                tool_call_id = getattr(llm_tool_call, 'id', None)
                 function_name = llm_tool_call.function.name
                 arguments = llm_tool_call.function.arguments
 
-                # Non-string arguments (already parsed) - use outer function name
-                tool_call_dicts.append({"function": function_name, "arguments": arguments})
+                # Build the tool call dict
+                call_dict = {"function": function_name, "arguments": arguments}
+                if tool_call_id:
+                    call_dict["tool_call_id"] = tool_call_id
+                tool_call_dicts.append(call_dict)
 
             except Exception:
                 continue
@@ -1481,7 +1528,18 @@ class CodecToolCaller(WARCaller):
 
     @observable
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        return [self._execute_single_call(call) for call in parsed_tool_calls]
+        """Execute parsed tool calls from LLM response.
+
+        Preserves tool_call_id in results for OpenAI native tool calling support.
+        """
+        results = []
+        for call in parsed_tool_calls:
+            result = self._execute_single_call(call)
+            # Preserve tool_call_id for OpenAI native tool support
+            if "tool_call_id" in call:
+                result["tool_call_id"] = call["tool_call_id"]
+            results.append(result)
+        return results
 
     @observable
     async def async_execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:

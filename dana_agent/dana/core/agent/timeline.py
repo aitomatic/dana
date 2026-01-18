@@ -73,6 +73,8 @@ class TimelineEntry:
         content: The actual content/message
         metadata: Additional context information
         is_latest_user_message: Whether this is the latest user message
+        tool_call_id: For tool results, the ID linking back to the original tool call (OpenAI native tools)
+        tool_calls: For assistant messages, the native tool calls array (OpenAI native tools)
     """
 
     entry_type: TimelineEntryType
@@ -80,6 +82,8 @@ class TimelineEntry:
     timestamp: datetime = field(default_factory=lambda: datetime.now())
     metadata: dict = field(default_factory=dict)
     is_latest_user_message: bool = False
+    tool_call_id: str | None = None  # For linking tool results to their calls
+    tool_calls: list | None = None  # For assistant messages with native tool calls
 
     def _get_entry_config(self) -> str:
         """
@@ -296,9 +300,25 @@ class Timeline:
                 # Convert context entries to messages
                 context_messages = []
                 for entry in context_entries:
-                    role = self._get_entry_role(entry, default_role)
                     content = self._format_entry_content(entry)
-                    context_messages.append(LLMMessage(role=role, content=content))
+
+                    # Handle native tool results (OpenAI format)
+                    if entry.tool_call_id:
+                        context_messages.append(LLMMessage(
+                            role="tool",
+                            content=content,
+                            tool_call_id=entry.tool_call_id
+                        ))
+                    # Handle assistant messages with native tool calls
+                    elif entry.tool_calls:
+                        context_messages.append(LLMMessage(
+                            role="assistant",
+                            content=content,
+                            tool_calls=entry.tool_calls
+                        ))
+                    else:
+                        role = self._get_entry_role(entry, default_role)
+                        context_messages.append(LLMMessage(role=role, content=content))
 
                 # Apply token limit to context if needed
                 if self._estimate_tokens(context_messages) > token_limit:
@@ -319,9 +339,25 @@ class Timeline:
         # Convert entries to LLM messages
         messages = []
         for entry in timeline_entries:
-            role = self._get_entry_role(entry, default_role)
             content = self._format_entry_content(entry)
-            messages.append(LLMMessage(role=role, content=content))
+
+            # Handle native tool results (OpenAI format)
+            if entry.tool_call_id:
+                messages.append(LLMMessage(
+                    role="tool",
+                    content=content,
+                    tool_call_id=entry.tool_call_id
+                ))
+            # Handle assistant messages with native tool calls
+            elif entry.tool_calls:
+                messages.append(LLMMessage(
+                    role="assistant",
+                    content=content,
+                    tool_calls=entry.tool_calls
+                ))
+            else:
+                role = self._get_entry_role(entry, default_role)
+                messages.append(LLMMessage(role=role, content=content))
 
         # Apply token limit if needed
         if self._estimate_tokens(messages) > token_limit:

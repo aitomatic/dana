@@ -31,8 +31,10 @@ class LLMMessage:
     """A single message in a conversation."""
 
     content: str
-    role: str  # "system", "user", "assistant"
+    role: str  # "system", "user", "assistant", "tool"
     cache_control: dict | None = None  # For Anthropic prompt caching
+    tool_calls: list | None = None  # For assistant messages with native tool calls
+    tool_call_id: str | None = None  # For tool result messages (role="tool")
 
 
 @dataclass
@@ -58,6 +60,15 @@ class AssistantLLMMessage(LLMMessage):
 
     content: str
     role: str = "assistant"  # Hard-coded role
+
+
+@dataclass
+class ToolLLMMessage(LLMMessage):
+    """A tool result message for native OpenAI tool calling."""
+
+    content: str
+    tool_call_id: str
+    role: str = "tool"  # Hard-coded role
 
 
 @dataclass

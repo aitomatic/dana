@@ -1,3 +1,4 @@
+import json
 from dana.common.llm.types import LLMResponse
 from dana.core.agent.star_agent import STARAgent
 from dana.core.resource.base_resource import BaseResource
@@ -31,6 +32,16 @@ def make_response(content: str) -> LLMResponse:
     return LLMResponse(content=content, model="mock", usage={"prompt_tokens": 1, "completion_tokens": 1}, finish_reason="stop")
 
 
+def make_json_response(done: bool, response: str | None = None, tool_calls: list | None = None) -> LLMResponse:
+    """Create a JSON-formatted LLM response."""
+    data = {
+        "done": done,
+        "response": response,
+        "tool_calls": tool_calls or []
+    }
+    return make_response(json.dumps(data))
+
+
 def make_agent(mock_llm: MockLLM, resources=None) -> STARAgent:
     agent = STARAgent(
         agent_type="test",
@@ -46,11 +57,7 @@ def make_agent(mock_llm: MockLLM, resources=None) -> STARAgent:
 
 def test_exit_when_done_true_with_response():
     mock_llm = MockLLM([
-        make_response(
-            "<done>true</done>"
-            "<function_call></function_call>"
-            "<response>Done</response>"
-        )
+        make_json_response(done=True, response="Done")
     ])
     agent = make_agent(mock_llm)
 
@@ -63,20 +70,11 @@ def test_exit_when_done_true_with_response():
 
 def test_continue_when_done_false_with_function_call():
     mock_llm = MockLLM([
-        make_response(
-            "<done>false</done>"
-            "<function_call>"
-            "<invoke name=\"mock-resource:query\">"
-            "<parameter name=\"message\">hello</parameter>"
-            "</invoke>"
-            "</function_call>"
-            "<response></response>"
+        make_json_response(
+            done=False,
+            tool_calls=[{"name": "mock-resource:query", "parameters": {"message": "hello"}}]
         ),
-        make_response(
-            "<done>true</done>"
-            "<function_call></function_call>"
-            "<response>Finished</response>"
-        ),
+        make_json_response(done=True, response="Finished"),
     ])
     resource = MockResource()
     agent = make_agent(mock_llm, resources=[resource])
@@ -91,16 +89,8 @@ def test_continue_when_done_false_with_function_call():
 
 def test_retry_when_done_false_no_function_call():
     mock_llm = MockLLM([
-        make_response(
-            "<done>false</done>"
-            "<function_call></function_call>"
-            "<response></response>"
-        ),
-        make_response(
-            "<done>true</done>"
-            "<function_call></function_call>"
-            "<response>Ok</response>"
-        ),
+        make_json_response(done=False, tool_calls=[]),
+        make_json_response(done=True, response="Ok"),
     ])
     agent = make_agent(mock_llm)
 
@@ -112,16 +102,8 @@ def test_retry_when_done_false_no_function_call():
 
 def test_retry_when_done_true_no_response():
     mock_llm = MockLLM([
-        make_response(
-            "<done>true</done>"
-            "<function_call></function_call>"
-            "<response></response>"
-        ),
-        make_response(
-            "<done>true</done>"
-            "<function_call></function_call>"
-            "<response>Now complete</response>"
-        ),
+        make_json_response(done=True, response=None),
+        make_json_response(done=True, response="Now complete"),
     ])
     agent = make_agent(mock_llm)
 
@@ -133,12 +115,8 @@ def test_retry_when_done_true_no_response():
 
 def test_retry_on_parse_failure():
     mock_llm = MockLLM([
-        make_response("<response>Missing done</response>"),
-        make_response(
-            "<done>true</done>"
-            "<function_call></function_call>"
-            "<response>Recovered</response>"
-        ),
+        make_response("Invalid format without JSON"),
+        make_json_response(done=True, response="Recovered"),
     ])
     agent = make_agent(mock_llm)
 
@@ -150,9 +128,9 @@ def test_retry_on_parse_failure():
 
 def test_max_retries_per_iteration():
     mock_llm = MockLLM([
-        make_response("<response>Missing done</response>"),
-        make_response("<response>Missing done</response>"),
-        make_response("<response>Missing done</response>"),
+        make_response("Invalid format"),
+        make_response("Invalid format"),
+        make_response("Invalid format"),
     ])
     agent = make_agent(mock_llm)
 
@@ -164,14 +142,9 @@ def test_max_retries_per_iteration():
 
 def test_max_iterations():
     mock_llm = MockLLM([
-        make_response(
-            "<done>false</done>"
-            "<function_call>"
-            "<invoke name=\"mock-resource:query\">"
-            "<parameter name=\"message\">step</parameter>"
-            "</invoke>"
-            "</function_call>"
-            "<response></response>"
+        make_json_response(
+            done=False,
+            tool_calls=[{"name": "mock-resource:query", "parameters": {"message": "step"}}]
         )
         for _ in range(12)
     ])
@@ -185,11 +158,7 @@ def test_max_iterations():
 
 def test_simple_task_single_turn():
     mock_llm = MockLLM([
-        make_response(
-            "<done>true</done>"
-            "<function_call></function_call>"
-            "<response>4</response>"
-        )
+        make_json_response(done=True, response="4")
     ])
     agent = make_agent(mock_llm)
 
@@ -203,5 +172,5 @@ def test_prompt_contains_output_format():
     agent = STARAgent(agent_type="prompt", auto_register=False, enable_web_search=False, enable_skills=False)
     system_prompt = agent.system_prompt
 
-    assert "<output_format>" in system_prompt
-    assert "<done>" in system_prompt
+    assert '"done"' in system_prompt
+    assert "JSON" in system_prompt

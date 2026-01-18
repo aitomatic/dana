@@ -20,6 +20,7 @@ def _build_instance(**overrides) -> ClaudeCodeSkills:
         "_available": True,
         "_all_skills": [],
         "_skills": [],
+        "_disable_session_persistence": False,
     }
     for key, value in {**defaults, **overrides}.items():
         setattr(instance, key, value)

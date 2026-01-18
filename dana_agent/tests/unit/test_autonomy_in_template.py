@@ -58,7 +58,7 @@ class TestAutonomyInTemplate:
 
 
 class TestAgentSystemPromptIncludesAutonomy:
-    """Test that actual agent system prompts include autonomy."""
+    """Test that actual agent system prompts include autonomy (JSON format via DefaultRuntime)."""
 
     def test_star_agent_system_prompt_has_autonomy(self):
         """Verify STARAgent system prompt includes autonomy instructions."""
@@ -70,18 +70,18 @@ class TestAgentSystemPromptIncludesAutonomy:
                 super().__init__(
                     agent_type="test",
                     agent_id="test-001",
-                    llm_provider="openai",
-                    model="gpt-4o-mini",
-                    codec=CSXMLCodec,
+                    auto_register=False,
+                    enable_web_search=False,
+                    enable_skills=False,
                 )
 
         agent = TestAgent()
         system_prompt = agent.system_prompt
 
-        # Check autonomy section is present
-        assert "<output_format>" in system_prompt
-        assert "STRICT OUTPUT FORMAT" in system_prompt
-        assert "<done>" in system_prompt
+        # Check JSON-based autonomy section is present (DefaultRuntime format)
+        assert "## Output Format" in system_prompt
+        assert '"done"' in system_prompt
+        assert "JSON" in system_prompt
 
     def test_star_agent_subclass_inherits_autonomy(self):
         """Verify subclasses of STARAgent inherit autonomy instructions."""
@@ -93,14 +93,14 @@ class TestAgentSystemPromptIncludesAutonomy:
                 super().__init__(
                     agent_type="custom",
                     agent_id="custom-001",
-                    llm_provider="openai",
-                    model="gpt-4o-mini",
-                    codec=CSXMLCodec,
+                    auto_register=False,
+                    enable_web_search=False,
+                    enable_skills=False,
                 )
 
         agent = CustomAgent()
         system_prompt = agent.system_prompt
 
-        # Subclass should also have autonomy
-        assert "<output_format>" in system_prompt
-        assert "STRICT OUTPUT FORMAT" in system_prompt
+        # Subclass should also have JSON-based autonomy (DefaultRuntime format)
+        assert "## Output Format" in system_prompt
+        assert '"done"' in system_prompt

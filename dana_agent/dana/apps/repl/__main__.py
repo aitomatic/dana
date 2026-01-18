@@ -20,6 +20,14 @@ def main():
     args = parser.parse_args()
 
     try:
+        # Load .env files (override existing env vars)
+        from dotenv import find_dotenv, load_dotenv
+        dotenv_path = find_dotenv()
+        if dotenv_path:
+            load_dotenv(dotenv_path, override=True)
+        else:
+            load_dotenv(override=True)
+
         from dana.apps.repl.repl_app import AdanaREPLApp
 
         app = AdanaREPLApp(verbose=args.verbose)
