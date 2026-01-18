@@ -5,15 +5,24 @@ Adana REPL - Entry Point
 This module serves as the entry point for the Adana interactive REPL.
 """
 
+import argparse
 import sys
 
 
 def main():
     """Main entry point for the Adana REPL."""
+    parser = argparse.ArgumentParser(description="Adana Interactive REPL")
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging (default: quiet)"
+    )
+    args = parser.parse_args()
+
     try:
         from dana.apps.repl.repl_app import AdanaREPLApp
 
-        app = AdanaREPLApp()
+        app = AdanaREPLApp(verbose=args.verbose)
         app.run()
 
     except KeyboardInterrupt:

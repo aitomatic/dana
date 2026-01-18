@@ -29,6 +29,7 @@ dependencies = [
     "pytest-cov",
     "ruff>=0.13.0",
     "mypy>=1.8.0",
+    "ddgs>=9.5.5",
 ]
 
 [project.optional-dependencies]

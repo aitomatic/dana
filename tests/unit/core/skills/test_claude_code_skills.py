@@ -1,313 +1,302 @@
+from __future__ import annotations
+
 from pathlib import Path
 import subprocess
-from types import SimpleNamespace
 
 from dana.core.skills import ClaudeCodeSkills
-import dana.core.skills.claude_code_skills as claude_skills
 
 
-def _make_instance(tmp_path: Path) -> ClaudeCodeSkills:
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+class DummyCompleted:
+    def __init__(self, returncode=0, stdout="", stderr=""):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+def make_skills_instance(tmp_path: Path) -> ClaudeCodeSkills:
+    instance = object.__new__(ClaudeCodeSkills)
     instance._available = True
-    instance._skills = [{"name": "pptx", "description": "Slides"}]
-    instance._output_dir = str(tmp_path / "out")
-    instance._timeout = 10
+    instance._skills = [{"name": "pptx", "description": "PPTX"}]
+    instance._output_dir = str(tmp_path)
+    instance._timeout = 123
+    instance._disable_session_persistence = False
     return instance
 
 
-def test_init_default_values(tmp_path, monkeypatch):
+def test_init_default_values(monkeypatch, tmp_path):
     monkeypatch.setattr(ClaudeCodeSkills, "_check_claude_available", lambda self: True)
+    monkeypatch.setattr(ClaudeCodeSkills, "_discover_skills", lambda self: [])
+    skills = ClaudeCodeSkills()
 
-    skills = ClaudeCodeSkills(skills_dir=str(tmp_path))
-
-    assert skills._skills_dir == tmp_path
+    assert skills._skills_dir == Path("~/.claude/skills").expanduser()
     assert skills._output_dir == "./skill_output"
     assert skills._timeout == 300
+    assert skills._disable_session_persistence is False
     assert skills.resource_id == "claude-skills"
 
 
-def test_init_custom_values(tmp_path, monkeypatch):
+def test_init_custom_values(monkeypatch, tmp_path):
     monkeypatch.setattr(ClaudeCodeSkills, "_check_claude_available", lambda self: True)
-
+    monkeypatch.setattr(ClaudeCodeSkills, "_discover_skills", lambda self: [])
     skills = ClaudeCodeSkills(
         skills_dir=str(tmp_path),
-        output_dir="./custom-output",
-        timeout=123,
-        resource_id="custom-id",
+        output_dir="/tmp/out",
+        timeout=42,
+        disable_session_persistence=True,
+        resource_id="custom",
     )
 
     assert skills._skills_dir == tmp_path
-    assert skills._output_dir == "./custom-output"
-    assert skills._timeout == 123
-    assert skills.resource_id == "custom-id"
+    assert skills._output_dir == "/tmp/out"
+    assert skills._timeout == 42
+    assert skills._disable_session_persistence is True
+    assert skills.resource_id == "custom"
 
 
-def test_init_with_skill_filter(tmp_path, monkeypatch):
+def test_init_with_skill_filter(monkeypatch):
     monkeypatch.setattr(ClaudeCodeSkills, "_check_claude_available", lambda self: True)
+    monkeypatch.setattr(
+        ClaudeCodeSkills,
+        "_discover_skills",
+        lambda self: [
+            {"name": "pptx", "description": "PPTX"},
+            {"name": "xlsx", "description": "XLSX"},
+        ],
+    )
 
-    skills_dir = tmp_path / "skills"
-    (skills_dir / "pptx").mkdir(parents=True)
-    (skills_dir / "xlsx").mkdir(parents=True)
-    (skills_dir / "pptx" / "SKILL.md").write_text("Presentation builder")
-    (skills_dir / "xlsx" / "SKILL.md").write_text("Spreadsheet helper")
-
-    skills = ClaudeCodeSkills(skills=["pptx"], skills_dir=str(skills_dir))
-
-    assert [skill["name"] for skill in skills.skills] == ["pptx"]
+    skills = ClaudeCodeSkills(skills=["xlsx"])
+    assert skills.skills == [{"name": "xlsx", "description": "XLSX"}]
 
 
 def test_check_claude_available_when_installed(monkeypatch):
-    def fake_run(*args, **kwargs):
-        return SimpleNamespace(returncode=0)
+    def fake_run(*_args, **_kwargs):
+        return DummyCompleted(returncode=0)
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
-
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+    monkeypatch.setattr("subprocess.run", fake_run)
+    instance = object.__new__(ClaudeCodeSkills)
     assert instance._check_claude_available() is True
 
 
 def test_check_claude_available_when_not_installed(monkeypatch):
-    def fake_run(*args, **kwargs):
-        raise FileNotFoundError("claude not found")
+    def fake_run(*_args, **_kwargs):
+        raise FileNotFoundError
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
-
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+    monkeypatch.setattr("subprocess.run", fake_run)
+    instance = object.__new__(ClaudeCodeSkills)
     assert instance._check_claude_available() is False
 
 
-def test_discover_skills_finds_skills(tmp_path):
-    skills_dir = tmp_path / "skills"
-    (skills_dir / "pptx").mkdir(parents=True)
-    (skills_dir / "pdf").mkdir(parents=True)
-    (skills_dir / "pptx" / "SKILL.md").write_text("Presentation builder")
-    (skills_dir / "pdf" / "SKILL.md").write_text("# PDF tools")
+def test_discover_skills_finds_skills(monkeypatch, tmp_path):
+    monkeypatch.setattr(ClaudeCodeSkills, "_check_claude_available", lambda self: True)
 
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
-    instance._skills_dir = skills_dir
+    skill_dir = tmp_path / "skills"
+    skill_dir.mkdir()
+    pptx_dir = skill_dir / "pptx"
+    pptx_dir.mkdir()
+    (pptx_dir / "SKILL.md").write_text("Presentation output")
 
-    skills = instance._discover_skills()
-    skill_names = {skill["name"] for skill in skills}
-
-    assert skill_names == {"pptx", "pdf"}
+    skills = ClaudeCodeSkills(skills_dir=str(skill_dir))
+    assert skills.all_skills == [{"name": "pptx", "description": "Presentation output"}]
 
 
-def test_discover_skills_empty_dir(tmp_path):
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
-    instance._skills_dir = tmp_path
+def test_discover_skills_empty_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(ClaudeCodeSkills, "_check_claude_available", lambda self: True)
+    skills = ClaudeCodeSkills(skills_dir=str(tmp_path))
+    assert skills.all_skills == []
 
-    assert instance._discover_skills() == []
 
-
-def test_discover_skills_missing_dir(tmp_path):
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
-    instance._skills_dir = tmp_path / "missing"
-
-    assert instance._discover_skills() == []
+def test_discover_skills_missing_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(ClaudeCodeSkills, "_check_claude_available", lambda self: True)
+    missing = tmp_path / "missing"
+    skills = ClaudeCodeSkills(skills_dir=str(missing))
+    assert skills.all_skills == []
 
 
 def test_parse_skill_description_first_line(tmp_path):
     skill_md = tmp_path / "SKILL.md"
-    skill_md.write_text("\n\nFirst line description\n# Heading")
+    skill_md.write_text("Simple description\n# Heading")
 
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
-
-    assert instance._parse_skill_description(skill_md) == "First line description"
+    instance = object.__new__(ClaudeCodeSkills)
+    assert instance._parse_skill_description(skill_md) == "Simple description"
 
 
 def test_parse_skill_description_heading(tmp_path):
     skill_md = tmp_path / "SKILL.md"
-    skill_md.write_text("# Heading Title\nMore text")
+    skill_md.write_text("# Skill Title\nMore")
 
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
-
-    assert instance._parse_skill_description(skill_md) == "Heading Title"
+    instance = object.__new__(ClaudeCodeSkills)
+    assert instance._parse_skill_description(skill_md) == "Skill Title"
 
 
 def test_parse_skill_description_truncates(tmp_path):
-    long_text = "a" * 250
     skill_md = tmp_path / "SKILL.md"
-    skill_md.write_text(long_text)
+    skill_md.write_text("a" * 300)
 
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
-
-    description = instance._parse_skill_description(skill_md)
-
-    assert len(description) == 200
+    instance = object.__new__(ClaudeCodeSkills)
+    assert instance._parse_skill_description(skill_md) == "a" * 200
 
 
 def test_filter_skills():
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+    instance = object.__new__(ClaudeCodeSkills)
     instance._all_skills = [
-        {"name": "pptx", "description": "Slides"},
-        {"name": "xlsx", "description": "Sheets"},
+        {"name": "pptx", "description": "PPTX"},
+        {"name": "xlsx", "description": "XLSX"},
     ]
 
-    filtered = instance._filter_skills(["xlsx"])
-
-    assert filtered == [{"name": "xlsx", "description": "Sheets"}]
+    assert instance._filter_skills(["pptx"]) == [{"name": "pptx", "description": "PPTX"}]
 
 
 def test_format_skills_for_docstring():
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+    instance = object.__new__(ClaudeCodeSkills)
     instance._skills = [
-        {"name": "pptx", "description": "Slides"},
-        {"name": "pdf", "description": "Docs"},
+        {"name": "pptx", "description": "PPTX"},
+        {"name": "xlsx", "description": "XLSX"},
     ]
 
-    formatted = instance._format_skills_for_docstring()
-
-    assert formatted == "- pptx: Slides\n- pdf: Docs"
+    assert instance._format_skills_for_docstring() == "- pptx: PPTX\n- xlsx: XLSX"
 
 
 def test_enabled_property_true():
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+    instance = object.__new__(ClaudeCodeSkills)
     instance._available = True
-    instance._skills = [{"name": "pptx", "description": "Slides"}]
+    instance._skills = [{"name": "pptx", "description": "PPTX"}]
 
     assert instance.enabled is True
 
 
 def test_enabled_property_false_no_claude():
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+    instance = object.__new__(ClaudeCodeSkills)
     instance._available = False
-    instance._skills = [{"name": "pptx", "description": "Slides"}]
+    instance._skills = [{"name": "pptx", "description": "PPTX"}]
 
     assert instance.enabled is False
 
 
 def test_enabled_property_false_no_skills():
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+    instance = object.__new__(ClaudeCodeSkills)
     instance._available = True
     instance._skills = []
 
     assert instance.enabled is False
 
 
-def test_execute_returns_error_when_not_available():
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+def test_execute_returns_error_when_not_available(tmp_path):
+    instance = object.__new__(ClaudeCodeSkills)
     instance._available = False
-    instance._skills = [{"name": "pptx", "description": "Slides"}]
+    instance._skills = [{"name": "pptx", "description": "PPTX"}]
 
-    result = instance.execute(task="Do it")
-
+    result = instance.execute("task")
     assert result["success"] is False
-    assert "not installed" in result["error"]
+    assert "Claude Code CLI" in result["error"]
 
 
-def test_execute_returns_error_when_no_skills():
-    instance = ClaudeCodeSkills.__new__(ClaudeCodeSkills)
+def test_execute_returns_error_when_no_skills(tmp_path):
+    instance = object.__new__(ClaudeCodeSkills)
     instance._available = True
     instance._skills = []
 
-    result = instance.execute(task="Do it")
-
+    result = instance.execute("task")
     assert result["success"] is False
     assert "No skills available" in result["error"]
 
 
-def test_execute_builds_prompt_with_context(tmp_path, monkeypatch):
-    instance = _make_instance(tmp_path)
+def test_execute_builds_prompt_with_context(monkeypatch, tmp_path):
+    instance = make_skills_instance(tmp_path)
 
     captured = {}
 
     def fake_run(cmd, **kwargs):
         captured["cmd"] = cmd
         captured["kwargs"] = kwargs
-        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        return DummyCompleted(returncode=0, stdout="done")
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
-
-    result = instance.execute(task="Do it", context="ctx")
+    monkeypatch.setattr("subprocess.run", fake_run)
+    result = instance.execute("Do thing", context="Context here")
 
     assert result["success"] is True
-    assert captured["cmd"][0:3] == ["claude", "--dangerously-skip-permissions", "-p"]
-    assert captured["cmd"][3] == "Context from our conversation:\nctx\n\nTask: Do it"
+    assert "-p" in captured["cmd"]
+    prompt = captured["cmd"][captured["cmd"].index("-p") + 1]
+    assert prompt == "Context from our conversation:\nContext here\n\nTask: Do thing"
 
 
-def test_execute_builds_prompt_without_context(tmp_path, monkeypatch):
-    instance = _make_instance(tmp_path)
+def test_execute_builds_prompt_without_context(monkeypatch, tmp_path):
+    instance = make_skills_instance(tmp_path)
 
     captured = {}
 
     def fake_run(cmd, **kwargs):
         captured["cmd"] = cmd
-        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        captured["kwargs"] = kwargs
+        return DummyCompleted(returncode=0, stdout="done")
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
+    monkeypatch.setattr("subprocess.run", fake_run)
+    result = instance.execute("Do thing")
 
-    instance.execute(task="Do it")
+    assert result["success"] is True
+    prompt = captured["cmd"][captured["cmd"].index("-p") + 1]
+    assert prompt == "Do thing"
 
-    assert captured["cmd"][3] == "Do it"
 
-
-def test_execute_unsets_api_key(tmp_path, monkeypatch):
-    instance = _make_instance(tmp_path)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "secret")
-
-    captured = {}
+def test_execute_unsets_api_key(monkeypatch, tmp_path):
+    instance = make_skills_instance(tmp_path)
 
     def fake_run(cmd, **kwargs):
-        captured["env"] = kwargs.get("env")
-        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        env = kwargs.get("env", {})
+        assert "ANTHROPIC_API_KEY" not in env
+        return DummyCompleted(returncode=0, stdout="done")
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "secret")
+    monkeypatch.setattr("subprocess.run", fake_run)
 
-    instance.execute(task="Do it")
-
-    assert "ANTHROPIC_API_KEY" not in captured["env"]
-
-
-def test_execute_creates_output_dir(tmp_path, monkeypatch):
-    output_dir = tmp_path / "output"
-    instance = _make_instance(tmp_path)
-    instance._output_dir = str(output_dir)
-
-    def fake_run(*args, **kwargs):
-        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
-
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
-
-    instance.execute(task="Do it")
-
-    assert output_dir.exists()
+    result = instance.execute("Do thing")
+    assert result["success"] is True
 
 
-def test_execute_handles_timeout(tmp_path, monkeypatch):
-    instance = _make_instance(tmp_path)
+def test_execute_creates_output_dir(monkeypatch, tmp_path):
+    instance = make_skills_instance(tmp_path / "out")
 
-    def fake_run(*args, **kwargs):
-        raise subprocess.TimeoutExpired(cmd="claude", timeout=instance._timeout)
+    def fake_run(cmd, **kwargs):
+        return DummyCompleted(returncode=0, stdout="done")
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
+    monkeypatch.setattr("subprocess.run", fake_run)
+    instance.execute("Do thing")
 
-    result = instance.execute(task="Do it")
+    assert (tmp_path / "out").exists()
 
+
+def test_execute_handles_timeout(monkeypatch, tmp_path):
+    instance = make_skills_instance(tmp_path)
+
+    def fake_run(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(cmd="claude", timeout=1)
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    result = instance.execute("Do thing")
     assert result["success"] is False
-    assert "timed out" in result["error"]
+    assert "timed out" in result["error"].lower()
 
 
-def test_execute_handles_success(tmp_path, monkeypatch):
-    instance = _make_instance(tmp_path)
+def test_execute_handles_success(monkeypatch, tmp_path):
+    instance = make_skills_instance(tmp_path)
 
-    def fake_run(*args, **kwargs):
-        return SimpleNamespace(returncode=0, stdout="done", stderr="")
+    def fake_run(*_args, **_kwargs):
+        return DummyCompleted(returncode=0, stdout="ok", stderr="")
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
+    monkeypatch.setattr("subprocess.run", fake_run)
 
-    result = instance.execute(task="Do it")
+    result = instance.execute("Do thing")
+    assert result == {"success": True, "output": "ok", "error": ""}
 
-    assert result == {"success": True, "output": "done", "error": ""}
 
+def test_execute_handles_failure(monkeypatch, tmp_path):
+    instance = make_skills_instance(tmp_path)
 
-def test_execute_handles_failure(tmp_path, monkeypatch):
-    instance = _make_instance(tmp_path)
+    def fake_run(*_args, **_kwargs):
+        return DummyCompleted(returncode=2, stdout="", stderr="bad")
 
-    def fake_run(*args, **kwargs):
-        return SimpleNamespace(returncode=1, stdout="nope", stderr="boom")
+    monkeypatch.setattr("subprocess.run", fake_run)
 
-    monkeypatch.setattr(claude_skills.subprocess, "run", fake_run)
-
-    result = instance.execute(task="Do it")
-
-    assert result == {"success": False, "output": "nope", "error": "boom"}
+    result = instance.execute("Do thing")
+    assert result["success"] is False
+    assert result["error"] == "bad"

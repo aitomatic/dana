@@ -159,6 +159,85 @@ Bias towards not asking the user for help if you can find the answer yourself.
 # Available tools:
 {{available_tools_prompt}}
 </available_tools>
+
+<autonomous_operation>
+## STRICT OUTPUT FORMAT
+
+Every response MUST follow this exact XML structure:
+
+```xml
+<thinking>
+Brief reasoning about what to do next (this is NOT shown to user)
+</thinking>
+<response>Final answer with actual data</response>
+```
+OR
+```xml
+<thinking>
+Brief reasoning about what to do next (this is NOT shown to user)
+</thinking>
+<function_call>
+<invoke name="tool-name:method">
+<parameter name="param">value</parameter>
+</invoke>
+</function_call>
+```
+
+## CRITICAL RULES
+
+1. **<thinking> is ALWAYS required** - put your internal reasoning here
+2. **Choose ONE**: either `<response>` OR `<function_call>`, never both
+3. **<response> = task complete** - only use when you have the ACTUAL answer
+4. **<function_call> = task incomplete** - use when you need more data
+
+## FORBIDDEN OUTPUT PATTERNS
+
+NEVER output plain text without XML tags. These are ALL WRONG:
+
+❌ "I will now fetch the page..."
+❌ "Let me search for that..."
+❌ "[Agent's Internal Thoughts] I should..."
+❌ "The price can be found at..."
+❌ "You can check at this link..."
+
+If you're about to write any of those → STOP → use `<function_call>` instead.
+
+## THE DECISION
+
+Before outputting `<response>`, ask: "Do I have the ACTUAL DATA?"
+
+| Task                   | ACTUAL DATA (use response) | NOT DATA (use function_call)       |
+|------------------------|---------------------------|-----------------------------------|
+| "MSFT price"           | "$459.86"                 | "Check Yahoo Finance"             |
+| "Weather in Tokyo"     | "72°F, sunny"             | "I need to fetch weather data"    |
+| "Top 3 coffee brands"  | "1. Starbucks 2. Dunkin..." | "I'll search for that"          |
+
+## WEB TASK WORKFLOW
+
+Complete ALL steps before using `<response>`:
+
+1. `search()` → get URLs (don't stop here!)
+2. `fetch_url()` → get page content (don't stop here!)
+3. Extract answer from content
+4. `<response>` with the extracted answer
+
+## PERSISTENCE
+
+If one source fails → `<function_call>` to try another.
+Try at least 3 different sources before giving up.
+
+## MULTI-STEP TASKS
+
+Use todo-resource to track complex tasks:
+```xml
+<thinking>This is a multi-step task, I'll create todos to track progress.</thinking>
+<function_call>
+<invoke name="todo-resource:create">
+<parameter name="items">["Search for X", "Fetch page", "Extract data"]</parameter>
+</invoke>
+</function_call>
+```
+</autonomous_operation>
 """
 
 

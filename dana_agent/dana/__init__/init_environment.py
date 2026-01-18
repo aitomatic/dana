@@ -84,12 +84,17 @@ def _install_langfuse_shim() -> None:
         sys.modules["langfuse"] = shim
 
 
-def init_environment():
-    """Load environment variables from .env file."""
+def init_environment(verbose: bool = False):
+    """Load environment variables from .env file.
+
+    Args:
+        verbose: If True, print status messages. Default is False (quiet).
+    """
     _install_structlog_shim()
     _install_langfuse_shim()
     dotenv_path = find_dotenv()
-    print(f"Loading environment variables from {dotenv_path}")
+    if verbose:
+        print(f"Loading environment variables from {dotenv_path}")
     if dotenv_path:
         load_dotenv(dotenv_path)
     else:
