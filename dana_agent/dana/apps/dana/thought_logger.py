@@ -5,26 +5,13 @@ This module provides a Notifiable implementation that intercepts and displays
 agent internal thought processes, including reasoning, tool calls, and reflections.
 """
 
-import os
-import sys
-
 from dana.common.protocols import DictParams, Notifiable
 from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
 
 
-# ANSI escape codes for terminal control
-CURSOR_UP = "\033[F"
-CLEAR_LINE = "\033[K"
+# ANSI escape codes for colors
 FADED_COLOR = "\033[90m"  # Bright black (gray)
 RESET_COLOR = "\033[0m"
-
-
-def _get_terminal_width() -> int:
-    """Get terminal width, default to 80 if unavailable."""
-    try:
-        return os.get_terminal_size().columns
-    except (AttributeError, OSError):
-        return 80
 
 
 class ThoughtLogger(Notifiable):
@@ -46,8 +33,6 @@ class ThoughtLogger(Notifiable):
         """
         self.verbose = verbose
         self.show_tool_calls = show_tool_calls
-        self._last_thought_lines = 0  # Track how many lines the last thought occupied
-        self._current_agent = None  # Track which agent's thoughts we're showing
 
     def notify(self, notifier: object, message: DictParams) -> None:
         """
@@ -84,6 +69,11 @@ class ThoughtLogger(Notifiable):
             response = trace_thoughts.get("response")
             reasoning = trace_thoughts.get("reasoning")
             tool_calls = trace_thoughts.get("tool_calls", [])
+            todo_list = trace_thoughts.get("todo_list")
+
+            # Display todo list if present
+            if todo_list:
+                self._display_todo_list(agent_id, todo_list)
 
             # Display if we have response OR reasoning
             if (response and len(response) > 0) or reasoning:
@@ -138,7 +128,6 @@ class ThoughtLogger(Notifiable):
         if self.show_tool_calls and "tool_calls" in message:
             tool_calls = message.get("tool_calls", [])
             if tool_calls:
-                self._clear_thought()  # Clear thought before showing action
                 self._display_tool_calls(agent_id, agent_type, tool_calls)
 
         # Check for tool results
@@ -151,16 +140,14 @@ class ThoughtLogger(Notifiable):
         """Extract a more informative summary from THINK phase using structured data.
 
         Args:
-            response: The agent's full thinking response
+            response: The agent's full thinking response (final answer when done=true)
+            reasoning: The agent's reasoning for this step
             tool_calls: List of structured tool call dictionaries with 'function' and 'arguments'
 
         Returns:
-            A more informative summary combining reasoning and structured tool intent
+            A summary for display - reasoning + tool intent, or just reasoning for final answers
         """
-        if reasoning:
-            response += f" ({reasoning})"
-
-        # If there are tool calls, show structured action plan
+        # If there are tool calls, show reasoning + tool intent
         if tool_calls and len(tool_calls) > 0:
             # Extract structured information from tool calls
             tool_descriptions = []
@@ -183,75 +170,43 @@ class ThoughtLogger(Notifiable):
 
             tool_summary = f"→ {', '.join(tool_descriptions)}"
 
-            # Show brief reasoning + structured tool intent
-            if len(response) <= 150:
-                return f"{response} {tool_summary}"
+            # Show reasoning + structured tool intent
+            display_text = reasoning or ""
+            if len(display_text) <= 150:
+                return f"{display_text} {tool_summary}".strip()
             else:
-                # Truncate response but keep tool intent visible
-                first_part = response[:150].strip()
-                return f"{first_part}... {tool_summary}"
+                return f"{display_text[:150].strip()}... {tool_summary}"
 
-        # No tool calls - this is a final response, show concise reasoning
-        if len(response) <= 400:
-            return response
+        # No tool calls - this is a final answer. Only show reasoning (response will be displayed separately)
+        if reasoning:
+            if len(reasoning) <= 400:
+                return reasoning
+            else:
+                return f"{reasoning[:350].strip()}..."
         else:
-            # Truncate long responses
-            return f"{response[:350].strip()}..."
-
-    def _clear_thought(self) -> None:
-        """Clear the previous thought display."""
-        if self._last_thought_lines > 0:
-            # Move cursor up and clear each line
-            for _ in range(self._last_thought_lines):
-                sys.stdout.write(CURSOR_UP + CLEAR_LINE)
-            sys.stdout.flush()
-            self._last_thought_lines = 0
-            self._current_agent = None
+            # No reasoning provided, just indicate completion
+            return "Preparing final response..."
 
     def _display_phase(self, agent_id: str, phase_label: str, content: str) -> None:
         """
-        Display a STAR phase in faded color, overwriting previous display.
+        Display a STAR phase in faded color.
 
         Args:
             agent_id: ID of the agent
             phase_label: Label for the phase (e.g., "💭 THINK", "⚡ ACT")
             content: The content to display
         """
-        # Only clear if we're displaying for the same agent
-        # This prevents clearing when switching between agents
-        if self._current_agent == agent_id:
-            self._clear_thought()
-        elif self._last_thought_lines > 0:
-            # Different agent, add a line break instead of clearing
-            print()
-            self._last_thought_lines = 0
-
-        self._current_agent = agent_id
-
         # Truncate long content
         max_length = 400
         display_text = content[:max_length] + "..." if len(content) > max_length else content
 
-        # Format with faded color (without color codes in length calculation)
-        prefix = f"{phase_label} [{agent_id}] "
-        thought_text = f"{prefix}{display_text}"
-        thought_line = f"{FADED_COLOR}{thought_text}{RESET_COLOR}"
-
-        # Print the thought
+        # Format with faded color
+        thought_line = f"{FADED_COLOR}{phase_label} [{agent_id}] {display_text}{RESET_COLOR}"
         print(thought_line, flush=True)
-
-        # Calculate how many terminal lines this will occupy
-        # Account for terminal width wrapping
-        terminal_width = _get_terminal_width()
-        # Add visible length (excluding ANSI codes)
-        visible_length = len(thought_text)
-        lines_needed = max(1, (visible_length + terminal_width - 1) // terminal_width)
-        self._last_thought_lines = lines_needed
 
     def _display_thought(self, agent_type: str, thought: str) -> None:
         """
-        Display a thought in faded color, overwriting previous thought.
-        This is a convenience wrapper for _display_phase.
+        Display a thought in faded color.
 
         Args:
             agent_type: Type of the agent
@@ -274,12 +229,10 @@ class ThoughtLogger(Notifiable):
                 self._display_thought(agent_type, entry.content)
         elif entry.entry_type == TimelineEntryType.AGENT_LEARNING:
             if self.verbose:
-                self._clear_thought()
-                print(f"\n🧠 [{agent_type}] Learning: {entry.content}")
+                print(f"🧠 [{agent_type}] Learning: {entry.content}")
         elif entry.entry_type == TimelineEntryType.TOOL_CALL:
             if self.show_tool_calls:
-                self._clear_thought()
-                print(f"\n🔧 [{agent_type}] Tool Call: {entry.content}")
+                print(f"🔧 [{agent_type}] Tool Call: {entry.content}")
 
     def _display_tool_calls(self, agent_id: str, agent_type: str, tool_calls: list[DictParams]) -> None:
         """
@@ -293,7 +246,7 @@ class ThoughtLogger(Notifiable):
         for tool_call in tool_calls:
             tool_name = tool_call.get("name", "unknown")
             tool_args = tool_call.get("arguments", {})
-            print(f"\n🔧 [{agent_type}] Calling tool: {tool_name}")
+            print(f"🔧 [{agent_type}] Calling tool: {tool_name}")
             if self.verbose and tool_args:
                 print(f"   Arguments: {tool_args}")
 
@@ -310,10 +263,44 @@ class ThoughtLogger(Notifiable):
             tool_name = result.get("name", "unknown")
             success = result.get("success", False)
             status = "✅" if success else "❌"
-            print(f"\n{status} [{agent_type}] Tool result: {tool_name}")
+            print(f"{status} [{agent_type}] Tool result: {tool_name}")
             if self.verbose:
                 output = result.get("output", "")
                 if output and len(str(output)) < 200:
                     print(f"   Output: {output}")
                 elif output:
                     print(f"   Output: {str(output)[:200]}...")
+
+    def _display_todo_list(self, agent_id: str, todo_list: list) -> None:
+        """
+        Display the agent's todo list with status indicators.
+
+        Args:
+            agent_id: ID of the agent
+            todo_list: List of TodoItem objects with content and status
+        """
+        # Status indicators
+        status_icons = {
+            "in_progress": "🔄",
+            "pending": "⏳",
+            "completed": "✅",
+        }
+
+        # Build todo display
+        todo_lines = []
+        for item in todo_list:
+            # Handle both TodoItem objects and dicts
+            if hasattr(item, "status"):
+                status = item.status
+                content = item.content
+            else:
+                status = item.get("status", "pending")
+                content = item.get("content", "")
+
+            icon = status_icons.get(status, "•")
+            todo_lines.append(f"  {icon} {content}")
+
+        if todo_lines:
+            todo_display = "\n".join(todo_lines)
+            print(f"📋 [{agent_id}] Todo List:")
+            print(f"{FADED_COLOR}{todo_display}{RESET_COLOR}")
