@@ -475,33 +475,48 @@ class DefaultRuntime(AgentRuntime):
         return tool_calls
 
     def _extract_json(self, content: str) -> dict[str, Any] | None:
-        """Extract JSON object from content, handling markdown code blocks."""
+        """Extract JSON object from content, handling markdown code blocks and nested structures."""
         import json as json_module
 
         if not content:
             return None
 
+        # Try to parse the whole content as JSON first (most common case)
+        try:
+            return json_module.loads(content.strip())
+        except json_module.JSONDecodeError:
+            pass
+
         # Try to find JSON in markdown code block
-        json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.DOTALL)
+        json_match = re.search(r"```(?:json)?\s*(\{.+\})\s*```", content, re.DOTALL)
         if json_match:
             try:
                 return json_module.loads(json_match.group(1))
             except json_module.JSONDecodeError:
                 pass
 
-        # Try to parse the whole content as JSON
-        try:
-            return json_module.loads(content)
-        except json_module.JSONDecodeError:
-            pass
+        # Try to find a balanced JSON object starting with { and containing "done"
+        # Find the first { that's likely the start of our JSON
+        start_idx = content.find('{"done"')
+        if start_idx == -1:
+            start_idx = content.find('{\n')
+        if start_idx == -1:
+            start_idx = content.find('{')
 
-        # Try to find a JSON object anywhere in the content
-        json_match = re.search(r'\{[^{}]*"done"[^{}]*\}', content, re.DOTALL)
-        if json_match:
-            try:
-                return json_module.loads(json_match.group(0))
-            except json_module.JSONDecodeError:
-                pass
+        if start_idx != -1:
+            # Find matching closing brace by counting braces
+            depth = 0
+            for i, char in enumerate(content[start_idx:], start_idx):
+                if char == '{':
+                    depth += 1
+                elif char == '}':
+                    depth -= 1
+                    if depth == 0:
+                        try:
+                            return json_module.loads(content[start_idx:i + 1])
+                        except json_module.JSONDecodeError:
+                            pass
+                        break
 
         return None
 
