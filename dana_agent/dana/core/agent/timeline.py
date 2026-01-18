@@ -751,8 +751,10 @@ class Timeline:
         entries_text = "\n".join(entries_text_parts)
 
         return f"""Summarize this conversation history in 2-3 sentences,
-preserving key facts, decisions, tool calls and their results:
+preserving key facts, decisions, tool calls and their results.
 
-{entries_text}
+Respond with a JSON object containing a "summary" field:
+{{"summary": "your summary here"}}
 
-Summary:"""
+Conversation history:
+{entries_text}"""

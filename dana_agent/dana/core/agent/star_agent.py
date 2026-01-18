@@ -435,7 +435,10 @@ class STARAgent(BaseSTARAgent):
                 temperature=0,
             )
 
-            summary = summary_response.content.strip() if summary_response.content else ""
+            raw_content = summary_response.content.strip() if summary_response.content else ""
+
+            # Parse JSON response to extract summary
+            summary = self._extract_compression_summary(raw_content)
 
             if summary:
                 compressed_count = timeline.compress_old_entries(summary)
@@ -468,7 +471,10 @@ class STARAgent(BaseSTARAgent):
                 temperature=0,
             )
 
-            summary = summary_response.content.strip() if summary_response.content else ""
+            raw_content = summary_response.content.strip() if summary_response.content else ""
+
+            # Parse JSON response to extract summary
+            summary = self._extract_compression_summary(raw_content)
 
             if summary:
                 compressed_count = timeline.compress_old_entries(summary)
@@ -480,6 +486,30 @@ class STARAgent(BaseSTARAgent):
                 )
         except Exception as e:
             logger.warning("Timeline compression failed", error=str(e))
+
+    def _extract_compression_summary(self, content: str) -> str:
+        """Extract summary from JSON compression response.
+
+        Args:
+            content: Raw LLM response (expected JSON with 'summary' field)
+
+        Returns:
+            Extracted summary text, or the raw content as fallback
+        """
+        import json
+
+        if not content:
+            return ""
+
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict) and "summary" in parsed:
+                return parsed["summary"]
+        except json.JSONDecodeError:
+            pass
+
+        # Fallback: return raw content if not valid JSON
+        return content
 
     # ============================================================================
     # STAR PATTERN IMPLEMENTATION (BaseSTARAgent abstract methods)
