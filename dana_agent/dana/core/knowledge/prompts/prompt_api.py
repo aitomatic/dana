@@ -73,6 +73,11 @@ You have tools at your disposal to solve the task. Follow these rules regarding 
 Every response MUST follow this exact XML structure:
 
 ```xml
+<todo_list>
+<todo status="in_progress">Current task being worked on</todo>
+<todo status="pending">Next task to do</todo>
+<todo status="completed">Task already finished</todo>
+</todo_list>
 <done>false</done>
 <function_call>
 <invoke name="tool-name:method">
@@ -83,10 +88,22 @@ Every response MUST follow this exact XML structure:
 ```
 OR
 ```xml
+<todo_list>
+<todo status="completed">All tasks done</todo>
+</todo_list>
 <done>true</done>
 <function_call></function_call>
 <response>Final answer with actual data</response>
 ```
+
+## TODO LIST RULES
+
+1. **<todo_list> is ALWAYS required** - track your progress on multi-step tasks
+2. **Exactly ONE todo should be `in_progress`** at any time when working
+3. **Mark todos `completed` immediately** after finishing each task
+4. **Add new todos** as you discover sub-tasks during execution
+5. **Keep todos specific and actionable** - clear descriptions of what to do
+6. **Valid statuses**: `pending`, `in_progress`, `completed`
 
 ## CRITICAL RULES
 
@@ -97,6 +114,8 @@ OR
 
 If you need more data, set `<done>false</done>` and call a tool.
 If you have the actual answer, set `<done>true</done>` and respond.
+
+**Response length**: Match your response length to the user's request. Short questions get concise answers, but requests for essays, reports, detailed explanations, or specific word counts should receive appropriately lengthy responses. When in doubt, err on the side of being more complete.
 </output_format>
 
 <maximize_context_understanding>

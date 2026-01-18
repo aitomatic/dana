@@ -621,12 +621,12 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using runtime
         llm_messages = self._runtime.build_prompt(self, timeline)
 
-        response, reasoning, tool_calls, done = None, None, [], None
+        response, reasoning, tool_calls, done, todo_list = None, None, [], None, None
         output_state = "retry"
         for attempt in range(self.MAX_THINK_RETRIES):
             raw = self._runtime.call_llm(llm_messages)
             parsed = self._runtime.parse_response(raw)
-            response, reasoning, tool_calls, done = parsed.response, parsed.reasoning, parsed.tool_calls, parsed.done
+            response, reasoning, tool_calls, done, todo_list = parsed.response, parsed.reasoning, parsed.tool_calls, parsed.done, parsed.todo_list
 
             has_tool_calls = bool(tool_calls)
             has_response = bool(response and response.strip())
@@ -708,7 +708,33 @@ class STARAgent(BaseSTARAgent):
             "reasoning": reasoning,
             "tool_calls": tool_calls,
             "done": done,
+            "todo_list": todo_list,
         }
+
+        # Add todo_list to timeline so LLM can see it in next iteration
+        if todo_list:
+            in_progress = [t for t in todo_list if t.status == "in_progress"]
+            pending = [t for t in todo_list if t.status == "pending"]
+            completed = [t for t in todo_list if t.status == "completed"]
+            logger.info(
+                "Todo list updated",
+                in_progress=len(in_progress),
+                pending=len(pending),
+                completed=len(completed),
+            )
+            # Format todo_list for timeline
+            todo_lines = []
+            for item in todo_list:
+                status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(item.status, "[?]")
+                todo_lines.append(f"{status_marker} {item.content}")
+            # Remove any existing TODO_LIST entries to avoid accumulation
+            timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
+            timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.TODO_LIST,
+                    content="\n".join(todo_lines),
+                )
+            )
 
         if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
@@ -911,7 +937,7 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using runtime
         llm_messages = self._runtime.build_prompt(self, timeline)
 
-        response, reasoning, tool_calls, done = None, None, [], None
+        response, reasoning, tool_calls, done, todo_list = None, None, [], None, None
         output_state = "retry"
         for attempt in range(self.MAX_THINK_RETRIES):
             if hasattr(self._runtime, "call_llm_async"):
@@ -921,7 +947,7 @@ class STARAgent(BaseSTARAgent):
 
                 raw = await asyncio.to_thread(self._runtime.call_llm, llm_messages)
             parsed = self._runtime.parse_response(raw)
-            response, reasoning, tool_calls, done = parsed.response, parsed.reasoning, parsed.tool_calls, parsed.done
+            response, reasoning, tool_calls, done, todo_list = parsed.response, parsed.reasoning, parsed.tool_calls, parsed.done, parsed.todo_list
 
             has_tool_calls = bool(tool_calls)
             has_response = bool(response and response.strip())
@@ -1003,7 +1029,33 @@ class STARAgent(BaseSTARAgent):
             "reasoning": reasoning,
             "tool_calls": tool_calls,
             "done": done,
+            "todo_list": todo_list,
         }
+
+        # Add todo_list to timeline so LLM can see it in next iteration
+        if todo_list:
+            in_progress = [t for t in todo_list if t.status == "in_progress"]
+            pending = [t for t in todo_list if t.status == "pending"]
+            completed = [t for t in todo_list if t.status == "completed"]
+            logger.info(
+                "Todo list updated",
+                in_progress=len(in_progress),
+                pending=len(pending),
+                completed=len(completed),
+            )
+            # Format todo_list for timeline
+            todo_lines = []
+            for item in todo_list:
+                status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(item.status, "[?]")
+                todo_lines.append(f"{status_marker} {item.content}")
+            # Remove any existing TODO_LIST entries to avoid accumulation
+            timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
+            timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.TODO_LIST,
+                    content="\n".join(todo_lines),
+                )
+            )
 
         if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)

@@ -36,6 +36,7 @@ class TimelineEntryType(Enum):
     AGENT_LEARNING = "agent_learning"
     TIMELINE_SUMMARY = "timeline_summary"  # Compressed history summary
     CONTEXT = "context"  # Ephemeral runtime context (time, user, location)
+    TODO_LIST = "todo_list"  # Agent's task tracking list
 
 
 # Static mapping of entry types to display labels
@@ -50,6 +51,7 @@ ENTRY_CONFIG: Final = {
     TimelineEntryType.UNKNOWN_TOOL_CALL: "Unknown Tool-to-Agent Result",
     TimelineEntryType.TIMELINE_SUMMARY: "Previous Context Summary",
     TimelineEntryType.CONTEXT: "Runtime Context",
+    TimelineEntryType.TODO_LIST: "Current Todo List",
 }
 
 
