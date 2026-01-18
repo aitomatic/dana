@@ -11,23 +11,21 @@ class TestAutonomyInTemplate:
     """Test that autonomy is in the template, not the codec."""
 
     def test_template_contains_autonomous_operation_section(self):
-        """Verify the template has the <autonomous_operation> section."""
-        assert "<autonomous_operation>" in TEMPLATE_SYSTEM_PROMPT
-        assert "</autonomous_operation>" in TEMPLATE_SYSTEM_PROMPT
+        """Verify the template has the <output_format> section."""
+        assert "<output_format>" in TEMPLATE_SYSTEM_PROMPT
+        assert "</output_format>" in TEMPLATE_SYSTEM_PROMPT
 
     def test_template_contains_key_autonomy_rules(self):
         """Verify the template contains key autonomy rules."""
         # Check for critical autonomy instructions
         assert "STRICT OUTPUT FORMAT" in TEMPLATE_SYSTEM_PROMPT
-        assert "<thinking>" in TEMPLATE_SYSTEM_PROMPT
+        assert "<done>" in TEMPLATE_SYSTEM_PROMPT
         assert "<function_call>" in TEMPLATE_SYSTEM_PROMPT
         assert "<response>" in TEMPLATE_SYSTEM_PROMPT
-        assert "FORBIDDEN OUTPUT PATTERNS" in TEMPLATE_SYSTEM_PROMPT
 
-    def test_template_references_todo_resource(self):
-        """Verify the template mentions the todo-resource for task tracking."""
-        assert "todo-resource" in TEMPLATE_SYSTEM_PROMPT
-        assert "MULTI-STEP TASKS" in TEMPLATE_SYSTEM_PROMPT
+    def test_template_no_todo_resource_reference(self):
+        """Verify the template no longer mentions the todo-resource."""
+        assert "todo-resource" not in TEMPLATE_SYSTEM_PROMPT
 
     def test_csxml_codec_has_no_autonomy(self):
         """Verify CSXMLCodec only has format rules, no autonomy."""
@@ -81,10 +79,9 @@ class TestAgentSystemPromptIncludesAutonomy:
         system_prompt = agent.system_prompt
 
         # Check autonomy section is present
-        assert "<autonomous_operation>" in system_prompt
+        assert "<output_format>" in system_prompt
         assert "STRICT OUTPUT FORMAT" in system_prompt
-        assert "<thinking>" in system_prompt
-        assert "todo-resource" in system_prompt
+        assert "<done>" in system_prompt
 
     def test_star_agent_subclass_inherits_autonomy(self):
         """Verify subclasses of STARAgent inherit autonomy instructions."""
@@ -105,5 +102,5 @@ class TestAgentSystemPromptIncludesAutonomy:
         system_prompt = agent.system_prompt
 
         # Subclass should also have autonomy
-        assert "<autonomous_operation>" in system_prompt
+        assert "<output_format>" in system_prompt
         assert "STRICT OUTPUT FORMAT" in system_prompt

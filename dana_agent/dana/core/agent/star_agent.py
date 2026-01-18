@@ -8,17 +8,16 @@ and conversational agent functionality using composable components.
 
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import datetime
-import json
 from typing import Any
 from uuid import uuid4
 
 import structlog
 
 from dana.common.llm.llm import LLM
+from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
-from dana.core.resource.todo import ToDoResource
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
 from ..knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
@@ -40,7 +39,7 @@ class STARAgent(BaseSTARAgent):
     """STARAgent implementation using composition-based architecture."""
 
     # Configuration constants
-    MAX_EMPTY_RESPONSE_RETRIES = 5  # Maximum retries when LLM returns empty response or premature stop
+    MAX_THINK_RETRIES = 3  # Maximum retries when output format or done/response rules are invalid
 
     def __init__(
         self,
@@ -173,8 +172,6 @@ class STARAgent(BaseSTARAgent):
         else:
             # No observer or codec = no EventLog (events only come from Observer)
             self._event_log = None
-
-        self.with_resources(ToDoResource(resource_id="todo-resource"))
 
         if enable_web_search:
             try:
@@ -532,6 +529,32 @@ class STARAgent(BaseSTARAgent):
 
         return f'<function_call><invoke name="{func}">{params_xml}</invoke></function_call>'
 
+    def _validate_done_output(self, done: bool | None, has_tool_calls: bool, has_response: bool) -> str:
+        if done is None:
+            return "retry"
+        if done and has_tool_calls:
+            return "retry"
+        if not done and has_response:
+            return "retry"
+        if not done and not has_tool_calls:
+            return "retry"
+        if done and not has_response:
+            return "retry"
+        return "exit" if done else "continue"
+
+    def _build_output_format_correction(self) -> LLMMessage:
+        return LLMMessage(
+            role="user",
+            content=(
+                "Your output format is invalid. Reply using exactly:\n"
+                "<done>true|false</done>\n"
+                "<function_call>...</function_call>\n"
+                "<response>...</response>\n"
+                "Rules: done=false requires a non-empty <function_call> and empty <response>. "
+                "done=true requires a non-empty <response> and empty <function_call>."
+            ),
+        )
+
     @observable
     def _think(self, trace_percepts: DictParams) -> DictParams:
         """
@@ -567,10 +590,9 @@ class STARAgent(BaseSTARAgent):
             if self.llm_client.provider.supports_native_tools:
                 native_tools = self._prompt_engineer.build_tool_schemas()
 
-        # Query LLM with retry logic for empty responses
-        response, reasoning, tool_calls = None, None, None
-        failed_tool_calls = []
-        for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
+        response, reasoning, tool_calls, done = None, None, [], None
+        output_state = "retry"
+        for attempt in range(self.MAX_THINK_RETRIES):
             llm_response = self.llm_client.chat_response_sync(
                 llm_messages,
                 agent_id=self.object_id,
@@ -578,76 +600,30 @@ class STARAgent(BaseSTARAgent):
                 temperature=0,
                 tools=native_tools,
             )
-            response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
+            response, reasoning, tool_calls, done = self._tool_caller.parse_llm_response(llm_response)
 
-            # Retry if both response and tool_calls are empty
-            has_content = response and response.strip()
-            has_tool_calls = tool_calls and len(tool_calls) > 0
+            has_tool_calls = bool(tool_calls)
+            has_response = bool(response and response.strip())
+            output_state = self._validate_done_output(done, has_tool_calls, has_response)
 
-            # Detect premature stop: LLM said "I will..." but didn't call a tool
-            # This catches the case where autonomy instructions weren't followed
-            if has_content and not has_tool_calls:
-                premature_stop_patterns = [
-                    # "I will/need to do X" patterns (should DO it, not say it)
-                    "i will now", "i will fetch", "i will search", "i will get",
-                    "i will correct", "i will try", "i will look", "i will perform",
-                    "i will proceed", "i need to fetch", "i need to search", "i need to get",
-                    "i'll now", "i'll fetch", "i'll search", "i'll get", "i'll try",
-                    "i'm going to", "i am going to",
-                    "proceeding to", "let me fetch", "let me get", "let me search",
-                    "let me try", "let's try", "let me correct", "let me look",
-                    "next, i will", "next i will", "now i will", "now i'll",
-                    "initiating", "try that again", "try again",
-                    # Internal thoughts leaked (should be in <thinking> not response)
-                    "[agent's internal thoughts]", "internal thoughts",
-                    # Lazy "here's a link" patterns (should fetch and extract, not punt to user)
-                    "you can check", "you can visit", "you can view", "you can see",
-                    "visit this link", "check this link", "available at",
-                    "here's where you can", "here is where you can",
-                    "i recommend visiting", "i suggest visiting",
-                ]
-                response_lower = response.lower()
-                is_premature_stop = any(pattern in response_lower for pattern in premature_stop_patterns)
-
-                if is_premature_stop and attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
-                    from dana.common.llm.types import LLMMessage
-
-                    correction_message = LLMMessage(
-                        role="user",
-                        content=(
-                            "⚠️ WRONG! Your response describes what you will do, not the actual result. "
-                            "You MUST either: (1) call a tool with <function_call>, or (2) give the final answer. "
-                            "If current source isn't working, TRY A DIFFERENT ONE (e.g., Google Finance instead of Yahoo). "
-                            "DO NOT give up - keep trying until you have the actual answer."
-                        )
-                    )
-                    llm_messages.append(correction_message)
-                    logger.warning("Detected premature stop pattern, retrying with correction", attempt=attempt + 1)
-                    continue
-
-            if has_content or has_tool_calls:
+            if output_state != "retry":
                 break
-            elif reasoning and "error" in reasoning.lower():
-                from dana.common.llm.types import LLMMessage
 
-                suggestion_message = LLMMessage(role="user", content=reasoning)
-                failed_tool_calls.append(llm_response.content)
-                if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
-                    # Replace old suggestion message in case of consecutive errors
-                    llm_messages[-1] = suggestion_message
-                else:
-                    # Add new suggestion message
-                    llm_messages.append(suggestion_message)
-            if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
-                logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
-
-        if failed_tool_calls:
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.FAILED_TOOL_CALL,
-                    content=json.dumps(failed_tool_calls),
+            if attempt < self.MAX_THINK_RETRIES - 1:
+                llm_messages.append(self._build_output_format_correction())
+                logger.warning(
+                    "Invalid output format, retrying",
+                    attempt=attempt + 1,
+                    done=done,
+                    has_tool_calls=has_tool_calls,
+                    has_response=has_response,
                 )
-            )
+
+        if output_state == "retry":
+            response = "No response generated"
+            tool_calls = []
+            done = True
+            output_state = "exit"
 
         if not tool_calls or len(tool_calls) == 0:
             response = response if (response and len(response) > 0) else "No response generated"
@@ -683,15 +659,17 @@ class STARAgent(BaseSTARAgent):
                 )
 
         # Output parameter checking
+        response = response or ""
         assert isinstance(response, str)
         assert isinstance(tool_calls, list)
         trace_percepts |= {
             "response": response,
             "reasoning": reasoning,
             "tool_calls": tool_calls,
+            "done": done,
         }
 
-        if tool_calls is None or len(tool_calls) == 0:
+        if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
 
         return super()._think(trace_percepts)
@@ -896,11 +874,9 @@ class STARAgent(BaseSTARAgent):
             if self.llm_client.provider.supports_native_tools:
                 native_tools = self._prompt_engineer.build_tool_schemas()
 
-        # Query LLM with retry logic for empty responses (async)
-        response, reasoning, tool_calls = None, None, None
-        failed_tool_calls = []
-        for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
-            # Native async LLM call instead of chat_response_sync
+        response, reasoning, tool_calls, done = None, None, [], None
+        output_state = "retry"
+        for attempt in range(self.MAX_THINK_RETRIES):
             llm_response = await self.llm_client.chat_response(
                 llm_messages,
                 agent_id=self.object_id,
@@ -908,76 +884,30 @@ class STARAgent(BaseSTARAgent):
                 temperature=0,
                 tools=native_tools,
             )
-            response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
+            response, reasoning, tool_calls, done = self._tool_caller.parse_llm_response(llm_response)
 
-            # Retry if both response and tool_calls are empty
-            has_content = response and response.strip()
-            has_tool_calls = tool_calls and len(tool_calls) > 0
+            has_tool_calls = bool(tool_calls)
+            has_response = bool(response and response.strip())
+            output_state = self._validate_done_output(done, has_tool_calls, has_response)
 
-            # Detect premature stop: LLM said "I will..." but didn't call a tool
-            # This catches the case where autonomy instructions weren't followed
-            if has_content and not has_tool_calls:
-                premature_stop_patterns = [
-                    # "I will/need to do X" patterns (should DO it, not say it)
-                    "i will now", "i will fetch", "i will search", "i will get",
-                    "i will correct", "i will try", "i will look", "i will perform",
-                    "i will proceed", "i need to fetch", "i need to search", "i need to get",
-                    "i'll now", "i'll fetch", "i'll search", "i'll get", "i'll try",
-                    "i'm going to", "i am going to",
-                    "proceeding to", "let me fetch", "let me get", "let me search",
-                    "let me try", "let's try", "let me correct", "let me look",
-                    "next, i will", "next i will", "now i will", "now i'll",
-                    "initiating", "try that again", "try again",
-                    # Internal thoughts leaked (should be in <thinking> not response)
-                    "[agent's internal thoughts]", "internal thoughts",
-                    # Lazy "here's a link" patterns (should fetch and extract, not punt to user)
-                    "you can check", "you can visit", "you can view", "you can see",
-                    "visit this link", "check this link", "available at",
-                    "here's where you can", "here is where you can",
-                    "i recommend visiting", "i suggest visiting",
-                ]
-                response_lower = response.lower()
-                is_premature_stop = any(pattern in response_lower for pattern in premature_stop_patterns)
-
-                if is_premature_stop and attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
-                    from dana.common.llm.types import LLMMessage
-
-                    correction_message = LLMMessage(
-                        role="user",
-                        content=(
-                            "⚠️ WRONG! Your response describes what you will do, not the actual result. "
-                            "You MUST either: (1) call a tool with <function_call>, or (2) give the final answer. "
-                            "If current source isn't working, TRY A DIFFERENT ONE (e.g., Google Finance instead of Yahoo). "
-                            "DO NOT give up - keep trying until you have the actual answer."
-                        )
-                    )
-                    llm_messages.append(correction_message)
-                    logger.warning("Detected premature stop pattern, retrying with correction", attempt=attempt + 1)
-                    continue
-
-            if has_content or has_tool_calls:
+            if output_state != "retry":
                 break
-            elif reasoning and "error" in reasoning.lower():
-                from dana.common.llm.types import LLMMessage
 
-                suggestion_message = LLMMessage(role="user", content=reasoning)
-                failed_tool_calls.append(llm_response.content)
-                if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
-                    # Replace old suggestion message in case of consecutive errors
-                    llm_messages[-1] = suggestion_message
-                else:
-                    # Add new suggestion message
-                    llm_messages.append(suggestion_message)
-            if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
-                logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
-
-        if failed_tool_calls:
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.FAILED_TOOL_CALL,
-                    content=json.dumps(failed_tool_calls),
+            if attempt < self.MAX_THINK_RETRIES - 1:
+                llm_messages.append(self._build_output_format_correction())
+                logger.warning(
+                    "Invalid output format, retrying",
+                    attempt=attempt + 1,
+                    done=done,
+                    has_tool_calls=has_tool_calls,
+                    has_response=has_response,
                 )
-            )
+
+        if output_state == "retry":
+            response = "No response generated"
+            tool_calls = []
+            done = True
+            output_state = "exit"
 
         if not tool_calls or len(tool_calls) == 0:
             response = response if (response and len(response) > 0) else "No response generated"
@@ -1013,15 +943,17 @@ class STARAgent(BaseSTARAgent):
                 )
 
         # Output parameter checking
+        response = response or ""
         assert isinstance(response, str)
         assert isinstance(tool_calls, list)
         trace_percepts |= {
             "response": response,
             "reasoning": reasoning,
             "tool_calls": tool_calls,
+            "done": done,
         }
 
-        if tool_calls is None or len(tool_calls) == 0:
+        if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
 
         # Call parent's base implementation (sync is fine, just data manipulation)

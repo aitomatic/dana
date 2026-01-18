@@ -110,10 +110,10 @@ class TestBaseAgent:
 
     def test_base_agent_workflow_management(self):
         """Test BaseAgent workflow management."""
-        from dana.lib.workflows import GoogleLookupWorkflow
+        from dana.core.workflow import BaseWorkflow
 
         agent = BaseAgent(agent_type="test_agent")
-        workflow = GoogleLookupWorkflow(workflow_id="test-workflow-123")
+        workflow = BaseWorkflow(workflow_type="test", workflow_id="test-workflow-123")
 
         # Test fluent interface
         agent_with_workflows = agent.with_workflows(workflow)
@@ -122,7 +122,7 @@ class TestBaseAgent:
         assert agent.available_workflows[0] == workflow
 
         # Test individual management with a different workflow
-        workflow2 = GoogleLookupWorkflow(workflow_id="test-workflow-456")
+        workflow2 = BaseWorkflow(workflow_type="test", workflow_id="test-workflow-456")
         agent.add_workflow(workflow2)
         assert len(agent.available_workflows) == 2
 
@@ -276,10 +276,8 @@ class TestSTARAgent:
         """Test listing resources (discovery-based)."""
         resources = agent.available_resources
         assert isinstance(resources, list)
-        # Should have at least the default ToDoResource
-        assert len(resources) >= 1
-        # Check that we have a ToDoResource
-        assert any(resource.resource_type == "todo" for resource in resources)
+        # Default resources are optional; ensure no unexpected todo resource
+        assert not any(resource.resource_type == "todo" for resource in resources)
 
     def test_list_agents(self, agent):
         """Test listing agents from registry."""

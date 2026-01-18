@@ -368,9 +368,10 @@ class ToolCaller(WARCaller):
                 # Phase 1: Try function_name as implicit target (e.g., "web-researcher")
                 # This handles cases where LLM provides function name without explicit target field
                 if function_name:
-                    # Handle dot-separated format: "resource_id.method_name" or "uuid.method_name"
-                    if "." in function_name:
-                        parts = function_name.rsplit(".", 1)
+                    # Handle dot/colon-separated format: "resource_id.method_name" or "resource_id:method_name"
+                    separator = "." if "." in function_name else ":" if ":" in function_name else None
+                    if separator:
+                        parts = function_name.rsplit(separator, 1)
                         target = parts[0]
                         method = parts[1] if len(parts) > 1 else "execute"
                         # Our extracted target/method take precedence over any in arguments
@@ -389,7 +390,7 @@ class ToolCaller(WARCaller):
     # ============================================================================
 
     @observable
-    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using LLM-assisted parsing.
 
@@ -399,7 +400,7 @@ class ToolCaller(WARCaller):
         return self.parse_llm_response_symbolic(llm_response)
 
     @observable
-    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using pure symbolic parsing (original method).
 
@@ -410,10 +411,10 @@ class ToolCaller(WARCaller):
             llm_response: The LLM response object containing content and tool calls
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         if not llm_response:
-            return None, None, []
+            return None, None, [], None
 
         # Work with a copy to avoid mutating the input
         content = llm_response.content.strip()
@@ -421,6 +422,7 @@ class ToolCaller(WARCaller):
         result_response = None
         result_reasoning = None
         result_tool_calls = []
+        done = None
 
         try:
             if llm_response.tool_calls:
@@ -433,31 +435,50 @@ class ToolCaller(WARCaller):
                     # Structured (JSON) tool calls
                     result_tool_calls.extend(self._to_tool_call_dicts(llm_response.tool_calls))
 
-            # Try to extract text content first
-            text = self._extract_content_between_xml_tags(content, "content")
-            if not text:
-                # Fallback: use content between <response> tags
-                text = self._extract_content_between_xml_tags(content, "response")
-
-            if not text:
-                # Find the first instance of "<response>"
-                response_start = content.find("<response>")
-                if response_start == -1:
-                    text = content
+            done_text = self._extract_content_between_xml_tags(content, "done")
+            if done_text is not None:
+                normalized_done = done_text.strip().lower()
+                if normalized_done == "true":
+                    done = True
+                elif normalized_done == "false":
+                    done = False
                 else:
-                    text = content[response_start:]
+                    done = None
 
-            result_response = text  # Already stripped
-            if not result_response:
-                result_response = content
+                result_response = self._extract_content_between_xml_tags(content, "response")
+                function_call_xml = self._extract_content_between_xml_tags(content, "function_call")
+                if function_call_xml:
+                    result_tool_calls.extend(self._extract_tool_calls_from_function_call(function_call_xml))
 
-            # Extract tool calls from content
-            tool_calls_xml = self._extract_content_between_xml_tags(content, "tool_calls")
-            if tool_calls_xml:
-                # Use the proper XML parsing method that creates correct structure
-                result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
+                result_reasoning = self._extract_content_between_xml_tags(content, "thinking")
+                if not result_reasoning:
+                    result_reasoning = self._extract_content_between_xml_tags(content, "reasoning")
+            else:
+                # Try to extract text content first (legacy behavior)
+                text = self._extract_content_between_xml_tags(content, "content")
+                if not text:
+                    # Fallback: use content between <response> tags
+                    text = self._extract_content_between_xml_tags(content, "response")
 
-            result_reasoning = self._extract_content_between_xml_tags(content, "reasoning")
+                if not text:
+                    # Find the first instance of "<response>"
+                    response_start = content.find("<response>")
+                    if response_start == -1:
+                        text = content
+                    else:
+                        text = content[response_start:]
+
+                result_response = text  # Already stripped
+                if not result_response:
+                    result_response = content
+
+                # Extract tool calls from content
+                tool_calls_xml = self._extract_content_between_xml_tags(content, "tool_calls")
+                if tool_calls_xml:
+                    # Use the proper XML parsing method that creates correct structure
+                    result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
+
+                result_reasoning = self._extract_content_between_xml_tags(content, "reasoning")
         except Exception as e:
             # Log error but don't crash - return what we have
             # TODO: Replace with proper logging
@@ -466,10 +487,10 @@ class ToolCaller(WARCaller):
             if not result_response and content:
                 result_response = content
 
-        return result_response, result_reasoning, result_tool_calls
+        return result_response, result_reasoning, result_tool_calls, done
 
     @observable
-    def parse_llm_response_assisted(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response_assisted(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using LLM-assisted canonical XML conversion.
 
@@ -480,10 +501,10 @@ class ToolCaller(WARCaller):
             llm_response: The LLM response object containing content and tool calls
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         if not llm_response:
-            return None, None, []
+            return None, None, [], None
 
         # Handle structured tool calls from LLM providers (like OpenAI function calling)
         if llm_response.tool_calls:
@@ -495,7 +516,7 @@ class ToolCaller(WARCaller):
             else:
                 # Structured tool calls - convert to our format and return
                 structured_tool_calls = self._to_tool_call_dicts(llm_response.tool_calls)
-                return llm_response.content, None, structured_tool_calls
+                return llm_response.content, None, structured_tool_calls, None
 
         # Work with a copy to avoid mutating the input
         content = llm_response.content.strip()
@@ -568,7 +589,7 @@ Please provide the canonical XML format:
             # Return original content wrapped in basic XML structure
             return f"<content>{content}</content>"
 
-    def _parse_canonical_xml(self, canonical_xml: str) -> tuple[str | None, str | None, list[DictParams]]:
+    def _parse_canonical_xml(self, canonical_xml: str) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse canonical XML with high confidence using symbolic parsing.
 
@@ -576,11 +597,12 @@ Please provide the canonical XML format:
             canonical_xml: The canonical XML string to parse
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         result_response = None
         result_reasoning = None
         result_tool_calls = []
+        done = None
 
         try:
             # Extract content section
@@ -602,13 +624,54 @@ Please provide the canonical XML format:
                 # Parse tool calls with high confidence since they're in canonical form
                 result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
 
+            done_text = self._extract_content_between_xml_tags(canonical_xml, "done")
+            if done_text is not None:
+                normalized_done = done_text.strip().lower()
+                if normalized_done == "true":
+                    done = True
+                elif normalized_done == "false":
+                    done = False
+                else:
+                    done = None
+
         except Exception as e:
             print(f"Error parsing canonical XML: {e}")
             # Return what we have so far
             if not result_response:
                 result_response = canonical_xml
 
-        return result_response, result_reasoning, result_tool_calls
+        return result_response, result_reasoning, result_tool_calls, done
+
+    def _extract_tool_calls_from_function_call(self, function_call_xml: str) -> list[DictParams]:
+        """
+        Parse <function_call> XML into tool call dictionaries.
+
+        Expected format:
+        <function_call>
+          <invoke name="target:method">
+            <parameter name="param">value</parameter>
+          </invoke>
+        </function_call>
+        """
+        if not function_call_xml or not function_call_xml.strip():
+            return []
+
+        tool_calls: list[DictParams] = []
+        invoke_pattern = r'<invoke\s+name=["\']([^"\']+)["\']\s*>(.*?)</invoke>'
+        for match in re.finditer(invoke_pattern, function_call_xml, re.DOTALL):
+            function_name = match.group(1).strip()
+            params_content = match.group(2)
+            arguments: dict[str, Any] = {}
+
+            param_pattern = r'<parameter\s+name=["\']([^"\']+)["\'][^>]*>(.*?)</parameter>'
+            for param_match in re.finditer(param_pattern, params_content, re.DOTALL):
+                param_name = param_match.group(1)
+                param_value = param_match.group(2).strip()
+                arguments[param_name] = self._convert_function_parameter_value(param_value)
+
+            tool_calls.append({"function": function_name, "arguments": arguments})
+
+        return tool_calls
 
     def _extract_content_between_xml_tags(self, content: str, tag: str) -> str | None:
         """
@@ -1249,14 +1312,14 @@ class CodecToolCaller(WARCaller):
         self._codec = codec
 
     @observable
-    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using codec-based format.
         """
         return self.parse_llm_response_symbolic(llm_response)
 
     @observable
-    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using codec-based format.
 
@@ -1267,17 +1330,32 @@ class CodecToolCaller(WARCaller):
             llm_response: The LLM response object containing content and tool calls
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         if not llm_response:
-            return None, None, []
+            return None, None, [], None
 
         # Work with a copy to avoid mutating the input
         content = llm_response.content.strip()
+        done = self._extract_done_flag(content)
         try:
-            return self._parse_codec_response(llm_response, content)
+            if done is not None:
+                response_text = self._extract_content_between_xml_tags(content, "response")
+                response_reasoning = self._extract_content_between_xml_tags(content, "thinking")
+                tool_calls = []
+                if llm_response.tool_calls:
+                    tool_calls.extend(self._to_tool_call_dicts(llm_response.tool_calls))
+
+                function_call_xml = self._extract_content_between_xml_tags(content, "function_call")
+                if function_call_xml:
+                    tool_calls.extend(self._extract_tool_calls_from_function_call(function_call_xml))
+
+                return response_text, response_reasoning, tool_calls, done
+
+            response_text, response_reasoning, tool_calls = self._parse_codec_response(llm_response, content)
+            return response_text, response_reasoning, tool_calls, done
         except Exception as _:
-            return content, None, []
+            return content, None, [], done
 
     def _parse_codec_response(self, llm_response: LLMResponse, content: str) -> tuple[str | None, str | None, list[DictParams]]:
         """
@@ -1331,6 +1409,58 @@ class CodecToolCaller(WARCaller):
             return "No response generated", response_reasoning, result_tool_calls
         else:
             return response_text, response_reasoning, result_tool_calls
+
+    def _extract_done_flag(self, content: str) -> bool | None:
+        done_text = self._extract_content_between_xml_tags(content, "done")
+        if done_text is None:
+            return None
+        normalized = done_text.strip().lower()
+        if normalized == "true":
+            return True
+        if normalized == "false":
+            return False
+        return None
+
+    def _extract_tool_calls_from_function_call(self, function_call_xml: str) -> list[DictParams]:
+        if not function_call_xml or not function_call_xml.strip():
+            return []
+
+        tool_calls: list[DictParams] = []
+        invoke_pattern = r'<invoke\s+name=["\']([^"\']+)["\']\s*>(.*?)</invoke>'
+        for match in re.finditer(invoke_pattern, function_call_xml, re.DOTALL):
+            function_name = match.group(1).strip()
+            params_content = match.group(2)
+            arguments: dict[str, Any] = {}
+
+            param_pattern = r'<parameter\s+name=["\']([^"\']+)["\'][^>]*>(.*?)</parameter>'
+            for param_match in re.finditer(param_pattern, params_content, re.DOTALL):
+                param_name = param_match.group(1)
+                param_value = param_match.group(2).strip()
+                arguments[param_name] = param_value
+
+            tool_calls.append({"function": function_name, "arguments": arguments})
+
+        return tool_calls
+
+    def _extract_content_between_xml_tags(self, content: str, tag: str) -> str | None:
+        if not content or not tag:
+            return None
+
+        escaped_tag = re.escape(tag)
+        match = re.search(r"<" + escaped_tag + r">(.*?)</" + escaped_tag + r">", content, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+
+        match = re.search(r"<" + escaped_tag + r">([^<]*)", content, re.DOTALL)
+        if match:
+            captured = match.group(1).strip()
+            if not captured:
+                match = re.search(r"<" + escaped_tag + r">(.*)", content, re.DOTALL)
+                if match:
+                    return match.group(1).strip()
+            return captured
+
+        return None
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
         """Convert structured function calls to our internal format."""

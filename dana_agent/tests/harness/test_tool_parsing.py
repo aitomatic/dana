@@ -279,7 +279,7 @@ class TestToolCallerUnit:
         """Empty response should return empty tool calls."""
         tool_caller = harness_agent._tool_caller
 
-        response, reasoning, tool_calls = tool_caller.parse_llm_response(
+        response, reasoning, tool_calls, _done = tool_caller.parse_llm_response(
             MockLLMClient.empty_response().to_llm_response()
         )
 
@@ -289,7 +289,7 @@ class TestToolCallerUnit:
         """Simple text response should be returned as response."""
         tool_caller = harness_agent._tool_caller
 
-        response, reasoning, tool_calls = tool_caller.parse_llm_response(
+        response, reasoning, tool_calls, _done = tool_caller.parse_llm_response(
             MockLLMClient.simple_response("Hello world").to_llm_response()
         )
 

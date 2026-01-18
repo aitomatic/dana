@@ -9,13 +9,17 @@ from __future__ import annotations
 
 import pytest
 
-from dana.core.resource.todo import ToDoResource
+try:
+    from dana.core.resource.todo import ToDoResource
+except ImportError:
+    ToDoResource = None
 
 from .mocks.llm_client import MockLLMClient, LLMResponseScenario
 from .mocks.resources import MockResource
 from .harness_agent import HarnessAgent
 
 
+@pytest.mark.skipif(ToDoResource is None, reason="ToDoResource has been removed")
 class TestToDoResourceBehavior:
     """Tests for ToDoResource functionality."""
 
@@ -65,6 +69,7 @@ class TestToDoResourceBehavior:
         assert not hasattr(todo_resource, "_storage")
 
 
+@pytest.mark.skipif(ToDoResource is None, reason="ToDoResource has been removed")
 class TestToDoResourceInvocation:
     """Tests for invoking ToDoResource via tool calls."""
 
@@ -198,6 +203,7 @@ class TestPlanStateAcrossLoops:
         assert len(iterations) >= 1
 
 
+@pytest.mark.skipif(ToDoResource is None, reason="ToDoResource has been removed")
 class TestPlaceboEffectiveness:
     """Tests evaluating the effectiveness of the placebo pattern."""
 
@@ -228,6 +234,7 @@ class TestPlaceboEffectiveness:
             assert "successfully" in result.lower()
 
 
+@pytest.mark.skipif(ToDoResource is None, reason="ToDoResource has been removed")
 class TestPlanningWithoutRealStorage:
     """Tests for planning behavior when no real storage exists."""
 

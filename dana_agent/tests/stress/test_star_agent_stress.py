@@ -14,8 +14,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from dana.core.agent.star_agent import STARAgent
-from dana.core.resource.todo import ToDoResource
+try:
+    from dana.core.resource.todo import ToDoResource
+except ImportError:
+    ToDoResource = None
 from dana.lib.resources.ping import PingResource
+
+pytestmark = pytest.mark.skipif(ToDoResource is None, reason="ToDoResource has been removed")
 
 
 @dataclass
