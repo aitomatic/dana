@@ -66,6 +66,7 @@ class DefaultRuntime(AgentRuntime):
         max_tokens: int | None = None,
         llm: LLM | None = None,
         provider: str = "anthropic",
+        use_native_tools: bool = True,
     ):
         self._model = model
         self._temperature = temperature
@@ -74,6 +75,7 @@ class DefaultRuntime(AgentRuntime):
         self._provider = provider
         self._agent = None
         self._native_tools = None
+        self._use_native_tools = use_native_tools
         self._last_llm_response: LLMResponse | None = None
 
     @property
@@ -328,6 +330,8 @@ class DefaultRuntime(AgentRuntime):
 
     def _build_native_tools_if_supported(self, agent) -> None:
         """Build native tool schemas if the LLM provider supports native tool calling."""
+        if not self._use_native_tools:
+            return
         llm = self._resolve_llm()
         if not hasattr(llm, "provider"):
             return
