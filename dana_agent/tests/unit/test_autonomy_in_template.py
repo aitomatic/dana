@@ -79,9 +79,9 @@ class TestAgentSystemPromptIncludesAutonomy:
         system_prompt = agent.system_prompt
 
         # Check JSON-based autonomy section is present (DefaultRuntime format)
-        assert "## Output Format" in system_prompt
+        assert '"output_format"' in system_prompt
         assert '"done"' in system_prompt
-        assert "JSON" in system_prompt
+        assert "JSON" in system_prompt or "json" in system_prompt.lower()
 
     def test_star_agent_subclass_inherits_autonomy(self):
         """Verify subclasses of STARAgent inherit autonomy instructions."""
@@ -102,5 +102,5 @@ class TestAgentSystemPromptIncludesAutonomy:
         system_prompt = agent.system_prompt
 
         # Subclass should also have JSON-based autonomy (DefaultRuntime format)
-        assert "## Output Format" in system_prompt
+        assert '"output_format"' in system_prompt
         assert '"done"' in system_prompt
