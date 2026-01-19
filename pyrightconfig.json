@@ -1,0 +1,16 @@
+{
+  "include": [
+    "dana_agent",
+    "dana_lang",
+    "dana_studio"
+  ],
+  "extraPaths": [
+    "dana_agent",
+    "dana_lang",
+    "dana_studio"
+  ],
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Darwin",
+  "venvPath": ".",
+  "venv": ".venv"
+}

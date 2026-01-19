@@ -88,8 +88,8 @@ class ThoughtLogger(Notifiable):
         if self.verbose and trace_outputs:
             tool_calls = trace_outputs.get("tool_calls", [])
             if tool_calls and len(tool_calls) > 0:
-                tool_names = [f"{tc.get('function', 'unknown')} {tc.get('arguments', {}).get('method', '')}" for tc in tool_calls]
-                self._display_phase(agent_id, "⚡ ACT", f"Calling: {', '.join(tool_names)}")
+                tool_summaries = [self._format_tool_call(tc) for tc in tool_calls]
+                self._display_phase(agent_id, "⚡ ACT", f"Calling: {', '.join(tool_summaries)}")
 
         # REFLECT phase - learning
         trace_learning = message.get("trace_learning", {})
@@ -186,6 +186,46 @@ class ThoughtLogger(Notifiable):
         else:
             # No reasoning provided, just indicate completion
             return "Preparing final response..."
+
+    def _format_tool_call(self, tc: DictParams) -> str:
+        """Format a tool call for display, including key arguments.
+        
+        Args:
+            tc: Tool call dictionary with 'function' and 'arguments'
+            
+        Returns:
+            Formatted string like 'web_search__fetch_url(example.com)'
+        """
+        function = tc.get("function", "unknown")
+        arguments = tc.get("arguments", {})
+        
+        # Extract the most relevant argument to display
+        arg_display = ""
+        if arguments:
+            # Priority order for which argument to show
+            if "url" in arguments:
+                url = arguments["url"]
+                # Truncate long URLs
+                if len(url) > 50:
+                    arg_display = f"({url[:47]}...)"
+                else:
+                    arg_display = f"({url})"
+            elif "query" in arguments:
+                query = arguments["query"]
+                if len(query) > 40:
+                    arg_display = f"({query[:37]}...)"
+                else:
+                    arg_display = f"({query})"
+            elif "message" in arguments:
+                msg = arguments["message"]
+                if len(msg) > 40:
+                    arg_display = f"({msg[:37]}...)"
+                else:
+                    arg_display = f"({msg})"
+            elif "method" in arguments:
+                arg_display = f"({arguments['method']})"
+        
+        return f"{function}{arg_display}"
 
     def _display_phase(self, agent_id: str, phase_label: str, content: str) -> None:
         """
