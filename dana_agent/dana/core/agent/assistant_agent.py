@@ -82,7 +82,7 @@ class AssistantAgent(STARAgent):
         resources: List of built-in resources to enable.
                    Options: "web_search", "code_execution"
                    Default: ["web_search", "code_execution"]
-        model: LLM model to use (default: "gpt-4o-mini")
+        model: LLM model to use (default: None)
         max_steps: Maximum STAR loop iterations (default: 10)
         **kwargs: Additional arguments passed to STARAgent
     """
@@ -91,7 +91,7 @@ class AssistantAgent(STARAgent):
         self,
         agent_type: str = "assistant",
         resources: list[str] | None = None,
-        model: str = "gpt-4o-mini",
+        model: str | None = None,
         max_steps: int = 10,
         **kwargs,
     ):

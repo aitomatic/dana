@@ -64,8 +64,8 @@ class STARAgent(BaseSTARAgent):
         ltmemory_path: str | None = None,
         enable_skills: bool = True,
         skills_output_dir: str = "./skill_output",
-        enable_web_search: bool = True,
-        enable_code_execution: bool = True,
+        enable_web_search: bool = False,
+        enable_code_execution: bool = False,
         enable_assistant: bool = True,
         **kwargs,
     ):
@@ -81,9 +81,9 @@ class STARAgent(BaseSTARAgent):
             max_context_tokens: Maximum tokens for timeline context
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
-            enable_web_search: Whether to enable web search resource (default: True).
+            enable_web_search: Whether to enable web search resource (default: False).
                 Provides search() and fetch_url() methods without requiring API keys.
-            enable_code_execution: Whether to enable code execution resource (default: True).
+            enable_code_execution: Whether to enable code execution resource (default: False).
                 Provides secure Python code execution in a sandbox.
             runtime: Runtime implementation that encapsulates prompt building, LLM calls,
                 response parsing, and tool execution. Defaults to DefaultRuntime.
