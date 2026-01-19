@@ -149,13 +149,16 @@ class TestDefaultRuntimeContext:
         """build_prompt injects runtime context into timeline."""
         from dana.core.agent.star_agent import STARAgent
 
+        class MockLLM:
+            pass
+
         agent = STARAgent(
             agent_type="test",
             auto_register=False,
             enable_web_search=False,
             enable_skills=False,
         )
-        runtime = DefaultRuntime()
+        runtime = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
         timeline = Timeline(agent=agent)
         timeline.add_entry(TimelineEntry(
             entry_type=TimelineEntryType.USER_MESSAGE,
@@ -172,11 +175,14 @@ class TestDefaultRuntimeContext:
 
     def test_ip_location_is_cached(self):
         """IP geolocation result is cached at class level."""
+        class MockLLM:
+            pass
+
         # Reset cache
         DefaultRuntime._cached_location = None
 
-        runtime1 = DefaultRuntime()
-        runtime2 = DefaultRuntime()
+        runtime1 = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
+        runtime2 = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
 
         # First call populates cache
         loc1 = runtime1._get_ip_location()
