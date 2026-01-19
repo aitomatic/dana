@@ -317,9 +317,13 @@ class AgentRuntime(ABC):
         return response.content
 
     @observable
-    def parse_response(self, raw: str) -> ParsedResponse:
+    def parse_response(self, raw: str | dict | Any) -> ParsedResponse:
         if raw is None:
             return ParsedResponse(done=None, reasoning=None, response=None, tool_calls=[], todo_list=None)
+
+        # Ensure raw is a string - LLM providers sometimes return unexpected types
+        if not isinstance(raw, str):
+            raw = str(raw)
 
         content = raw.strip()
         done = None
