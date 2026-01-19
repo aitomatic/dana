@@ -2,6 +2,7 @@
 Anthropic Provider Implementation
 """
 
+import json
 import anthropic
 import structlog
 
@@ -14,6 +15,11 @@ logger = structlog.get_logger()
 
 class AnthropicProvider(LLMProvider):
     """Anthropic Claude provider using the official Anthropic library."""
+
+    @property
+    def supports_native_tools(self) -> bool:
+        """Anthropic supports native tool calling."""
+        return True
 
     def __init__(self, api_key: str | None = None, model: str = "claude-3-sonnet-20240229", base_url: str | None = None):
         """
@@ -40,13 +46,22 @@ class AnthropicProvider(LLMProvider):
         # Use official Anthropic client with prompt caching beta header
         self.client = anthropic.AsyncAnthropic(api_key=self.api_key, default_headers={"anthropic-beta": "prompt-caching-2024-07-31"})
 
-    async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
-        """Send messages to Anthropic and get a response."""
+    async def chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> LLMResponse:
+        """Send messages to Anthropic and get a response.
+
+        Args:
+            messages: List of conversation messages
+            tools: Optional list of tool schemas for native tool calling
+            **kwargs: Additional parameters passed to the API
+        """
         try:
             # Convert our message format to Anthropic format
             system_message = None
             system_cache_control = None
             anthropic_messages = []
+            # Allow json_mode with native tools - we want JSON structured output for reasoning/todo_list
+            # even when using native tool calling for tool invocations
+            json_mode = kwargs.get("json_mode", False)
 
             for msg in messages:
                 if msg.role == "system":
@@ -58,15 +73,46 @@ class AnthropicProvider(LLMProvider):
                     else:
                         user_msg = {"role": "user", "content": msg.content}
                     anthropic_messages.append(user_msg)
+                elif msg.role == "tool":
+                    # Tool result message - Anthropic uses tool_result content block
+                    anthropic_messages.append({
+                        "role": "user",
+                        "content": [{
+                            "type": "tool_result",
+                            "tool_use_id": msg.tool_call_id,
+                            "content": msg.content,
+                        }]
+                    })
                 elif msg.role == "assistant":
-                    if msg.cache_control:
+                    # Check if this assistant message has native tool_calls
+                    if msg.tool_calls:
+                        # Format tool_calls for Anthropic API
+                        content_blocks = []
+                        if msg.content:
+                            content_blocks.append({"type": "text", "text": msg.content})
+                        for tc in msg.tool_calls:
+                            content_blocks.append({
+                                "type": "tool_use",
+                                "id": tc.get("tool_call_id", ""),
+                                "name": tc.get("function", ""),
+                                "input": tc.get("arguments", {}),
+                            })
+                        anthropic_messages.append({
+                            "role": "assistant",
+                            "content": content_blocks,
+                        })
+                    elif msg.cache_control:
                         assistant_msg = {
                             "role": "assistant",
                             "content": [{"type": "text", "text": msg.content, "cache_control": msg.cache_control}],
                         }
+                        anthropic_messages.append(assistant_msg)
                     else:
-                        assistant_msg = {"role": "assistant", "content": msg.content}
-                    anthropic_messages.append(assistant_msg)
+                        anthropic_messages.append({"role": "assistant", "content": msg.content})
+
+            # Add prefill to force JSON output when json_mode is enabled (and not using native tools)
+            if json_mode:
+                anthropic_messages.append({"role": "assistant", "content": '{"done":'})
 
             # Prepare request parameters
             request_kwargs = {
@@ -74,6 +120,29 @@ class AnthropicProvider(LLMProvider):
                 "messages": anthropic_messages,
                 "max_tokens": kwargs.get("max_tokens") or 4096,
             }
+
+            # Add temperature if provided
+            if "temperature" in kwargs:
+                request_kwargs["temperature"] = kwargs["temperature"]
+
+            # Add stop sequences when in json_mode without native tools
+            # Skip when using tools as the model outputs JSON + tool_use blocks
+            # Note: \n\n is whitespace-only which Anthropic rejects, so we skip it
+            if json_mode and not tools:
+                request_kwargs["stop_sequences"] = ["\n[", "\nLet me"]
+
+            # Add tools if provided (native tool calling)
+            if tools:
+                # Convert OpenAI-style tool schemas to Anthropic format
+                anthropic_tools = []
+                for tool in tools:
+                    func = tool.get("function", {})
+                    anthropic_tools.append({
+                        "name": func.get("name", ""),
+                        "description": func.get("description", ""),
+                        "input_schema": func.get("parameters", {"type": "object", "properties": {}}),
+                    })
+                request_kwargs["tools"] = anthropic_tools
 
             # Add system message if present (with cache_control support)
             if system_message:
@@ -86,7 +155,27 @@ class AnthropicProvider(LLMProvider):
             response = await self.client.messages.create(**request_kwargs)
 
             # Convert response to our format
-            content = response.content[0].text if response.content else ""
+            content = ""
+            tool_calls = None
+
+            for block in response.content:
+                if block.type == "text":
+                    content += block.text
+                elif block.type == "tool_use":
+                    if tool_calls is None:
+                        tool_calls = []
+                    # Convert to OpenAI-compatible format for our runtime
+                    tool_calls.append(type("ToolCall", (), {
+                        "id": block.id,
+                        "function": type("Function", (), {
+                            "name": block.name,
+                            "arguments": json.dumps(block.input) if isinstance(block.input, dict) else block.input,
+                        })(),
+                    })())
+
+            # If we used JSON prefill, prepend the prefill string
+            if json_mode:
+                content = '{"done":' + content
 
             return LLMResponse(
                 content=content,
@@ -99,6 +188,7 @@ class AnthropicProvider(LLMProvider):
                 if response.usage
                 else None,
                 finish_reason=response.stop_reason,
+                tool_calls=tool_calls,
             )
 
         except Exception as e:

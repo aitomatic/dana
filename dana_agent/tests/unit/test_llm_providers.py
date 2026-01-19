@@ -85,6 +85,7 @@ class TestAnthropicProvider:
         """Test successful chat completion"""
         mock_response = Mock()
         mock_response.content = [Mock()]
+        mock_response.content[0].type = "text"
         mock_response.content[0].text = "Hello from Anthropic!"
         mock_response.stop_reason = "end_turn"
         mock_response.model = "claude-3-sonnet"

@@ -3,6 +3,7 @@
 import pytest
 
 from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.core.runtime.base import AgentRuntime
 from dana.core.runtime.default import DefaultRuntime
 
 
@@ -149,13 +150,16 @@ class TestDefaultRuntimeContext:
         """build_prompt injects runtime context into timeline."""
         from dana.core.agent.star_agent import STARAgent
 
+        class MockLLM:
+            pass
+
         agent = STARAgent(
             agent_type="test",
             auto_register=False,
             enable_web_search=False,
             enable_skills=False,
         )
-        runtime = DefaultRuntime()
+        runtime = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
         timeline = Timeline(agent=agent)
         timeline.add_entry(TimelineEntry(
             entry_type=TimelineEntryType.USER_MESSAGE,
@@ -172,11 +176,14 @@ class TestDefaultRuntimeContext:
 
     def test_ip_location_is_cached(self):
         """IP geolocation result is cached at class level."""
-        # Reset cache
-        DefaultRuntime._cached_location = None
+        class MockLLM:
+            pass
 
-        runtime1 = DefaultRuntime()
-        runtime2 = DefaultRuntime()
+        # Reset cache
+        AgentRuntime._cached_location = None
+
+        runtime1 = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
+        runtime2 = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
 
         # First call populates cache
         loc1 = runtime1._get_ip_location()
@@ -185,12 +192,12 @@ class TestDefaultRuntimeContext:
         loc2 = runtime2._get_ip_location()
 
         assert loc1 == loc2
-        assert DefaultRuntime._cached_location is not None
+        assert AgentRuntime._cached_location is not None
 
     def test_context_includes_location_when_available(self):
         """Context includes location field when IP geolocation succeeds."""
         # Set a mock cached location
-        DefaultRuntime._cached_location = {"location": "Test City, Test State, Test Country"}
+        AgentRuntime._cached_location = {"location": "Test City, Test State, Test Country"}
 
         runtime = DefaultRuntime()
         context = runtime._get_runtime_context()

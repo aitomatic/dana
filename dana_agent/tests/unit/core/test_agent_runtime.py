@@ -4,7 +4,7 @@ from dana.common.llm.types import LLMMessage
 from dana.core.agent.star_agent import STARAgent
 from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
 from dana.core.resource.base_resource import BaseResource
-from dana.core.runtime import AgentRuntime, ParsedResponse
+from dana.core.runtime import AgentRuntime, ParsedResponse, RuntimeRegistry
 from dana.core.runtime.default import DefaultRuntime
 
 
@@ -41,8 +41,11 @@ def test_default_runtime_initialization_custom_llm():
 
 
 def test_default_runtime_build_prompt():
+    class MockLLM:
+        pass
+
     agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False)
-    runtime = DefaultRuntime()
+    runtime = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
     timeline = Timeline(agent=agent)
     timeline.add_entry(
         TimelineEntry(
@@ -120,7 +123,8 @@ def test_star_agent_with_runtime_parameter():
 def test_star_agent_default_runtime():
     agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False)
 
-    assert isinstance(agent._runtime, DefaultRuntime)
+    # Runtime is auto-selected based on provider - should be an AgentRuntime subclass
+    assert isinstance(agent._runtime, AgentRuntime)
 
 
 def test_star_agent_deprecated_codec_parameter():
@@ -166,6 +170,9 @@ def test_think_uses_runtime_methods():
         def get_output_instructions(self):
             return ""
 
+        def get_system_prompt_template(self, native_tools: bool) -> str:
+            return ""
+
     runtime = TrackingRuntime()
     agent = STARAgent(agent_type="runtime-test", runtime=runtime, auto_register=False, enable_web_search=False, enable_skills=False)
 
@@ -173,3 +180,78 @@ def test_think_uses_runtime_methods():
 
     assert runtime.calls[:4] == ["build_prompt", "call_llm", "parse_response", "execute_tools"]
     assert "execute_tools" in runtime.calls
+
+
+# RuntimeRegistry tests
+
+
+def test_runtime_registry_default_returns_default_runtime():
+    registry = RuntimeRegistry()
+    runtime = registry.select(model="gpt-4", provider="openai")
+    assert isinstance(runtime, DefaultRuntime)
+
+
+def test_runtime_registry_matches_provider():
+    class CustomRuntime(DefaultRuntime):
+        pass
+
+    registry = RuntimeRegistry()
+    registry.register(CustomRuntime, provider="openai")
+
+    # Should match openai
+    runtime = registry.select(model="gpt-4", provider="openai")
+    assert isinstance(runtime, CustomRuntime)
+
+    # Should fallback for anthropic
+    runtime = registry.select(model="claude-3", provider="anthropic")
+    assert isinstance(runtime, DefaultRuntime)
+    assert not isinstance(runtime, CustomRuntime)
+
+
+def test_runtime_registry_matches_model_pattern():
+    class ClaudeRuntime(DefaultRuntime):
+        pass
+
+    registry = RuntimeRegistry()
+    registry.register(ClaudeRuntime, model_pattern="claude-*")
+
+    # Should match claude models
+    runtime = registry.select(model="claude-3-opus", provider="anthropic")
+    assert isinstance(runtime, ClaudeRuntime)
+
+    # Should fallback for gpt models
+    runtime = registry.select(model="gpt-4", provider="openai")
+    assert isinstance(runtime, DefaultRuntime)
+    assert not isinstance(runtime, ClaudeRuntime)
+
+
+def test_runtime_registry_priority():
+    class LowPriorityRuntime(DefaultRuntime):
+        pass
+
+    class HighPriorityRuntime(DefaultRuntime):
+        pass
+
+    registry = RuntimeRegistry()
+    registry.register(LowPriorityRuntime, priority=0)
+    registry.register(HighPriorityRuntime, priority=10)
+
+    # Higher priority should win
+    runtime = registry.select(model="any", provider="any")
+    assert isinstance(runtime, HighPriorityRuntime)
+
+
+def test_runtime_registry_passes_kwargs():
+    registry = RuntimeRegistry()
+    registry.register(DefaultRuntime, priority=0)
+
+    runtime = registry.select(model="gpt-4", provider="openai", temperature=0.5)
+    assert runtime._temperature == 0.5
+
+
+def test_runtime_registry_select_runtime_classmethod():
+    from dana.core.runtime.anthropic import AnthropicRuntime
+
+    runtime = RuntimeRegistry.select_runtime(model="claude-3", provider="anthropic")
+    # Should return AnthropicRuntime for anthropic provider
+    assert isinstance(runtime, AnthropicRuntime)

@@ -27,15 +27,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
       uses: astral-sh/setup-uv@v6
-    - name: Cache uv dependencies
-      uses: actions/cache@v4
       with:
-        path: ~/.cache/uv
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
+        enable-cache: true
     - name: Install dependencies
-      run: uv sync --extra dev
+      run: uv sync --extra dev --python ${{ matrix.python-version }}
     - name: Critical lint checks (BLOCKING)
       env:
         PYTHONPATH: ${{ github.workspace }}

@@ -81,7 +81,7 @@ attr-rgx=[a-z_][a-z0-9_]{2,30}$
 argument-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct class attribute names
-class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
+class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,60}|(__.*__))$
 
 # Regular expression matching correct method names
 method-rgx=[a-z_][a-z0-9_]{2,30}$

@@ -36,20 +36,24 @@ class TimelineEntryType(Enum):
     AGENT_LEARNING = "agent_learning"
     TIMELINE_SUMMARY = "timeline_summary"  # Compressed history summary
     CONTEXT = "context"  # Ephemeral runtime context (time, user, location)
+    TODO_LIST = "todo_list"  # Agent's task tracking list
 
 
 # Static mapping of entry types to display labels
+# Using concise labels to avoid model mimicking patterns like "[Agent's Internal Thoughts]"
 ENTRY_CONFIG: Final = {
-    TimelineEntryType.USER_MESSAGE: "User-to-Agent Message",
-    TimelineEntryType.AGENT_RESPONSE: "Agent-to-User Response",
-    TimelineEntryType.AGENT_THOUGHTS: "Agent's Internal Thoughts",
-    TimelineEntryType.AGENT_LEARNING: "Agent's Self-Learning",
-    TimelineEntryType.SUB_AGENT_RESPONSE: "SubAgent-to-Agent Response",
-    TimelineEntryType.RESOURCE_RESULT: "Resource-to-Agent Result",
-    TimelineEntryType.WORKFLOW_RESULT: "Workflow-to-Agent Result",
-    TimelineEntryType.UNKNOWN_TOOL_CALL: "Unknown Tool-to-Agent Result",
-    TimelineEntryType.TIMELINE_SUMMARY: "Previous Context Summary",
-    TimelineEntryType.CONTEXT: "Runtime Context",
+    TimelineEntryType.USER_MESSAGE: "USER",
+    TimelineEntryType.AGENT_RESPONSE: "RESPONSE",
+    TimelineEntryType.AGENT_THOUGHTS: "THOUGHT",
+    TimelineEntryType.AGENT_LEARNING: "LEARNING",
+    TimelineEntryType.SUB_AGENT_RESPONSE: "SUBAGENT",
+    TimelineEntryType.RESOURCE_RESULT: "TOOL_RESULT",
+    TimelineEntryType.WORKFLOW_RESULT: "WORKFLOW_RESULT",
+    TimelineEntryType.UNKNOWN_TOOL_CALL: "UNKNOWN_TOOL",
+    TimelineEntryType.TOOL_CALL: "TOOL_CALL",
+    TimelineEntryType.TIMELINE_SUMMARY: "SUMMARY",
+    TimelineEntryType.CONTEXT: "CONTEXT",
+    TimelineEntryType.TODO_LIST: "TODO",
 }
 
 
@@ -743,10 +747,20 @@ class Timeline:
             return None
 
         # Build entries text with truncation for very long entries
+        # Use simple role labels to avoid model mimicking patterns like [thought] or [tool_call]
+        role_map = {
+            "user_message": "User",
+            "agent_response": "Assistant",
+            "thought": "Assistant thinking",
+            "tool_call": "Tool called",
+            "resource_result": "Tool result",
+            "workflow_result": "Workflow result",
+        }
         entries_text_parts = []
         for entry in entries_to_compress:
             content = entry.content[:500] + "..." if len(entry.content) > 500 else entry.content
-            entries_text_parts.append(f"[{entry.entry_type.value}] {content}")
+            role = role_map.get(entry.entry_type.value, entry.entry_type.value)
+            entries_text_parts.append(f"{role}: {content}")
 
         entries_text = "\n".join(entries_text_parts)
 

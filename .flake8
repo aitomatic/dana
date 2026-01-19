@@ -1,0 +1,5 @@
+[flake8]
+# Ignore line too long (E501) - handled by ruff formatter
+# Ignore whitespace before ':' (E203) - conflicts with Black formatter
+ignore = E501,E203
+max-line-length = 140
