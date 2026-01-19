@@ -61,7 +61,7 @@ ENTRY_CONFIG: Final = {
 class TimelineConfig:
     """Configuration for timeline compression and management."""
 
-    max_context_tokens: int = 4000
+    max_context_tokens: int = 32000
     compression_threshold: float = 0.8  # Trigger compression at 80% of max tokens
     compression_enabled: bool = True
     min_entries_before_compress: int = 5  # Don't compress until we have at least this many entries
@@ -231,7 +231,7 @@ class Timeline:
 
     def __init__(
         self,
-        max_context_tokens: int = 4000,
+        max_context_tokens: int = 32000,
         agent: "BaseAgent | None" = None,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
         config: TimelineConfig | None = None,
@@ -403,11 +403,28 @@ class Timeline:
                 role = self._get_entry_role(entry, default_role)
                 messages.append(LLMMessage(role=role, content=content))
 
-        # Apply token limit if needed
-        if self._estimate_tokens(messages) > token_limit:
-            return self._build_context_with_token_limit(messages, token_limit)
+        # Merge consecutive assistant messages (without tool_calls) to avoid confusing the LLM
+        # OpenAI models can get confused by multiple consecutive assistant messages
+        merged_messages = []
+        for msg in messages:
+            if (merged_messages and
+                msg.role == "assistant" and
+                merged_messages[-1].role == "assistant" and
+                not msg.tool_calls and
+                not merged_messages[-1].tool_calls):
+                # Merge into previous assistant message
+                merged_messages[-1] = LLMMessage(
+                    role="assistant",
+                    content=f"{merged_messages[-1].content}\n{msg.content}".strip()
+                )
+            else:
+                merged_messages.append(msg)
 
-        return messages
+        # Apply token limit if needed
+        if self._estimate_tokens(merged_messages) > token_limit:
+            return self._build_context_with_token_limit(merged_messages, token_limit)
+
+        return merged_messages
 
     def _get_entry_role(self, entry: TimelineEntry, default_role: str) -> str:
         """
@@ -433,6 +450,7 @@ class Timeline:
             TimelineEntryType.WORKFLOW_RESULT,
             TimelineEntryType.UNKNOWN_TOOL_CALL,
             TimelineEntryType.TOOL_CALL,  # Agent's tool calls are assistant actions
+            TimelineEntryType.TODO_LIST,  # Agent's task tracking is part of assistant output
         ]:
             return "assistant"
         else:
@@ -484,6 +502,9 @@ class Timeline:
         """
         Build context using token limit approach with sliding window.
 
+        Preserves message integrity by keeping tool_call/tool_result pairs together
+        and always including the first user message.
+
         Args:
             messages: All messages in chronological order
             max_tokens: Maximum tokens to include
@@ -491,18 +512,81 @@ class Timeline:
         Returns:
             List of LLMMessage objects within token limit
         """
-        # Start with most recent messages and work backwards
-        result = []
-        current_tokens = 0
+        if not messages:
+            return []
 
-        for message in reversed(messages):
-            message_tokens = self._estimate_tokens([message])
+        # Group messages into atomic units that must stay together:
+        # - assistant with tool_calls + following tool results
+        # - single messages (user, system, assistant without tool_calls)
+        groups: list[list[LLMMessage]] = []
+        i = 0
+        while i < len(messages):
+            msg = messages[i]
+            if msg.role == "assistant" and msg.tool_calls:
+                # Start a group with assistant + all following tool results
+                group = [msg]
+                i += 1
+                while i < len(messages) and messages[i].role == "tool":
+                    group.append(messages[i])
+                    i += 1
+                groups.append(group)
+            else:
+                groups.append([msg])
+                i += 1
 
-            if current_tokens + message_tokens > max_tokens:
+        # Always include the first user message if present
+        first_user_group_idx = None
+        for idx, group in enumerate(groups):
+            if group[0].role == "user":
+                first_user_group_idx = idx
                 break
 
-            result.insert(0, message)  # Insert at beginning to maintain chronological order
-            current_tokens += message_tokens
+        # Build result from most recent groups, respecting token limit
+        result_groups: list[list[LLMMessage]] = []
+        current_tokens = 0
+
+        # Reserve space for first user message if we need to include it
+        first_user_tokens = 0
+        if first_user_group_idx is not None:
+            first_user_tokens = self._estimate_tokens(groups[first_user_group_idx])
+
+        # Always include at least the most recent group (even if it exceeds limit)
+        # This ensures the LLM has context about what just happened
+        most_recent_included = False
+
+        for group in reversed(groups):
+            group_tokens = self._estimate_tokens(group)
+
+            # Check if adding this group would exceed limit (accounting for first user message)
+            available = max_tokens - first_user_tokens if first_user_group_idx is not None else max_tokens
+            if current_tokens + group_tokens > available:
+                # Always include the most recent group even if it exceeds limit
+                if not most_recent_included:
+                    result_groups.insert(0, group)
+                    current_tokens += group_tokens
+                    most_recent_included = True
+                    continue
+                break
+
+            result_groups.insert(0, group)
+            current_tokens += group_tokens
+            most_recent_included = True
+
+            # If we just added the first user message group, clear the reservation
+            if first_user_group_idx is not None and group is groups[first_user_group_idx]:
+                first_user_tokens = 0
+
+        # Ensure first user message is included
+        if first_user_group_idx is not None:
+            first_user_group = groups[first_user_group_idx]
+            if first_user_group not in result_groups:
+                # Insert at the appropriate position
+                result_groups.insert(0, first_user_group)
+
+        # Flatten groups back into messages
+        result = []
+        for group in result_groups:
+            result.extend(group)
 
         return result
 
@@ -681,7 +765,8 @@ class Timeline:
         Compress old timeline entries into a summary entry.
 
         This method replaces old entries with a single TIMELINE_SUMMARY entry,
-        preserving recent entries as configured.
+        preserving recent entries as configured. It ensures tool_call/tool_result
+        groups are kept together to maintain valid message sequences.
 
         Args:
             summary: The summary text to use for the compressed entries
@@ -694,9 +779,30 @@ class Timeline:
         if len(self.timeline) <= keep_recent:
             return 0  # Nothing to compress
 
-        # Get entries to compress (all except recent N)
-        old_entries = self.timeline[:-keep_recent]
-        recent_entries = self.timeline[-keep_recent:]
+        # Find the split point, ensuring we don't break tool_call/tool_result groups
+        # We need to keep at least keep_recent entries, but may need to keep more
+        # to avoid orphaning tool results
+        split_idx = len(self.timeline) - keep_recent
+
+        # Expand split_idx backwards if we would orphan tool results
+        # (i.e., if recent_entries starts with tool results without their tool_call)
+        while split_idx > 0:
+            # Check if the entry at split_idx is a tool result
+            entry_at_split = self.timeline[split_idx]
+            if entry_at_split.tool_call_id:
+                # This is a tool result - we need to include its tool_call
+                # Move split_idx back to include the tool_call
+                split_idx -= 1
+            else:
+                # Not a tool result, we can split here
+                break
+
+        # If split_idx is 0, we can't compress anything without breaking groups
+        if split_idx <= 0:
+            return 0
+
+        old_entries = self.timeline[:split_idx]
+        recent_entries = self.timeline[split_idx:]
 
         if not old_entries:
             return 0
@@ -724,6 +830,8 @@ class Timeline:
         """
         Get the entries that would be compressed (for generating a summary).
 
+        Ensures tool_call/tool_result groups are kept together.
+
         Returns:
             List of old entries that would be replaced by a summary
         """
@@ -732,7 +840,21 @@ class Timeline:
         if len(self.timeline) <= keep_recent:
             return []
 
-        return self.timeline[:-keep_recent]
+        # Find the split point, ensuring we don't break tool_call/tool_result groups
+        split_idx = len(self.timeline) - keep_recent
+
+        # Expand split_idx backwards if we would orphan tool results
+        while split_idx > 0:
+            entry_at_split = self.timeline[split_idx]
+            if entry_at_split.tool_call_id:
+                split_idx -= 1
+            else:
+                break
+
+        if split_idx <= 0:
+            return []
+
+        return self.timeline[:split_idx]
 
     def build_compression_prompt(self) -> str | None:
         """

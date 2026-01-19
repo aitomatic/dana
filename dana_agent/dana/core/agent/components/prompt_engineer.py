@@ -809,13 +809,13 @@ class LegacyPromptEngineer:
                 context_messages = timeline_messages[:-1]
                 latest_user_message = timeline_messages[-1]
             else:
-                # No latest user message at the end - find the original user query from timeline
+                # No latest user message at the end - find the most recent user query from timeline
                 # This happens after tool execution when is_latest_user_message flag was cleared
                 context_messages = timeline_messages
 
-                # Find the first USER_MESSAGE entry to use as the question
+                # Find the most recent USER_MESSAGE entry (for multi-turn conversations)
                 from dana.core.agent.timeline import TimelineEntryType
-                for entry in timeline.timeline:
+                for entry in reversed(timeline.timeline):
                     if entry.entry_type == TimelineEntryType.USER_MESSAGE:
                         latest_user_message = LLMMessage(role="user", content=entry.content)
                         break

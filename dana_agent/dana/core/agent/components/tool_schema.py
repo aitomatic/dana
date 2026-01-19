@@ -160,6 +160,54 @@ def generate_workflow_schemas(workflows: list[WorkflowProtocol]) -> list[dict]:
     return schemas
 
 
+def generate_agent_schemas(agents: list[AgentProtocol]) -> list[dict]:
+    """Generate tool schemas for sub-agents.
+
+    Each agent is exposed as a single tool with a `query` method that accepts
+    a message parameter. The agent's public_description is used as the tool
+    description so the LLM knows what the agent can do.
+
+    Args:
+        agents: List of agent instances to generate schemas for
+
+    Returns:
+        List of OpenAI-compatible tool schemas
+    """
+    schemas = []
+
+    for agent in agents:
+        # Use agent_type as the tool identifier (more readable than object_id)
+        agent_id = agent.agent_type
+        safe_agent_id = agent_id.replace(".", "_").replace("-", "_")
+        function_name = f"{safe_agent_id}__query"
+
+        # Get the agent's description for the LLM
+        description = getattr(agent, "public_description", None)
+        if not description:
+            description = f"Send a task to the {agent_id} agent and receive a result."
+
+        schema = {
+            "type": "function",
+            "function": {
+                "name": function_name,
+                "description": description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string",
+                            "description": "The task or question to send to this agent",
+                        },
+                    },
+                    "required": ["message"],
+                },
+            },
+        }
+        schemas.append(schema)
+
+    return schemas
+
+
 def generate_tool_schemas(
     agents: list[AgentProtocol] | None = None,
     resources: list[ResourceProtocol] | None = None,
@@ -168,7 +216,7 @@ def generate_tool_schemas(
     """Generate OpenAI-compatible tool schemas for all available tools.
 
     Args:
-        agents: List of sub-agents (future: could generate schemas for agent.query)
+        agents: List of sub-agents to generate schemas for
         resources: List of resources to generate schemas for
         workflows: List of workflows to generate schemas for
 
@@ -177,6 +225,14 @@ def generate_tool_schemas(
     """
     schemas = []
     seen_names: set[str] = set()
+
+    # Add agent schemas first (they're high-level delegation tools)
+    if agents:
+        for schema in generate_agent_schemas(agents):
+            func_name = schema["function"]["name"]
+            if func_name not in seen_names:
+                schemas.append(schema)
+                seen_names.add(func_name)
 
     if resources:
         for schema in generate_resource_schemas(resources):
@@ -191,9 +247,5 @@ def generate_tool_schemas(
             if func_name not in seen_names:
                 schemas.append(schema)
                 seen_names.add(func_name)
-
-    # Future: Add agent schemas if needed
-    # if agents:
-    #     schemas.extend(generate_agent_schemas(agents))
 
     return schemas
