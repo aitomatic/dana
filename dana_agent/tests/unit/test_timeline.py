@@ -34,7 +34,7 @@ class TestTimelineEntry:
 
         string_repr = entry.to_string()
         assert "[2024-01-15 10:30:45]" in string_repr
-        assert "[User-to-Agent Message]" in string_repr
+        assert "[USER]" in string_repr
         assert "Hello world" in string_repr
 
     def test_timeline_entry_type_checks(self):
@@ -120,8 +120,8 @@ class TestTimeline:
         summary = timeline.get_timeline_summary()
         assert "2024-01-15 10:30:00" in summary
         assert "2024-01-15 10:30:05" in summary
-        assert "[User-to-Agent Message]" in summary
-        assert "[Agent-to-User Response]" in summary
+        assert "[USER]" in summary
+        assert "[RESPONSE]" in summary
         assert "Hello" in summary
         assert "Hi there!" in summary
 
@@ -173,9 +173,9 @@ class TestTimeline:
         assert messages[0].role == "user"
         assert messages[0].content == "User message"
         assert messages[1].role == "assistant"
-        assert messages[1].content == "[Agent's Internal Thoughts] Agent thinking"
+        assert messages[1].content == "[THOUGHT] Agent thinking"
         assert messages[2].role == "assistant"
-        assert messages[2].content == "[Resource-to-Agent Result] Resource result"
+        assert messages[2].content == "[TOOL_RESULT] Resource result"
 
     def test_to_llm_messages_with_token_limit(self, timeline):
         """Test LLM message conversion with token limits."""
@@ -233,7 +233,7 @@ class TestTimeline:
         assert messages[0].role == "assistant"
         assert messages[0].content == "Previous response"
         assert messages[1].role == "assistant"
-        assert messages[1].content == "[Agent's Internal Thoughts] Agent thinking"
+        assert messages[1].content == "[THOUGHT] Agent thinking"
         assert messages[2].role == "user"
         assert messages[2].content == "Latest user message"
 
