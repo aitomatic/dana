@@ -83,6 +83,8 @@ class STARAgent(BaseSTARAgent):
             registry: Specific registry to use (defaults to global registry)
             enable_web_search: Whether to enable web search resource (default: True).
                 Provides search() and fetch_url() methods without requiring API keys.
+            enable_code_execution: Whether to enable code execution resource (default: True).
+                Provides secure Python code execution in a sandbox.
             runtime: Runtime implementation that encapsulates prompt building, LLM calls,
                 response parsing, and tool execution. Defaults to DefaultRuntime.
             codec: Deprecated. Use runtime instead.
