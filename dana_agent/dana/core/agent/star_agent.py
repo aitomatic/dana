@@ -11,13 +11,12 @@ from datetime import datetime
 import inspect
 from typing import Any
 from uuid import uuid4
+import warnings
 
 import structlog
-import warnings
 
 from dana.common.config import config_manager
 from dana.common.llm.llm import LLM
-from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
@@ -66,6 +65,7 @@ class STARAgent(BaseSTARAgent):
         enable_skills: bool = True,
         skills_output_dir: str = "./skill_output",
         enable_web_search: bool = True,
+        enable_code_execution: bool = True,
         **kwargs,
     ):
         """
@@ -82,6 +82,8 @@ class STARAgent(BaseSTARAgent):
             registry: Specific registry to use (defaults to global registry)
             enable_web_search: Whether to enable web search resource (default: True).
                 Provides search() and fetch_url() methods without requiring API keys.
+            enable_code_execution: Whether to enable code execution resource (default: True).
+                Provides secure Python code execution in a sandbox.
             runtime: Runtime implementation that encapsulates prompt building, LLM calls,
                 response parsing, and tool execution. Defaults to DefaultRuntime.
             codec: Deprecated. Use runtime instead.
@@ -210,6 +212,11 @@ class STARAgent(BaseSTARAgent):
             skills = ClaudeCodeSkills(output_dir=skills_output_dir)
             if skills.enabled:
                 self.with_resources(skills)
+
+        if enable_code_execution:
+            from dana.common.resource import CodeExecutionResource
+
+            self.with_resources(CodeExecutionResource(resource_id="code-execution"))
 
     def set_session_id(self, session_id: str) -> None:
         """Set the session id for the agent."""
@@ -627,7 +634,13 @@ class STARAgent(BaseSTARAgent):
         for attempt in range(self.MAX_THINK_RETRIES):
             raw = self._runtime.call_llm(llm_messages)
             parsed = self._runtime.parse_response(raw)
-            response, reasoning, tool_calls, done, todo_list = parsed.response, parsed.reasoning, parsed.tool_calls, parsed.done, parsed.todo_list
+            response, reasoning, tool_calls, done, todo_list = (
+                parsed.response,
+                parsed.reasoning,
+                parsed.tool_calls,
+                parsed.done,
+                parsed.todo_list,
+            )
 
             has_tool_calls = bool(tool_calls)
             has_response = bool(response and response.strip())
@@ -809,17 +822,15 @@ class STARAgent(BaseSTARAgent):
                     break
 
             # Count completed tool calls to estimate progress
-            tool_call_count = sum(
-                1 for entry in self._timeline.timeline
-                if entry.entry_type == TimelineEntryType.TOOL_CALL
-            )
+            tool_call_count = sum(1 for entry in self._timeline.timeline if entry.entry_type == TimelineEntryType.TOOL_CALL)
 
             # Estimate expected steps based on sequential action patterns
             # "search then fetch" = 2 steps, "search, then process, then save" = 3 steps
             request_lower = original_request.lower()
             # Count occurrences of step separators (avoiding overlap)
             import re
-            step_separators = re.findall(r'\bthen\b|\bafter that\b|\bnext\b|\bfinally\b', request_lower)
+
+            step_separators = re.findall(r"\bthen\b|\bafter that\b|\bnext\b|\bfinally\b", request_lower)
             expected_steps = 1 + len(step_separators)
             # Cap expected_steps at a reasonable maximum
             expected_steps = min(expected_steps, 5)
@@ -948,7 +959,13 @@ class STARAgent(BaseSTARAgent):
 
                 raw = await asyncio.to_thread(self._runtime.call_llm, llm_messages)
             parsed = self._runtime.parse_response(raw)
-            response, reasoning, tool_calls, done, todo_list = parsed.response, parsed.reasoning, parsed.tool_calls, parsed.done, parsed.todo_list
+            response, reasoning, tool_calls, done, todo_list = (
+                parsed.response,
+                parsed.reasoning,
+                parsed.tool_calls,
+                parsed.done,
+                parsed.todo_list,
+            )
 
             has_tool_calls = bool(tool_calls)
             has_response = bool(response and response.strip())
