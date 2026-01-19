@@ -140,16 +140,24 @@ class OpenAIProvider(LLMProvider):
                 content = message.content or ""
                 tool_calls = None
 
-            return LLMResponse(
-                content=content,
-                model=response.model,
-                usage={
+            # Build usage dict with cache metrics if available
+            usage = None
+            if response.usage:
+                usage = {
                     "prompt_tokens": response.usage.prompt_tokens,
                     "completion_tokens": response.usage.completion_tokens,
                     "total_tokens": response.usage.total_tokens,
                 }
-                if response.usage
-                else None,
+                # OpenAI returns cached_tokens in prompt_tokens_details for prompts >= 1024 tokens
+                if hasattr(response.usage, "prompt_tokens_details") and response.usage.prompt_tokens_details:
+                    details = response.usage.prompt_tokens_details
+                    if hasattr(details, "cached_tokens"):
+                        usage["cached_tokens"] = details.cached_tokens
+
+            return LLMResponse(
+                content=content,
+                model=response.model,
+                usage=usage,
                 finish_reason=choice.finish_reason,
                 tool_calls=tool_calls,
             )

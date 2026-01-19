@@ -177,16 +177,24 @@ class AnthropicProvider(LLMProvider):
             if json_mode:
                 content = '{"done":' + content
 
-            return LLMResponse(
-                content=content,
-                model=response.model,
-                usage={
+            # Build usage dict with cache metrics if available
+            usage = None
+            if response.usage:
+                usage = {
                     "prompt_tokens": response.usage.input_tokens,
                     "completion_tokens": response.usage.output_tokens,
                     "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
                 }
-                if response.usage
-                else None,
+                # Anthropic returns cache metrics for prompt caching
+                if hasattr(response.usage, "cache_creation_input_tokens"):
+                    usage["cache_creation_tokens"] = response.usage.cache_creation_input_tokens
+                if hasattr(response.usage, "cache_read_input_tokens"):
+                    usage["cached_tokens"] = response.usage.cache_read_input_tokens
+
+            return LLMResponse(
+                content=content,
+                model=response.model,
+                usage=usage,
                 finish_reason=response.stop_reason,
                 tool_calls=tool_calls,
             )
