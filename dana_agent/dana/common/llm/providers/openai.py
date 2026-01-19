@@ -105,19 +105,21 @@ class OpenAIProvider(LLMProvider):
                     else:
                         openai_messages.append({"role": "assistant", "content": msg.content})
 
-            # Build request parameters
+            # Build request parameters - filter out our custom parameters
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["json_mode"]}
             request_kwargs = {
                 "model": self.model,
                 "messages": openai_messages,
-                **kwargs
+                **filtered_kwargs
             }
 
             # Add tools if provided
             if tools:
                 request_kwargs["tools"] = tools
                 request_kwargs["tool_choice"] = "auto"
-            else:
-                # When not using native tools, enable JSON mode for reliable formatting
+
+            # Enable JSON mode when requested (works with or without tools)
+            if kwargs.get("json_mode", False):
                 request_kwargs["response_format"] = {"type": "json_object"}
 
             # Call OpenAI API

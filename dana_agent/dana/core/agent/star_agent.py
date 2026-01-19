@@ -133,9 +133,10 @@ class STARAgent(BaseSTARAgent):
 
                 runtime = LegacyRuntime()
             else:
-                from dana.core.runtime.default import DefaultRuntime
+                # Use the runtime registry to choose the appropriate runtime
+                from dana.core.runtime import RuntimeRegistry
 
-                runtime = DefaultRuntime(provider=llm_provider, model=model)
+                runtime = RuntimeRegistry.select_runtime(provider=llm_provider, model=model)
                 if codec_provided:
                     warnings.warn(
                         "The codec parameter is deprecated; pass runtime=... instead.",

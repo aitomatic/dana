@@ -173,15 +173,24 @@ def generate_tool_schemas(
         workflows: List of workflows to generate schemas for
 
     Returns:
-        List of OpenAI-compatible tool schemas
+        List of OpenAI-compatible tool schemas (deduplicated by function name)
     """
     schemas = []
+    seen_names: set[str] = set()
 
     if resources:
-        schemas.extend(generate_resource_schemas(resources))
+        for schema in generate_resource_schemas(resources):
+            func_name = schema["function"]["name"]
+            if func_name not in seen_names:
+                schemas.append(schema)
+                seen_names.add(func_name)
 
     if workflows:
-        schemas.extend(generate_workflow_schemas(workflows))
+        for schema in generate_workflow_schemas(workflows):
+            func_name = schema["function"]["name"]
+            if func_name not in seen_names:
+                schemas.append(schema)
+                seen_names.add(func_name)
 
     # Future: Add agent schemas if needed
     # if agents:

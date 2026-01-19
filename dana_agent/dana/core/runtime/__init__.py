@@ -1,72 +1,11 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
+from .base import AgentRuntime, ParsedResponse, TodoItem
+from .selector import RuntimeRegistry
 
-from dana.common.llm.types import LLMMessage
-
-
-@dataclass
-class TodoItem:
-    content: str
-    status: str  # "pending", "in_progress", "completed"
-
-
-@dataclass
-class ParsedResponse:
-    done: bool | None
-    reasoning: str | None
-    response: str | None
-    tool_calls: list[dict[str, Any]]
-    todo_list: list[TodoItem] | None = None
-
-
-class AgentRuntime(ABC):
-    @abstractmethod
-    def build_prompt(self, agent, timeline, learned_context: str | None = None) -> list[LLMMessage]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def call_llm(self, messages: list[LLMMessage]) -> str:
-        raise NotImplementedError
-
-    @abstractmethod
-    def parse_response(self, raw: str) -> ParsedResponse:
-        raise NotImplementedError
-
-    @abstractmethod
-    def execute_tools(self, agent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        raise NotImplementedError
-
-    def validate_done_output(self, done: bool | None, has_tool_calls: bool, has_response: bool) -> str:
-        if done is None:
-            return "retry"
-        if done and has_tool_calls:
-            return "retry"
-        if not done and has_response:
-            return "retry"
-        if not done and not has_tool_calls:
-            return "retry"
-        if done and not has_response:
-            return "retry"
-        return "exit" if done else "continue"
-
-    def build_output_format_correction(self) -> LLMMessage:
-        return LLMMessage(
-            role="user",
-            content=(
-                "Invalid format. Reply with ONLY valid JSON:\n\n"
-                "If you NEED more information, call a tool:\n"
-                '{"done": false, "reasoning": "...", "response": null, "tool_calls": [{"name": "...", "parameters": {...}}]}\n\n'
-                "If you HAVE all the information needed, provide your answer:\n"
-                '{"done": true, "reasoning": "...", "response": "your synthesized answer", "tool_calls": []}\n\n'
-                "RULES:\n"
-                "- done=false REQUIRES tool_calls (which SPECIFIC tool are you calling?)\n"
-                "- done=true REQUIRES response (provide your answer)\n"
-                "- If you have the data needed to answer, set done=true and write your answer"
-            ),
-        )
-
-
-__all__ = ["AgentRuntime", "ParsedResponse", "TodoItem"]
+__all__ = [
+    "AgentRuntime",
+    "ParsedResponse",
+    "TodoItem",
+    "RuntimeRegistry",
+]
