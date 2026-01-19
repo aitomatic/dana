@@ -37,6 +37,8 @@ class TestOpenAIProvider:
         mock_response.usage.prompt_tokens = 10
         mock_response.usage.completion_tokens = 5
         mock_response.usage.total_tokens = 15
+        # Explicitly set prompt_tokens_details to None to avoid Mock returning Mock for cache fields
+        mock_response.usage.prompt_tokens_details = None
 
         # Create an async mock for the create method
         async def mock_create(*args, **kwargs):
@@ -88,7 +90,7 @@ class TestAnthropicProvider:
         mock_response.content[0].text = "Hello from Anthropic!"
         mock_response.stop_reason = "end_turn"
         mock_response.model = "claude-3-sonnet"
-        mock_response.usage = Mock()
+        mock_response.usage = Mock(spec=["input_tokens", "output_tokens"])
         mock_response.usage.input_tokens = 10
         mock_response.usage.output_tokens = 5
 
