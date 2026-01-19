@@ -205,10 +205,17 @@ class AgentRuntime(ABC):
             timeline.set_context(runtime_context)
 
         # Build system prompt with runtime context prepended
+        # Mark system prompt for caching - it's static and often large
         system_prompt = self._build_system_prompt(agent)
         context_line = self._format_runtime_context(runtime_context)
         full_system_prompt = f"{context_line}\n\n{system_prompt}" if context_line else system_prompt
-        messages.append(LLMMessage(role="system", content=full_system_prompt))
+        messages.append(
+            LLMMessage(
+                role="system",
+                content=full_system_prompt,
+                cache_control={"type": "ephemeral"},  # Cache for Anthropic; OpenAI caches implicitly
+            )
+        )
 
         if timeline:
             # Find the latest user message for context retrieval (learnings, ltmemory, etc.)
