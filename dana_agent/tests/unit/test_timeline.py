@@ -163,19 +163,24 @@ class TestTimeline:
         assert messages[1].content == "Hi there!"
 
     def test_to_llm_messages_with_roles(self, timeline):
-        """Test LLM message conversion with different entry types."""
+        """Test LLM message conversion with different entry types.
+        
+        Note: Consecutive assistant messages (without tool_calls) are merged
+        to avoid confusing LLMs like OpenAI's models.
+        """
         timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="User message"))
         timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.AGENT_THOUGHTS, content="Agent thinking"))
         timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.RESOURCE_RESULT, content="Resource result"))
 
         messages = timeline.to_llm_messages()
-        assert len(messages) == 3
+        # Consecutive assistant messages are merged
+        assert len(messages) == 2
         assert messages[0].role == "user"
         assert messages[0].content == "User message"
         assert messages[1].role == "assistant"
-        assert messages[1].content == "[THOUGHT] Agent thinking"
-        assert messages[2].role == "assistant"
-        assert messages[2].content == "[TOOL_RESULT] Resource result"
+        # THOUGHT and TOOL_RESULT are merged into one assistant message
+        assert "[THOUGHT] Agent thinking" in messages[1].content
+        assert "[TOOL_RESULT] Resource result" in messages[1].content
 
     def test_to_llm_messages_with_token_limit(self, timeline):
         """Test LLM message conversion with token limits."""

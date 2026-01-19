@@ -188,6 +188,11 @@ class AgentRuntime(ABC):
 
     @observable
     def build_prompt(self, agent, timeline: Timeline, learned_context: str | None = None) -> list[LLMMessage]:
+        """Build LLM messages from timeline.
+
+        Simple approach: system prompt + timeline messages in order.
+        Learnings and retrieved context are added before the timeline.
+        """
         self._agent = agent
         messages = []
 
@@ -206,127 +211,78 @@ class AgentRuntime(ABC):
         messages.append(LLMMessage(role="system", content=full_system_prompt))
 
         if timeline:
-            timeline_messages = timeline.to_llm_messages(separate_latest_user=True)
-            if timeline_messages and timeline_messages[-1].role == "user":
-                context_messages = timeline_messages[:-1]
-                latest_user_message = timeline_messages[-1]
+            # Find the latest user message for context retrieval (learnings, ltmemory, etc.)
+            task = self._get_latest_user_task(timeline)
 
-                task = latest_user_message.content
+            # Build retrieved context (learnings, ltmemory, resource queries)
+            context_text = self._build_retrieved_context(agent, timeline, task, learned_context)
 
-                class _TaggedQueryable:
-                    def __init__(self, source, tag: str):
-                        self._source = source
-                        self._tag = tag
+            # Add retrieved context as a user message if present
+            if context_text:
+                messages.append(LLMMessage(role="user", content=f"<CONTEXT>\n{context_text}\n</CONTEXT>"))
 
-                    def query(self, question: str) -> str:
-                        result = self._source.query(question)
-                        return f"<{self._tag}>\n{result}\n</{self._tag}>"
-
-                ctx = ContextBuilder(token_budget=getattr(timeline, "max_context_tokens", 100000))
-                ltmemory = getattr(agent, "_ltmemory", None)
-                if ltmemory is not None:
-                    ctx.add_source("ltmemory", _TaggedQueryable(ltmemory, "LTMEMORY"))
-
-                for resource in getattr(agent, "_resources", []):
-                    if hasattr(resource, "query") and hasattr(resource, "resource_id"):
-                        ctx.add_source(resource.resource_id, _TaggedQueryable(resource, resource.resource_id.upper()))
-
-                context = ctx.build(task=task)
-
-                if context_messages or context.text:
-                    self._add_context_messages(messages, context_messages, context.text)
-
-                user_parts = [latest_user_message.content]
-                if learned_context:
-                    user_parts.append(f"\n{learned_context}")
-
-                learner = getattr(agent, "_learner", None)
-                if learner is not None:
-                    related_acquisitive = learner.query_learnings(task, LearningPhase.ACQUISITIVE)
-                    if related_acquisitive:
-                        user_parts.append(f"\nLearning from the past: {related_acquisitive}")
-                    related_retentive = learner.query_learnings(task, LearningPhase.RETENTIVE)
-                    if related_retentive:
-                        user_parts.append(f"\nRelevant memories from past sessions: {related_retentive}")
-
-                messages.append(LLMMessage(role="user", content="\n".join(user_parts)))
-            else:
-                # No separate user message (e.g., after tool execution)
-                if self._native_tools:
-                    self._add_native_tools_messages(messages, timeline_messages)
-                else:
-                    messages.extend(timeline_messages)
+            # Add timeline messages in order - simple and straightforward
+            timeline_messages = timeline.to_llm_messages()
+            messages.extend(timeline_messages)
 
         self._log_prompt_build(agent, system_prompt, timeline, messages)
 
         return messages
 
-    def _add_context_messages(
-        self,
-        messages: list[LLMMessage],
-        context_messages: list[LLMMessage],
-        context_text: str,
-    ) -> None:
-        """Add context messages to the prompt. Override for custom formatting."""
-        if self._native_tools:
-            # Native tools mode: only include tool calls and results
-            valid_tool_use_ids = set()
-            for msg in context_messages:
-                if msg.role == "assistant" and msg.tool_calls:
-                    for tc in msg.tool_calls:
-                        tc_id = tc.get("tool_call_id") if isinstance(tc, dict) else getattr(tc, "id", None)
-                        if tc_id:
-                            valid_tool_use_ids.add(tc_id)
+    def _get_latest_user_task(self, timeline: Timeline) -> str:
+        """Get the latest user message content for context retrieval."""
+        from dana.core.agent.timeline import TimelineEntryType
 
-            for msg in context_messages:
-                if msg.role == "assistant" and msg.tool_calls:
-                    messages.append(msg)
-                elif msg.role == "tool" and msg.tool_call_id:
-                    if msg.tool_call_id in valid_tool_use_ids:
-                        messages.append(msg)
+        for entry in reversed(timeline.timeline):
+            if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+                return entry.content
+        return ""
 
-            if context_text:
-                messages.append(LLMMessage(role="user", content=f"<CONTEXT>\n{context_text}\n</CONTEXT>"))
-        else:
-            # JSON mode: wrap everything in CONTEXT block
-            timeline_lines = ["<CONTEXT>"]
-            if context_messages:
-                timeline_lines.append("<TIMELINE>")
-                for msg in context_messages:
-                    timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
-                timeline_lines.append("</TIMELINE>")
-            if context_text:
-                timeline_lines.append(context_text)
-            timeline_lines.append("</CONTEXT>")
-            messages.append(LLMMessage(role="assistant", content="\n".join(timeline_lines)))
+    def _build_retrieved_context(self, agent, timeline: Timeline, task: str, learned_context: str | None) -> str:
+        """Build retrieved context from learnings, ltmemory, and resources."""
+        if not task:
+            return ""
 
-    def _add_native_tools_messages(
-        self,
-        messages: list[LLMMessage],
-        timeline_messages: list[LLMMessage],
-    ) -> None:
-        """Add messages for native tools mode. Override for provider-specific ordering."""
-        # Find and add the original user message
-        first_user_msg = next((m for m in timeline_messages if m.role == "user"), None)
-        if first_user_msg:
-            messages.append(first_user_msg)
+        context_parts = []
 
-        # Collect valid tool_use_ids
-        valid_tool_use_ids = set()
-        for msg in timeline_messages:
-            if msg.role == "assistant" and msg.tool_calls:
-                for tc in msg.tool_calls:
-                    tc_id = tc.get("tool_call_id") if isinstance(tc, dict) else getattr(tc, "id", None)
-                    if tc_id:
-                        valid_tool_use_ids.add(tc_id)
+        # Add learned context if provided
+        if learned_context:
+            context_parts.append(learned_context)
 
-        # Add tool calls and results in order
-        for msg in timeline_messages:
-            if msg.role == "assistant" and msg.tool_calls:
-                messages.append(msg)
-            elif msg.role == "tool" and msg.tool_call_id:
-                if msg.tool_call_id in valid_tool_use_ids:
-                    messages.append(msg)
+        # Add learnings from learner
+        learner = getattr(agent, "_learner", None)
+        if learner is not None:
+            related_acquisitive = learner.query_learnings(task, LearningPhase.ACQUISITIVE)
+            if related_acquisitive:
+                context_parts.append(f"Learning from the past: {related_acquisitive}")
+            related_retentive = learner.query_learnings(task, LearningPhase.RETENTIVE)
+            if related_retentive:
+                context_parts.append(f"Relevant memories from past sessions: {related_retentive}")
+
+        # Add context from ltmemory and resources
+        class _TaggedQueryable:
+            def __init__(self, source, tag: str):
+                self._source = source
+                self._tag = tag
+
+            def query(self, question: str) -> str:
+                result = self._source.query(question)
+                return f"<{self._tag}>\n{result}\n</{self._tag}>"
+
+        ctx = ContextBuilder(token_budget=getattr(timeline, "max_context_tokens", 100000))
+        ltmemory = getattr(agent, "_ltmemory", None)
+        if ltmemory is not None:
+            ctx.add_source("ltmemory", _TaggedQueryable(ltmemory, "LTMEMORY"))
+
+        for resource in getattr(agent, "_resources", []):
+            if hasattr(resource, "query") and hasattr(resource, "resource_id"):
+                ctx.add_source(resource.resource_id, _TaggedQueryable(resource, resource.resource_id.upper()))
+
+        context = ctx.build(task=task)
+        if context.text:
+            context_parts.append(context.text)
+
+        return "\n\n".join(context_parts) if context_parts else ""
 
     @observable
     def call_llm(self, messages: list[LLMMessage]) -> str:
@@ -361,9 +317,13 @@ class AgentRuntime(ABC):
         return response.content
 
     @observable
-    def parse_response(self, raw: str) -> ParsedResponse:
+    def parse_response(self, raw: str | dict | Any) -> ParsedResponse:
         if raw is None:
             return ParsedResponse(done=None, reasoning=None, response=None, tool_calls=[], todo_list=None)
+
+        # Ensure raw is a string - LLM providers sometimes return unexpected types
+        if not isinstance(raw, str):
+            raw = str(raw)
 
         content = raw.strip()
         done = None
@@ -451,14 +411,15 @@ class AgentRuntime(ABC):
             return LLMMessage(
                 role="user",
                 content=(
-                    "Invalid format. Reply with ONLY valid JSON:\n\n"
-                    "If you called a tool to gather more information:\n"
-                    '{"done": false, "reasoning": "I need to search for...", "response": null}\n\n'
-                    "If you have gathered all information and can answer:\n"
-                    '{"done": true, "reasoning": "I found the answer", "response": "Here is your answer..."}\n\n'
-                    "RULES:\n"
-                    "- If you called a tool: set done=false, response=null\n"
-                    "- If you can answer now: set done=true, write your complete answer in response"
+                    "ERROR: You returned done=false but did NOT call any tools.\n\n"
+                    "You MUST do ONE of these:\n\n"
+                    "A) If you need more data: USE THE FUNCTION CALLING FEATURE to call a tool RIGHT NOW.\n"
+                    "   Do NOT just say you need to call a tool - actually invoke it!\n"
+                    '   Then output: {"done": false, "reasoning": "Calling tool...", "response": null}\n\n'
+                    "B) If you have enough data: Provide your final answer NOW.\n"
+                    '   Output: {"done": true, "reasoning": "...", "response": "YOUR COMPLETE ANSWER HERE"}\n\n'
+                    "Based on the conversation, you likely have enough information to answer.\n"
+                    "PROVIDE YOUR ANSWER NOW using the data you have."
                 ),
             )
         else:
@@ -696,7 +657,7 @@ class AgentRuntime(ABC):
                 continue
         return tool_call_dicts
 
-    def _create_tool_success(self, tool_type: str, target: str, result: str) -> dict[str, Any]:
+    def _create_tool_success(self, tool_type: str, target: str, result: Any) -> dict[str, Any]:
         return {"type": tool_type, "target": target, "result": result, "success": True}
 
     def _create_tool_error(self, tool_type: str, target: str, error_message: str) -> dict[str, Any]:

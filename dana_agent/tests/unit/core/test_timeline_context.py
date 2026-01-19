@@ -158,6 +158,8 @@ class TestDefaultRuntimeContext:
             auto_register=False,
             enable_web_search=False,
             enable_skills=False,
+            enable_code_execution=False,
+            enable_assistant=False,
         )
         runtime = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
         timeline = Timeline(agent=agent)
