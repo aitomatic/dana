@@ -28,9 +28,7 @@ class TestCodeExecutionResourceLive:
             agent.with_resources(CodeExecutionResource(auto_register=False))
 
             # Ask agent to calculate using Python code
-            result = agent.query(
-                message="Calculate 2 + 2 using Python code. Use the code execution resource to run the calculation."
-            )
+            result = agent.query(message="Calculate 2 + 2 using Python code. Use the code execution resource to run the calculation.")
 
             assert result is not None
             assert "response" in result
@@ -41,7 +39,7 @@ class TestCodeExecutionResourceLive:
             assert isinstance(response, str)
             assert "4" in response or "four" in response.lower()
 
-            print(f"✅ Agent executed code: response contains '4'")
+            print("✅ Agent executed code: response contains '4'")
             print(f"   Response: {response[:200]}")
 
         except Exception as e:
@@ -61,9 +59,7 @@ class TestCodeExecutionResourceLive:
             )
             agent.with_resources(CodeExecutionResource(auto_register=False))
 
-            result = agent.query(
-                message="Calculate the standard deviation of [1, 2, 3, 4, 5] using Python code and the statistics module."
-            )
+            result = agent.query(message="Calculate the standard deviation of [1, 2, 3, 4, 5] using Python code and the statistics module.")
 
             assert result is not None
             assert "response" in result
@@ -72,11 +68,9 @@ class TestCodeExecutionResourceLive:
             # Standard deviation of [1,2,3,4,5] is approximately 1.58
             assert isinstance(response, str)
             # Should contain the result (might be formatted differently)
-            assert any(
-                char.isdigit() for char in response
-            ), "Response should contain numeric result"
+            assert any(char.isdigit() for char in response), "Response should contain numeric result"
 
-            print(f"✅ Agent executed statistics calculation")
+            print("✅ Agent executed statistics calculation")
             print(f"   Response: {response[:200]}")
 
         except Exception as e:
@@ -97,9 +91,7 @@ class TestCodeExecutionResourceLive:
             agent.with_resources(CodeExecutionResource(auto_register=False))
 
             # Ask agent to do something that will cause an error (like using blocked builtin)
-            result = agent.query(
-                message="Try to open a file using Python code. Use the code execution resource."
-            )
+            result = agent.query(message="Try to open a file using Python code. Use the code execution resource.")
 
             assert result is not None
             assert "response" in result
@@ -115,7 +107,7 @@ class TestCodeExecutionResourceLive:
                 or "blocked" in response.lower()
             )
 
-            print(f"✅ Agent handled execution error gracefully")
+            print("✅ Agent handled execution error gracefully")
             print(f"   Response: {response[:200]}")
 
         except Exception as e:
@@ -136,25 +128,21 @@ class TestCodeExecutionResourceLive:
             agent.with_resources(CodeExecutionResource(auto_register=False))
 
             # First call: set a variable
-            result1 = agent.query(
-                message="Using Python code, set a variable x = 10 and print it."
-            )
+            result1 = agent.query(message="Using Python code, set a variable x = 10 and print it.")
 
             assert result1 is not None
             assert "response" in result1
             assert "10" in result1["response"]
 
             # Second call: use the variable from first call
-            result2 = agent.query(
-                message="Now multiply x by 2 using Python code and print the result."
-            )
+            result2 = agent.query(message="Now multiply x by 2 using Python code and print the result.")
 
             assert result2 is not None
             assert "response" in result2
             # Should be able to use x from previous execution
             assert "20" in result2["response"] or "x" in result2["response"].lower()
 
-            print(f"✅ Agent used stateful execution")
+            print("✅ Agent used stateful execution")
             print(f"   First response: {result1['response'][:100]}")
             print(f"   Second response: {result2['response'][:100]}")
 
