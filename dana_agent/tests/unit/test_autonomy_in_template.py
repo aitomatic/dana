@@ -73,6 +73,7 @@ class TestAgentSystemPromptIncludesAutonomy:
                     auto_register=False,
                     enable_web_search=False,
                     enable_skills=False,
+                    enable_code_execution=False,
                 )
 
         agent = TestAgent()
@@ -96,6 +97,7 @@ class TestAgentSystemPromptIncludesAutonomy:
                     auto_register=False,
                     enable_web_search=False,
                     enable_skills=False,
+                    enable_code_execution=False,
                 )
 
         agent = CustomAgent()
