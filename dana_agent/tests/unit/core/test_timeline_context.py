@@ -3,6 +3,7 @@
 import pytest
 
 from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.core.runtime.base import AgentRuntime
 from dana.core.runtime.default import DefaultRuntime
 
 
@@ -179,7 +180,7 @@ class TestDefaultRuntimeContext:
             pass
 
         # Reset cache
-        DefaultRuntime._cached_location = None
+        AgentRuntime._cached_location = None
 
         runtime1 = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
         runtime2 = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
@@ -191,12 +192,12 @@ class TestDefaultRuntimeContext:
         loc2 = runtime2._get_ip_location()
 
         assert loc1 == loc2
-        assert DefaultRuntime._cached_location is not None
+        assert AgentRuntime._cached_location is not None
 
     def test_context_includes_location_when_available(self):
         """Context includes location field when IP geolocation succeeds."""
         # Set a mock cached location
-        DefaultRuntime._cached_location = {"location": "Test City, Test State, Test Country"}
+        AgentRuntime._cached_location = {"location": "Test City, Test State, Test Country"}
 
         runtime = DefaultRuntime()
         context = runtime._get_runtime_context()
