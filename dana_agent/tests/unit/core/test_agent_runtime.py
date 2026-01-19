@@ -41,8 +41,11 @@ def test_default_runtime_initialization_custom_llm():
 
 
 def test_default_runtime_build_prompt():
+    class MockLLM:
+        pass
+
     agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False)
-    runtime = DefaultRuntime()
+    runtime = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
     timeline = Timeline(agent=agent)
     timeline.add_entry(
         TimelineEntry(
