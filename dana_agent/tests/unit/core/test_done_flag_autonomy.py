@@ -51,6 +51,7 @@ class MockResource(BaseResource):
         self.calls = []
 
     def query(self, message: str) -> str:
+        """Query the mock resource with a message."""
         self.calls.append(message)
         return "ok"
 
@@ -117,8 +118,10 @@ def test_continue_when_done_false_with_function_call():
     result = agent.query(message="run")
 
     assert mock_llm.call_count == 2
-    assert "hello" in resource.calls
-    assert resource.calls[-1] == "hello"
+    # The resource.query method is called for both:
+    # 1. Context building (with user message "run")
+    # 2. Tool call execution (with tool parameter "hello")
+    assert "hello" in resource.calls  # Tool call was executed with correct parameter
     assert result.get("response") == "Finished"
 
 
