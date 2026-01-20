@@ -10,15 +10,25 @@ Part of Dana's Cognitive Ontology vision.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import hashlib
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+from typing import TYPE_CHECKING
+
+from structlog import get_logger
 
 from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
+
+
+if TYPE_CHECKING:
+    from dana.common.protocols import Notifier
+
+logger = get_logger()
 
 
 class ClaudeCodeSkills(BaseResource):
@@ -54,6 +64,9 @@ class ClaudeCodeSkills(BaseResource):
         timeout: int = 300,
         disable_session_persistence: bool = False,
         resource_id: str = "claude-skills",
+        thought_callback: Callable[[str, str], None] | None = None,
+        notifier: Notifier | None = None,
+        streaming: bool = True,
         **kwargs,
     ):
         """
@@ -65,19 +78,73 @@ class ClaudeCodeSkills(BaseResource):
             timeout: Execution timeout in seconds (default: 300)
             disable_session_persistence: Disable Claude Code session persistence
             resource_id: Resource identifier
+            thought_callback: Optional callback for progress/thought logging.
+                Called with (phase, message) where phase is one of:
+                'init', 'discover', 'execute', 'complete', 'error'
+            notifier: Optional Notifier (agent) to broadcast progress messages to.
+                When provided, progress will be displayed in the agent's thought log.
+            streaming: Use streaming JSON output for real-time progress (default: True).
+                Set to False for simpler subprocess.run behavior (useful for tests).
         """
+        self._thought_callback = thought_callback
+        self._notifier = notifier
+        self._streaming = streaming
+        self._log_thought("init", f"Initializing ClaudeCodeSkills with skills_dir={skills_dir}")
+
         self._skills_dir = Path(skills_dir).expanduser()
         self._output_dir = output_dir
         self._timeout = timeout
         self._disable_session_persistence = disable_session_persistence
         self._available = self._check_claude_available()
 
+        if self._available:
+            self._log_thought("init", "Claude Code CLI is available")
+        else:
+            self._log_thought("init", "Claude Code CLI is NOT available - skills will be disabled")
+
         self._all_skills = self._discover_skills()
         self._skills = self._filter_skills(skills) if skills else self._all_skills
+
+        skill_names = [s["name"] for s in self._skills]
+        self._log_thought("init", f"Initialized with {len(self._skills)} skills: {skill_names}")
 
         super().__init__(resource_type="claude-skills", resource_id=resource_id, **kwargs)
 
         self.execute.__func__.__doc__ = self.get_execute_docstring()
+
+    def _log_thought(self, phase: str, message: str) -> None:
+        """Log a thought/progress message.
+
+        Args:
+            phase: The current phase ('init', 'discover', 'execute', 'complete', 'error')
+            message: The thought/progress message
+        """
+        # Always log to structlog
+        logger.info(message, phase=phase, resource="claude-skills")
+
+        # Broadcast through notifier if available (for agent UI display)
+        notifier = getattr(self, "_notifier", None)
+        if notifier and hasattr(notifier, "broadcast"):
+            try:
+                notifier.broadcast(
+                    {
+                        "skill_progress": {
+                            "skill_id": "claude-skills",
+                            "phase": phase,
+                            "message": message,
+                        }
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Notifier broadcast failed: {e}")
+
+        # Also call callback if provided (check for attribute existence for test compatibility)
+        callback = getattr(self, "_thought_callback", None)
+        if callback:
+            try:
+                callback(phase, message)
+            except Exception as e:
+                logger.warning(f"Thought callback failed: {e}")
 
     def _check_claude_available(self) -> bool:
         """Check if Claude Code CLI is installed."""
@@ -102,7 +169,10 @@ class ClaudeCodeSkills(BaseResource):
         """
         skills: list[dict] = []
 
+        self._log_thought("discover", f"Scanning for skills in {self._skills_dir}")
+
         if not self._skills_dir.exists():
+            self._log_thought("discover", f"Skills directory does not exist: {self._skills_dir}")
             return skills
 
         for skill_path in self._skills_dir.iterdir():
@@ -118,7 +188,9 @@ class ClaudeCodeSkills(BaseResource):
                     "description": description,
                 }
             )
+            self._log_thought("discover", f"Found skill: {skill_path.name}")
 
+        self._log_thought("discover", f"Discovered {len(skills)} total skills")
         return skills
 
     def _parse_skill_description(self, skill_md: Path) -> str:
@@ -279,13 +351,14 @@ class ClaudeCodeSkills(BaseResource):
         env.setdefault("WATCHPACK_POLLING", "true")
         return env, api_key
 
-    def _build_command(self, prompt: str, output_path: Path, env: dict) -> list[str]:
+    def _build_command(self, prompt: str, output_path: Path, env: dict, streaming: bool = True) -> list[str]:
         """Build the Claude CLI command with appropriate flags.
 
         Args:
             prompt: The prompt to send to Claude
             output_path: Path for output files and config
             env: Environment dict to modify if using custom config dir
+            streaming: Whether to use streaming JSON output (default: True)
 
         Returns:
             Command list ready for subprocess
@@ -303,6 +376,10 @@ class ClaudeCodeSkills(BaseResource):
             self._sync_keychain_credentials(claude_config_dir)
             env["CLAUDE_CONFIG_DIR"] = str(claude_config_dir)
             env["HOME"] = str(claude_config_dir)
+
+        # Add streaming output flags for real-time progress
+        if streaming:
+            cmd.extend(["--output-format", "stream-json", "--verbose"])
 
         cmd.extend(["-p", prompt])
         return cmd
@@ -342,6 +419,137 @@ class ClaudeCodeSkills(BaseResource):
             cwd=cwd,
             preexec_fn=preexec_fn,
         )
+
+    def _run_claude_subprocess_streaming(
+        self,
+        cmd: list[str],
+        env: dict,
+        cwd: str,
+        preexec_fn,
+    ) -> dict:
+        """Run Claude Code subprocess with streaming JSON output.
+
+        Parses stream-json events in real-time and logs progress.
+
+        Returns:
+            dict with 'success', 'output', 'error' keys
+        """
+        import json
+
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+            cwd=cwd,
+            preexec_fn=preexec_fn,
+        )
+
+        output_lines = []
+        final_result = None
+        assistant_content = []
+
+        try:
+            # Read stdout line by line for streaming JSON
+            while True:
+                # Check if process has finished
+                if process.poll() is not None:
+                    break
+
+                line = process.stdout.readline()
+                if not line:
+                    break
+
+                line = line.strip()
+                if not line:
+                    continue
+
+                output_lines.append(line)
+
+                try:
+                    event = json.loads(line)
+                    event_type = event.get("type", "")
+
+                    if event_type == "system":
+                        subtype = event.get("subtype", "")
+                        if subtype == "init":
+                            model = event.get("model", "unknown")
+                            self._log_thought("execute", f"Claude Code initialized (model: {model})")
+                        elif subtype == "hook_response":
+                            pass  # Ignore hook responses
+
+                    elif event_type == "assistant":
+                        # Extract content from assistant message
+                        message = event.get("message", {})
+                        content = message.get("content", [])
+                        for item in content:
+                            if item.get("type") == "text":
+                                text = item.get("text", "")
+                                if text:
+                                    assistant_content.append(text)
+                                    # Log a preview of what Claude is saying
+                                    preview = text[:100] + "..." if len(text) > 100 else text
+                                    self._log_thought("execute", f"Claude: {preview}")
+                            elif item.get("type") == "tool_use":
+                                tool_name = item.get("name", "unknown")
+                                self._log_thought("execute", f"Claude using tool: {tool_name}")
+
+                    elif event_type == "result":
+                        final_result = event
+                        is_error = event.get("is_error", False)
+                        result_text = event.get("result", "")
+                        if is_error:
+                            self._log_thought("error", f"Claude Code error: {result_text[:200]}")
+                        else:
+                            duration_ms = event.get("duration_ms", 0)
+                            self._log_thought("execute", f"Claude Code completed in {duration_ms}ms")
+
+                    elif event_type == "user":
+                        # This might indicate waiting for input
+                        self._log_thought("execute", "Claude Code waiting for input...")
+
+                except json.JSONDecodeError:
+                    # Not JSON, might be stderr or other output
+                    if line:
+                        output_lines.append(line)
+
+            # Wait for process to complete with timeout
+            try:
+                process.wait(timeout=self._timeout)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                return {
+                    "success": False,
+                    "output": "\n".join(output_lines),
+                    "error": f"Execution timed out after {self._timeout} seconds",
+                }
+
+            # Read any remaining stderr
+            stderr = process.stderr.read() if process.stderr else ""
+
+            # Build result
+            if final_result:
+                return {
+                    "success": not final_result.get("is_error", False),
+                    "output": final_result.get("result", ""),
+                    "error": stderr if final_result.get("is_error") else "",
+                }
+            else:
+                # No final result event, fall back to collected content
+                return {
+                    "success": process.returncode == 0,
+                    "output": " ".join(assistant_content) if assistant_content else "\n".join(output_lines),
+                    "error": stderr if process.returncode != 0 else "",
+                }
+
+        except Exception as e:
+            process.kill()
+            return {
+                "success": False,
+                "output": "\n".join(output_lines),
+                "error": str(e),
+            }
 
     def _extract_error_output(self, result: subprocess.CompletedProcess) -> str:
         """Extract error output from subprocess result."""
@@ -390,7 +598,10 @@ class ClaudeCodeSkills(BaseResource):
             - output (str): Output from Claude Code (summary of what was done)
             - error (str): Error message if failed, empty string if successful
         """
+        self._log_thought("execute", f"Starting skill execution for task: {task[:100]}...")
+
         if not self._available:
+            self._log_thought("error", "Claude Code CLI is not available")
             return {
                 "success": False,
                 "output": "",
@@ -398,37 +609,75 @@ class ClaudeCodeSkills(BaseResource):
             }
 
         if not self._skills:
+            self._log_thought("error", "No skills available to execute task")
             return {
                 "success": False,
                 "output": "",
                 "error": "No skills available. Install skills in ~/.claude/skills/",
             }
 
+        self._log_thought("execute", f"Available skills for this task: {[s['name'] for s in self._skills]}")
+
         prompt = f"Context from our conversation:\n{context}\n\nTask: {task}" if context else task
         output_path = Path(self._output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
+        self._log_thought("execute", f"Output directory: {output_path.absolute()}")
+
         env, api_key = self._build_execution_env()
-        cmd = self._build_command(prompt, output_path, env)
+        use_streaming = getattr(self, "_streaming", True)
+        cmd = self._build_command(prompt, output_path, env, streaming=use_streaming)
         cwd = str(output_path)
         preexec_fn = self._get_preexec_fn()
 
+        self._log_thought("execute", f"Invoking Claude Code subprocess (timeout: {self._timeout}s)")
+
         try:
-            result = self._run_claude_subprocess(cmd, env, cwd, preexec_fn)
+            if use_streaming:
+                # Use streaming subprocess for real-time progress
+                result_dict = self._run_claude_subprocess_streaming(cmd, env, cwd, preexec_fn)
 
-            if self._should_retry_with_api_key(result, api_key):
-                env["ANTHROPIC_API_KEY"] = api_key
+                # Check if we need to retry with API key
+                if not result_dict["success"] and api_key:
+                    error = result_dict.get("error", "")
+                    retry_triggers = ("Invalid API key", "Please run /login", "Connection error")
+                    if any(trigger in error for trigger in retry_triggers):
+                        self._log_thought("execute", "Retrying with API key authentication...")
+                        env["ANTHROPIC_API_KEY"] = api_key
+                        result_dict = self._run_claude_subprocess_streaming(cmd, env, cwd, preexec_fn)
+            else:
+                # Use simple subprocess.run (for tests/backwards compatibility)
                 result = self._run_claude_subprocess(cmd, env, cwd, preexec_fn)
+                self._log_thought("execute", f"Subprocess completed with return code: {result.returncode}")
 
-            return self._build_result_dict(result)
+                if self._should_retry_with_api_key(result, api_key):
+                    self._log_thought("execute", "Retrying with API key authentication...")
+                    env["ANTHROPIC_API_KEY"] = api_key
+                    result = self._run_claude_subprocess(cmd, env, cwd, preexec_fn)
+                    self._log_thought("execute", f"Retry completed with return code: {result.returncode}")
+
+                result_dict = self._build_result_dict(result)
+
+            if result_dict["success"]:
+                self._log_thought("complete", "Task completed successfully")
+                # Log a preview of the output (first 200 chars)
+                output_preview = result_dict["output"][:200] if result_dict["output"] else "(no output)"
+                self._log_thought("complete", f"Output preview: {output_preview}...")
+            else:
+                error_preview = result_dict["error"][:200] if result_dict["error"] else "(unknown error)"
+                self._log_thought("error", f"Task failed: {error_preview}")
+
+            return result_dict
 
         except subprocess.TimeoutExpired:
+            self._log_thought("error", f"Execution timed out after {self._timeout} seconds")
             return {
                 "success": False,
                 "output": "",
                 "error": f"Execution timed out after {self._timeout} seconds",
             }
         except Exception as exc:
+            self._log_thought("error", f"Unexpected error: {exc}")
             return {
                 "success": False,
                 "output": "",

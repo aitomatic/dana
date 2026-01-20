@@ -121,6 +121,24 @@ class ThoughtLogger(Notifiable):
 
             self._display_phase(workflow_id, f"{phase_emoji} WORKFLOW", workflow_message)
 
+        # Skill progress - show skill execution progress
+        skill_progress = message.get("skill_progress", {})
+        if self.verbose and skill_progress:
+            skill_id = skill_progress.get("skill_id", "claude-skills")
+            skill_message = skill_progress.get("message", "")
+            phase = skill_progress.get("phase", "unknown")
+
+            # Use different emoji for different skill phases
+            phase_emoji = {
+                "init": "🔧",
+                "discover": "🔍",
+                "execute": "⚡",
+                "complete": "✅",
+                "error": "❌",
+            }.get(phase, "🎯")
+
+            self._display_phase(skill_id, f"{phase_emoji} SKILL", skill_message)
+
         # Note: We skip timeline entries to avoid duplication since
         # the STAR phases above already show the relevant information
 
