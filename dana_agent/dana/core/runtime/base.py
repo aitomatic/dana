@@ -362,7 +362,21 @@ class AgentRuntime(ABC):
                                 )
                             )
                 done = parsed_json.get("done")
-                response_text = parsed_json.get("response")
+                # Accept both "response" and "message" as valid field names
+                response_text = parsed_json.get("response") or parsed_json.get("message")
+                
+                # Ensure response_text is a string (LLM might return nested dict)
+                if response_text is not None and not isinstance(response_text, str):
+                    response_text = str(response_text)
+                
+                # Handle case where response text comes after a minimal JSON object
+                # e.g., '{"done":true} Here is the actual response...'
+                if not response_text and done is True:
+                    # Find where the JSON ends and extract trailing text as response
+                    trailing_text = self._extract_trailing_text(content)
+                    if trailing_text:
+                        response_text = trailing_text
+                
                 # Only extract tool_calls from JSON if not using native tools
                 if not self._native_tools:
                     json_tool_calls = parsed_json.get("tool_calls", [])
@@ -624,6 +638,41 @@ class AgentRuntime(ABC):
                         except json.JSONDecodeError:
                             pass
                         break
+
+        return None
+
+    def _extract_trailing_text(self, content: str) -> str | None:
+        """Extract text that comes after a JSON object.
+        
+        Handles cases like: '{"done":true} Here is the actual response...'
+        Returns the trailing text after the JSON object, or None if no trailing text.
+        """
+        if not content:
+            return None
+
+        # Find the JSON object boundaries
+        start_idx = content.find("{")
+        if start_idx == -1:
+            return None
+
+        depth = 0
+        end_idx = -1
+        for i, char in enumerate(content[start_idx:], start_idx):
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    end_idx = i
+                    break
+
+        if end_idx == -1:
+            return None
+
+        # Extract text after the JSON object
+        trailing = content[end_idx + 1:].strip()
+        if trailing:
+            return trailing
 
         return None
 

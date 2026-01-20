@@ -26,6 +26,8 @@ from .types import LLMMessage, LLMProvider, LLMResponse, ProviderError
 
 logger = structlog.get_logger()
 
+import asyncio
+import atexit
 import time
 
 from dana.common.observable import observable
@@ -34,6 +36,46 @@ from .debug_logger import get_debug_logger
 
 
 debug_logger = get_debug_logger()
+
+# Module-level event loop for sync operations
+# This avoids "Event loop is closed" errors when async HTTP clients (httpx/anthropic/openai)
+# try to close connections after asyncio.run() closes the loop
+_sync_event_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _get_or_create_event_loop() -> asyncio.AbstractEventLoop:
+    """Get or create a persistent event loop for sync operations.
+
+    This reuses the same event loop across multiple sync calls to avoid
+    the "Event loop is closed" error that occurs when async HTTP clients
+    try to clean up after asyncio.run() closes the loop.
+    """
+    global _sync_event_loop
+    if _sync_event_loop is None or _sync_event_loop.is_closed():
+        _sync_event_loop = asyncio.new_event_loop()
+        # Don't set as the default loop to avoid interfering with other async code
+    return _sync_event_loop
+
+
+def _cleanup_event_loop():
+    """Clean up the persistent event loop on exit."""
+    global _sync_event_loop
+    if _sync_event_loop is not None and not _sync_event_loop.is_closed():
+        try:
+            # Cancel all pending tasks
+            pending = asyncio.all_tasks(_sync_event_loop)
+            for task in pending:
+                task.cancel()
+            # Run until all tasks are cancelled
+            if pending:
+                _sync_event_loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            _sync_event_loop.close()
+        except Exception:
+            pass  # Ignore errors during cleanup
+
+
+# Register cleanup handler
+atexit.register(_cleanup_event_loop)
 
 
 class LLM:
@@ -196,7 +238,7 @@ class LLM:
     @observable
     def chat_response_sync(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
         """
-        Synchronous version of chat_response - runs the async version in a new event loop.
+        Synchronous version of chat_response - runs the async version in an event loop.
 
         Args:
             messages: List of LLMMessage objects representing the full conversation context
@@ -209,25 +251,20 @@ class LLM:
             ValueError: If messages list is empty
             ProviderError: If the provider operation fails
         """
-        import asyncio
-
-        # Use asyncio.run which handles event loop creation properly
+        # Check if we're already in an async context
         try:
-            # Check if we're already in an async context
-            try:
-                asyncio.get_running_loop()
-                # We're in an async context, but this is a sync method
-                # This should not normally happen, but if it does, raise an error
-                raise RuntimeError("chat_response_sync() cannot be called from within an async context. Use chat_response() instead.")
-            except RuntimeError:
-                # No running loop, which is expected for sync method
-                pass
+            asyncio.get_running_loop()
+            # We're in an async context, but this is a sync method
+            # This should not normally happen, but if it does, raise an error
+            raise RuntimeError("chat_response_sync() cannot be called from within an async context. Use chat_response() instead.")
+        except RuntimeError:
+            # No running loop, which is expected for sync method
+            pass
 
-            # Create new event loop and run the async method
-            return asyncio.run(self.chat_response(messages, **kwargs))
-        except Exception:
-            # Handle any other asyncio-related errors by using asyncio.run
-            return asyncio.run(self.chat_response(messages, **kwargs))
+        # Reuse a persistent event loop to avoid "Event loop is closed" errors
+        # when async HTTP clients (httpx) try to close connections after asyncio.run() closes the loop
+        loop = _get_or_create_event_loop()
+        return loop.run_until_complete(self.chat_response(messages, **kwargs))
 
     async def ask(self, question: str, system_prompt: str | None = None, **kwargs) -> str:
         """

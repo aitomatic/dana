@@ -75,14 +75,27 @@ class AnthropicProvider(LLMProvider):
                     anthropic_messages.append(user_msg)
                 elif msg.role == "tool":
                     # Tool result message - Anthropic uses tool_result content block
-                    anthropic_messages.append({
-                        "role": "user",
-                        "content": [{
-                            "type": "tool_result",
-                            "tool_use_id": msg.tool_call_id,
-                            "content": msg.content,
-                        }]
-                    })
+                    # IMPORTANT: For parallel tool calls, multiple tool_results must be in ONE user message
+                    tool_result_block = {
+                        "type": "tool_result",
+                        "tool_use_id": msg.tool_call_id,
+                        "content": msg.content,
+                    }
+                    # Check if the last message is already a user message with tool_result blocks
+                    # If so, append to it (for parallel tool results)
+                    if (anthropic_messages and
+                        anthropic_messages[-1].get("role") == "user" and
+                        isinstance(anthropic_messages[-1].get("content"), list) and
+                        anthropic_messages[-1]["content"] and
+                        anthropic_messages[-1]["content"][0].get("type") == "tool_result"):
+                        # Append to existing tool results
+                        anthropic_messages[-1]["content"].append(tool_result_block)
+                    else:
+                        # Create new user message with tool_result
+                        anthropic_messages.append({
+                            "role": "user",
+                            "content": [tool_result_block]
+                        })
                 elif msg.role == "assistant":
                     # Check if this assistant message has native tool_calls
                     if msg.tool_calls:
@@ -110,7 +123,9 @@ class AnthropicProvider(LLMProvider):
                     else:
                         anthropic_messages.append({"role": "assistant", "content": msg.content})
 
-            # Add prefill to force JSON output when json_mode is enabled (and not using native tools)
+            # Add prefill to force JSON output when json_mode is enabled
+            # Note: With native tools, Claude outputs text content (JSON) + tool_use blocks
+            # The prefill helps ensure the text content is valid JSON
             if json_mode:
                 anthropic_messages.append({"role": "assistant", "content": '{"done":'})
 
@@ -143,6 +158,9 @@ class AnthropicProvider(LLMProvider):
                         "input_schema": func.get("parameters", {"type": "object", "properties": {}}),
                     })
                 request_kwargs["tools"] = anthropic_tools
+                # Enable parallel tool use (similar to OpenAI's tool_choice="auto")
+                # This explicitly allows Claude to call multiple tools in a single response
+                request_kwargs["tool_choice"] = {"type": "auto", "disable_parallel_tool_use": False}
 
             # Add system message if present (with cache_control support)
             if system_message:

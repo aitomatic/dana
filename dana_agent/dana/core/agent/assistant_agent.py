@@ -71,9 +71,11 @@ class AssistantAgent(STARAgent):
     Pre-configured with web search and code execution resources.
     Designed to be used as a sub-agent that returns concise results.
 
+    Each query() creates a fresh instance - no context accumulates between calls.
+
     Key features:
+    - Fresh instance per query - no context accumulation
     - Built-in web search and code execution
-    - Uses fast/cheap model by default (gpt-4o-mini)
     - Minimal system prompt focused on task execution
     - Returns concise, focused results
 
@@ -82,7 +84,7 @@ class AssistantAgent(STARAgent):
         resources: List of built-in resources to enable.
                    Options: "web_search", "code_execution"
                    Default: ["web_search", "code_execution"]
-        model: LLM model to use (default: "gpt-4o-mini")
+        model: LLM model to use (default: None)
         max_steps: Maximum STAR loop iterations (default: 10)
         **kwargs: Additional arguments passed to STARAgent
     """
@@ -91,7 +93,7 @@ class AssistantAgent(STARAgent):
         self,
         agent_type: str = "assistant",
         resources: list[str] | None = None,
-        model: str = "gpt-4o-mini",
+        model: str | None = None,
         max_steps: int = 10,
         **kwargs,
     ):
@@ -100,6 +102,15 @@ class AssistantAgent(STARAgent):
             resources = DEFAULT_RESOURCES.copy()
 
         self._builtin_resources = resources
+
+        # Store init args for creating fresh instances
+        self._init_kwargs = {
+            "agent_type": agent_type,
+            "resources": resources,
+            "model": model,
+            "max_steps": max_steps,
+            **kwargs,
+        }
 
         # Disable STARAgent's default resources and assistant - we add our own
         kwargs.setdefault("enable_web_search", False)
@@ -186,12 +197,23 @@ Example good responses:
 - Task: "Find the CEO of Apple" → "Tim Cook"
 """
 
+    def _do_query(self, **kwargs) -> str:
+        """Execute the actual query using parent's query method.
+
+        This is called by fresh instances to avoid recursion.
+        """
+        result = super().query(**kwargs)
+        return self._extract_response(result)
+
+    async def _do_aquery(self, **kwargs) -> str:
+        """Async version of _do_query."""
+        result = await super().aquery(**kwargs)
+        return self._extract_response(result)
+
     def query(self, **kwargs) -> str:
         """Execute a task and return only the response string.
 
-        Unlike STARAgent.query() which returns a full trace dict,
-        AssistantAgent returns just the answer - keeping the parent's
-        context clean.
+        Creates a fresh AssistantAgent instance for each query - no context accumulates.
 
         Args:
             **kwargs: Arguments passed to the query (must include 'message')
@@ -199,13 +221,21 @@ Example good responses:
         Returns:
             The response string, or an error message if the query failed
         """
-        result = super().query(**kwargs)
-        return self._extract_response(result)
+        # Create a fresh instance with the same config
+        fresh = AssistantAgent(**self._init_kwargs)
+        # Pass through notifiables so the fresh instance can emit thought/action notifications
+        if hasattr(self, "_notifiables") and self._notifiables:
+            fresh.with_notifiable(*self._notifiables)
+        return fresh._do_query(**kwargs)
 
     async def aquery(self, **kwargs) -> str:
         """Async version of query - returns only the response string."""
-        result = await super().aquery(**kwargs)
-        return self._extract_response(result)
+        # Create a fresh instance with the same config
+        fresh = AssistantAgent(**self._init_kwargs)
+        # Pass through notifiables so the fresh instance can emit thought/action notifications
+        if hasattr(self, "_notifiables") and self._notifiables:
+            fresh.with_notifiable(*self._notifiables)
+        return await fresh._do_aquery(**kwargs)
 
     def _extract_response(self, result) -> str:
         """Extract just the response string from query result."""
