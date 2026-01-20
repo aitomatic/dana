@@ -213,7 +213,7 @@ class STARAgent(BaseSTARAgent):
         if enable_skills:
             from dana.core.skills import ClaudeCodeSkills
 
-            skills = ClaudeCodeSkills(output_dir=skills_output_dir)
+            skills = ClaudeCodeSkills(output_dir=skills_output_dir, notifier=self)
             if skills.enabled:
                 self.with_resources(skills)
 

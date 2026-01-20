@@ -21,6 +21,7 @@ def _build_instance(**overrides) -> ClaudeCodeSkills:
         "_all_skills": [],
         "_skills": [],
         "_disable_session_persistence": False,
+        "_streaming": False,  # Disable streaming for tests (uses subprocess.run)
     }
     for key, value in {**defaults, **overrides}.items():
         setattr(instance, key, value)
