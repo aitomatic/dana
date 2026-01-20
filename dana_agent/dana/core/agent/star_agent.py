@@ -85,6 +85,9 @@ class STARAgent(BaseSTARAgent):
                 Provides search() and fetch_url() methods without requiring API keys.
             enable_code_execution: Whether to enable code execution resource (default: False).
                 Provides secure Python code execution in a sandbox.
+            enable_assistant: Whether to enable the built-in AssistantAgent (default: True).
+                The assistant can search the web and execute code, returning concise results.
+                Useful for delegating subtasks that require research or computation.
             runtime: Runtime implementation that encapsulates prompt building, LLM calls,
                 response parsing, and tool execution. Defaults to DefaultRuntime.
             codec: Deprecated. Use runtime instead.
@@ -218,6 +221,17 @@ class STARAgent(BaseSTARAgent):
             from dana.common.resource import CodeExecutionResource
 
             self.with_resources(CodeExecutionResource(resource_id="code-execution"))
+
+        if enable_assistant:
+            from dana.core.agent.assistant_agent import AssistantAgent
+
+            # Create assistant with web search and code execution
+            # The assistant runs in its own context, so it needs its own resources
+            assistant = AssistantAgent(
+                agent_id=f"{self.agent_id}_assistant",
+                auto_register=False,  # Don't register sub-agent globally
+            )
+            self.with_agents(assistant)
 
     def set_session_id(self, session_id: str) -> None:
         """Set the session id for the agent."""
@@ -691,6 +705,34 @@ class STARAgent(BaseSTARAgent):
                     )
                 )
 
+            # Add todo_list BEFORE tool calls so it doesn't break the tool_call → tool_result sequence
+            # (OpenAI requires tool results immediately after tool calls)
+            if todo_list:
+                in_progress = [t for t in todo_list if t.status == "in_progress"]
+                pending = [t for t in todo_list if t.status == "pending"]
+                completed = [t for t in todo_list if t.status == "completed"]
+                logger.info(
+                    "Todo list updated",
+                    in_progress=len(in_progress),
+                    pending=len(pending),
+                    completed=len(completed),
+                )
+                # Format todo_list for timeline
+                todo_lines = []
+                for item in todo_list:
+                    status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(
+                        item.status, "[?]"
+                    )
+                    todo_lines.append(f"{status_marker} {item.content}")
+                # Remove any existing TODO_LIST entries to avoid accumulation
+                timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.TODO_LIST,
+                        content="\n".join(todo_lines),
+                    )
+                )
+
             # Check if these are native tool calls (have tool_call_id)
             has_native_tool_calls = any(tc.get("tool_call_id") for tc in tool_calls)
 
@@ -725,31 +767,6 @@ class STARAgent(BaseSTARAgent):
             "done": done,
             "todo_list": todo_list,
         }
-
-        # Add todo_list to timeline so LLM can see it in next iteration
-        if todo_list:
-            in_progress = [t for t in todo_list if t.status == "in_progress"]
-            pending = [t for t in todo_list if t.status == "pending"]
-            completed = [t for t in todo_list if t.status == "completed"]
-            logger.info(
-                "Todo list updated",
-                in_progress=len(in_progress),
-                pending=len(pending),
-                completed=len(completed),
-            )
-            # Format todo_list for timeline
-            todo_lines = []
-            for item in todo_list:
-                status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(item.status, "[?]")
-                todo_lines.append(f"{status_marker} {item.content}")
-            # Remove any existing TODO_LIST entries to avoid accumulation
-            timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.TODO_LIST,
-                    content="\n".join(todo_lines),
-                )
-            )
 
         if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
@@ -1016,6 +1033,34 @@ class STARAgent(BaseSTARAgent):
                     )
                 )
 
+            # Add todo_list BEFORE tool calls so it doesn't break the tool_call → tool_result sequence
+            # (OpenAI requires tool results immediately after tool calls)
+            if todo_list:
+                in_progress = [t for t in todo_list if t.status == "in_progress"]
+                pending = [t for t in todo_list if t.status == "pending"]
+                completed = [t for t in todo_list if t.status == "completed"]
+                logger.info(
+                    "Todo list updated",
+                    in_progress=len(in_progress),
+                    pending=len(pending),
+                    completed=len(completed),
+                )
+                # Format todo_list for timeline
+                todo_lines = []
+                for item in todo_list:
+                    status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(
+                        item.status, "[?]"
+                    )
+                    todo_lines.append(f"{status_marker} {item.content}")
+                # Remove any existing TODO_LIST entries to avoid accumulation
+                timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.TODO_LIST,
+                        content="\n".join(todo_lines),
+                    )
+                )
+
             # Check if these are native tool calls (have tool_call_id)
             has_native_tool_calls = any(tc.get("tool_call_id") for tc in tool_calls)
 
@@ -1050,31 +1095,6 @@ class STARAgent(BaseSTARAgent):
             "done": done,
             "todo_list": todo_list,
         }
-
-        # Add todo_list to timeline so LLM can see it in next iteration
-        if todo_list:
-            in_progress = [t for t in todo_list if t.status == "in_progress"]
-            pending = [t for t in todo_list if t.status == "pending"]
-            completed = [t for t in todo_list if t.status == "completed"]
-            logger.info(
-                "Todo list updated",
-                in_progress=len(in_progress),
-                pending=len(pending),
-                completed=len(completed),
-            )
-            # Format todo_list for timeline
-            todo_lines = []
-            for item in todo_list:
-                status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(item.status, "[?]")
-                todo_lines.append(f"{status_marker} {item.content}")
-            # Remove any existing TODO_LIST entries to avoid accumulation
-            timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.TODO_LIST,
-                    content="\n".join(todo_lines),
-                )
-            )
 
         if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
