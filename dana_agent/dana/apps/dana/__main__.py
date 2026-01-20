@@ -17,9 +17,9 @@ def main():
 
         dotenv_path = find_dotenv()
         if dotenv_path:
-            load_dotenv(dotenv_path)
+            load_dotenv(dotenv_path, override=True)
         else:
-            load_dotenv()
+            load_dotenv(override=True)
 
         from dana.apps.dana.dana_app import DanaApp
 

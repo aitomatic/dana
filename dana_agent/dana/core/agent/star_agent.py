@@ -8,29 +8,32 @@ and conversational agent functionality using composable components.
 
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import datetime
-import json
+import inspect
 from typing import Any
 from uuid import uuid4
+import warnings
 
 import structlog
 
+from dana.common.config import config_manager
 from dana.common.llm.llm import LLM
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
-from dana.core.resource.todo import ToDoResource
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
 from ..knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
 from ..knowledge.prompts.prompt_api import PromptAPIProtocol
+from ..runtime import AgentRuntime
 from .base_star_agent import BaseSTARAgent
-from .components import Communicator, LearnerProtocol, PromptEngineer, State, ToolCaller
+from .components import Communicator, LearnerProtocol, State
 from .components.observer import ObserverProtocol
-from .components.tool_caller import CodecToolCaller
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
 logger = structlog.get_logger()
+
+_CODEC_SENTINEL = object()
 
 
 # from dana.apps.dana.thought_logger import ThoughtLogger  # Moved to avoid circular import
@@ -40,7 +43,7 @@ class STARAgent(BaseSTARAgent):
     """STARAgent implementation using composition-based architecture."""
 
     # Configuration constants
-    MAX_EMPTY_RESPONSE_RETRIES = 3  # Maximum retries when LLM returns empty response with no tool calls
+    MAX_THINK_RETRIES = 3  # Maximum retries when output format or done/response rules are invalid
 
     def __init__(
         self,
@@ -52,7 +55,8 @@ class STARAgent(BaseSTARAgent):
         max_context_tokens: int = 4000,
         auto_register: bool = True,
         registry=None,
-        codec: type[AbstractCodec] | None = CSXMLCodec,
+        codec: type[AbstractCodec] | None | object = _CODEC_SENTINEL,
+        runtime: AgentRuntime | None = None,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
         prompt_api: PromptAPIProtocol | None = None,
         observer: ObserverProtocol | None = None,
@@ -60,6 +64,9 @@ class STARAgent(BaseSTARAgent):
         ltmemory_path: str | None = None,
         enable_skills: bool = True,
         skills_output_dir: str = "./skill_output",
+        enable_web_search: bool = False,
+        enable_code_execution: bool = False,
+        enable_assistant: bool = True,
         **kwargs,
     ):
         """
@@ -74,16 +81,18 @@ class STARAgent(BaseSTARAgent):
             max_context_tokens: Maximum tokens for timeline context
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
-            codec: Codec class to use for prompt/tool system (default: CSXMLCodec).
-                - Default (CSXMLCodec): Uses new system (CodecToolCaller and LocalPromptAPI).
-                  This is the recommended approach for reliable tool parsing and execution.
-                  Provides structured XML parsing and explicit handling of object_id vs class_name.
-                - If explicitly set to None: Uses legacy system (ToolCaller and PromptEngineer).
-                  This is deprecated and only maintained for backward compatibility.
-                  The legacy system uses regex-based parsing which can be unreliable,
-                  especially with UUIDs/object_ids.
-                - Can also use other codecs (e.g., KLXMLCodec) for different formats.
-                  See dana.core.knowledge.prompts.codecs for available codecs.
+            enable_web_search: Whether to enable web search resource (default: False).
+                Provides search() and fetch_url() methods without requiring API keys.
+            enable_code_execution: Whether to enable code execution resource (default: False).
+                Provides secure Python code execution in a sandbox.
+            enable_assistant: Whether to enable the built-in AssistantAgent (default: True).
+                The assistant can search the web and execute code, returning concise results.
+                Useful for delegating subtasks that require research or computation.
+            runtime: Runtime implementation that encapsulates prompt building, LLM calls,
+                response parsing, and tool execution. Defaults to DefaultRuntime.
+            codec: Deprecated. Use runtime instead.
+                - Default: maps to DefaultRuntime.
+                - If explicitly set to None: uses LegacyRuntime.
             ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
             enable_skills: Whether to enable Claude Code skills resource discovery
             skills_output_dir: Directory to use for skill output files
@@ -98,6 +107,10 @@ class STARAgent(BaseSTARAgent):
         }
         super().__init__(**kwargs)
 
+        # Determine effective LLM provider: explicit > first available > anthropic fallback
+        if llm_provider is None:
+            llm_provider = config_manager.get_first_available_provider() or "anthropic"
+
         # Initialize LLM (lazy - only created when first accessed)
         self._llm_client = None  # Explicit init to avoid __getattr__ interception
         self._llm_config = {
@@ -106,40 +119,45 @@ class STARAgent(BaseSTARAgent):
         }
 
         self._session_id = str(uuid4())
-        # Conditional component initialization based on codec
-        # IMPORTANT: Codec selection determines which system is used:
-        #   - Default (codec=CSXMLCodec): Uses CodecToolCaller and LocalPromptAPI (NEW - DEFAULT)
-        #     This is the recommended system for reliable tool parsing and execution.
-        #     It provides structured XML parsing and explicit handling of object_id vs class_name.
-        #   - Explicit opt-out (codec=None): Uses ToolCaller and PromptEngineer (LEGACY - DEPRECATED)
-        #     This system uses regex-based parsing which can be unreliable, especially
-        #     with UUIDs/object_ids. Only use for backward compatibility.
         self._repository_factory = repository_factory
+        codec_provided = codec is not _CODEC_SENTINEL
+        if codec is _CODEC_SENTINEL:
+            codec = CSXMLCodec
         self._codec = codec
-        
-        # Issue deprecation warning if explicitly opting out to legacy system
-        if codec is None:
-            import warnings
-            warnings.warn(
-                "codec=None is deprecated. The codec system (CSXMLCodec) is now the default. "
-                "The legacy system (ToolCaller/PromptEngineer) will be removed in a future version. "
-                "Remove codec=None to use the recommended codec system, or explicitly pass "
-                "codec=CSXMLCodec if you need to be explicit.",
-                DeprecationWarning,
-                stacklevel=2
-            )
-        
-        if codec is not None:
-            # NEW SYSTEM: Use codec-based components
-            from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
 
-            self._prompt_engineer = prompt_api or LocalPromptAPI(self, codec=codec, repository_factory=self._repository_factory)
-            self._tool_caller = CodecToolCaller(self, codec=codec)
+        if runtime is None:
+            if codec is None:
+                # codec=None explicitly triggers LegacyRuntime (deprecated)
+                if codec_provided:
+                    warnings.warn(
+                        "codec=None is deprecated and will be removed in a future version. "
+                        "LegacyRuntime is no longer maintained. Use DefaultRuntime instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+                from dana.core.runtime.legacy import LegacyRuntime
+
+                runtime = LegacyRuntime()
+            else:
+                # Use the runtime registry to choose the appropriate runtime
+                from dana.core.runtime import RuntimeRegistry
+
+                runtime = RuntimeRegistry.select_runtime(provider=llm_provider, model=model)
+                if codec_provided:
+                    warnings.warn(
+                        "The codec parameter is deprecated; pass runtime=... instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
         else:
-            # LEGACY SYSTEM: Use old components (backward compatibility only)
-            # NOTE: This system is deprecated. Use codecs for new code.
-            self._prompt_engineer = PromptEngineer(self)
-            self._tool_caller = ToolCaller(self)
+            if codec_provided:
+                warnings.warn(
+                    "The codec parameter is deprecated and ignored when runtime is provided.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
+        self._runtime = runtime
 
         # Initialize other components
         self._communicator = Communicator(self)
@@ -155,8 +173,8 @@ class STARAgent(BaseSTARAgent):
 
             self._ltmemory = LTMemory(
                 path=ltmemory_path,
-                llm_provider=llm_provider or "anthropic",
-                llm_model=model or "claude-sonnet-4-20250514",
+                llm_provider=llm_provider,
+                llm_model=model or config_manager.get_provider_default_model(llm_provider),
             )
         else:
             self._ltmemory = None
@@ -184,14 +202,36 @@ class STARAgent(BaseSTARAgent):
             # No observer or codec = no EventLog (events only come from Observer)
             self._event_log = None
 
-        self.with_resources(ToDoResource(resource_id="todo-resource"))
+        if enable_web_search:
+            try:
+                from dana.core.resource.simple_search import SimpleWebSearch
+
+                self.with_resources(SimpleWebSearch(resource_id="web-search"))
+            except ImportError:
+                pass  # Web search not available
 
         if enable_skills:
             from dana.core.skills import ClaudeCodeSkills
 
-            skills = ClaudeCodeSkills(output_dir=skills_output_dir)
+            skills = ClaudeCodeSkills(output_dir=skills_output_dir, notifier=self)
             if skills.enabled:
                 self.with_resources(skills)
+
+        if enable_code_execution:
+            from dana.common.resource import CodeExecutionResource
+
+            self.with_resources(CodeExecutionResource(resource_id="code-execution"))
+
+        if enable_assistant:
+            from dana.core.agent.assistant_agent import AssistantAgent
+
+            # Create assistant with web search and code execution
+            # The assistant runs in its own context, so it needs its own resources
+            assistant = AssistantAgent(
+                agent_id=f"{self.agent_id}_assistant",
+                auto_register=False,  # Don't register sub-agent globally
+            )
+            self.with_agents(assistant)
 
     def set_session_id(self, session_id: str) -> None:
         """Set the session id for the agent."""
@@ -208,6 +248,8 @@ class STARAgent(BaseSTARAgent):
     def llm_client(self, value: LLM):
         """Set the LLM client."""
         self._llm_client = value
+        if hasattr(self._runtime, "set_llm"):
+            self._runtime.set_llm(value)
 
     # ============================================================================
     # PUBLIC API - AGENT IDENTITY & PROMPTS
@@ -215,19 +257,22 @@ class STARAgent(BaseSTARAgent):
 
     def with_agents(self, *agents: AgentProtocol) -> BaseSTARAgent:
         """Add agents to the agent."""
-        self._prompt_engineer.reset()
+        if hasattr(self._runtime, "reset"):
+            self._runtime.reset()
         super().with_agents(*agents)
         return self
 
     def with_resources(self, *resources: ResourceProtocol) -> BaseSTARAgent:
         """Add resources to the agent."""
-        self._prompt_engineer.reset()
+        if hasattr(self._runtime, "reset"):
+            self._runtime.reset()
         super().with_resources(*resources)
         return self
 
     def with_workflows(self, *workflows: WorkflowProtocol) -> BaseSTARAgent:
         """Add workflows to the agent."""
-        self._prompt_engineer.reset()
+        if hasattr(self._runtime, "reset"):
+            self._runtime.reset()
         super().with_workflows(*workflows)
         return self
 
@@ -245,17 +290,23 @@ class STARAgent(BaseSTARAgent):
     @property
     def public_description(self) -> str:
         """Get the public description of the agent."""
-        return self._prompt_engineer.public_description
+        if hasattr(self._runtime, "public_description"):
+            return self._runtime.public_description(self)
+        return inspect.getdoc(self.__class__) or f"{self.agent_type} agent."
 
     @property
     def private_identity(self) -> str:
         """Get the private identity of the agent."""
-        return self._prompt_engineer.identity
+        if hasattr(self._runtime, "private_identity"):
+            return self._runtime.private_identity(self)
+        return super().private_identity
 
     @property
     def system_prompt(self) -> str:
         """Get the system prompt of the agent."""
-        return self._prompt_engineer.system_prompt
+        if hasattr(self._runtime, "system_prompt"):
+            return self._runtime.system_prompt(self)
+        return super().system_prompt
 
     # ============================================================================
     # PUBLIC API - STATE & CONTEXT MANAGEMENT
@@ -407,7 +458,10 @@ class STARAgent(BaseSTARAgent):
                 temperature=0,
             )
 
-            summary = summary_response.content.strip() if summary_response.content else ""
+            raw_content = summary_response.content.strip() if summary_response.content else ""
+
+            # Parse JSON response to extract summary
+            summary = self._extract_compression_summary(raw_content)
 
             if summary:
                 compressed_count = timeline.compress_old_entries(summary)
@@ -440,7 +494,10 @@ class STARAgent(BaseSTARAgent):
                 temperature=0,
             )
 
-            summary = summary_response.content.strip() if summary_response.content else ""
+            raw_content = summary_response.content.strip() if summary_response.content else ""
+
+            # Parse JSON response to extract summary
+            summary = self._extract_compression_summary(raw_content)
 
             if summary:
                 compressed_count = timeline.compress_old_entries(summary)
@@ -452,6 +509,30 @@ class STARAgent(BaseSTARAgent):
                 )
         except Exception as e:
             logger.warning("Timeline compression failed", error=str(e))
+
+    def _extract_compression_summary(self, content: str) -> str:
+        """Extract summary from JSON compression response.
+
+        Args:
+            content: Raw LLM response (expected JSON with 'summary' field)
+
+        Returns:
+            Extracted summary text, or the raw content as fallback
+        """
+        import json
+
+        if not content:
+            return ""
+
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict) and "summary" in parsed:
+                return parsed["summary"]
+        except json.JSONDecodeError:
+            pass
+
+        # Fallback: return raw content if not valid JSON
+        return content
 
     # ============================================================================
     # STAR PATTERN IMPLEMENTATION (BaseSTARAgent abstract methods)
@@ -518,6 +599,22 @@ class STARAgent(BaseSTARAgent):
 
         return super()._see(trace_inputs)
 
+    def _format_tool_call_as_xml(self, tool_call: DictParams) -> str:
+        """Format a tool call dict as XML for consistent LLM context.
+
+        This ensures the LLM sees tool calls in the same XML format it should
+        produce, rather than Python dict format which it might mimic.
+        """
+        func = tool_call.get("function", "unknown:unknown")
+        args = tool_call.get("arguments", {})
+
+        # Build XML parameters
+        params_xml = ""
+        for key, value in args.items():
+            params_xml += f'<parameter name="{key}">{value}</parameter>'
+
+        return f'<function_call><invoke name="{func}">{params_xml}</invoke></function_call>'
+
     @observable
     def _think(self, trace_percepts: DictParams) -> DictParams:
         """
@@ -544,54 +641,44 @@ class STARAgent(BaseSTARAgent):
         # Check if timeline needs compression before building messages
         self._maybe_compress_timeline(timeline)
 
-        # Build LLM messages using PromptEngineer
-        llm_messages = self._prompt_engineer.build_llm_request(timeline)
+        # Build LLM messages using runtime
+        llm_messages = self._runtime.build_prompt(self, timeline)
 
-        # Check if provider supports native tool calling
-        native_tools = None
-        if hasattr(self.llm_client, "provider") and hasattr(self.llm_client.provider, "supports_native_tools"):
-            if self.llm_client.provider.supports_native_tools:
-                native_tools = self._prompt_engineer.build_tool_schemas()
-
-        # Query LLM with retry logic for empty responses
-        response, reasoning, tool_calls = None, None, None
-        failed_tool_calls = []
-        for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
-            llm_response = self.llm_client.chat_response_sync(
-                llm_messages,
-                agent_id=self.object_id,
-                agent_type=self.agent_type,
-                temperature=0,
-                tools=native_tools,
+        response, reasoning, tool_calls, done, todo_list = None, None, [], None, None
+        output_state = "retry"
+        for attempt in range(self.MAX_THINK_RETRIES):
+            raw = self._runtime.call_llm(llm_messages)
+            parsed = self._runtime.parse_response(raw)
+            response, reasoning, tool_calls, done, todo_list = (
+                parsed.response,
+                parsed.reasoning,
+                parsed.tool_calls,
+                parsed.done,
+                parsed.todo_list,
             )
-            response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 
-            # Retry if both response and tool_calls are empty
-            has_content = response and response.strip()
-            has_tool_calls = tool_calls and len(tool_calls) > 0
-            if has_content or has_tool_calls:
+            has_tool_calls = bool(tool_calls)
+            has_response = bool(response and response.strip())
+            output_state = self._runtime.validate_done_output(done, has_tool_calls, has_response)
+
+            if output_state != "retry":
                 break
-            elif reasoning and "error" in reasoning.lower():
-                from dana.common.llm.types import LLMMessage
 
-                suggestion_message = LLMMessage(role="user", content=reasoning)
-                failed_tool_calls.append(llm_response.content)
-                if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
-                    # Replace old suggestion message in case of consecutive errors
-                    llm_messages[-1] = suggestion_message
-                else:
-                    # Add new suggestion message
-                    llm_messages.append(suggestion_message)
-            if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
-                logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
-
-        if failed_tool_calls:
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.FAILED_TOOL_CALL,
-                    content=json.dumps(failed_tool_calls),
+            if attempt < self.MAX_THINK_RETRIES - 1:
+                llm_messages.append(self._runtime.build_output_format_correction())
+                logger.warning(
+                    "Invalid output format, retrying",
+                    attempt=attempt + 1,
+                    done=done,
+                    has_tool_calls=has_tool_calls,
+                    has_response=has_response,
                 )
-            )
+
+        if output_state == "retry":
+            response = "No response generated"
+            tool_calls = []
+            done = True
+            output_state = "exit"
 
         if not tool_calls or len(tool_calls) == 0:
             response = response if (response and len(response) > 0) else "No response generated"
@@ -618,24 +705,70 @@ class STARAgent(BaseSTARAgent):
                     )
                 )
 
-            for tool_call in tool_calls:
+            # Add todo_list BEFORE tool calls so it doesn't break the tool_call → tool_result sequence
+            # (OpenAI requires tool results immediately after tool calls)
+            if todo_list:
+                in_progress = [t for t in todo_list if t.status == "in_progress"]
+                pending = [t for t in todo_list if t.status == "pending"]
+                completed = [t for t in todo_list if t.status == "completed"]
+                logger.info(
+                    "Todo list updated",
+                    in_progress=len(in_progress),
+                    pending=len(pending),
+                    completed=len(completed),
+                )
+                # Format todo_list for timeline
+                todo_lines = []
+                for item in todo_list:
+                    status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(
+                        item.status, "[?]"
+                    )
+                    todo_lines.append(f"{status_marker} {item.content}")
+                # Remove any existing TODO_LIST entries to avoid accumulation
+                timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
                 timeline.add_entry(
                     TimelineEntry(
-                        entry_type=TimelineEntryType.TOOL_CALL,
-                        content=str(tool_call),
+                        entry_type=TimelineEntryType.TODO_LIST,
+                        content="\n".join(todo_lines),
                     )
                 )
 
+            # Check if these are native tool calls (have tool_call_id)
+            has_native_tool_calls = any(tc.get("tool_call_id") for tc in tool_calls)
+
+            if has_native_tool_calls:
+                # For native OpenAI tools, store all tool_calls in a single entry
+                # The tool_calls will be converted to proper OpenAI format when building messages
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.TOOL_CALL,
+                        content="",  # Content is empty for native tool calls
+                        tool_calls=tool_calls,  # Store native tool_calls array
+                    )
+                )
+            else:
+                # Legacy XML format - store each tool call separately
+                for tool_call in tool_calls:
+                    timeline.add_entry(
+                        TimelineEntry(
+                            entry_type=TimelineEntryType.TOOL_CALL,
+                            content=self._format_tool_call_as_xml(tool_call),
+                        )
+                    )
+
         # Output parameter checking
+        response = response or ""
         assert isinstance(response, str)
         assert isinstance(tool_calls, list)
         trace_percepts |= {
             "response": response,
             "reasoning": reasoning,
             "tool_calls": tool_calls,
+            "done": done,
+            "todo_list": todo_list,
         }
 
-        if tool_calls is None or len(tool_calls) == 0:
+        if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
 
         return super()._think(trace_percepts)
@@ -671,8 +804,8 @@ class STARAgent(BaseSTARAgent):
 
         tool_calls: list[DictParams] = trace_thoughts.get("tool_calls")
 
-        # Execute tool calls using ToolCaller
-        tool_results = self._tool_caller.execute_tool_calls(tool_calls)
+        # Execute tool calls using runtime
+        tool_results = self._runtime.execute_tools(self, tool_calls)
 
         # Add tool results to timeline
         if isinstance(tool_results, list):
@@ -689,27 +822,49 @@ class STARAgent(BaseSTARAgent):
                     else:  # unknown
                         entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
 
+                    # Include tool_call_id for OpenAI native tool support
                     self._timeline.add_entry(
                         TimelineEntry(
                             entry_type=entry_type,
                             content=tool_result.get("result", "Unknown tool result"),
+                            tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
 
-            # Add a synthetic user message to prompt the agent to respond based on tool results
-            # This ensures the next THINK phase has a user message to respond to
-            # last_command_message = ""
-            # for entry in self._timeline.timeline[::-1]:
-            #     if entry.entry_type == TimelineEntryType.USER_MESSAGE:
-            #         last_command_message = entry.content and "Please provide a response" not in entry.content
-            #         break
-            # self._timeline.add_entry(
-            #     TimelineEntry(
-            #         entry_type=TimelineEntryType.USER_MESSAGE,
-            #         content=f"Please provide a response based on the tool results above to answer : {last_command_message}",
-            #         is_latest_user_message=True,
-            #     )
-            # )
+            # Add a system reminder to continue if task is not complete
+            # Find original user request
+            original_request = ""
+            for entry in self._timeline.timeline:
+                if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+                    original_request = entry.content
+                    break
+
+            # Count completed tool calls to estimate progress
+            tool_call_count = sum(1 for entry in self._timeline.timeline if entry.entry_type == TimelineEntryType.TOOL_CALL)
+
+            # Estimate expected steps based on sequential action patterns
+            # "search then fetch" = 2 steps, "search, then process, then save" = 3 steps
+            request_lower = original_request.lower()
+            # Count occurrences of step separators (avoiding overlap)
+            import re
+
+            step_separators = re.findall(r"\bthen\b|\bafter that\b|\bnext\b|\bfinally\b", request_lower)
+            expected_steps = 1 + len(step_separators)
+            # Cap expected_steps at a reasonable maximum
+            expected_steps = min(expected_steps, 5)
+
+            # Only add reminder if we haven't completed all expected steps
+            if tool_call_count < expected_steps:
+                remaining = expected_steps - tool_call_count
+                self._timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                        content=f"[MULTI-STEP TASK - {remaining} STEP(S) REMAINING] "
+                        f"Completed {tool_call_count}/{expected_steps} steps. "
+                        "I MUST call the next tool using this EXACT XML format: "
+                        '<function_call><invoke name="resource-id:method"><parameter name="param">value</parameter></invoke></function_call>',
+                    )
+                )
 
         # Output parameter checking
         assert isinstance(tool_results, list)
@@ -809,55 +964,49 @@ class STARAgent(BaseSTARAgent):
         # Check if timeline needs compression before building messages
         await self._maybe_compress_timeline_async(timeline)
 
-        # Build LLM messages using PromptEngineer
-        llm_messages = self._prompt_engineer.build_llm_request(timeline)
+        # Build LLM messages using runtime
+        llm_messages = self._runtime.build_prompt(self, timeline)
 
-        # Check if provider supports native tool calling
-        native_tools = None
-        if hasattr(self.llm_client, "provider") and hasattr(self.llm_client.provider, "supports_native_tools"):
-            if self.llm_client.provider.supports_native_tools:
-                native_tools = self._prompt_engineer.build_tool_schemas()
+        response, reasoning, tool_calls, done, todo_list = None, None, [], None, None
+        output_state = "retry"
+        for attempt in range(self.MAX_THINK_RETRIES):
+            if hasattr(self._runtime, "call_llm_async"):
+                raw = await self._runtime.call_llm_async(llm_messages)
+            else:
+                import asyncio
 
-        # Query LLM with retry logic for empty responses (async)
-        response, reasoning, tool_calls = None, None, None
-        failed_tool_calls = []
-        for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
-            # Native async LLM call instead of chat_response_sync
-            llm_response = await self.llm_client.chat_response(
-                llm_messages,
-                agent_id=self.object_id,
-                agent_type=self.agent_type,
-                temperature=0,
-                tools=native_tools,
+                raw = await asyncio.to_thread(self._runtime.call_llm, llm_messages)
+            parsed = self._runtime.parse_response(raw)
+            response, reasoning, tool_calls, done, todo_list = (
+                parsed.response,
+                parsed.reasoning,
+                parsed.tool_calls,
+                parsed.done,
+                parsed.todo_list,
             )
-            response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
 
-            # Retry if both response and tool_calls are empty
-            has_content = response and response.strip()
-            has_tool_calls = tool_calls and len(tool_calls) > 0
-            if has_content or has_tool_calls:
+            has_tool_calls = bool(tool_calls)
+            has_response = bool(response and response.strip())
+            output_state = self._runtime.validate_done_output(done, has_tool_calls, has_response)
+
+            if output_state != "retry":
                 break
-            elif reasoning and "error" in reasoning.lower():
-                from dana.common.llm.types import LLMMessage
 
-                suggestion_message = LLMMessage(role="user", content=reasoning)
-                failed_tool_calls.append(llm_response.content)
-                if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
-                    # Replace old suggestion message in case of consecutive errors
-                    llm_messages[-1] = suggestion_message
-                else:
-                    # Add new suggestion message
-                    llm_messages.append(suggestion_message)
-            if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
-                logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
-
-        if failed_tool_calls:
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.FAILED_TOOL_CALL,
-                    content=json.dumps(failed_tool_calls),
+            if attempt < self.MAX_THINK_RETRIES - 1:
+                llm_messages.append(self._runtime.build_output_format_correction())
+                logger.warning(
+                    "Invalid output format, retrying",
+                    attempt=attempt + 1,
+                    done=done,
+                    has_tool_calls=has_tool_calls,
+                    has_response=has_response,
                 )
-            )
+
+        if output_state == "retry":
+            response = "No response generated"
+            tool_calls = []
+            done = True
+            output_state = "exit"
 
         if not tool_calls or len(tool_calls) == 0:
             response = response if (response and len(response) > 0) else "No response generated"
@@ -884,24 +1033,70 @@ class STARAgent(BaseSTARAgent):
                     )
                 )
 
-            for tool_call in tool_calls:
+            # Add todo_list BEFORE tool calls so it doesn't break the tool_call → tool_result sequence
+            # (OpenAI requires tool results immediately after tool calls)
+            if todo_list:
+                in_progress = [t for t in todo_list if t.status == "in_progress"]
+                pending = [t for t in todo_list if t.status == "pending"]
+                completed = [t for t in todo_list if t.status == "completed"]
+                logger.info(
+                    "Todo list updated",
+                    in_progress=len(in_progress),
+                    pending=len(pending),
+                    completed=len(completed),
+                )
+                # Format todo_list for timeline
+                todo_lines = []
+                for item in todo_list:
+                    status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(
+                        item.status, "[?]"
+                    )
+                    todo_lines.append(f"{status_marker} {item.content}")
+                # Remove any existing TODO_LIST entries to avoid accumulation
+                timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
                 timeline.add_entry(
                     TimelineEntry(
-                        entry_type=TimelineEntryType.TOOL_CALL,
-                        content=str(tool_call),
+                        entry_type=TimelineEntryType.TODO_LIST,
+                        content="\n".join(todo_lines),
                     )
                 )
 
+            # Check if these are native tool calls (have tool_call_id)
+            has_native_tool_calls = any(tc.get("tool_call_id") for tc in tool_calls)
+
+            if has_native_tool_calls:
+                # For native OpenAI tools, store all tool_calls in a single entry
+                # The tool_calls will be converted to proper OpenAI format when building messages
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.TOOL_CALL,
+                        content="",  # Content is empty for native tool calls
+                        tool_calls=tool_calls,  # Store native tool_calls array
+                    )
+                )
+            else:
+                # Legacy XML format - store each tool call separately
+                for tool_call in tool_calls:
+                    timeline.add_entry(
+                        TimelineEntry(
+                            entry_type=TimelineEntryType.TOOL_CALL,
+                            content=self._format_tool_call_as_xml(tool_call),
+                        )
+                    )
+
         # Output parameter checking
+        response = response or ""
         assert isinstance(response, str)
         assert isinstance(tool_calls, list)
         trace_percepts |= {
             "response": response,
             "reasoning": reasoning,
             "tool_calls": tool_calls,
+            "done": done,
+            "todo_list": todo_list,
         }
 
-        if tool_calls is None or len(tool_calls) == 0:
+        if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
 
         # Call parent's base implementation (sync is fine, just data manipulation)
@@ -939,8 +1134,13 @@ class STARAgent(BaseSTARAgent):
 
         tool_calls: list[DictParams] = trace_thoughts.get("tool_calls")
 
-        # Execute tool calls using async ToolCaller (parallel execution)
-        tool_results = await self._tool_caller.async_execute_tool_calls(tool_calls)
+        # Execute tool calls using runtime
+        if hasattr(self._runtime, "execute_tools_async"):
+            tool_results = await self._runtime.execute_tools_async(self, tool_calls)
+        else:
+            import asyncio
+
+            tool_results = await asyncio.to_thread(self._runtime.execute_tools, self, tool_calls)
 
         # Add tool results to timeline
         if isinstance(tool_results, list):
@@ -957,10 +1157,12 @@ class STARAgent(BaseSTARAgent):
                     else:  # unknown
                         entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
 
+                    # Include tool_call_id for OpenAI native tool support
                     self._timeline.add_entry(
                         TimelineEntry(
                             entry_type=entry_type,
                             content=tool_result.get("result", "Unknown tool result"),
+                            tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
 

@@ -677,16 +677,26 @@ This spec file should follow the established ralph.md pattern:
 3. Exit condition: Write <promise>$PROMISE</promise> when ALL tests pass
 
 IMPLEMENTATION GUIDANCE:
-- If this coder has tools, plugins, or capabilities that can streamline or simplify
-  the implementation, you SHOULD use them. For example:
-  * Code generation tools or templates
-  * Automated refactoring capabilities
-  * Built-in testing frameworks or test generators
-  * Code analysis or linting tools
-  * Any other features that reduce manual work or improve code quality
-- Prefer simpler, more maintainable solutions over complex ones
-- Use established patterns and libraries when appropriate
-- The goal is efficient, clean implementation that meets the spec requirements
+
+CODEBASE CONVENTIONS:
+- READ existing files before modifying - understand current patterns first
+- FOLLOW existing code style (logging, error handling, naming) unless spec says otherwise
+- REUSE existing utilities and base classes - don't reinvent
+- MATCH existing patterns for similar functionality
+- DON'T add new dependencies unless necessary
+- DON'T change APIs/signatures unless the spec requires it
+
+If the spec explicitly requires changing conventions (refactoring, migration, etc.),
+then change them - but be consistent across the affected code.
+
+TOOL USAGE:
+- Use code search to find existing patterns before writing new code
+- Use available tools/plugins to streamline implementation
+
+SIMPLICITY:
+- Prefer modifying existing code over creating new files
+- Prefer simple solutions over clever ones
+- Minimal, clean changes that meet the spec
 
 COMPLETION INSTRUCTIONS:
 When ALL tests pass (unit, integration, and live if specified), you MUST:

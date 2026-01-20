@@ -15,12 +15,12 @@ import structlog
 
 
 def _load_env():
-    """Load environment variables from .env file."""
+    """Load environment variables from .env file (overrides existing env vars)."""
     dotenv_path = find_dotenv()
     if dotenv_path:
-        load_dotenv(dotenv_path)
+        load_dotenv(dotenv_path, override=True)
     else:
-        load_dotenv()
+        load_dotenv(override=True)
 
 
 # Load .env automatically when dana_app is imported
@@ -298,20 +298,12 @@ You can also just talk to me naturally! Tell me what you need.
             traces = self.dana_agent.query(message=message)
             response = traces.get("response", "I'm not sure how to respond to that. Could you rephrase?")
 
-            # Clear any lingering thoughts before showing response
-            if self.thought_logger:
-                self.thought_logger._clear_thought()
-
             # Display response
             print("\n🤖 Dana: ", end="", flush=True)
             print(response)
             print()
 
         except Exception as e:
-            # Clear thoughts on error too
-            if self.thought_logger:
-                self.thought_logger._clear_thought()
-
             print(f"\n❌ I encountered an error: {e}")
             print("Let's try something else.")
             print()

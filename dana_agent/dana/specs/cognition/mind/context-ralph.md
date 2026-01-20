@@ -212,18 +212,15 @@ Only if ALL tests pass, output the completion tag:
 
 ### Codec System Architecture
 
-**IMPORTANT: Codecs are now the DEFAULT. PromptEngineer is deprecated.**
-
 | Mode | Components | Status |
 |------|------------|--------|
-| **Default (with codec)** | `LocalPromptAPI` + `CodecToolCaller` + `CSXMLCodec` | ✅ DEFAULT - Use this |
-| **Legacy (codec=None)** | `PromptEngineer` + `ToolCaller` | ⚠️ DEPRECATED - Do not use |
+| **Default (with codec)** | `LocalPromptAPI` + `CodecToolCaller` + `CSXMLCodec` | ✅ DEFAULT |
+| **Legacy (codec=None)** | `PromptEngineer` + `ToolCaller` | Available for backward compatibility |
 
 ### Current State
 - ✅ ContextBuilder implemented
 - ✅ Files exist: `dana_agent/dana/core/context/`
 - ✅ LocalPromptAPI uses ContextBuilder for context assembly (codec system - DEFAULT)
-- ⚠️ PromptEngineer is deprecated - all new code must use LocalPromptAPI with codecs
 
 ### Integration Tasks
 

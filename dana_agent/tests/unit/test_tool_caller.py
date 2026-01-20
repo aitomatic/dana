@@ -573,7 +573,7 @@ class TestLLMResponseParsing:
             content="<response><content>Hello, this is a simple response.</content></response>", model="test-model", tool_calls=[]
         )
 
-        response_text, _reasoning, tool_calls = tool_caller.parse_llm_response(llm_response)
+        response_text, _reasoning, tool_calls, _done = tool_caller.parse_llm_response(llm_response)
 
         assert response_text == "Hello, this is a simple response."
         assert len(tool_calls) == 0
@@ -596,7 +596,7 @@ class TestLLMResponseParsing:
             tool_calls=[],
         )
 
-        response_text, _reasoning, tool_calls = tool_caller.parse_llm_response(llm_response)
+        response_text, _reasoning, tool_calls, _done = tool_caller.parse_llm_response(llm_response)
 
         assert "I will research China's energy consumption trends and data." in response_text
         assert len(tool_calls) == 1
@@ -626,7 +626,7 @@ class TestLLMResponseParsing:
             tool_calls=[],
         )
 
-        response_text, _reasoning, tool_calls = tool_caller.parse_llm_response(llm_response)
+        response_text, _reasoning, tool_calls, _done = tool_caller.parse_llm_response(llm_response)
 
         assert "I'll select the appropriate workflow for your research request." in response_text
         assert len(tool_calls) == 1
@@ -670,7 +670,7 @@ class TestLLMResponseParsing:
             tool_calls=[],
         )
 
-        response_text, _reasoning, tool_calls = tool_caller.parse_llm_response(llm_response)
+        response_text, _reasoning, tool_calls, _done = tool_caller.parse_llm_response(llm_response)
 
         assert "Initializing research tasks." in response_text
         assert len(tool_calls) == 1
@@ -709,7 +709,7 @@ class TestLLMResponseParsing:
             tool_calls=[],
         )
 
-        response_text, _reasoning, tool_calls = tool_caller.parse_llm_response(llm_response)
+        response_text, _reasoning, tool_calls, _done = tool_caller.parse_llm_response(llm_response)
 
         assert "I'll execute the single source deep dive workflow." in response_text
         assert len(tool_calls) == 1
@@ -723,7 +723,7 @@ class TestLLMResponseParsing:
 
     def test_parse_llm_response_empty(self, tool_caller):
         """Test parsing empty LLM response."""
-        response_text, reasoning, tool_calls = tool_caller.parse_llm_response(None)
+        response_text, reasoning, tool_calls, _done = tool_caller.parse_llm_response(None)
 
         assert response_text is None
         assert reasoning is None

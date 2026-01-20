@@ -255,22 +255,12 @@ class WARCaller:
             return self._create_tool_error("agent", object_id, f"Error calling agent {object_id}: {str(e)}")
 
 
-class ToolCaller(WARCaller):
+class LegacyToolCaller(WARCaller):
     """
-    Component providing tool call execution and orchestration capabilities.
-    
-    .. deprecated:: 
-        This is the LEGACY tool caller implementation. It uses regex-based parsing
-        which can be unreliable, especially with UUIDs/object_ids.
-        
-        **For new code, use CodecToolCaller instead** by passing a codec (e.g., CSXMLCodec)
-        to STARAgent initialization. CodecToolCaller provides:
-        - Structured XML parsing instead of regex heuristics
-        - Explicit handling of object_id vs class_name
-        - Better error messages when tools aren't found
-        - More reliable tool execution
-        
-        See: dana.core.knowledge.prompts.codecs for available codecs.
+    Legacy component providing tool call execution and orchestration capabilities.
+
+    DEPRECATED: This class is only used by LegacyRuntime. New code should use
+    DefaultRuntime which handles tool execution internally.
     """
 
     def __init__(self, agent: STARAgent):
@@ -288,8 +278,18 @@ class ToolCaller(WARCaller):
     # ============================================================================
 
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Execute parsed tool calls from LLM response."""
-        return [self._execute_single_call(call) for call in parsed_tool_calls]
+        """Execute parsed tool calls from LLM response.
+
+        Preserves tool_call_id in results for OpenAI native tool calling support.
+        """
+        results = []
+        for call in parsed_tool_calls:
+            result = self._execute_single_call(call)
+            # Preserve tool_call_id for OpenAI native tool support
+            if "tool_call_id" in call:
+                result["tool_call_id"] = call["tool_call_id"]
+            results.append(result)
+        return results
 
     # ============================================================================
     # TOOL CALL EXECUTION
@@ -383,9 +383,10 @@ class ToolCaller(WARCaller):
                 # Phase 1: Try function_name as implicit target (e.g., "web-researcher")
                 # This handles cases where LLM provides function name without explicit target field
                 if function_name:
-                    # Handle dot-separated format: "resource_id.method_name" or "uuid.method_name"
-                    if "." in function_name:
-                        parts = function_name.rsplit(".", 1)
+                    # Handle dot/colon-separated format: "resource_id.method_name" or "resource_id:method_name"
+                    separator = "." if "." in function_name else ":" if ":" in function_name else None
+                    if separator:
+                        parts = function_name.rsplit(separator, 1)
                         target = parts[0]
                         method = parts[1] if len(parts) > 1 else "execute"
                         # Our extracted target/method take precedence over any in arguments
@@ -404,7 +405,7 @@ class ToolCaller(WARCaller):
     # ============================================================================
 
     @observable
-    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using LLM-assisted parsing.
 
@@ -414,7 +415,7 @@ class ToolCaller(WARCaller):
         return self.parse_llm_response_symbolic(llm_response)
 
     @observable
-    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using pure symbolic parsing (original method).
 
@@ -425,17 +426,19 @@ class ToolCaller(WARCaller):
             llm_response: The LLM response object containing content and tool calls
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         if not llm_response:
-            return None, None, []
+            return None, None, [], None
 
         # Work with a copy to avoid mutating the input
-        content = llm_response.content.strip()
+        # Handle None content (common with native tool calls)
+        content = (llm_response.content or "").strip()
 
         result_response = None
         result_reasoning = None
         result_tool_calls = []
+        done = None
 
         try:
             if llm_response.tool_calls:
@@ -445,34 +448,59 @@ class ToolCaller(WARCaller):
                     if content:
                         content = content.strip()
                 else:
-                    # Structured (JSON) tool calls
+                    # Structured (JSON) tool calls - native OpenAI format
                     result_tool_calls.extend(self._to_tool_call_dicts(llm_response.tool_calls))
+                    # For native tool calls, automatically set done=False since LLM wants to execute tools
+                    # Check if these are native tool calls (have tool_call_id)
+                    if any(tc.get("tool_call_id") for tc in result_tool_calls):
+                        done = False
+                        result_response = content  # Preserve any content from the response
+                        return result_response, result_reasoning, result_tool_calls, done
 
-            # Try to extract text content first
-            text = self._extract_content_between_xml_tags(content, "content")
-            if not text:
-                # Fallback: use content between <response> tags
-                text = self._extract_content_between_xml_tags(content, "response")
-
-            if not text:
-                # Find the first instance of "<response>"
-                response_start = content.find("<response>")
-                if response_start == -1:
-                    text = content
+            done_text = self._extract_content_between_xml_tags(content, "done")
+            if done_text is not None:
+                normalized_done = done_text.strip().lower()
+                if normalized_done == "true":
+                    done = True
+                elif normalized_done == "false":
+                    done = False
                 else:
-                    text = content[response_start:]
+                    done = None
 
-            result_response = text  # Already stripped
-            if not result_response:
-                result_response = content
+                result_response = self._extract_content_between_xml_tags(content, "response")
+                function_call_xml = self._extract_content_between_xml_tags(content, "function_call")
+                if function_call_xml:
+                    result_tool_calls.extend(self._extract_tool_calls_from_function_call(function_call_xml))
 
-            # Extract tool calls from content
-            tool_calls_xml = self._extract_content_between_xml_tags(content, "tool_calls")
-            if tool_calls_xml:
-                # Use the proper XML parsing method that creates correct structure
-                result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
+                result_reasoning = self._extract_content_between_xml_tags(content, "thinking")
+                if not result_reasoning:
+                    result_reasoning = self._extract_content_between_xml_tags(content, "reasoning")
+            else:
+                # Try to extract text content first (legacy behavior)
+                text = self._extract_content_between_xml_tags(content, "content")
+                if not text:
+                    # Fallback: use content between <response> tags
+                    text = self._extract_content_between_xml_tags(content, "response")
 
-            result_reasoning = self._extract_content_between_xml_tags(content, "reasoning")
+                if not text:
+                    # Find the first instance of "<response>"
+                    response_start = content.find("<response>")
+                    if response_start == -1:
+                        text = content
+                    else:
+                        text = content[response_start:]
+
+                result_response = text  # Already stripped
+                if not result_response:
+                    result_response = content
+
+                # Extract tool calls from content
+                tool_calls_xml = self._extract_content_between_xml_tags(content, "tool_calls")
+                if tool_calls_xml:
+                    # Use the proper XML parsing method that creates correct structure
+                    result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
+
+                result_reasoning = self._extract_content_between_xml_tags(content, "reasoning")
         except Exception as e:
             # Log error but don't crash - return what we have
             # TODO: Replace with proper logging
@@ -481,10 +509,10 @@ class ToolCaller(WARCaller):
             if not result_response and content:
                 result_response = content
 
-        return result_response, result_reasoning, result_tool_calls
+        return result_response, result_reasoning, result_tool_calls, done
 
     @observable
-    def parse_llm_response_assisted(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response_assisted(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using LLM-assisted canonical XML conversion.
 
@@ -495,10 +523,10 @@ class ToolCaller(WARCaller):
             llm_response: The LLM response object containing content and tool calls
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         if not llm_response:
-            return None, None, []
+            return None, None, [], None
 
         # Handle structured tool calls from LLM providers (like OpenAI function calling)
         if llm_response.tool_calls:
@@ -510,7 +538,7 @@ class ToolCaller(WARCaller):
             else:
                 # Structured tool calls - convert to our format and return
                 structured_tool_calls = self._to_tool_call_dicts(llm_response.tool_calls)
-                return llm_response.content, None, structured_tool_calls
+                return llm_response.content, None, structured_tool_calls, None
 
         # Work with a copy to avoid mutating the input
         content = llm_response.content.strip()
@@ -583,7 +611,7 @@ Please provide the canonical XML format:
             # Return original content wrapped in basic XML structure
             return f"<content>{content}</content>"
 
-    def _parse_canonical_xml(self, canonical_xml: str) -> tuple[str | None, str | None, list[DictParams]]:
+    def _parse_canonical_xml(self, canonical_xml: str) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse canonical XML with high confidence using symbolic parsing.
 
@@ -591,11 +619,12 @@ Please provide the canonical XML format:
             canonical_xml: The canonical XML string to parse
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         result_response = None
         result_reasoning = None
         result_tool_calls = []
+        done = None
 
         try:
             # Extract content section
@@ -617,13 +646,54 @@ Please provide the canonical XML format:
                 # Parse tool calls with high confidence since they're in canonical form
                 result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
 
+            done_text = self._extract_content_between_xml_tags(canonical_xml, "done")
+            if done_text is not None:
+                normalized_done = done_text.strip().lower()
+                if normalized_done == "true":
+                    done = True
+                elif normalized_done == "false":
+                    done = False
+                else:
+                    done = None
+
         except Exception as e:
             print(f"Error parsing canonical XML: {e}")
             # Return what we have so far
             if not result_response:
                 result_response = canonical_xml
 
-        return result_response, result_reasoning, result_tool_calls
+        return result_response, result_reasoning, result_tool_calls, done
+
+    def _extract_tool_calls_from_function_call(self, function_call_xml: str) -> list[DictParams]:
+        """
+        Parse <function_call> XML into tool call dictionaries.
+
+        Expected format:
+        <function_call>
+          <invoke name="target:method">
+            <parameter name="param">value</parameter>
+          </invoke>
+        </function_call>
+        """
+        if not function_call_xml or not function_call_xml.strip():
+            return []
+
+        tool_calls: list[DictParams] = []
+        invoke_pattern = r'<invoke\s+name=["\']([^"\']+)["\']\s*>(.*?)</invoke>'
+        for match in re.finditer(invoke_pattern, function_call_xml, re.DOTALL):
+            function_name = match.group(1).strip()
+            params_content = match.group(2)
+            arguments: dict[str, Any] = {}
+
+            param_pattern = r'<parameter\s+name=["\']([^"\']+)["\'][^>]*>(.*?)</parameter>'
+            for param_match in re.finditer(param_pattern, params_content, re.DOTALL):
+                param_name = param_match.group(1)
+                param_value = param_match.group(2).strip()
+                arguments[param_name] = self._convert_function_parameter_value(param_value)
+
+            tool_calls.append({"function": function_name, "arguments": arguments})
+
+        return tool_calls
 
     def _extract_content_between_xml_tags(self, content: str, tag: str) -> str | None:
         """
@@ -883,11 +953,16 @@ Please provide the canonical XML format:
                 return self._filter_valid_tool_calls(xml_tool_calls)
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
-        """Convert structured function calls to our internal format."""
+        """Convert structured function calls to our internal format.
+
+        Preserves tool_call_id for OpenAI native tool calling support.
+        """
         tool_call_dicts = []
 
         for llm_tool_call in llm_tool_calls:
             try:
+                # Get tool_call_id for OpenAI native tool support
+                tool_call_id = getattr(llm_tool_call, 'id', None)
                 function_name = llm_tool_call.function.name
                 arguments = llm_tool_call.function.arguments
 
@@ -896,10 +971,17 @@ Please provide the canonical XML format:
                     # Note: For XML format, outer_function_name is ignored and replaced
                     # with function names from nested XML structure
                     parsed_calls = self._detect_format_and_extract_tool_calls(arguments, function_name)
+                    # Attach tool_call_id to each parsed call
+                    for call in parsed_calls:
+                        if tool_call_id:
+                            call["tool_call_id"] = tool_call_id
                     tool_call_dicts.extend(parsed_calls)
                 else:
                     # Non-string arguments (already parsed) - use outer function name
-                    tool_call_dicts.append({"function": function_name, "arguments": arguments})
+                    call_dict = {"function": function_name, "arguments": arguments}
+                    if tool_call_id:
+                        call_dict["tool_call_id"] = tool_call_id
+                    tool_call_dicts.append(call_dict)
 
             except Exception:
                 continue
@@ -1224,38 +1306,15 @@ Please provide the canonical XML format:
             return self._create_tool_error("parsing", target or "unknown", f"Fault-tolerant parsing failed: {str(e)}")
 
 
-class CodecToolCaller(WARCaller):
+class LegacyCodecToolCaller(WARCaller):
     """
-    Component providing codec-based tool call execution and orchestration.
-    
-    This is the RECOMMENDED tool caller implementation. It uses structured XML parsing
-    via codecs (e.g., CSXMLCodec, KLXMLCodec) for reliable tool call extraction and
-    execution.
-    
-    Key advantages over the legacy ToolCaller:
-    - Structured XML parsing instead of regex heuristics
-    - Explicit handling of object_id vs class_name
-    - Better error messages when tools aren't found
-    - More reliable tool execution, especially with UUIDs
-    
-    Usage:
-        Automatically used when you pass a codec to STARAgent initialization:
-        
-        .. code-block:: python
-        
-            from dana.core.knowledge.prompts.codecs import CSXMLCodec
-            
-            class MyAgent(STARAgent):
-                def __init__(self, **kwargs):
-                    super().__init__(
-                        agent_type="my-agent",
-                        codec=CSXMLCodec,  # Enables CodecToolCaller
-                        **kwargs
-                    )
-    
-    See also:
-        - ToolCaller: Legacy implementation (deprecated)
-        - dana.core.knowledge.prompts.codecs: Available codec implementations
+    Legacy component providing codec-based tool call execution and orchestration.
+
+    DEPRECATED: This class is no longer used. DefaultRuntime handles tool execution
+    internally without requiring a separate ToolCaller class.
+
+    This was previously the recommended tool caller when using the codec system,
+    but has been superseded by DefaultRuntime's integrated approach.
     """
     
     def __init__(self, agent: STARAgent, codec: type[AbstractCodec]):
@@ -1264,14 +1323,14 @@ class CodecToolCaller(WARCaller):
         self._codec = codec
 
     @observable
-    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using codec-based format.
         """
         return self.parse_llm_response_symbolic(llm_response)
 
     @observable
-    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams], bool | None]:
         """
         Parse LLM response using codec-based format.
 
@@ -1282,17 +1341,42 @@ class CodecToolCaller(WARCaller):
             llm_response: The LLM response object containing content and tool calls
 
         Returns:
-            Tuple of (response_text, response_reasoning, tool_calls_list)
+            Tuple of (response_text, response_reasoning, tool_calls_list, done_flag)
         """
         if not llm_response:
-            return None, None, []
+            return None, None, [], None
 
         # Work with a copy to avoid mutating the input
-        content = llm_response.content.strip()
+        # Handle None content (common with native tool calls)
+        content = (llm_response.content or "").strip()
+
+        # Handle native tool calls (OpenAI format) FIRST - before checking XML done flag
+        # Native tool calls have tool_call_id and don't use XML format
+        if llm_response.tool_calls:
+            native_tool_calls = self._to_tool_call_dicts(llm_response.tool_calls)
+            if native_tool_calls and any(tc.get("tool_call_id") for tc in native_tool_calls):
+                # For native tool calls, automatically set done=False
+                return content, None, native_tool_calls, False
+
+        done = self._extract_done_flag(content)
         try:
-            return self._parse_codec_response(llm_response, content)
+            if done is not None:
+                response_text = self._extract_content_between_xml_tags(content, "response")
+                response_reasoning = self._extract_content_between_xml_tags(content, "thinking")
+                tool_calls = []
+                if llm_response.tool_calls:
+                    tool_calls.extend(self._to_tool_call_dicts(llm_response.tool_calls))
+
+                function_call_xml = self._extract_content_between_xml_tags(content, "function_call")
+                if function_call_xml:
+                    tool_calls.extend(self._extract_tool_calls_from_function_call(function_call_xml))
+
+                return response_text, response_reasoning, tool_calls, done
+
+            response_text, response_reasoning, tool_calls = self._parse_codec_response(llm_response, content)
+            return response_text, response_reasoning, tool_calls, done
         except Exception as _:
-            return content, None, []
+            return content, None, [], done
 
     def _parse_codec_response(self, llm_response: LLMResponse, content: str) -> tuple[str | None, str | None, list[DictParams]]:
         """
@@ -1347,17 +1431,77 @@ class CodecToolCaller(WARCaller):
         else:
             return response_text, response_reasoning, result_tool_calls
 
+    def _extract_done_flag(self, content: str) -> bool | None:
+        done_text = self._extract_content_between_xml_tags(content, "done")
+        if done_text is None:
+            return None
+        normalized = done_text.strip().lower()
+        if normalized == "true":
+            return True
+        if normalized == "false":
+            return False
+        return None
+
+    def _extract_tool_calls_from_function_call(self, function_call_xml: str) -> list[DictParams]:
+        if not function_call_xml or not function_call_xml.strip():
+            return []
+
+        tool_calls: list[DictParams] = []
+        invoke_pattern = r'<invoke\s+name=["\']([^"\']+)["\']\s*>(.*?)</invoke>'
+        for match in re.finditer(invoke_pattern, function_call_xml, re.DOTALL):
+            function_name = match.group(1).strip()
+            params_content = match.group(2)
+            arguments: dict[str, Any] = {}
+
+            param_pattern = r'<parameter\s+name=["\']([^"\']+)["\'][^>]*>(.*?)</parameter>'
+            for param_match in re.finditer(param_pattern, params_content, re.DOTALL):
+                param_name = param_match.group(1)
+                param_value = param_match.group(2).strip()
+                arguments[param_name] = param_value
+
+            tool_calls.append({"function": function_name, "arguments": arguments})
+
+        return tool_calls
+
+    def _extract_content_between_xml_tags(self, content: str, tag: str) -> str | None:
+        if not content or not tag:
+            return None
+
+        escaped_tag = re.escape(tag)
+        match = re.search(r"<" + escaped_tag + r">(.*?)</" + escaped_tag + r">", content, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+
+        match = re.search(r"<" + escaped_tag + r">([^<]*)", content, re.DOTALL)
+        if match:
+            captured = match.group(1).strip()
+            if not captured:
+                match = re.search(r"<" + escaped_tag + r">(.*)", content, re.DOTALL)
+                if match:
+                    return match.group(1).strip()
+            return captured
+
+        return None
+
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
-        """Convert structured function calls to our internal format."""
+        """Convert structured function calls to our internal format.
+
+        Preserves tool_call_id for OpenAI native tool calling support.
+        """
         tool_call_dicts = []
 
         for llm_tool_call in llm_tool_calls:
             try:
+                # Get tool_call_id for OpenAI native tool support
+                tool_call_id = getattr(llm_tool_call, 'id', None)
                 function_name = llm_tool_call.function.name
                 arguments = llm_tool_call.function.arguments
 
-                # Non-string arguments (already parsed) - use outer function name
-                tool_call_dicts.append({"function": function_name, "arguments": arguments})
+                # Build the tool call dict
+                call_dict = {"function": function_name, "arguments": arguments}
+                if tool_call_id:
+                    call_dict["tool_call_id"] = tool_call_id
+                tool_call_dicts.append(call_dict)
 
             except Exception:
                 continue
@@ -1366,7 +1510,18 @@ class CodecToolCaller(WARCaller):
 
     @observable
     def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        return [self._execute_single_call(call) for call in parsed_tool_calls]
+        """Execute parsed tool calls from LLM response.
+
+        Preserves tool_call_id in results for OpenAI native tool calling support.
+        """
+        results = []
+        for call in parsed_tool_calls:
+            result = self._execute_single_call(call)
+            # Preserve tool_call_id for OpenAI native tool support
+            if "tool_call_id" in call:
+                result["tool_call_id"] = call["tool_call_id"]
+            results.append(result)
+        return results
 
     @observable
     async def async_execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1694,3 +1849,8 @@ class CodecToolCaller(WARCaller):
         for workflow in self._agent.available_workflows:
             class_names.append(workflow.__class__.__name__)
         return sorted(set(class_names))
+
+
+# Backward-compatible aliases (deprecated)
+ToolCaller = LegacyToolCaller
+CodecToolCaller = LegacyCodecToolCaller

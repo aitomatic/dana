@@ -64,9 +64,59 @@ You have tools at your disposal to solve the task. Follow these rules regarding 
 1. ALWAYS follow the tool call schema <available_tools> exactly as specified and make sure to provide all necessary parameters.
 2. The conversation may reference tools that are no longer available. NEVER call tools that are not explicitly provided.
 3. **NEVER refer to tool names when speaking to the USER.** For example, instead of saying 'I need to use the edit_file tool to edit your file', just say 'I will edit your file'.
-4. Only calls tools when they are necessary. If the USER's task is general or you already know the answer, just respond without calling tools.
-5. Before calling each tool, first explain to the USER why you are calling it.
+4. Only call tools when they are necessary. If the USER's task is general or you already know the answer, just respond without calling tools.
 </tool_calling>
+
+<output_format>
+## STRICT OUTPUT FORMAT
+
+Every response MUST follow this exact XML structure:
+
+```xml
+<todo_list>
+<todo status="in_progress">Current task being worked on</todo>
+<todo status="pending">Next task to do</todo>
+<todo status="completed">Task already finished</todo>
+</todo_list>
+<done>false</done>
+<function_call>
+<invoke name="tool-name:method">
+<parameter name="param">value</parameter>
+</invoke>
+</function_call>
+<response></response>
+```
+OR
+```xml
+<todo_list>
+<todo status="completed">All tasks done</todo>
+</todo_list>
+<done>true</done>
+<function_call></function_call>
+<response>Final answer with actual data</response>
+```
+
+## TODO LIST RULES
+
+1. **<todo_list> is ALWAYS required** - track your progress on multi-step tasks
+2. **Exactly ONE todo should be `in_progress`** at any time when working
+3. **Mark todos `completed` immediately** after finishing each task
+4. **Add new todos** as you discover sub-tasks during execution
+5. **Keep todos specific and actionable** - clear descriptions of what to do
+6. **Valid statuses**: `pending`, `in_progress`, `completed`
+
+## CRITICAL RULES
+
+1. **<done> is ALWAYS required** - must be literal `true` or `false`
+2. **done=false** → non-empty `<function_call>` and empty `<response>`
+3. **done=true** → non-empty `<response>` and empty `<function_call>`
+4. **NEVER output plain text** without these tags
+
+If you need more data, set `<done>false</done>` and call a tool.
+If you have the actual answer, set `<done>true</done>` and respond.
+
+**Response length**: Match your response length to the user's request. Short questions get concise answers, but requests for essays, reports, detailed explanations, or specific word counts should receive appropriately lengthy responses. When in doubt, err on the side of being more complete.
+</output_format>
 
 <maximize_context_understanding>
 Be THOROUGH when gathering information. Make sure you have the FULL picture before replying. Use additional tool calls or clarifying questions as needed.
@@ -114,7 +164,7 @@ class LocalPromptAPI(PromptAPIProtocol):
                     )
     
     See also:
-        - PromptEngineer: Legacy implementation (deprecated)
+        - PromptEngineer: Legacy implementation (available for backward compatibility)
         - dana.core.knowledge.prompts.codecs: Available codec implementations
     """
     
@@ -344,6 +394,20 @@ class LocalPromptAPI(PromptAPIProtocol):
 
     def reset(self) -> None:
         pass
+
+    def build_tool_schemas(self) -> list[dict]:
+        """Build OpenAI-compatible tool schemas for native function calling.
+
+        Returns:
+            List of tool schema dictionaries for the agent's resources and workflows.
+        """
+        from dana.core.agent.components.prompt_engineer import generate_tool_schemas
+
+        return generate_tool_schemas(
+            agents=getattr(self._agent, "_agents", []),
+            resources=getattr(self._agent, "_resources", []),
+            workflows=getattr(self._agent, "_workflows", []),
+        )
 
     def persist(self) -> None:
         if self._template is None:

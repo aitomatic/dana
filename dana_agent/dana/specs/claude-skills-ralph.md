@@ -656,6 +656,154 @@ class TestClaudeCodeSkillsLive:
         assert len(filtered.skills) < all_count, "Filtered should have fewer skills"
 ```
 
+### E2E Live Tests via STARAgent: `tests/live/core/skills/test_star_agent_skills_e2e.py`
+
+These tests verify the **full E2E flow**: STARAgent receives a query → LLM decides to use skills → file is generated.
+
+**This is the critical test** that validates the entire integration works as designed.
+
+```python
+"""
+E2E tests for STARAgent with Claude Skills integration.
+
+These tests verify the FULL flow:
+1. STARAgent receives a user query
+2. Agent's LLM sees available skills and decides to use them
+3. Agent autonomously calls ClaudeCodeSkills.execute()
+4. Actual file is generated
+
+Run manually with: pytest -m live tests/live/core/skills/test_star_agent_skills_e2e.py -v
+
+Requirements:
+- Claude Code CLI installed and authenticated
+- Skills installed in ~/.claude/skills/
+- Active Claude subscription
+- LLM API key configured (for STARAgent's LLM)
+"""
+
+import os
+import tempfile
+
+import pytest
+
+from dana.core.agent.star_agent import STARAgent
+
+
+@pytest.mark.live
+class TestSTARAgentSkillsE2E:
+    """E2E tests: STARAgent query → skill execution → file output."""
+
+    def test_star_agent_creates_presentation_from_query(self):
+        """E2E: STARAgent receives query and autonomously creates .pptx file.
+
+        This is the primary E2E test validating the full integration:
+        User query → LLM decision → skill execution → file output
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create agent with skills enabled (default)
+            agent = STARAgent(
+                agent_type="test-skills-agent",
+                skills_output_dir=tmpdir,
+            )
+
+            # Verify skills resource is attached
+            resource_ids = [r.resource_id for r in agent._resources]
+            assert "claude-skills" in resource_ids, "Skills resource should be attached"
+
+            output_path = os.path.join(tmpdir, "test_e2e.pptx")
+
+            # Send query that should trigger skill usage
+            response = agent.query(
+                message=f"Create a simple 2-slide presentation about software testing. "
+                        f"Slide 1 should have the title 'Testing Fundamentals'. "
+                        f"Slide 2 should list 3 types of testing. "
+                        f"Save the file to {output_path}"
+            )
+
+            print(f"Agent response: {response}")
+
+            # Verify file was created
+            assert os.path.exists(output_path), (
+                f"Output file not created at {output_path}. "
+                f"Agent may not have used the skills resource. Response: {response}"
+            )
+
+            # Verify file has content
+            file_size = os.path.getsize(output_path)
+            assert file_size > 1000, f"File too small ({file_size} bytes)"
+
+            print(f"SUCCESS: STARAgent created {output_path} ({file_size} bytes)")
+
+    def test_star_agent_uses_context_in_skill_execution(self):
+        """E2E: STARAgent passes conversation context to skill execution.
+
+        Verifies that when user provides context and then asks for a document,
+        the agent extracts and passes relevant context to the skill.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            agent = STARAgent(
+                agent_type="test-context-agent",
+                skills_output_dir=tmpdir,
+            )
+
+            output_path = os.path.join(tmpdir, "q4_report.pptx")
+
+            # Query with embedded context that should appear in output
+            response = agent.query(
+                message=f"Our Q4 results: Revenue was $5.2 million, up 23% year-over-year. "
+                        f"We acquired 150 new enterprise customers. "
+                        f"Create a 2-slide executive summary presentation with these numbers. "
+                        f"Save to {output_path}"
+            )
+
+            print(f"Agent response: {response}")
+
+            # Verify file was created
+            assert os.path.exists(output_path), (
+                f"Output file not created. Agent response: {response}"
+            )
+
+            file_size = os.path.getsize(output_path)
+            assert file_size > 1000, f"File too small ({file_size} bytes)"
+
+            print(f"SUCCESS: Context-aware presentation created ({file_size} bytes)")
+
+    def test_star_agent_with_filtered_skills(self):
+        """E2E: Specialized agent with filtered skills works correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            from dana.core.skills import ClaudeCodeSkills
+
+            # Create agent without default skills
+            agent = STARAgent(
+                agent_type="doc-specialist",
+                enable_skills=False,
+            )
+
+            # Add filtered skills (documents only)
+            filtered_skills = ClaudeCodeSkills(
+                skills=["pptx", "docx"],
+                output_dir=tmpdir,
+            )
+            agent.with_resources(filtered_skills)
+
+            # Verify only filtered skills are available
+            skill_names = [s["name"] for s in filtered_skills.skills]
+            assert "pptx" in skill_names
+            assert "xlsx" not in skill_names, "xlsx should be filtered out"
+
+            output_path = os.path.join(tmpdir, "filtered_test.pptx")
+
+            response = agent.query(
+                message=f"Create a simple 1-slide presentation titled 'Filtered Skills Test'. "
+                        f"Save to {output_path}"
+            )
+
+            print(f"Agent response: {response}")
+
+            assert os.path.exists(output_path), f"File not created: {response}"
+            print(f"SUCCESS: Filtered skills agent created presentation")
+```
+
 Command to run tests:
 ```bash
 # Unit tests (mocked, fast, run in CI)
@@ -687,12 +835,14 @@ pytest -m "not live and not harness" --ignore=tests/live/
 10. All unit tests pass
 11. All integration tests pass
 12. **All live tests pass** (actual file generation via Claude Code)
+13. **E2E via STARAgent**: Given a user query, STARAgent autonomously decides to use Claude skills and generates output files
 
 ## Before Marking Complete
 
 - [x] All unit tests pass
 - [x] All integration tests pass
-- [ ] **All live tests pass** (only run after unit + integration pass)
+- [ ] **All live tests pass** (direct ClaudeCodeSkills execution)
+- [ ] **All E2E STARAgent tests pass** (query → LLM decision → skill execution → file output)
 - [x] Code follows existing patterns (matches `ToDoResource` style)
 - [x] Skill discovery works with actual `~/.claude/skills/` directory
 - [x] Dynamic docstring shows discovered skills
@@ -700,20 +850,18 @@ pytest -m "not live and not harness" --ignore=tests/live/
 - [x] No over-engineering (YAGNI)
 - [x] Code is documented where non-obvious
 
-Live test status: `ClaudeCodeSkills.enabled` is `False` in this environment (Claude Code CLI unavailable), so E2E execution tests fail.
-
 ## When Complete
 
 **Test execution is sequential and gated:**
 
 ```
-┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐
-│  1. Unit Tests  │────▶│ 2. Integration Tests│────▶│  3. Live Tests  │
-│    (mocked)     │     │      (mocked)       │     │  (real Claude)  │
-│                 │     │                     │     │                 │
-│  MUST PASS to   │     │   MUST PASS to      │     │  MUST PASS to   │
-│  continue       │     │   continue          │     │  mark complete  │
-└─────────────────┘     └─────────────────────┘     └─────────────────┘
+┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐     ┌─────────────────────┐
+│  1. Unit Tests  │────▶│ 2. Integration Tests│────▶│  3. Live Tests  │────▶│ 4. E2E STARAgent    │
+│    (mocked)     │     │      (mocked)       │     │  (real Claude)  │     │    (full flow)      │
+│                 │     │                     │     │                 │     │                     │
+│  MUST PASS to   │     │   MUST PASS to      │     │  MUST PASS to   │     │  MUST PASS to       │
+│  continue       │     │   continue          │     │  continue       │     │  mark complete      │
+└─────────────────┘     └─────────────────────┘     └─────────────────┘     └─────────────────────┘
 ```
 
 Run these commands **in order** - stop if any step fails:
@@ -739,9 +887,14 @@ python -c "from dana.core.agent.star_agent import STARAgent; a = STARAgent(agent
 # Step 6: Verify filtered skills
 python -c "from dana.core.skills import ClaudeCodeSkills; s = ClaudeCodeSkills(skills=['pptx', 'xlsx']); print(f'Filtered to {len(s.skills)} skills:', [sk['name'] for sk in s.skills])"
 
-# Step 7: LIVE TESTS - actual Claude Code execution (ONLY after steps 1-6 pass)
+# Step 7: LIVE TESTS - direct Claude Code execution (ONLY after steps 1-6 pass)
 pytest -m live tests/live/core/skills/test_claude_code_skills_live.py -v
 # This actually generates .pptx files via Claude Code
+# STOP if this fails
+
+# Step 8: E2E STARAgent TESTS - full flow (ONLY after step 7 passes)
+pytest -m live tests/live/core/skills/test_star_agent_skills_e2e.py -v
+# This tests: user query → STARAgent LLM decision → skill execution → file output
 ```
 
 **What "live tests pass" means:**
@@ -750,7 +903,12 @@ pytest -m live tests/live/core/skills/test_claude_code_skills_live.py -v
 - `test_execute_with_context_injection`: Creates .pptx with injected context
 - `test_filtered_skills`: Filtering works with real skills
 
-Only if ALL tests pass (including live), write this exact line to the ralph.md file:
+**What "E2E STARAgent tests pass" means:**
+- `test_star_agent_creates_presentation_from_query`: STARAgent receives query, LLM decides to use skills, .pptx file created
+- `test_star_agent_uses_context_in_skill_execution`: Context from query is passed to skill
+- `test_star_agent_with_filtered_skills`: Specialized agent with filtered skills works
+
+Only if ALL tests pass (including live AND E2E STARAgent), write this exact line to the ralph.md file:
 ```
 <promise>$task_complete$</promise>
 ```

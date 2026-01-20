@@ -7,9 +7,6 @@ resources, and workflows through natural language interaction.
 
 from dana.apps.dana.thought_logger import ThoughtLogger
 from dana.core.agent.star_agent import STARAgent
-from dana.lib.agents import WebResearchAgent
-from dana.lib.resources import SearchResource
-from dana.lib.workflows import GoogleLookupWorkflow
 
 
 class DanaAgent(STARAgent):
@@ -17,12 +14,9 @@ class DanaAgent(STARAgent):
         """Initialize Dana agent."""
         super().__init__(agent_id="dana_agent", agent_type="dana_agent", **kwargs)
 
-        self.with_agents(
-            WebResearchAgent(),
-        ).with_workflows(
-            GoogleLookupWorkflow(),
-        ).with_resources(
-            SearchResource(),
-        ).with_notifiable(
-            thought_logger,
-        )
+        # STARAgent provides by default:
+        # - assistant__query (AssistantAgent with web search + code execution)
+        # - web_search__search, web_search__fetch_url (SimpleWebSearch)
+        # - claude_skills__execute (ClaudeCodeSkills)
+
+        self.with_notifiable(thought_logger)

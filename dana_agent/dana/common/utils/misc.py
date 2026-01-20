@@ -148,8 +148,13 @@ class Misc:
             if name.startswith("_"):
                 continue
 
-            # Get the attribute
-            attr = getattr(resource_instance, name, None)
+            # Get the attribute - wrap in try/except to handle property getters
+            # that may raise exceptions (e.g., llm_client requiring API keys)
+            try:
+                attr = getattr(resource_instance, name, None)
+            except Exception:
+                # Skip attributes that raise exceptions when accessed
+                continue
 
             # Check if it's callable and has __dict__ (methods have this)
             if callable(attr) and hasattr(attr, "__dict__"):

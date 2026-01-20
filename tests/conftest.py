@@ -1,8 +1,10 @@
-from pathlib import Path
+from __future__ import annotations
+
 import sys
+from pathlib import Path
 
 
-repo_root = Path(__file__).resolve().parents[1]
-dana_agent_root = repo_root / "dana_agent"
-if str(dana_agent_root) not in sys.path:
-    sys.path.insert(0, str(dana_agent_root))
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DANA_AGENT_ROOT = REPO_ROOT / "dana_agent"
+if str(DANA_AGENT_ROOT) not in sys.path:
+    sys.path.insert(0, str(DANA_AGENT_ROOT))

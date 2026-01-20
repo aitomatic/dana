@@ -35,19 +35,25 @@ class TimelineEntryType(Enum):
     UNKNOWN_TOOL_CALL = "unknown_tool_call"
     AGENT_LEARNING = "agent_learning"
     TIMELINE_SUMMARY = "timeline_summary"  # Compressed history summary
+    CONTEXT = "context"  # Ephemeral runtime context (time, user, location)
+    TODO_LIST = "todo_list"  # Agent's task tracking list
 
 
 # Static mapping of entry types to display labels
+# Using concise labels to avoid model mimicking patterns like "[Agent's Internal Thoughts]"
 ENTRY_CONFIG: Final = {
-    TimelineEntryType.USER_MESSAGE: "User-to-Agent Message",
-    TimelineEntryType.AGENT_RESPONSE: "Agent-to-User Response",
-    TimelineEntryType.AGENT_THOUGHTS: "Agent's Internal Thoughts",
-    TimelineEntryType.AGENT_LEARNING: "Agent's Self-Learning",
-    TimelineEntryType.SUB_AGENT_RESPONSE: "SubAgent-to-Agent Response",
-    TimelineEntryType.RESOURCE_RESULT: "Resource-to-Agent Result",
-    TimelineEntryType.WORKFLOW_RESULT: "Workflow-to-Agent Result",
-    TimelineEntryType.UNKNOWN_TOOL_CALL: "Unknown Tool-to-Agent Result",
-    TimelineEntryType.TIMELINE_SUMMARY: "Previous Context Summary",
+    TimelineEntryType.USER_MESSAGE: "USER",
+    TimelineEntryType.AGENT_RESPONSE: "RESPONSE",
+    TimelineEntryType.AGENT_THOUGHTS: "THOUGHT",
+    TimelineEntryType.AGENT_LEARNING: "LEARNING",
+    TimelineEntryType.SUB_AGENT_RESPONSE: "SUBAGENT",
+    TimelineEntryType.RESOURCE_RESULT: "TOOL_RESULT",
+    TimelineEntryType.WORKFLOW_RESULT: "WORKFLOW_RESULT",
+    TimelineEntryType.UNKNOWN_TOOL_CALL: "UNKNOWN_TOOL",
+    TimelineEntryType.TOOL_CALL: "TOOL_CALL",
+    TimelineEntryType.TIMELINE_SUMMARY: "SUMMARY",
+    TimelineEntryType.CONTEXT: "CONTEXT",
+    TimelineEntryType.TODO_LIST: "TODO",
 }
 
 
@@ -55,7 +61,7 @@ ENTRY_CONFIG: Final = {
 class TimelineConfig:
     """Configuration for timeline compression and management."""
 
-    max_context_tokens: int = 4000
+    max_context_tokens: int = 32000
     compression_threshold: float = 0.8  # Trigger compression at 80% of max tokens
     compression_enabled: bool = True
     min_entries_before_compress: int = 5  # Don't compress until we have at least this many entries
@@ -73,6 +79,9 @@ class TimelineEntry:
         content: The actual content/message
         metadata: Additional context information
         is_latest_user_message: Whether this is the latest user message
+        tool_call_id: For tool results, the ID linking back to the original tool call (OpenAI native tools)
+        tool_calls: For assistant messages, the native tool calls array (OpenAI native tools)
+        ephemeral: If True, entry is not persisted and only exists for current query
     """
 
     entry_type: TimelineEntryType
@@ -80,6 +89,9 @@ class TimelineEntry:
     timestamp: datetime = field(default_factory=lambda: datetime.now())
     metadata: dict = field(default_factory=dict)
     is_latest_user_message: bool = False
+    tool_call_id: str | None = None  # For linking tool results to their calls
+    tool_calls: list | None = None  # For assistant messages with native tool calls
+    ephemeral: bool = False  # Ephemeral entries are not persisted
 
     def _get_entry_config(self) -> str:
         """
@@ -219,7 +231,7 @@ class Timeline:
 
     def __init__(
         self,
-        max_context_tokens: int = 4000,
+        max_context_tokens: int = 32000,
         agent: "BaseAgent | None" = None,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
         config: TimelineConfig | None = None,
@@ -262,6 +274,42 @@ class Timeline:
         """
         self.timeline.append(entry)
 
+    def set_context(self, context: dict[str, Any]) -> None:
+        """
+        Set or replace the ephemeral runtime context entry.
+
+        This removes any existing CONTEXT entry and adds a fresh one.
+        The context entry is ephemeral (not persisted) and provides
+        runtime information like current time, user, and timezone.
+
+        Args:
+            context: Dictionary with context info (e.g., timestamp, user, timezone)
+        """
+        # Remove any existing CONTEXT entries
+        self.timeline = [e for e in self.timeline if e.entry_type != TimelineEntryType.CONTEXT]
+
+        # Format context for display
+        context_parts = []
+        if "timestamp" in context:
+            context_parts.append(f"Current time: {context['timestamp']}")
+        if "timezone" in context:
+            context_parts.append(f"Timezone: {context['timezone']}")
+        if "location" in context:
+            context_parts.append(f"Location: {context['location']}")
+        if "user" in context:
+            context_parts.append(f"User: {context['user']}")
+
+        content = " | ".join(context_parts) if context_parts else str(context)
+
+        # Insert at the beginning of the timeline
+        context_entry = TimelineEntry(
+            entry_type=TimelineEntryType.CONTEXT,
+            content=content,
+            metadata=context,
+            ephemeral=True,
+        )
+        self.timeline.insert(0, context_entry)
+
     def to_llm_messages(
         self, max_tokens: int | None = None, default_role: str = "user", separate_latest_user: bool = False
     ) -> list[LLMMessage]:
@@ -296,9 +344,25 @@ class Timeline:
                 # Convert context entries to messages
                 context_messages = []
                 for entry in context_entries:
-                    role = self._get_entry_role(entry, default_role)
                     content = self._format_entry_content(entry)
-                    context_messages.append(LLMMessage(role=role, content=content))
+
+                    # Handle native tool results (OpenAI format)
+                    if entry.tool_call_id:
+                        context_messages.append(LLMMessage(
+                            role="tool",
+                            content=content,
+                            tool_call_id=entry.tool_call_id
+                        ))
+                    # Handle assistant messages with native tool calls
+                    elif entry.tool_calls:
+                        context_messages.append(LLMMessage(
+                            role="assistant",
+                            content=content,
+                            tool_calls=entry.tool_calls
+                        ))
+                    else:
+                        role = self._get_entry_role(entry, default_role)
+                        context_messages.append(LLMMessage(role=role, content=content))
 
                 # Apply token limit to context if needed
                 if self._estimate_tokens(context_messages) > token_limit:
@@ -319,15 +383,48 @@ class Timeline:
         # Convert entries to LLM messages
         messages = []
         for entry in timeline_entries:
-            role = self._get_entry_role(entry, default_role)
             content = self._format_entry_content(entry)
-            messages.append(LLMMessage(role=role, content=content))
+
+            # Handle native tool results (OpenAI format)
+            if entry.tool_call_id:
+                messages.append(LLMMessage(
+                    role="tool",
+                    content=content,
+                    tool_call_id=entry.tool_call_id
+                ))
+            # Handle assistant messages with native tool calls
+            elif entry.tool_calls:
+                messages.append(LLMMessage(
+                    role="assistant",
+                    content=content,
+                    tool_calls=entry.tool_calls
+                ))
+            else:
+                role = self._get_entry_role(entry, default_role)
+                messages.append(LLMMessage(role=role, content=content))
+
+        # Merge consecutive assistant messages (without tool_calls) to avoid confusing the LLM
+        # OpenAI models can get confused by multiple consecutive assistant messages
+        merged_messages = []
+        for msg in messages:
+            if (merged_messages and
+                msg.role == "assistant" and
+                merged_messages[-1].role == "assistant" and
+                not msg.tool_calls and
+                not merged_messages[-1].tool_calls):
+                # Merge into previous assistant message
+                merged_messages[-1] = LLMMessage(
+                    role="assistant",
+                    content=f"{merged_messages[-1].content}\n{msg.content}".strip()
+                )
+            else:
+                merged_messages.append(msg)
 
         # Apply token limit if needed
-        if self._estimate_tokens(messages) > token_limit:
-            return self._build_context_with_token_limit(messages, token_limit)
+        if self._estimate_tokens(merged_messages) > token_limit:
+            return self._build_context_with_token_limit(merged_messages, token_limit)
 
-        return messages
+        return merged_messages
 
     def _get_entry_role(self, entry: TimelineEntry, default_role: str) -> str:
         """
@@ -342,6 +439,8 @@ class Timeline:
         """
         if entry.entry_type == TimelineEntryType.USER_MESSAGE:
             return "user"
+        elif entry.entry_type == TimelineEntryType.CONTEXT:
+            return "system"
         elif entry.entry_type in [
             TimelineEntryType.AGENT_RESPONSE,
             TimelineEntryType.AGENT_THOUGHTS,
@@ -351,6 +450,7 @@ class Timeline:
             TimelineEntryType.WORKFLOW_RESULT,
             TimelineEntryType.UNKNOWN_TOOL_CALL,
             TimelineEntryType.TOOL_CALL,  # Agent's tool calls are assistant actions
+            TimelineEntryType.TODO_LIST,  # Agent's task tracking is part of assistant output
         ]:
             return "assistant"
         else:
@@ -402,6 +502,9 @@ class Timeline:
         """
         Build context using token limit approach with sliding window.
 
+        Preserves message integrity by keeping tool_call/tool_result pairs together
+        and always including the first user message.
+
         Args:
             messages: All messages in chronological order
             max_tokens: Maximum tokens to include
@@ -409,18 +512,81 @@ class Timeline:
         Returns:
             List of LLMMessage objects within token limit
         """
-        # Start with most recent messages and work backwards
-        result = []
-        current_tokens = 0
+        if not messages:
+            return []
 
-        for message in reversed(messages):
-            message_tokens = self._estimate_tokens([message])
+        # Group messages into atomic units that must stay together:
+        # - assistant with tool_calls + following tool results
+        # - single messages (user, system, assistant without tool_calls)
+        groups: list[list[LLMMessage]] = []
+        i = 0
+        while i < len(messages):
+            msg = messages[i]
+            if msg.role == "assistant" and msg.tool_calls:
+                # Start a group with assistant + all following tool results
+                group = [msg]
+                i += 1
+                while i < len(messages) and messages[i].role == "tool":
+                    group.append(messages[i])
+                    i += 1
+                groups.append(group)
+            else:
+                groups.append([msg])
+                i += 1
 
-            if current_tokens + message_tokens > max_tokens:
+        # Always include the first user message if present
+        first_user_group_idx = None
+        for idx, group in enumerate(groups):
+            if group[0].role == "user":
+                first_user_group_idx = idx
                 break
 
-            result.insert(0, message)  # Insert at beginning to maintain chronological order
-            current_tokens += message_tokens
+        # Build result from most recent groups, respecting token limit
+        result_groups: list[list[LLMMessage]] = []
+        current_tokens = 0
+
+        # Reserve space for first user message if we need to include it
+        first_user_tokens = 0
+        if first_user_group_idx is not None:
+            first_user_tokens = self._estimate_tokens(groups[first_user_group_idx])
+
+        # Always include at least the most recent group (even if it exceeds limit)
+        # This ensures the LLM has context about what just happened
+        most_recent_included = False
+
+        for group in reversed(groups):
+            group_tokens = self._estimate_tokens(group)
+
+            # Check if adding this group would exceed limit (accounting for first user message)
+            available = max_tokens - first_user_tokens if first_user_group_idx is not None else max_tokens
+            if current_tokens + group_tokens > available:
+                # Always include the most recent group even if it exceeds limit
+                if not most_recent_included:
+                    result_groups.insert(0, group)
+                    current_tokens += group_tokens
+                    most_recent_included = True
+                    continue
+                break
+
+            result_groups.insert(0, group)
+            current_tokens += group_tokens
+            most_recent_included = True
+
+            # If we just added the first user message group, clear the reservation
+            if first_user_group_idx is not None and group is groups[first_user_group_idx]:
+                first_user_tokens = 0
+
+        # Ensure first user message is included
+        if first_user_group_idx is not None:
+            first_user_group = groups[first_user_group_idx]
+            if first_user_group not in result_groups:
+                # Insert at the appropriate position
+                result_groups.insert(0, first_user_group)
+
+        # Flatten groups back into messages
+        result = []
+        for group in result_groups:
+            result.extend(group)
 
         return result
 
@@ -504,14 +670,18 @@ class Timeline:
         """
         Save timeline for a session.
 
+        Ephemeral entries (like CONTEXT) are excluded from persistence.
+
         Args:
             session_id: Session identifier
         """
         if self._repository is None:
             raise ValueError("Cannot save timeline: repository is None. Initialize Timeline with repository or agent.")
 
-        self._repository.save(session_id, self.timeline)
-        logger.info(f"Saved timeline with {len(self.timeline)} entries for session {session_id}")
+        # Filter out ephemeral entries before saving
+        persistent_entries = [e for e in self.timeline if not e.ephemeral]
+        self._repository.save(session_id, persistent_entries)
+        logger.info(f"Saved timeline with {len(persistent_entries)} entries for session {session_id} (excluded {len(self.timeline) - len(persistent_entries)} ephemeral)")
 
     def read_since(self, checkpoint: int) -> Iterator[TimelineEntry]:
         """
@@ -595,7 +765,8 @@ class Timeline:
         Compress old timeline entries into a summary entry.
 
         This method replaces old entries with a single TIMELINE_SUMMARY entry,
-        preserving recent entries as configured.
+        preserving recent entries as configured. It ensures tool_call/tool_result
+        groups are kept together to maintain valid message sequences.
 
         Args:
             summary: The summary text to use for the compressed entries
@@ -608,9 +779,30 @@ class Timeline:
         if len(self.timeline) <= keep_recent:
             return 0  # Nothing to compress
 
-        # Get entries to compress (all except recent N)
-        old_entries = self.timeline[:-keep_recent]
-        recent_entries = self.timeline[-keep_recent:]
+        # Find the split point, ensuring we don't break tool_call/tool_result groups
+        # We need to keep at least keep_recent entries, but may need to keep more
+        # to avoid orphaning tool results
+        split_idx = len(self.timeline) - keep_recent
+
+        # Expand split_idx backwards if we would orphan tool results
+        # (i.e., if recent_entries starts with tool results without their tool_call)
+        while split_idx > 0:
+            # Check if the entry at split_idx is a tool result
+            entry_at_split = self.timeline[split_idx]
+            if entry_at_split.tool_call_id:
+                # This is a tool result - we need to include its tool_call
+                # Move split_idx back to include the tool_call
+                split_idx -= 1
+            else:
+                # Not a tool result, we can split here
+                break
+
+        # If split_idx is 0, we can't compress anything without breaking groups
+        if split_idx <= 0:
+            return 0
+
+        old_entries = self.timeline[:split_idx]
+        recent_entries = self.timeline[split_idx:]
 
         if not old_entries:
             return 0
@@ -638,6 +830,8 @@ class Timeline:
         """
         Get the entries that would be compressed (for generating a summary).
 
+        Ensures tool_call/tool_result groups are kept together.
+
         Returns:
             List of old entries that would be replaced by a summary
         """
@@ -646,7 +840,21 @@ class Timeline:
         if len(self.timeline) <= keep_recent:
             return []
 
-        return self.timeline[:-keep_recent]
+        # Find the split point, ensuring we don't break tool_call/tool_result groups
+        split_idx = len(self.timeline) - keep_recent
+
+        # Expand split_idx backwards if we would orphan tool results
+        while split_idx > 0:
+            entry_at_split = self.timeline[split_idx]
+            if entry_at_split.tool_call_id:
+                split_idx -= 1
+            else:
+                break
+
+        if split_idx <= 0:
+            return []
+
+        return self.timeline[:split_idx]
 
     def build_compression_prompt(self) -> str | None:
         """
@@ -661,16 +869,28 @@ class Timeline:
             return None
 
         # Build entries text with truncation for very long entries
+        # Use simple role labels to avoid model mimicking patterns like [thought] or [tool_call]
+        role_map = {
+            "user_message": "User",
+            "agent_response": "Assistant",
+            "thought": "Assistant thinking",
+            "tool_call": "Tool called",
+            "resource_result": "Tool result",
+            "workflow_result": "Workflow result",
+        }
         entries_text_parts = []
         for entry in entries_to_compress:
             content = entry.content[:500] + "..." if len(entry.content) > 500 else entry.content
-            entries_text_parts.append(f"[{entry.entry_type.value}] {content}")
+            role = role_map.get(entry.entry_type.value, entry.entry_type.value)
+            entries_text_parts.append(f"{role}: {content}")
 
         entries_text = "\n".join(entries_text_parts)
 
         return f"""Summarize this conversation history in 2-3 sentences,
-preserving key facts, decisions, tool calls and their results:
+preserving key facts, decisions, tool calls and their results.
 
-{entries_text}
+Respond with a JSON object containing a "summary" field:
+{{"summary": "your summary here"}}
 
-Summary:"""
+Conversation history:
+{entries_text}"""
