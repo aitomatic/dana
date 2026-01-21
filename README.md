@@ -2,116 +2,82 @@
   <img src="https://raw.githubusercontent.com/aitomatic/dana/release/docs/.archive/0804/images/dana-logo.jpg" alt="Dana Logo" width="80">
 </div>
 
-# Dana: The Cognitive Enterprise Platform
+# Dana: The Cognitive Ontology Platform
 
-> *"We have 50 years of expertise walking around in people's heads.
-> It's never been written down. It can't be searched. And every day, a little more of it disappears."*
-> — VP of Operations, Fortune 500 Manufacturer
+Dana is a **Cognitive Ontology** platform focused on **MapMaking**: capturing, organizing, and continuously improving enterprise knowledge into a living map of how things actually work.
 
-**What if you could capture, retain, and multiply that knowledge?**
+Most AI systems excel at **MapUsing** (See–Think–Act)—navigating existing knowledge to complete tasks. Dana specializes in the harder problem: **Curate–Organize–Reflect**—creating, maintaining, and evolving the map itself.
 
----
+Dana doesn't replace your existing AI stack—it powers it. We build the cognitive map that other AIs navigate.
 
-## The $3.1 Trillion Problem
-
-Every year, enterprises lose **$3.1 trillion** to knowledge that was never captured, expertise that isn't retained, and wisdom that can't scale.
-
-- **Knowledge never captured** — Your best operators make split-second decisions based on decades of pattern recognition. None of it is written down.
-- **Knowledge not retained** — Even when documented, context fades. The *why* behind decisions gets lost. Procedures exist but understanding doesn't.
-- **Knowledge not multiplied** — One expert can only be in one place. Their judgment doesn't scale. New hires take years to develop the same instincts.
-- **Knowledge walking out the door** — When veterans leave, retire, or move on, their expertise leaves with them.
-
-Traditional solutions don't work:
-- **Documentation?** Captures the *what*, loses the *why*. Outdated the moment it's written.
-- **Knowledge bases?** Graveyards of stale wikis nobody searches.
-- **Knowledge graphs?** Promising, but prohibitively expensive to build and maintain.
-
-**The brutal truth:** In most enterprises, critical operating knowledge exists in exactly one place—people's heads. It was never captured. It's not being retained. And it certainly isn't multiplying.
+> **Why does this matter?** Read the [Manifesto](MANIFESTO.md) for the business case: the $3.1 trillion knowledge problem and how Cognitive Ontology solves it.
 
 ---
 
-## What If Knowledge Could Compound?
+## What Is Cognitive Ontology?
 
-Imagine an enterprise where:
+A **Cognitive Ontology** is a living knowledge graph that captures not just *what* your enterprise knows, but *how* things connect and *why* decisions get made.
 
-- A new engineer asks *"Why do we heat-treat at 450°F instead of 500°F?"* and gets the actual reasoning—traced back to the 2019 incident that taught everyone that lesson.
+Unlike traditional knowledge graphs (which require humans to build and maintain them), a Cognitive Ontology is built and evolved *automatically* by intelligent agents—extracting knowledge from documents, learning from experts, and improving continuously.
 
-- Your AI assistant doesn't just search documents—it *understands* how your processes connect, why decisions were made, and what happens downstream when something changes.
+**What lives in the ontology:**
+- Procedures and the reasoning behind them
+- Decisions and their causal links
+- Entities, roles, dependencies, and outcomes
+- Lessons learned from incidents and operations
 
-- When regulations shift, you know instantly which procedures are affected, who owns them, and what needs to change.
-
-- Domain expertise isn't locked in veterans' heads—it's encoded, evolving, and available to every agent and every employee, 24/7.
-
-**This is the Cognitive Enterprise.** And Dana makes it possible.
+It's not just "how to do things"—it's *why*, *where*, *when*, and *what happens next*.
 
 ---
 
-## How It Works: Cognitive Ontology
+## MapMaking vs. MapUsing
 
-The secret is a new architectural layer: **Cognitive Ontology**—a living knowledge graph that captures not just *what* your enterprise knows, but *how* things connect and *why* decisions get made.
+This is Dana's core positioning:
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     TODAY: KNOWLEDGE TRAPPED                             │
-│                                                                          │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                       HUMAN OPERATORS                            │   │
-│   │             (context lives only in their heads)                  │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-│                                 │                                        │
-│                                 ▼                                        │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                        DATA LAYER                                │   │
-│   │         (databases, documents, logs — disconnected)              │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────────┘
-
-
-┌──────────────────────────────────────────────────────────────────────────┐
-│                   TOMORROW: KNOWLEDGE LIBERATED                          │
-│                                                                          │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                       HUMAN OPERATORS                            │   │
-│   │               (amplified by encoded expertise)                   │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-│                                 │                                        │
-│                                 ▼                                        │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                      COSTAR AGENTS                               │   │
-│   │           (continuously build and apply knowledge)               │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-│                                 │                                        │
-│                                 ▼                                        │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                  COGNITIVE ONTOLOGY                              │   │
-│   │       (living knowledge graph — built by agents, for agents)     │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-│                                 │                                        │
-│                                 ▼                                        │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                        DATA LAYER                                │   │
-│   │             (now connected, contextualized, alive)               │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   MAPMAKING (Dana)                        MAPUSING (Other AI)               │
+│   ────────────────                        ─────────────────                 │
+│                                                                             │
+│   ┌──────────┐                            ┌──────────┐                      │
+│   │  CURATE  │  Extract knowledge         │   SEE    │  Perceive situation  │
+│   └────┬─────┘  from docs & experts       └────┬─────┘                      │
+│        │                                       │                            │
+│        ▼                                       ▼                            │
+│   ┌──────────┐                            ┌──────────┐                      │
+│   │ ORGANIZE │  Structure into            │  THINK   │  Reason & decide     │
+│   └────┬─────┘  causal relationships      └────┬─────┘                      │
+│        │                                       │                            │
+│        ▼                                       ▼                            │
+│   ┌──────────┐                            ┌──────────┐                      │
+│   │ REFLECT  │  Learn & improve           │   ACT    │  Execute action      │
+│   └──────────┘  the map                   └──────────┘                      │
+│                                                                             │
+│   Creates the map <─────────────────────────────────▶  Navigates the map    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**The key insight:** Traditional knowledge graphs failed because humans had to build and maintain them. That's expensive and unsustainable.
+**MapUsing** is what ChatGPT, copilots, and most AI agents do: they navigate existing knowledge (or hallucinate when the map doesn't exist).
 
-**Dana's breakthrough:** Intelligent agents build the ontology *automatically*—extracting knowledge from documents, learning from experts, and evolving the graph continuously. The ontology is cognitive because it's created by cognition, for cognition.
+**MapMaking** is the unsolved problem: turning scattered documents, expert judgment, workflows, and operational data into a structured, causal, navigable knowledge graph.
+
+Dana solves MapMaking. Your AI agents handle MapUsing—but now they have a real map to navigate.
 
 ---
 
-## COSTAR: Agents That Learn
+## COSTAR: The Complete Methodology
 
-Dana agents follow the **COSTAR** lifecycle—a continuous loop of knowledge building and application:
+The full **COSTAR** lifecycle spans both MapMaking and MapUsing:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                                                                        │
-│                       COSTAR AGENT LIFECYCLE                           │
+│                       COSTAR: THE COMPLETE CYCLE                       │
 │                                                                        │
-│  KNOWLEDGE AGENTS            COGNITIVE              TASK AGENTS        │
-│  (build the ontology)        ONTOLOGY            (use the ontology)    │
+│  MAPMAKING (Dana)              COGNITIVE              MAPUSING (AI)    │
+│  Build the map                 ONTOLOGY               Navigate the map │
 │                                                                        │
 │  ┌──────────┐           ┌───────────────┐          ┌──────────┐        │
 │  │  CURATE  │──────────▶│               │─────────▶│   SEE    │        │
@@ -121,17 +87,16 @@ Dana agents follow the **COSTAR** lifecycle—a continuous loop of knowledge bui
 │  ┌──────────┐           │               │          ┌──────────┐        │
 │  │ ORGANIZE │──────────▶│  ┌─────────┐  │          │  THINK   │        │
 │  └──────────┘ structure │  │ Entity  │  │          └────┬─────┘        │
-│                         │  ├─────────┤  │               │              │
-│                         │  │ Entity  │  │               ▼              │
-│  ┌──────────┐           │  ├─────────┤  │          ┌──────────┐        │
-│  │ REFLECT  │◀──────────│  │ Entity  │  │◀─────────│   ACT    │        │
-│  └──────────┘  learning │  └─────────┘  │  results └────┬─────┘        │
-│       ▲                 │ Causal Links  │               │              │
-│       │                 └───────────────┘               ▼              │
-│       │                        ▲                   ┌──────────┐        │
-│       │                        └───────────────────│ REFLECT  │        │
-│       │                            feedback        └────┬─────┘        │
-│       └─────────────────────────────────────────────────┘              │
+│       │                 │  ├─────────┤  │               │              │
+│       │                 │  │ Entity  │  │               ▼              │
+│       │                 │  ├─────────┤  │          ┌──────────┐        │
+│       │                 │  │ Entity  │  │◀─────────│   ACT    │        │
+│       │                 │  └─────────┘  │  results └────┬─────┘        │
+│       │                 │ Causal Links  │               │              │
+│       ▼                 └───────────────┘               │              │
+│  ┌──────────┐                  ▲                        │              │
+│  │ REFLECT  │◀─────────────────┴────────────────────────┘              │
+│  └──────────┘                feedback                                  │
 │                                                                        │
 └────────────────────────────────────────────────────────────────────────┘
 ```
@@ -145,89 +110,11 @@ Dana agents follow the **COSTAR** lifecycle—a continuous loop of knowledge bui
 | **Act** | Execute with encoded institutional judgment | Decisions made at 3 AM without waiting for experts |
 | **Reflect** | Learn from outcomes, improve the ontology | Every action makes the system smarter |
 
-**The result:** Agents that don't just follow instructions—they *understand* your domain.
+**Dana's focus:** Curate–Organize–Reflect (MapMaking)
 
----
+**Your AI agents:** See–Think–Act (MapUsing)
 
-## What Cognitive Agents Actually Do
-
-The ontology enables reasoning. Reasoning enables *action*. Here's what becomes possible when agents truly understand your domain:
-
-| Before Dana | With Dana Agents |
-|-------------|------------------|
-| Alert fires → human investigates → human diagnoses → human decides → human acts | Agent perceives, diagnoses, decides, and acts—pages human only when needed |
-| Expert reviews 200 cases/day with tribal knowledge | Agent processes 5,000 cases/day with *encoded* expert judgment |
-| New hire shadows veterans for 6 months | New hire works alongside an agent that *has* the veteran's knowledge |
-| 3 AM anomaly waits until morning shift | 3 AM anomaly resolved at 3:04 AM |
-| "Why did we reject this batch?" → 3-day investigation | "Why did we reject this batch?" → instant causal trace with evidence |
-| Regulatory change → months of manual procedure review | Regulatory change → instant impact analysis, draft remediation |
-
-**The shift:** From humans doing cognitive labor while AI assists → to agents doing cognitive labor while humans supervise.
-
-This is not about answering questions. It's about *doing the work* that previously required scarce human expertise—continuously, at scale, at 3 AM.
-
----
-
-## Real-World Impact
-
-### Semiconductor Manufacturing
-*"Dana agents autonomously reclassify 2,400 wafer defects per shift with 94% accuracy—work that consumed 3 FTEs of tedious expert review. Root-cause analysis that took senior engineers 3 days now happens in 20 minutes, automatically, at 3 AM."*
-
-### Financial Services
-*"Our compliance agent reviewed 14,000 loan files in 6 hours, flagging 847 exceptions with full audit trails. Previously: 4 analysts, 3 weeks, and we still missed things. The agent doesn't just find problems—it explains them in regulatory language and drafts the remediation."*
-
-### Industrial Operations
-*"When a heat exchanger drifted out of spec at 2 AM, the Dana agent diagnosed failing tube fouling (not pump failure—the obvious guess), adjusted flow rates to compensate, scheduled maintenance for the optimal window, and briefed the morning shift. No human touched it. No production lost."*
-
----
-
-## Get Started in 5 Minutes
-
-```bash
-pip install dana
-dana studio
-```
-
-```python
-from adana.core.agent import STARAgent
-
-# Create an agent grounded in your domain knowledge
-agent = STARAgent(agent_type="operations_expert")
-
-# Point it at your knowledge sources
-agent.with_resources(
-    rag_resource("./procedures"),
-    rag_resource("./incident_reports"),
-    rag_resource("./equipment_manuals")
-)
-
-# The agent monitors, reasons, and acts autonomously
-agent.on_event("sensor_anomaly", handler=lambda e: agent.diagnose_and_respond(e))
-
-# When furnace #3 shows temperature drift at 2:47 AM:
-# → Agent correlates with similar patterns from 2019 incident IR-2019-0847
-# → Identifies root cause: failing thermocouple (not heater element)
-# → Initiates controlled cooldown per SOP-HT-003 emergency procedures
-# → Pages on-call engineer with diagnosis and recommended action
-# → Logs decision rationale for continuous learning
-
-# Result: Problem contained in 4 minutes. Previously took 2+ hours
-# of expert diagnosis—if someone was awake to notice.
-```
-
----
-
-## The Inevitable Future
-
-Every enterprise will become a Cognitive Enterprise. The only question is when—and whether you'll lead or follow.
-
-The companies deploying cognitive agents today will:
-- **Automate expert judgment**—not just routine tasks, but decisions that previously required veterans
-- **Operate continuously**—agents that diagnose, decide, and act at 3 AM without waiting for morning
-- **Scale expertise infinitely**—one expert's knowledge, encoded, serving thousands of decisions per hour
-- **Compound institutional intelligence**—every action teaches the system, making tomorrow's agents smarter than today's
-
-**Dana makes this accessible now.** Not in some distant future. Not requiring massive infrastructure investments. Today.
+**The result:** A compounding knowledge asset that any downstream system can use.
 
 ---
 
@@ -245,18 +132,89 @@ dana/
 └── bin/            # CLI tools & scripts
 ```
 
+### Core Components
+
+- **dana_lang** — The language runtime for defining ontology schemas, knowledge extraction rules, and agent behaviors
+- **dana_agent** — COSTAR agent implementation for both MapMaking (knowledge agents) and MapUsing (task agents)
+- **dana_studio** — Visual builder for designing agents, inspecting the ontology, and monitoring operations
+
 ---
 
-## Learn More
+## Get Started
+
+### Installation
+
+```bash
+pip install dana
+```
+
+### Quick Start
+
+```bash
+dana studio
+```
+
+### Basic Usage
+
+```python
+from adana.core.agent import STARAgent
+
+# Create an agent grounded in your domain knowledge
+agent = STARAgent(agent_type="operations_expert")
+
+# Point it at your knowledge sources
+agent.with_resources(
+    rag_resource("./procedures"),
+    rag_resource("./incident_reports"),
+    rag_resource("./equipment_manuals")
+)
+
+# The agent monitors, reasons, and acts autonomously
+agent.on_event("sensor_anomaly", handler=lambda e: agent.diagnose_and_respond(e))
+```
+
+### What Happens
+
+When furnace #3 shows temperature drift at 2:47 AM:
+
+1. Agent correlates with similar patterns from 2019 incident IR-2019-0847
+2. Identifies root cause: failing thermocouple (not heater element)
+3. Initiates controlled cooldown per SOP-HT-003 emergency procedures
+4. Pages on-call engineer with diagnosis and recommended action
+5. Logs decision rationale for continuous learning
+
+**Result:** Problem contained in 4 minutes. Previously took 2+ hours of expert diagnosis—if someone was awake to notice.
+
+---
+
+## Documentation
 
 - [Quick Start Guide](docs/quickstart.md) — Running in 5 minutes
-- [Core Concepts](docs/core-concepts.md) — Understanding COSTAR and Cognitive Ontology
+- [Core Concepts](docs/core-concepts.md) — Deep dive into COSTAR and Cognitive Ontology
+- [API Reference](docs/api.md) — Complete API documentation
 - [Enterprise Deployment](docs/enterprise.md) — Scaling to production
+
+---
+
+## How Dana Compares
+
+| Approach | What It Does | Limitation |
+|----------|--------------|------------|
+| **RAG** | Retrieves relevant documents | No understanding of relationships or causality |
+| **Knowledge Graphs** | Structures entities and relationships | Requires manual construction and maintenance |
+| **Fine-tuned LLMs** | Encodes knowledge in weights | Static, expensive to update, not auditable |
+| **Agent Frameworks** | Orchestrates LLM actions | Assumes knowledge exists; doesn't create it |
+| **Dana** | Automatically builds and evolves a cognitive ontology | — |
+
+Dana is infrastructure, not application. We create the knowledge layer that makes all the above approaches work better.
+
+---
 
 ## Community
 
 - [GitHub Issues](https://github.com/aitomatic/dana/issues) — Report bugs, request features
 - [Discord](https://discord.gg/dana) — Join the community
+- [Contributing](CONTRIBUTING.md) — How to contribute
 
 ## Enterprise
 
