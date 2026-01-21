@@ -391,11 +391,12 @@ class TestCompressedTimelineToLLMMessages:
         )
         timeline.set_llm_call_fn(lambda x: '{"summary": "Previous context: User asked about weather."}')
 
+        # Add entries with enough content to exceed 100 tokens
         for i in range(10):
             timeline.add_entry(
                 TimelineEntry(
                     entry_type=TimelineEntryType.USER_MESSAGE,
-                    content=f"Message {i} with content",
+                    content=f"This is message number {i} with a lot more content words to ensure we exceed the token threshold for compression testing purposes",
                 )
             )
 
@@ -416,11 +417,12 @@ class TestCompressedTimelineToLLMMessages:
         )
         timeline.set_llm_call_fn(lambda x: '{"summary": "Test summary"}')
 
+        # Add entries with enough content to exceed 100 tokens
         for i in range(10):
             timeline.add_entry(
                 TimelineEntry(
                     entry_type=TimelineEntryType.USER_MESSAGE,
-                    content=f"Message {i} with content",
+                    content=f"This is message number {i} with a lot more content words to ensure we exceed the token threshold for compression testing purposes",
                 )
             )
 
