@@ -25,6 +25,7 @@ from dana.core.agent.timeline import (
     TimelineConfig,
     TimelineEntry,
     TimelineEntryType,
+    TimelineProtocol,
 )
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
@@ -64,10 +65,10 @@ class CompressedTimeline(Timeline):
     """
     Timeline with intelligent compression and context management.
 
-    This Timeline subclass implements progressive compression using LLM-based
-    summarization. It tracks token usage and compresses older entries when
-    thresholds are reached, storing the compressed context in metadata for
-    efficient session loading.
+    This Timeline subclass implements the TimelineProtocol interface and provides
+    progressive compression using LLM-based summarization. It tracks token usage
+    and compresses older entries when thresholds are reached, storing the compressed
+    context in metadata for efficient session loading.
 
     Compression triggers when:
     - Total tokens exceed max_tokens_until_compression, OR
