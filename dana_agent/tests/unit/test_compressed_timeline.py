@@ -359,11 +359,13 @@ class TestCompressedTimelineAsyncCompression:
 
         timeline.set_llm_call_async_fn(mock_llm_call_async)
 
+        # Add entries with enough content to exceed 100 tokens (~1.3 tokens/word)
+        # Need > 100 / 1.3 = ~77 words total
         for i in range(10):
             timeline.add_entry(
                 TimelineEntry(
                     entry_type=TimelineEntryType.USER_MESSAGE,
-                    content=f"Message {i} with content to fill tokens",
+                    content=f"This is message number {i} with a lot more content words to ensure we exceed the token threshold for compression testing purposes",
                 )
             )
 
