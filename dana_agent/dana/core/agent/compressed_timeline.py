@@ -158,6 +158,54 @@ class CompressedTimeline(Timeline):
         """Set the async LLM call function."""
         self._llm_call_async_fn = fn
 
+    def _get_default_llm_call_fn(self) -> Callable[[str], str] | None:
+        """
+        Get a default LLM call function using the agent's runtime.
+
+        Returns a function that wraps the prompt string in an LLMMessage
+        and calls the agent's runtime.call_llm method.
+
+        Returns:
+            Callable that takes a prompt string and returns the LLM response,
+            or None if agent or runtime is not available.
+        """
+        if self._agent is None:
+            return None
+
+        runtime = getattr(self._agent, "_runtime", None)
+        if runtime is None or not hasattr(runtime, "call_llm"):
+            return None
+
+        def default_call_fn(prompt: str) -> str:
+            messages = [LLMMessage(role="user", content=prompt)]
+            return runtime.call_llm(messages)
+
+        return default_call_fn
+
+    def _get_default_llm_call_async_fn(self) -> Callable[[str], Any] | None:
+        """
+        Get a default async LLM call function using the agent's runtime.
+
+        Returns a function that wraps the prompt string in an LLMMessage
+        and calls the agent's runtime.call_llm_async method.
+
+        Returns:
+            Callable that takes a prompt string and returns an awaitable LLM response,
+            or None if agent or runtime is not available.
+        """
+        if self._agent is None:
+            return None
+
+        runtime = getattr(self._agent, "_runtime", None)
+        if runtime is None or not hasattr(runtime, "call_llm_async"):
+            return None
+
+        async def default_call_async_fn(prompt: str) -> str:
+            messages = [LLMMessage(role="user", content=prompt)]
+            return await runtime.call_llm_async(messages)
+
+        return default_call_async_fn
+
     def needs_compression(self) -> bool:
         """
         Check if timeline compression is needed.
@@ -383,11 +431,14 @@ Respond with ONLY a JSON object containing the summary:
             Number of entries compressed
 
         Raises:
-            RuntimeError: If LLM call function is not set
+            RuntimeError: If LLM call function is not set and no agent runtime available
         """
-        if self._llm_call_fn is None:
+        # Use provided function or fall back to agent runtime
+        llm_call_fn = self._llm_call_fn or self._get_default_llm_call_fn()
+        if llm_call_fn is None:
             raise RuntimeError(
-                "LLM call function not set. Use set_llm_call_fn() to provide a compression function."
+                "LLM call function not set and no agent runtime available. "
+                "Use set_llm_call_fn() to provide a compression function or ensure an agent with runtime is provided."
             )
 
         if not self.needs_compression():
@@ -405,7 +456,7 @@ Respond with ONLY a JSON object containing the summary:
 
         # Call LLM to get summary
         try:
-            response = self._llm_call_fn(prompt)
+            response = llm_call_fn(prompt)
             summary = self._extract_summary_from_response(response)
         except Exception as e:
             logger.error(f"Failed to compress timeline: {e}")
@@ -435,11 +486,14 @@ Respond with ONLY a JSON object containing the summary:
             Number of entries compressed
 
         Raises:
-            RuntimeError: If async LLM call function is not set
+            RuntimeError: If async LLM call function is not set and no agent runtime available
         """
-        if self._llm_call_async_fn is None:
+        # Use provided function or fall back to agent runtime
+        llm_call_async_fn = self._llm_call_async_fn or self._get_default_llm_call_async_fn()
+        if llm_call_async_fn is None:
             raise RuntimeError(
-                "Async LLM call function not set. Use set_llm_call_async_fn() to provide a compression function."
+                "Async LLM call function not set and no agent runtime available. "
+                "Use set_llm_call_async_fn() to provide a compression function or ensure an agent with runtime is provided."
             )
 
         if not self.needs_compression():
@@ -457,7 +511,7 @@ Respond with ONLY a JSON object containing the summary:
 
         # Call LLM to get summary
         try:
-            response = await self._llm_call_async_fn(prompt)
+            response = await llm_call_async_fn(prompt)
             summary = self._extract_summary_from_response(response)
         except Exception as e:
             logger.error(f"Failed to compress timeline: {e}")
