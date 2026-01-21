@@ -5,11 +5,12 @@ This module provides a unified, chronological record of all agent interactions
 with efficient context management to prevent context window explosion.
 """
 
+from abc import abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Protocol, runtime_checkable
 
 from structlog import get_logger
 
@@ -173,6 +174,189 @@ class TimelineEntry:
         return self.entry_type == TimelineEntryType.RESOURCE_RESULT
 
 
+@runtime_checkable
+class TimelineProtocol(Protocol):
+    """
+    Protocol defining the interface for timeline implementations.
+
+    This protocol defines the contract that all timeline implementations must follow,
+    enabling dependency injection and easier testing through duck typing.
+
+    Timeline implementations manage chronological records of agent interactions
+    with context management and optional compression capabilities.
+    """
+
+    @property
+    def timeline(self) -> list[TimelineEntry]:
+        """Get the list of timeline entries."""
+        ...
+
+    @property
+    def max_context_tokens(self) -> int:
+        """Get the maximum context tokens allowed."""
+        ...
+
+    def add_entry(self, entry: TimelineEntry) -> None:
+        """
+        Add entry to timeline.
+
+        Args:
+            entry: TimelineEntry to add
+        """
+        ...
+
+    def set_context(self, context: dict[str, Any]) -> None:
+        """
+        Set or replace the ephemeral runtime context entry.
+
+        Args:
+            context: Dictionary with context info (e.g., timestamp, user, timezone)
+        """
+        ...
+
+    def to_llm_messages(
+        self,
+        max_tokens: int | None = None,
+        default_role: str = "user",
+        separate_latest_user: bool = False,
+    ) -> list[LLMMessage]:
+        """
+        Convert timeline entries to LLM messages.
+
+        Args:
+            max_tokens: Maximum tokens to include (overrides max_context_tokens)
+            default_role: Default role for entries without specific mapping
+            separate_latest_user: If True, separates latest user message from context
+
+        Returns:
+            List of LLMMessage objects in chronological order
+        """
+        ...
+
+    def get_recent_entries(self, count: int) -> list[TimelineEntry]:
+        """
+        Get most recent N entries.
+
+        Args:
+            count: Number of recent entries to return
+
+        Returns:
+            List of most recent TimelineEntry objects
+        """
+        ...
+
+    def get_entries_by_type(self, entry_type: TimelineEntryType) -> list[TimelineEntry]:
+        """
+        Get entries filtered by type.
+
+        Args:
+            entry_type: Type of entries to filter by
+
+        Returns:
+            List of TimelineEntry objects of specified type
+        """
+        ...
+
+    def clear_old_entries(self, before_timestamp: datetime) -> int:
+        """
+        Remove entries before timestamp.
+
+        Args:
+            before_timestamp: Remove entries before this timestamp
+
+        Returns:
+            Number of entries removed
+        """
+        ...
+
+    def get_timeline_summary(self) -> str:
+        """
+        Get a summary of the timeline.
+
+        Returns:
+            Human-readable timeline summary
+        """
+        ...
+
+    def get_entry_count(self) -> int:
+        """
+        Get total number of entries in timeline.
+
+        Returns:
+            Number of entries
+        """
+        ...
+
+    def get_entry_count_by_type(self) -> dict[TimelineEntryType, int]:
+        """
+        Get count of entries by type.
+
+        Returns:
+            Dictionary mapping entry types to counts
+        """
+        ...
+
+    def save(self, session_id: str) -> None:
+        """
+        Save timeline for a session.
+
+        Args:
+            session_id: Session identifier
+        """
+        ...
+
+    def read_since(self, checkpoint: int) -> Iterator[TimelineEntry]:
+        """
+        Read timeline entries since checkpoint.
+
+        Args:
+            checkpoint: Starting index for reading entries
+
+        Yields:
+            TimelineEntry objects since checkpoint
+        """
+        ...
+
+    def needs_compression(self) -> bool:
+        """
+        Check if timeline compression is needed.
+
+        Returns:
+            True if compression should be triggered
+        """
+        ...
+
+    def compress_old_entries(self, summary: str) -> int:
+        """
+        Compress old timeline entries into a summary entry.
+
+        Args:
+            summary: The summary text to use for the compressed entries
+
+        Returns:
+            Number of entries that were compressed
+        """
+        ...
+
+    def get_entries_for_compression(self) -> list[TimelineEntry]:
+        """
+        Get the entries that would be compressed.
+
+        Returns:
+            List of old entries that would be replaced by a summary
+        """
+        ...
+
+    def build_compression_prompt(self) -> str | None:
+        """
+        Build a prompt for LLM-based compression of old entries.
+
+        Returns:
+            Prompt string for summarization, or None if compression not needed
+        """
+        ...
+
+
 def _sanitize_for_json(obj: Any) -> Any:
     """
     Recursively sanitize objects to make them JSON serializable.
@@ -227,6 +411,8 @@ class Timeline:
 
     The Timeline provides a unified, chronological record of all agent interactions
     with efficient context management to prevent context window explosion.
+
+    This class implements the TimelineProtocol interface.
     """
 
     def __init__(
@@ -602,7 +788,7 @@ class Timeline:
         """
         return self.timeline[-count:] if count > 0 else []
 
-    def get_entries_by_type(self, entry_type: str) -> list[TimelineEntry]:
+    def get_entries_by_type(self, entry_type: TimelineEntryType) -> list[TimelineEntry]:
         """
         Get entries filtered by type.
 
@@ -654,14 +840,14 @@ class Timeline:
         """
         return len(self.timeline)
 
-    def get_entry_count_by_type(self) -> dict[str, int]:
+    def get_entry_count_by_type(self) -> dict[TimelineEntryType, int]:
         """
         Get count of entries by type.
 
         Returns:
             Dictionary mapping entry types to counts
         """
-        counts = {}
+        counts: dict[TimelineEntryType, int] = {}
         for entry in self.timeline:
             counts[entry.entry_type] = counts.get(entry.entry_type, 0) + 1
         return counts
