@@ -1,10 +1,10 @@
-"""Claude Skills integration via Claude Code CLI.
-
-Skills are ontological elements - reusable, composable capabilities that
-define what an agent can do. This module provides the ClaudeCodeSkills
-resource which discovers and exposes Claude Code skills to STARAgents.
-"""
+"""Dana Skills - Composable task templates for agents."""
 
 from .claude_code_skills import ClaudeCodeSkills
+from .dana_skills import DanaSkill, DanaSkills, SkillLoader, parse_skill_md
 
-__all__ = ["ClaudeCodeSkills"]
+
+# Backward compatibility alias
+SkillResource = DanaSkills
+
+__all__ = ["ClaudeCodeSkills", "DanaSkill", "parse_skill_md", "SkillLoader", "DanaSkills", "SkillResource"]

@@ -14,8 +14,8 @@ init_environment()
 
 ########################################################
 # Export main components
-from dana.common import LLM, LLMMessage, LLMResponse
-from dana.core import STARAgent
+from dana.common.llm.llm import LLM, LLMMessage, LLMResponse
+from dana.core.agent.star_agent import STARAgent
 
 
 ########################################################

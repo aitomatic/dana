@@ -22,12 +22,13 @@ from dana.common.protocols import AgentProtocol, DictParams, Notifiable, Resourc
 from dana.common.protocols.types import LearningPhase
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
-from ..knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
+from ..knowledge.prompts.codecs import AbstractCodec
 from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from ..runtime import AgentRuntime
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, LearnerProtocol, State
 from .components.observer import ObserverProtocol
+from .compressed_timeline import CompressedTimeline
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
@@ -121,8 +122,6 @@ class STARAgent(BaseSTARAgent):
         self._session_id = str(uuid4())
         self._repository_factory = repository_factory
         codec_provided = codec is not _CODEC_SENTINEL
-        if codec is _CODEC_SENTINEL:
-            codec = CSXMLCodec
         self._codec = codec
 
         if runtime is None:
@@ -138,7 +137,7 @@ class STARAgent(BaseSTARAgent):
                 from dana.core.runtime.legacy import LegacyRuntime
 
                 runtime = LegacyRuntime()
-            else:
+            elif codec is _CODEC_SENTINEL:
                 # Use the runtime registry to choose the appropriate runtime
                 from dana.core.runtime import RuntimeRegistry
 
@@ -149,6 +148,10 @@ class STARAgent(BaseSTARAgent):
                         DeprecationWarning,
                         stacklevel=2,
                     )
+            elif isinstance(codec, type) and issubclass(codec, AbstractCodec):
+                from dana.core.runtime import RuntimeRegistry
+
+                runtime = RuntimeRegistry.select_codec_runtime(provider=llm_provider, model=model, codec=codec)
         else:
             if codec_provided:
                 warnings.warn(
@@ -182,11 +185,14 @@ class STARAgent(BaseSTARAgent):
         # Determine storage_config for timeline and event_log
 
         # Initialize timeline at agent level with agent, codec, and storage_config
-        self._timeline = Timeline(
-            max_context_tokens=max_context_tokens,
-            agent=self,
-            repository_factory=self._repository_factory,
-        )
+        if codec_provided:
+            self._timeline = CompressedTimeline(agent=self, repository_factory=self._repository_factory)
+        else:
+            self._timeline = Timeline(
+                max_context_tokens=max_context_tokens,
+                agent=self,
+                repository_factory=self._repository_factory,
+            )
 
         # Initialize EventLog API (only if observer AND codec provided)
         # Events ONLY come from Observer - no observer = no EventLog

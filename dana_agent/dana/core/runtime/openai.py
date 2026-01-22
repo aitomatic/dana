@@ -21,6 +21,8 @@ from dana.core.runtime.base import AgentRuntime
 
 OPENAI_SYSTEM_PROMPT_JSON = """You are an AI assistant. {{identity}}
 
+{{resource_context}}
+
 ## Output Format
 You MUST respond with a valid JSON object only. No markdown, no extra text.
 
@@ -51,6 +53,8 @@ Done:
 {{available_tools_prompt}}"""
 
 OPENAI_SYSTEM_PROMPT_NATIVE_TOOLS = """You are an AI assistant. {{identity}}
+
+{{resource_context}}
 
 ## Output Format
 You MUST respond with a valid JSON object only. No markdown, no extra text.

@@ -364,11 +364,11 @@ class AgentRuntime(ABC):
                 done = parsed_json.get("done")
                 # Accept both "response" and "message" as valid field names
                 response_text = parsed_json.get("response") or parsed_json.get("message")
-                
+
                 # Ensure response_text is a string (LLM might return nested dict)
                 if response_text is not None and not isinstance(response_text, str):
                     response_text = str(response_text)
-                
+
                 # Handle case where response text comes after a minimal JSON object
                 # e.g., '{"done":true} Here is the actual response...'
                 if not response_text and done is True:
@@ -376,7 +376,7 @@ class AgentRuntime(ABC):
                     trailing_text = self._extract_trailing_text(content)
                     if trailing_text:
                         response_text = trailing_text
-                
+
                 # Only extract tool_calls from JSON if not using native tools
                 if not self._native_tools:
                     json_tool_calls = parsed_json.get("tool_calls", [])
@@ -547,12 +547,33 @@ class AgentRuntime(ABC):
             workflows=getattr(agent, "_workflows", []),
         )
 
+    def _build_resource_context(self, agent) -> str:
+        """Build additional context from resources that implement get_prompt_context().
+
+        Resources can implement get_prompt_context() to contribute to the system prompt.
+        This is used for things like skill descriptions, resource-specific instructions, etc.
+
+        Returns:
+            Concatenated context from all resources, or empty string if none.
+        """
+        contexts = []
+        for resource in getattr(agent, "_resources", []):
+            if hasattr(resource, "get_prompt_context"):
+                ctx = resource.get_prompt_context()
+                if ctx:
+                    contexts.append(ctx)
+        return "\n\n".join(contexts)
+
     def _build_system_prompt(self, agent) -> str:
         """Build the system prompt using the template and hooks."""
         identity = self.get_identity(agent)
         template = self.get_system_prompt_template(native_tools=bool(self._native_tools))
 
         values = {"identity": identity}
+
+        # Add resource context (e.g., skill labels)
+        resource_context = self._build_resource_context(agent)
+        values["resource_context"] = resource_context
 
         # Add available tools for JSON mode
         if not self._native_tools:
@@ -643,7 +664,7 @@ class AgentRuntime(ABC):
 
     def _extract_trailing_text(self, content: str) -> str | None:
         """Extract text that comes after a JSON object.
-        
+
         Handles cases like: '{"done":true} Here is the actual response...'
         Returns the trailing text after the JSON object, or None if no trailing text.
         """
@@ -670,7 +691,7 @@ class AgentRuntime(ABC):
             return None
 
         # Extract text after the JSON object
-        trailing = content[end_idx + 1:].strip()
+        trailing = content[end_idx + 1 :].strip()
         if trailing:
             return trailing
 

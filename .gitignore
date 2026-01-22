@@ -102,3 +102,5 @@ dana_studio/dana/studio/api_backup
 **/.archive_local
 /knowledge_packs
 skill_output/
+
+.dana_backup
