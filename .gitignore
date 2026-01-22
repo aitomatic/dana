@@ -104,3 +104,5 @@ dana_studio/dana/studio/api_backup
 skill_output/
 
 .dana_backup
+
+.local_backup

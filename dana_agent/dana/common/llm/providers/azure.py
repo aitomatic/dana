@@ -2,7 +2,7 @@
 Azure Provider Implementation
 """
 
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI
 import structlog
 
 from ...config import config_manager
@@ -23,11 +23,12 @@ class AzureProvider(LLMProvider):
 
         Args:
             api_key: Azure OpenAI API key (defaults to AZURE_OPENAI_API_KEY env var)
-            model: Model to use
-            base_url: Azure OpenAI endpoint URL
+            model: Model/deployment name to use
+            base_url: Azure OpenAI endpoint URL (e.g., https://your-resource.openai.azure.com)
             api_version: Azure OpenAI API version
         """
         self.model = model
+        self.deployment_name = model
 
         # Get API key from parameter, env var, or config
         if api_key:
@@ -40,45 +41,30 @@ class AzureProvider(LLMProvider):
             api_key_env = config.get("api_key_env") if config else "AZURE_OPENAI_API_KEY"
             raise ValueError(f"Azure OpenAI API key not found. Set {api_key_env} environment variable.")
 
-        # Get base URL from parameter, env var, or config
+        # Get base URL (Azure endpoint) from parameter, env var, or config
         if base_url:
-            self.base_url = base_url
+            azure_endpoint = base_url
         else:
-            self.base_url = config_manager.get_provider_base_url("azure")
+            azure_endpoint = config_manager.get_provider_base_url("azure")
+
+        if not azure_endpoint:
+            raise ValueError("Azure OpenAI endpoint URL not found. Set AZURE_OPENAI_API_URL environment variable.")
+
+        # Clean up the endpoint URL - remove trailing slashes
+        azure_endpoint = azure_endpoint.rstrip("/")
 
         # Get API version from parameter, env var, or config
         if api_version:
             self.api_version = api_version
         else:
-            self.api_version = config_manager.get_provider_api_version("azure")
+            self.api_version = config_manager.get_provider_api_version("azure") or "2024-02-15-preview"
 
-        # Construct proper Azure OpenAI endpoint URL
-        # Azure URLs should be: https://{resource}.openai.azure.com/openai/deployments/{deployment}/chat/completions
-
-        # For deployment-based endpoints, append the model/deployment name to the URL
-        if self.base_url and "/deployments" in self.base_url and not self.base_url.endswith("/deployments/"):
-            # URL ends with /deployments, append the model name
-            self.base_url += f"/{self.model}"
-            self.deployment_name = self.model
-        elif self.base_url and "/deployments/" in self.base_url:
-            # URL already has deployment name, extract it
-            deployment_name = self.base_url.split("/deployments/")[1].split("/")[0]
-            self.deployment_name = deployment_name
-        else:
-            self.deployment_name = self.model
-
-        # Ensure URL ends with /
-        if self.base_url and not self.base_url.endswith("/"):
-            self.base_url += "/"
-
-        # Add API version as query parameter
-        if self.api_version and self.base_url:
-            separator = "&" if "?" in self.base_url else "?"
-            self.base_url += f"{separator}api-version={self.api_version}"
-
-        # Use OpenAI client with Azure endpoint
-        client_kwargs = {"api_key": self.api_key, "base_url": self.base_url}
-        self.client = AsyncOpenAI(**client_kwargs)
+        # Use the dedicated Azure OpenAI client
+        self.client = AsyncAzureOpenAI(
+            api_key=self.api_key,
+            azure_endpoint=azure_endpoint,
+            api_version=self.api_version,
+        )
 
     async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
         """Send messages to Azure OpenAI and get a response."""

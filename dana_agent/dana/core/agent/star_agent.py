@@ -151,7 +151,7 @@ class STARAgent(BaseSTARAgent):
             elif isinstance(codec, type) and issubclass(codec, AbstractCodec):
                 from dana.core.runtime import RuntimeRegistry
 
-                runtime = RuntimeRegistry.select_codec_runtime(provider=llm_provider, model=model, codec=codec)
+                runtime = RuntimeRegistry.select_codec_runtime(provider=llm_provider, model=model, codec=codec, use_native_tools=False)
         else:
             if codec_provided:
                 warnings.warn(

@@ -2,7 +2,7 @@
 
 from .loader import SkillLoader
 from .models import DanaSkill, parse_skill_md
-from .skills import DanaSkills
+from .skills import DanaSkillResource
 
 
-__all__ = ["DanaSkill", "parse_skill_md", "SkillLoader", "DanaSkills"]
+__all__ = ["DanaSkill", "parse_skill_md", "SkillLoader", "DanaSkillResource"]

@@ -1,16 +1,25 @@
 """
-Dana Skills - Agent-facing API for skill invocation.
+Skill Resource - @tool_use interface for invoking skills.
 
-Provides the invoke() tool for agents to execute Dana skills.
-Supports both main mode (instruction injection) and fork mode (isolated subagent).
+Provides the agent-facing API for skill invocation. Skills can run in:
+- Main mode: Instructions returned to current context (recipe stays on counter)
+- Fork mode: Isolated execution via subagent, only summary returns (context discarded after)
+
+Fork Mode Architecture:
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│ Main Agent   │──────│ Skill Tool   │──────│ Subagent     │
+│              │      │              │      │              │
+│ "I'm just    │      │ Sees fork,   │      │ Same type,   │
+│  using a     │      │ creates      │      │ restricted   │
+│  skill"      │      │ subagent     │      │ tools        │
+└──────────────┘      └──────────────┘      └──────────────┘
+    UNAWARE              AUTOMATIC           ISOLATED
 """
 
-from __future__ import annotations
-
-import re
+import fnmatch
 from typing import TYPE_CHECKING, Any
 
-import structlog
+from structlog import get_logger
 
 from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
@@ -22,390 +31,415 @@ from .models import DanaSkill
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
 
-logger = structlog.get_logger()
+logger = get_logger()
 
 
-class DanaSkills(BaseResource):
-    """Resource for invoking Dana skills from agents.
+class DanaSkillResource(BaseResource):
+    """
+    Execute skills - composable task templates that extend agent capabilities.
 
-    Provides the invoke() tool that agents use to execute skills.
-    Skills can run in two modes:
+    Skills are discovered at startup from ~/.dana/skills/, ./.dana/skills/,
+    ~/.claude/skills/, and ./.claude/skills/. Available skills and their
+    descriptions are shown in the system prompt.
 
-    - main: Injects skill instructions into current conversation context
-    - fork: Creates isolated subagent to execute skill, returns summary
-
-    Usage:
-        loader = SkillLoader()
-        dana_skills = DanaSkills(skill_loader=loader, agent=my_agent)
-        agent.with_resources(dana_skills)
-
-        # Agent can then call:
-        result = await skills.invoke("my-skill", arguments="search for X")
+    Use invoke() to execute a skill by name.
     """
 
     def __init__(
         self,
         skill_loader: SkillLoader | None = None,
-        agent: STARAgent | None = None,
+        agent: "STARAgent | None" = None,
         resource_id: str = "skills",
         **kwargs: Any,
     ):
-        """Initialize the skill resource.
+        """
+        Initialize the skill resource.
 
         Args:
-            skill_loader: SkillLoader instance for skill discovery.
-                         If None, creates default loader.
-            agent: Parent agent (required for fork mode).
-            resource_id: Resource identifier (default: "skills")
+            skill_loader: Custom SkillLoader instance. If None, creates default.
+            agent: Parent agent (for subagent creation in fork mode).
+                   Required for fork mode to work - without it, fork falls back to main.
+            resource_id: Resource identifier.
             **kwargs: Additional arguments passed to BaseResource.
         """
-        super().__init__(resource_type="skills", resource_id=resource_id, **kwargs)
-
+        super().__init__(resource_type="skill", resource_id=resource_id, **kwargs)
         self._skill_loader = skill_loader or SkillLoader()
         self._agent = agent
-        self._executing_skills: set[str] = set()  # Prevent recursion
 
     @tool_use
     async def invoke(
         self,
         skill_name: str,
-        arguments: str = "",
         context: str = "",
+        parameters: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Invoke a Dana skill by name.
+        """
+        Invoke a skill by name.
 
         Args:
-            skill_name: Name of the skill to invoke (e.g., "commit", "review-pr")
-            arguments: Arguments to pass to the skill (replaces $ARGUMENTS)
-            context: Additional context from the conversation
+            skill_name: Name of the skill to invoke (e.g., "commit-message")
+            context: Relevant context from the conversation that the skill needs
+            parameters: Optional parameters to pass to the skill (accessible as $ARGUMENTS in scripts)
 
         Returns:
-            Dict with:
-            - success: Whether invocation succeeded
-            - mode: "main" or "fork"
-            - instructions: (main mode) Skill instructions with substitutions
-            - result: (fork mode) Summary from subagent execution
-            - agent_id: (fork mode) Subagent ID for potential resumption
-            - error: Error message if failed
+            For non-fork skills: Returns skill instructions to follow in your response
+            For fork skills: Returns summary of completed work
         """
-        logger.info("Invoking skill", skill_name=skill_name, arguments=arguments[:100] if arguments else "")
-
-        # Get the skill
         skill = self._skill_loader.get_skill(skill_name)
         if not skill:
-            available = [s.name for s in self._skill_loader.list_skills()]
+            available = ", ".join(s.name for s in self._skill_loader.list_skills()[:10])
             return {
                 "success": False,
-                "mode": None,
-                "error": f"Skill '{skill_name}' not found. Available: {', '.join(available[:10])}",
+                "error": f"Skill '{skill_name}' not found. Available: {available}",
             }
 
-        # Check for recursion
-        if skill_name in self._executing_skills:
-            return {
-                "success": False,
-                "mode": None,
-                "error": f"Skill '{skill_name}' is already executing (recursion prevented)",
-            }
+        logger.info("invoking_skill", name=skill_name, context_mode=skill.context_mode)
 
-        try:
-            self._executing_skills.add(skill_name)
+        if skill.context_mode == "fork":
+            return await self._execute_fork(skill, context, parameters or {})
+        else:
+            # Main mode doesn't need await (just returns instructions)
+            return self._execute_main(skill, context, parameters or {})
 
-            if skill.context_mode == "fork":
-                return await self._invoke_fork(skill, arguments, context)
-            else:
-                return self._invoke_main(skill, arguments, context)
-
-        finally:
-            self._executing_skills.discard(skill_name)
-
-    def _invoke_main(
+    def _execute_main(
         self,
         skill: DanaSkill,
-        arguments: str,
         context: str,
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
-        """Invoke skill in main mode (instruction injection).
+        """
+        Execute skill in main context (non-fork).
 
-        Returns skill instructions with $ARGUMENTS substituted.
-        The agent will execute these instructions in the current context.
+        The skill content is returned to the agent. The agent should follow
+        the instructions in its response. Content stays in conversation history.
 
         Args:
-            skill: The skill to invoke
-            arguments: Value for $ARGUMENTS substitution
-            context: Additional context (prepended to instructions)
+            skill: The skill to execute
+            context: Context from the conversation
+            parameters: Skill parameters
 
         Returns:
-            Dict with success, mode, and instructions
+            Dictionary with skill instructions
         """
-        session_id = ""
-        if self._agent and hasattr(self._agent, "_session_id"):
-            session_id = self._agent._session_id
+        skill_content = skill.content
 
-        instructions = skill.substitute_arguments(arguments, session_id)
+        # Build tool restriction note if applicable
+        tools_note = ""
+        if skill.allowed_tools:
+            tools_note = f"\n\n**Tool Restrictions:** You may only use: {', '.join(skill.allowed_tools)}"
 
-        if context:
-            instructions = f"Context: {context}\n\n{instructions}"
-
-        logger.info(
-            "Skill invoked (main mode)",
-            skill_name=skill.name,
-            instructions_length=len(instructions),
-        )
+        # Build scripts note if applicable
+        scripts_note = ""
+        if skill.scripts_dir:
+            scripts_note = f"\n\n**Scripts Available:** Run scripts from {skill.scripts_dir}/ - execute them, do not read the code."
 
         return {
             "success": True,
             "mode": "main",
-            "instructions": instructions,
+            "instructions": f"""<skill name="{skill.name}">
+{skill_content}
+</skill>
+
+<context>
+{context if context else "No additional context provided."}
+</context>
+
+<parameters>
+{parameters if parameters else "No parameters provided."}
+</parameters>{tools_note}{scripts_note}
+
+Follow the skill instructions above. The skill content will remain in your context for follow-up questions.""",
         }
 
-    async def _invoke_fork(
+    async def _execute_fork(
         self,
         skill: DanaSkill,
-        arguments: str,
         context: str,
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
-        """Invoke skill in fork mode (isolated subagent).
+        """
+        Execute skill in forked context (isolated subagent).
 
-        Creates a subagent with filtered resources/skills and executes
-        the skill instructions. Returns summary and agent ID.
+        Creates a subagent with:
+        - Same agent type and system prompt as parent
+        - Restricted tools based on allowed-tools in SKILL.md
+        - Skill content + context + parameters as the task
+
+        Only returns a summary - the subagent context is discarded after execution.
+
+        Architecture:
+        ┌─────────────────────────────────────────────────────────────┐
+        │ SKILL TOOL (Internal Logic)                                 │
+        │                                                             │
+        │   1. Loads SKILL.md                                         │
+        │   2. Reads frontmatter (context: fork, allowed-tools)       │
+        │   3. Creates subagent (same type, restricted tools)         │
+        │   4. Passes SKILL.md + context + parameters to subagent     │
+        │   5. Waits for subagent to complete                         │
+        │   6. Returns summary to main agent (context discarded)      │
+        │                                                             │
+        └─────────────────────────────────────────────────────────────┘
 
         Args:
-            skill: The skill to invoke
-            arguments: Value for $ARGUMENTS substitution
-            context: Additional context for the subagent
+            skill: The skill to execute
+            context: Context from the conversation
+            parameters: Skill parameters
 
         Returns:
-            Dict with success, mode, result, and agent_id
+            Dictionary with execution result/summary
         """
-        if not self._agent:
-            return {
-                "success": False,
-                "mode": "fork",
-                "error": "Fork mode requires parent agent reference",
-            }
+        # Check if we have a parent agent for forking
+        if self._agent is None:
+            logger.warning(
+                "fork_mode_no_agent",
+                skill=skill.name,
+                message="No parent agent available for fork mode, falling back to main mode",
+            )
+            return self._execute_main(skill, context, parameters)
 
         try:
-            # Import here to avoid circular imports
-            from dana.core.agent.star_agent import STARAgent
+            # Create subagent with restricted resources
+            subagent = self._create_fork_subagent(skill)
 
-            session_id = getattr(self._agent, "_session_id", "")
-            instructions = skill.substitute_arguments(arguments, session_id)
-
-            if context:
-                instructions = f"Context: {context}\n\n{instructions}"
-
-            # Determine subagent configuration
-            agent_type = skill.agent or "general-purpose"
-            model = skill.model or getattr(self._agent, "_llm_config", {}).get("model")
-            llm_provider = getattr(self._agent, "_llm_config", {}).get("provider")
-
-            # Create subagent
-            subagent = STARAgent(
-                agent_id=f"{self._agent.object_id}_skill_{skill.name}",
-                agent_type=agent_type,
-                auto_register=False,
-                llm_provider=llm_provider,
-                model=model,
-                enable_skills=False,  # Don't auto-enable skills in subagent
-            )
-
-            # Add filtered resources based on allowed_tools
-            if skill.allowed_tools:
-                filtered_resources = self._filter_resources(skill.allowed_tools)
-                for resource in filtered_resources:
-                    subagent.with_resources(resource)
-            else:
-                # Copy all resources from parent
-                for resource in self._agent._resources:
-                    if resource.resource_id != self.resource_id:  # Don't copy self
-                        subagent.with_resources(resource)
-
-            # Add filtered skills if specified
-            if skill.allowed_skills:
-                filtered_loader = self._skill_loader.filter_by_names(skill.allowed_skills)
-                skill_resource = DanaSkills(
-                    skill_loader=filtered_loader,
-                    agent=subagent,
-                    resource_id="skills",
-                    auto_register=False,
-                )
-                subagent.with_resources(skill_resource)
-
-            # Execute the skill
-            logger.info(
-                "Executing skill in fork mode",
-                skill_name=skill.name,
-                subagent_id=subagent.object_id,
-                agent_type=agent_type,
-            )
-
-            result = await subagent.aquery(message=instructions)
-            response = result.get("response", "No response from subagent")
+            # Build the task message for the subagent
+            task_message = self._build_fork_task_message(skill, context, parameters)
 
             logger.info(
-                "Skill fork completed",
-                skill_name=skill.name,
+                "fork_executing",
+                skill=skill.name,
                 subagent_id=subagent.object_id,
-                response_length=len(response),
+                allowed_tools=skill.allowed_tools,
+            )
+
+            # Use async query for non-blocking execution
+            result = await subagent.aquery(message=task_message)
+
+            # Extract the response from the subagent
+            response = result.get("response", "Skill execution completed.")
+
+            logger.info(
+                "fork_completed",
+                skill=skill.name,
+                subagent_id=subagent.object_id,
             )
 
             return {
                 "success": True,
                 "mode": "fork",
                 "result": response,
-                "agent_id": subagent.object_id,
             }
 
         except Exception as e:
-            logger.error("Skill fork failed", skill_name=skill.name, error=str(e))
+            logger.error(
+                "fork_execution_error",
+                skill=skill.name,
+                error=str(e),
+            )
             return {
                 "success": False,
                 "mode": "fork",
-                "error": str(e),
+                "error": f"Fork execution failed: {e}",
             }
 
-    def _filter_resources(self, allowed_tools: list[str]) -> list:
-        """Filter parent agent's resources based on allowed-tools patterns.
+    def _create_fork_subagent(self, skill: DanaSkill) -> "STARAgent":
+        """
+        Create a subagent for fork execution.
+
+        The subagent:
+        - Is the same type as the parent agent
+        - Has the same LLM configuration
+        - Has restricted resources based on allowed-tools
 
         Args:
-            allowed_tools: List of tool patterns (e.g., ["Read", "Bash(git:*)"])
+            skill: The skill being executed (contains allowed-tools)
 
         Returns:
-            List of matching resources
+            Configured subagent ready for execution
+        """
+        from dana.core.agent.star_agent import STARAgent
+
+        # Create subagent with same configuration as parent
+        subagent = STARAgent(
+            agent_type=f"{self._agent.agent_type}",
+            agent_id=f"{self._agent.object_id}",
+            llm_provider=self._agent._llm_config.get("provider"),
+            model=self._agent._llm_config.get("model"),
+            codec=self._agent._codec,
+            auto_register=False,  # Don't register fork agents
+            max_context_tokens=self._agent._timeline.max_context_tokens,
+            enable_assistant=False,
+        )
+
+        subagent.set_session_id(f"{self._agent._session_id}-{skill.name}")
+        # Filter and add resources based on allowed-tools
+        if skill.allowed_tools:
+            filtered_resources = self._filter_resources(skill.allowed_tools)
+            if filtered_resources:
+                subagent.with_resources(*filtered_resources)
+        else:
+            # No restrictions - copy all resources from parent (except SkillResource to prevent recursion)
+            for resource in self._agent._resources:
+                if not isinstance(resource, DanaSkillResource):
+                    subagent.with_resources(resource)
+
+        # Handle nested skills if skill declares allowed_skills
+        if skill.allowed_skills:
+            # Prevent self-recursion: exclude the current skill from allowed_skills
+            safe_allowed_skills = [s for s in skill.allowed_skills if s != skill.name]
+
+            if safe_allowed_skills:
+                filtered_skill_loader = self._create_filtered_skill_loader(safe_allowed_skills)
+                nested_skill_resource = DanaSkillResource(
+                    skill_loader=filtered_skill_loader,
+                    agent=subagent,  # Enable further nesting
+                    resource_id="skills",
+                )
+                subagent.with_resources(nested_skill_resource)
+                logger.info(
+                    "fork_with_nested_skills",
+                    skill=skill.name,
+                    nested_skills=safe_allowed_skills,
+                )
+            elif skill.name in skill.allowed_skills:
+                # Log when self-recursion was prevented
+                logger.info(
+                    "fork_self_recursion_prevented",
+                    skill=skill.name,
+                    message="Skill declared itself in allowed_skills - removed to prevent infinite loop",
+                )
+
+        return subagent
+
+    def _filter_resources(self, allowed_tools: list[str]) -> list[Any]:
+        """
+        Filter parent resources based on allowed-tools patterns.
+
+        Pattern format: "resource_id:method" or "resource_id:*"
+        Examples:
+        - "bash:execute" - only bash.execute method
+        - "bash:*" - all bash methods
+        - "*:read" - read method on any resource
+
+        Args:
+            allowed_tools: List of tool patterns from SKILL.md
+
+        Returns:
+            List of resources that match the patterns
         """
         if not self._agent:
             return []
 
         filtered = []
         for resource in self._agent._resources:
+            # Skip SkillResource to prevent recursion
+            if isinstance(resource, DanaSkillResource):
+                continue
+
             resource_id = resource.resource_id
 
+            # Check if this resource matches any allowed pattern
             for pattern in allowed_tools:
-                if self._match_tool_pattern(pattern, resource_id):
-                    # For patterns like Bash(git:*), we'd need to wrap the resource
-                    # to filter commands. For now, just include the whole resource.
-                    filtered.append(resource)
+                if ":" in pattern:
+                    pattern_resource, _ = pattern.split(":", 1)
+                else:
+                    pattern_resource = pattern
+
+                # Match resource_id using fnmatch for glob-style patterns
+                if fnmatch.fnmatch(resource_id, pattern_resource):
+                    # TODO: Could add method-level filtering if needed
+                    # For now, include the whole resource if resource_id matches
+                    if resource not in filtered:
+                        filtered.append(resource)
                     break
 
         return filtered
 
-    def _match_tool_pattern(self, pattern: str, resource_id: str) -> bool:
-        """Match a tool pattern against a resource ID.
+    def _create_filtered_skill_loader(self, allowed_skills: list[str]) -> SkillLoader:
+        """
+        Create a SkillLoader with only the specified skills.
 
-        Patterns:
-        - "Read" -> matches resource_id="Read" or "read" (case-insensitive)
-        - "Bash(git:*)" -> matches resource_id="bash" (command filtering TBD)
-        - "file-io:read" -> matches resource_id="file-io" with method "read"
+        This enables nested skill invocation with controlled access:
+        - Parent skill declares which skills it can invoke via skills: [...]
+        - Subagent gets a SkillLoader containing only those skills
+        - Prevents arbitrary skill access from forked contexts
 
         Args:
-            pattern: Tool pattern string
-            resource_id: Resource ID to match
+            allowed_skills: List of skill names this skill can invoke
 
         Returns:
-            True if pattern matches resource
+            SkillLoader containing only the allowed skills
         """
-        # Extract base tool name and optional filter
-        match = re.match(r"^([a-zA-Z_-]+)(?:\(([^)]+)\))?$", pattern)
-        if not match:
-            return pattern.lower() == resource_id.lower()
+        # Get all skills from parent loader
+        all_skills = self._skill_loader._skills
 
-        tool_name = match.group(1)
+        # Filter to only allowed skills
+        filtered_skills = {name: skill for name, skill in all_skills.items() if name in allowed_skills}
 
-        # Handle resource:method patterns
-        if ":" in tool_name and "(" not in pattern:
-            res_id, _ = tool_name.split(":", 1)
-            return res_id.lower() == resource_id.lower()
+        # Create new loader with filtered skills (no auto-discover)
+        loader = SkillLoader(skill_dirs=[], auto_discover=False)
+        loader._skills = filtered_skills
 
-        return tool_name.lower() == resource_id.lower()
+        logger.debug(
+            "created_filtered_skill_loader",
+            allowed=allowed_skills,
+            available=list(filtered_skills.keys()),
+        )
 
-    @tool_use
-    def list_available(self) -> dict[str, Any]:
-        """List available skills.
+        return loader
 
-        Returns:
-            Dict with success and list of skill summaries
+    def _build_fork_task_message(
+        self,
+        skill: DanaSkill,
+        context: str,
+        parameters: dict[str, Any],
+    ) -> str:
         """
-        skills = self._skill_loader.list_model_invocable()
-        skill_list = [
-            {
-                "name": skill.name,
-                "description": skill.description[:200],
-                "mode": skill.context_mode,
-                "user_invocable": skill.user_invocable,
-            }
-            for skill in skills
-        ]
-
-        return {
-            "success": True,
-            "skills": skill_list,
-            "count": len(skill_list),
-        }
-
-    def get_skill_loader(self) -> SkillLoader:
-        """Get the underlying skill loader.
-
-        Returns:
-            The SkillLoader instance
-        """
-        return self._skill_loader
-
-    def set_agent(self, agent: STARAgent) -> None:
-        """Set the parent agent reference.
-
-        Required for fork mode execution.
+        Build the task message for the forked subagent.
 
         Args:
-            agent: The parent agent
-        """
-        self._agent = agent
-
-    def get_prompt_context(self) -> str:
-        """Return skill labels for inclusion in system prompt.
-
-        Called by runtime to build resource context section.
-        Returns ONLY name and description for model-invocable skills.
-
-        The LLM needs to know:
-        - WHAT skills exist (name)
-        - WHEN to use them (description)
-
-        System metadata (context_mode, allowed-tools, hooks, etc.) is NOT included
-        as the system handles that during execution.
+            skill: The skill to execute
+            context: Context from the conversation
+            parameters: Skill parameters
 
         Returns:
-            JSON-formatted string for inclusion in system prompt, or empty string
-            if no model-invocable skills are available.
+            Formatted task message for the subagent
         """
-        model_invocable = self._skill_loader.list_model_invocable()
+        skill_content = skill.content
 
-        if not model_invocable:
-            return ""  # No context to add
+        scripts_note = ""
+        if skill.scripts_dir:
+            scripts_note = f"\n\n**Scripts Available:** Run scripts from {skill.scripts_dir}/ - execute them, do not read the code."
 
-        skill_entries = self._format_skills_for_prompt(model_invocable)
+        return f"""You are executing a forked skill in an isolated context.
 
-        return f""""available_skills": {{
-    "description": "Skills you can invoke using the skills:invoke tool",
-    "usage": "Call skills:invoke with skill_name and arguments",
-    "skills": [
-{skill_entries}
-    ]
-  }}"""
+CRITICAL: Your entire conversation history will be DISCARDED after execution.
+ONLY your FINAL RESPONSE will be returned to the caller.
 
-    def _format_skills_for_prompt(self, skills: list[DanaSkill]) -> str:
-        """Format skills as JSON array entries with ONLY name and description.
+This means:
+- Do NOT provide status updates or partial progress
+- Do NOT explain what you're about to do next
+- Complete ALL instructions FIRST, then provide your final response
+- Your final response must be actionable/usable, not internal reasoning
 
-        Args:
-            skills: List of DanaSkill objects to format.
+<skill name="{skill.name}">
+{skill_content}
+</skill>
+
+<context>
+{context if context else "No additional context provided."}
+</context>
+
+<parameters>
+{parameters if parameters else "No parameters provided."}
+</parameters>{scripts_note}
+
+Execute ALL skill instructions above completely. Your final response is the ONLY output that will be seen - make it count."""
+
+    def list_skills(self) -> list[DanaSkill]:
+        """
+        List all available skills (for programmatic use, not @tool_use).
 
         Returns:
-            Formatted string with one skill per line in JSON format.
+            List of all discovered DanaSkill objects
         """
-        lines = []
-        for skill in sorted(skills, key=lambda s: s.name):
-            # Only include name and description - NO system metadata
-            # Escape quotes in description to ensure valid JSON
-            escaped_desc = skill.description.replace('"', '\\"')
-            lines.append(f'      {{"name": "{skill.name}", "description": "{escaped_desc}"}}')
-        return ",\n".join(lines)
+        return self._skill_loader.list_skills()

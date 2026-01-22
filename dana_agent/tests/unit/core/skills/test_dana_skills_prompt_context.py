@@ -7,7 +7,7 @@ from pathlib import Path
 from dana.core.agent.star_agent import STARAgent
 from dana.core.runtime.default import DefaultRuntime
 from dana.core.skills.dana_skills.loader import SkillLoader
-from dana.core.skills.dana_skills.skills import DanaSkills
+from dana.core.skills.dana_skills.skills import DanaSkillResource
 
 
 class TestDanaSkillsPromptContext:
@@ -29,7 +29,7 @@ This is the skill content.
 
         # Create loader and skills resource
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills = DanaSkills(skill_loader=loader, auto_register=False)
+        skills = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         # Get prompt context
         context = skills.get_prompt_context()
@@ -44,7 +44,7 @@ This is the skill content.
         """Test that get_prompt_context returns empty string when no skills available."""
         # Create loader with empty directory
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills = DanaSkills(skill_loader=loader, auto_register=False)
+        skills = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         context = skills.get_prompt_context()
 
@@ -78,7 +78,7 @@ This skill should be included.
         )
 
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills = DanaSkills(skill_loader=loader, auto_register=False)
+        skills = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         context = skills.get_prompt_context()
 
@@ -105,7 +105,7 @@ Fork mode skill content.
         )
 
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills = DanaSkills(skill_loader=loader, auto_register=False)
+        skills = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         context = skills.get_prompt_context()
 
@@ -134,7 +134,7 @@ Skill content.
         )
 
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills = DanaSkills(skill_loader=loader, auto_register=False)
+        skills = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         context = skills.get_prompt_context()
 
@@ -157,7 +157,7 @@ Content.
             )
 
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills = DanaSkills(skill_loader=loader, auto_register=False)
+        skills = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         # Get model invocable skills and format
         model_invocable = loader.list_model_invocable()
@@ -188,7 +188,7 @@ Content.
 
         # Create agent with DanaSkills resource
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills_resource = DanaSkills(skill_loader=loader, auto_register=False)
+        skills_resource = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         agent = STARAgent(
             agent_type="test-agent",
@@ -238,7 +238,7 @@ Content.
 
         # Create agent with DanaSkills resource
         loader = SkillLoader(skill_dirs=[tmp_path])
-        skills_resource = DanaSkills(skill_loader=loader, auto_register=False)
+        skills_resource = DanaSkillResource(skill_loader=loader, auto_register=False)
 
         agent = STARAgent(
             agent_type="test-agent",

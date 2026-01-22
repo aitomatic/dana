@@ -7,7 +7,7 @@ from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
 
 
-class ProgressResource(BaseResource):
+class ToDoResource(BaseResource):
     """Resource for tracking task progress."""
 
     def __init__(self, resource_id: str, **kwargs):

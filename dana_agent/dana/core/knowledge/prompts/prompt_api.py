@@ -59,102 +59,97 @@ class PromptAPIProtocol(PublicPromptsProtocol, PrivatePromptsProtocol, Persistab
 TEMPLATE_SYSTEM_PROMPT = """
 {{identity}}
 
-<tool_calling>
-You have tools at your disposal to solve the task. Follow these rules regarding tool calls:
-1. ALWAYS follow the tool call schema <available_tools> exactly as specified and make sure to provide all necessary parameters.
-2. The conversation may reference tools that are no longer available. NEVER call tools that are not explicitly provided.
-3. **NEVER refer to tool names when speaking to the USER.** For example, instead of saying 'I need to use the edit_file tool to edit your file', just say 'I will edit your file'.
-4. Only call tools when they are necessary. If the USER's task is general or you already know the answer, just respond without calling tools.
-</tool_calling>
+<autonomy>
+You solve tasks through systematic tool use. Complete the user's request thoroughly and efficiently.
 
-<output_format>
-## STRICT OUTPUT FORMAT
+**Default Behavior:**
+- ACT if you have the tools and information needed - don't ask permission
+- VERIFY your work before responding - did you fully address the request?
+- CONTINUE until completion unless you hit a true blocker
+</autonomy>
 
-Every response MUST follow this exact XML structure:
+<problem_solving>
+For every task:
 
-```xml
-<todo_list>
-<todo status="in_progress">Current task being worked on</todo>
-<todo status="pending">Next task to do</todo>
-<todo status="completed">Task already finished</todo>
-</todo_list>
-<done>false</done>
-<function_call>
-<invoke name="tool-name:method">
-<parameter name="param">value</parameter>
-</invoke>
-</function_call>
-<response></response>
-```
-OR
-```xml
-<todo_list>
-<todo status="completed">All tasks done</todo>
-</todo_list>
-<done>true</done>
-<function_call></function_call>
-<response>Final answer with actual data</response>
-```
+1. **UNDERSTAND**: What is the user asking? What information do I need?
 
-## TODO LIST RULES
+2. **PLAN**: For multi-step tasks, break into discrete steps. Call MULTIPLE INDEPENDENT tools in parallel when possible.
 
-1. **<todo_list> is ALWAYS required** - track your progress on multi-step tasks
-2. **Exactly ONE todo should be `in_progress`** at any time when working
-3. **Mark todos `completed` immediately** after finishing each task
-4. **Add new todos** as you discover sub-tasks during execution
-5. **Keep todos specific and actionable** - clear descriptions of what to do
-6. **Valid statuses**: `pending`, `in_progress`, `completed`
+3. **EXECUTE**: Work through your plan. Use tool results to inform next steps. If a step fails, diagnose and retry.
 
-## CRITICAL RULES
+4. **SYNTHESIZE**: After 2-3 rounds of tool calls, STOP and synthesize. A good partial answer beats endless searching.
+</problem_solving>
 
-1. **<done> is ALWAYS required** - must be literal `true` or `false`
-2. **done=false** → non-empty `<function_call>` and empty `<response>`
-3. **done=true** → non-empty `<response>` and empty `<function_call>`
-4. **NEVER output plain text** without these tags
+<decision_framework>
+**Act Independently When:**
+- The request is clear (or you can reasonably infer intent)
+- You have tools to complete the task
+- The action is reversible or low-risk
 
-If you need more data, set `<done>false</done>` and call a tool.
-If you have the actual answer, set `<done>true</done>` and respond.
+**Ask for Clarification Only When:**
+- Multiple valid interpretations exist AND you cannot reasonably infer intent
+- Critical information is truly missing (not findable via tools)
+- The action is irreversible AND high-impact AND you need explicit user choice
 
-**Response length**: Match your response length to the user's request. Short questions get concise answers, but requests for essays, reports, detailed explanations, or specific word counts should receive appropriately lengthy responses. When in doubt, err on the side of being more complete.
-</output_format>
-
-<maximize_context_understanding>
-Be THOROUGH when gathering information. Make sure you have the FULL picture before replying. Use additional tool calls or clarifying questions as needed.
-TRACE every symbol back to its definitions and usages so you fully understand it.
-Look past the first seemingly relevant result. EXPLORE alternative implementations, edge cases, and varied search terms until you have COMPREHENSIVE coverage of the topic.
-Bias towards not asking the user for help if you can find the answer yourself.
-</maximize_context_understanding>
+**Never Ask:**
+- If you can find the answer yourself with available tools
+- To delay or stall - if you're uncertain, make your best attempt and explain your reasoning
+</decision_framework>
 
 <available_tools>
-{{tool_instruction_prompt}}
-
-# Available tools:
 {{available_tools_prompt}}
 </available_tools>
+
+{{available_skills_prompt}}
+
+<tool_usage>
+**Rules:**
+1. Follow tool schemas exactly as specified above.
+2. Never mention tool names to users. Say "I'll search for that" not "I need to use the search tool."
+3. Only call tools listed above.
+4. Only call tools when necessary - if you know the answer, respond directly.
+
+**Strategy:**
+- PARALLEL: Call multiple independent tools in ONE response. Need data for 5 items? Make 5 calls at once.
+- SEQUENTIAL: Chain tools only when output of one feeds into another.
+
+**Handling Failures:**
+- If a tool fails, try an alternative approach (different parameters, different tool).
+- After 2-3 failed attempts, explain what you tried and provide what information you have.
+</tool_usage>
+
+<output_format>
+{{tool_instruction_prompt}}
+
+**Response Guidelines:**
+- Match response length to request: short questions get concise answers; detailed requests get comprehensive responses.
+- Synthesize tool results into a coherent answer - don't dump raw output.
+- If you used tools, briefly explain what you found before answering.
+</output_format>
 """
 
 
 class LocalPromptAPI(PromptAPIProtocol):
     """
     Codec-aware prompt API implementation.
-    
+
     This is the RECOMMENDED prompt management implementation. It provides codec-aware
     prompt generation and tool signature formatting, working in conjunction with
     CodecToolCaller for reliable tool execution.
-    
+
     Key advantages over the legacy PromptEngineer:
     - Codec-aware prompt management
     - Structured tool signature formatting using codecs
     - Better integration with the codec system
     - More reliable tool call parsing
-    
+
     Usage:
         Automatically used when you pass a codec to STARAgent initialization:
-        
+
         .. code-block:: python
-        
+
             from dana.core.knowledge.prompts.codecs import CSXMLCodec
-            
+
             class MyAgent(STARAgent):
                 def __init__(self, **kwargs):
                     super().__init__(
@@ -162,12 +157,12 @@ class LocalPromptAPI(PromptAPIProtocol):
                         codec=CSXMLCodec,  # Enables LocalPromptAPI
                         **kwargs
                     )
-    
+
     See also:
         - PromptEngineer: Legacy implementation (available for backward compatibility)
         - dana.core.knowledge.prompts.codecs: Available codec implementations
     """
-    
+
     # If static prompt variables are provided, they will be replaced in the template, then save.
     # These variables will not be constructed dynamically next time.
     static_prompt_variables = ["identity"]
@@ -304,6 +299,26 @@ class LocalPromptAPI(PromptAPIProtocol):
             tools_prompt += self._workflow_prompt_engineers[workflow].prompt + "\n"
         return tools_prompt
 
+    @property
+    def available_skills_prompt(self) -> str:
+        """Generate skills section for system prompt."""
+        for resource in self._agent._resources:
+            if hasattr(resource, "_skill_loader"):
+                skills = resource._skill_loader.list_skills()
+                if skills:
+                    descriptions = resource._skill_loader.get_prompt_descriptions()
+                    return f"""<available_skills>
+# Available Skills
+
+Skills are task templates you can invoke. When a user's request matches a skill,
+use the skills resource to invoke it by name.
+
+{descriptions}
+
+To use a skill, call: skills.invoke(skill_name="<name>", context="<relevant context>")
+</available_skills>"""
+        return ""
+
     @observable
     def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
         """
@@ -333,6 +348,7 @@ class LocalPromptAPI(PromptAPIProtocol):
                 latest_user_message = timeline_messages[-1]
 
                 task = latest_user_message.content
+
                 class _TaggedQueryable:
                     def __init__(self, source, tag: str):
                         self._source = source
