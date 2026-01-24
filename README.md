@@ -33,31 +33,7 @@ It's not just "how to do things"—it's *why*, *where*, *when*, and *what happen
 ## MapMaking vs. MapUsing
 
 This is Dana's core positioning:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│   MAPMAKING (Dana)                        MAPUSING (Other AI)               │
-│   ────────────────                        ─────────────────                 │
-│                                                                             │
-│   ┌──────────┐                            ┌──────────┐                      │
-│   │  CURATE  │  Extract knowledge         │   SEE    │  Perceive situation  │
-│   └────┬─────┘  from docs & experts       └────┬─────┘                      │
-│        │                                       │                            │
-│        ▼                                       ▼                            │
-│   ┌──────────┐                            ┌──────────┐                      │
-│   │ ORGANIZE │  Structure into            │  THINK   │  Reason & decide     │
-│   └────┬─────┘  causal relationships      └────┬─────┘                      │
-│        │                                       │                            │
-│        ▼                                       ▼                            │
-│   ┌──────────┐                            ┌──────────┐                      │
-│   │ REFLECT  │  Learn & improve           │   ACT    │  Execute action      │
-│   └──────────┘  the map                   └──────────┘                      │
-│                                                                             │
-│   Creates the map <─────────────────────────────────▶  Navigates the map    │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+![MapMaking vs. MapUsing](./images/map-making.jpg)
 
 **MapUsing** is what ChatGPT, copilots, and most AI agents do: they navigate existing knowledge (or hallucinate when the map doesn't exist).
 
@@ -70,36 +46,7 @@ Dana solves MapMaking. Your AI agents handle MapUsing—but now they have a real
 ## COSTAR: The Complete Methodology
 
 The full **COSTAR** lifecycle spans both MapMaking and MapUsing:
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                                                                        │
-│                       COSTAR: THE COMPLETE CYCLE                       │
-│                                                                        │
-│  MAPMAKING (Dana)              COGNITIVE              MAPUSING (AI)    │
-│  Build the map                 ONTOLOGY               Navigate the map │
-│                                                                        │
-│  ┌──────────┐           ┌───────────────┐          ┌──────────┐        │
-│  │  CURATE  │──────────▶│               │─────────▶│   SEE    │        │
-│  └──────────┘  extract  │    Domain     │  context └────┬─────┘        │
-│       │       knowledge │   Knowledge   │               │              │
-│       ▼                 │     Graph     │               ▼              │
-│  ┌──────────┐           │               │          ┌──────────┐        │
-│  │ ORGANIZE │──────────▶│  ┌─────────┐  │          │  THINK   │        │
-│  └──────────┘ structure │  │ Entity  │  │          └────┬─────┘        │
-│       │                 │  ├─────────┤  │               │              │
-│       │                 │  │ Entity  │  │               ▼              │
-│       │                 │  ├─────────┤  │          ┌──────────┐        │
-│       │                 │  │ Entity  │  │◀─────────│   ACT    │        │
-│       │                 │  └─────────┘  │  results └────┬─────┘        │
-│       │                 │ Causal Links  │               │              │
-│       ▼                 └───────────────┘               │              │
-│  ┌──────────┐                  ▲                        │              │
-│  │ REFLECT  │◀─────────────────┴────────────────────────┘              │
-│  └──────────┘                feedback                                  │
-│                                                                        │
-└────────────────────────────────────────────────────────────────────────┘
-```
+![COSTAR: The Complete Cycle](./images/costar.jpg)
 
 | Phase | What Happens | The Outcome |
 |-------|--------------|-------------|
