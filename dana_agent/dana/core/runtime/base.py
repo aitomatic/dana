@@ -232,6 +232,11 @@ class AgentRuntime(ABC):
             timeline_messages = timeline.to_llm_messages()
             messages.extend(timeline_messages)
 
+            # Inject system reminders after timeline messages
+            reminders = self._evaluate_reminders(agent, timeline)
+            if reminders:
+                messages.append(LLMMessage(role="user", content=reminders))
+
         self._log_prompt_build(agent, system_prompt, timeline, messages)
 
         return messages
@@ -290,6 +295,25 @@ class AgentRuntime(ABC):
             context_parts.append(context.text)
 
         return "\n\n".join(context_parts) if context_parts else ""
+
+    def _evaluate_reminders(self, agent, timeline: Timeline) -> str:
+        """
+        Evaluate reminder rules and return formatted reminders.
+
+        This method checks if the agent has a ReminderManager and if so,
+        evaluates all registered reminders against the current context.
+
+        Args:
+            agent: The agent instance (should have _reminder_manager attribute)
+            timeline: The current timeline
+
+        Returns:
+            Formatted reminder string (XML-tagged), or empty string if no reminders
+        """
+        if not hasattr(agent, "_reminder_manager") or agent._reminder_manager is None:
+            return ""
+
+        return agent._reminder_manager.evaluate_all(agent, timeline)
 
     @observable
     def call_llm(self, messages: list[LLMMessage]) -> str:

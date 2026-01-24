@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from dana.common.protocols.war import IS_TOOL_USE
 from dana.common.utils.misc import Misc
+
 
 if TYPE_CHECKING:
     from dana.common.protocols import AgentProtocol, ResourceProtocol, WorkflowProtocol
@@ -32,13 +32,40 @@ PYTHON_TO_JSON_TYPE = {
 }
 
 
-def _python_type_to_json_schema(python_type: str) -> str:
-    """Convert Python type string to JSON Schema type."""
-    # Handle common type variations
-    base_type = python_type.split("[")[0].strip()  # Remove generics like list[str]
-    base_type = base_type.replace("Optional[", "").replace("]", "")
+def _python_type_to_json_schema(python_type: str) -> dict:
+    """Convert Python type string to JSON Schema.
 
-    return PYTHON_TO_JSON_TYPE.get(base_type, "string")
+    Args:
+        python_type: Python type string (e.g., "str", "list[str]", "dict[str, Any]")
+
+    Returns:
+        JSON Schema dict with type and optional items/additionalProperties
+    """
+    # Handle common type variations
+    base_type = python_type.split("[")[0].strip()  # Get base type before generics
+    base_type_clean = base_type.replace("Optional[", "").replace("]", "")
+
+    json_type = PYTHON_TO_JSON_TYPE.get(base_type_clean, "string")
+
+    # For arrays, extract item type from generics like list[str], list[dict], etc.
+    if json_type == "array":
+        # Try to extract the item type from list[X]
+        if "[" in python_type and "]" in python_type:
+            inner_start = python_type.index("[") + 1
+            inner_end = python_type.rindex("]")
+            inner_type = python_type[inner_start:inner_end].strip()
+            # Recursively get schema for inner type
+            inner_schema = _python_type_to_json_schema(inner_type)
+            return {"type": "array", "items": inner_schema}
+        else:
+            # Default to string items if no generic type specified
+            return {"type": "array", "items": {"type": "string"}}
+
+    # For objects (dict), add additionalProperties for flexibility
+    if json_type == "object":
+        return {"type": "object", "additionalProperties": True}
+
+    return {"type": json_type}
 
 
 def _method_signature_to_schema(
@@ -71,10 +98,10 @@ def _method_signature_to_schema(
         if param.name == "self":
             continue
 
-        param_schema = {
-            "type": _python_type_to_json_schema(param.type),
-            "description": param.description or f"Parameter {param.name}",
-        }
+        # Get base schema from type (may include items for arrays, etc.)
+        param_schema = _python_type_to_json_schema(param.type)
+        # Add description
+        param_schema["description"] = param.description or f"Parameter {param.name}"
 
         properties[param.name] = param_schema
 
@@ -113,7 +140,7 @@ def generate_resource_schemas(resources: list[ResourceProtocol]) -> list[dict]:
         # Get all @tool_use decorated methods
         tool_methods = Misc.extract_tool_use_methods(resource)
 
-        for method_name, method in tool_methods:
+        for _method_name, method in tool_methods:
             # Parse the method signature
             method_sig = Misc.parse_method_signature(method, object_id=resource_id)
 

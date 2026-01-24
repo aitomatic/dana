@@ -186,7 +186,9 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
                         break
 
                 except Exception as e:
-                    print(f"Error in query: {e}")
+                    import traceback
+
+                    print(f"Error in query: {e}. {traceback.format_exc()}")
                     trace_outputs = {"trace_outputs": {"error": e}}
                     break
 
