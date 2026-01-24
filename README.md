@@ -33,7 +33,7 @@ It's not just "how to do things"—it's *why*, *where*, *when*, and *what happen
 ## MapMaking vs. MapUsing
 
 This is Dana's core positioning:
-![MapMaking vs. MapUsing](./images/map-making.jpg)
+![MapMaking vs. MapUsing](./images/map-making.png)
 
 **MapUsing** is what ChatGPT, copilots, and most AI agents do: they navigate existing knowledge (or hallucinate when the map doesn't exist).
 
@@ -46,7 +46,7 @@ Dana solves MapMaking. Your AI agents handle MapUsing—but now they have a real
 ## COSTAR: The Complete Methodology
 
 The full **COSTAR** lifecycle spans both MapMaking and MapUsing:
-![COSTAR: The Complete Cycle](./images/costar.jpg)
+![COSTAR: The Complete Cycle](./images/costar.png)
 
 | Phase | What Happens | The Outcome |
 |-------|--------------|-------------|
