@@ -24,6 +24,7 @@ class DanaSkill:
        description: Brief description
        context: fork
        allowed-tools: tool1, tool2
+       disable-model-invocation: true
        ---
 
     2. Legacy inline format:
@@ -39,6 +40,7 @@ class DanaSkill:
     context_mode: Literal["main", "fork"] = "main"  # Fork creates isolated context
     allowed_tools: list[str] | None = None  # Tool whitelist (None = all)
     allowed_skills: list[str] | None = None  # Skills this skill can invoke (None = none)
+    disable_model_invocation: bool = False  # Whether this skill should be hidden from LLM
 
     # Lazy-loaded properties
     _content: str | None = field(default=None, repr=False)
@@ -191,6 +193,11 @@ def parse_skill_md(skill_md_path: Path) -> DanaSkill | None:
             if skills_match:
                 allowed_skills = _parse_tools_list(skills_match.group(1))
 
+        # Disable model invocation: frontmatter only
+        disable_model_invocation = False
+        if frontmatter.get("disable-model-invocation", "").lower() == "true":
+            disable_model_invocation = True
+
         return DanaSkill(
             name=name,
             description=description,
@@ -198,6 +205,7 @@ def parse_skill_md(skill_md_path: Path) -> DanaSkill | None:
             context_mode=context_mode,
             allowed_tools=allowed_tools,
             allowed_skills=allowed_skills,
+            disable_model_invocation=disable_model_invocation,
         )
     except Exception:
         return None

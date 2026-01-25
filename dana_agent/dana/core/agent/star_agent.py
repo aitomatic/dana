@@ -155,6 +155,11 @@ class STARAgent(BaseSTARAgent):
             elif isinstance(codec, type) and issubclass(codec, AbstractCodec):
                 from dana.core.runtime import RuntimeRegistry
 
+                warnings.warn(
+                    "The codec parameter is deprecated; pass runtime=... instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
                 # use_native_tools=None allows auto-detection based on provider support
                 runtime = RuntimeRegistry.select_codec_runtime(provider=llm_provider, model=model, codec=codec, use_native_tools=None)
         else:

@@ -344,10 +344,10 @@ class LocalPromptAPI(PromptAPIProtocol):
     def available_skills_prompt(self) -> str:
         """Generate skills section for system prompt."""
         for resource in self._agent._resources:
-            if hasattr(resource, "_skill_loader"):
-                skills = resource._skill_loader.list_skills()
+            if hasattr(resource, "list_model_invocable"):
+                skills = resource.list_model_invocable()
                 if skills:
-                    descriptions = resource._skill_loader.get_prompt_descriptions()
+                    descriptions = resource.get_prompt_descriptions()
                     return f"""<available_skills>
 # Available Skills
 

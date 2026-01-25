@@ -269,8 +269,8 @@ class TestTodoNeverCalledReminder:
         result = reminder.evaluate(mock_agent, mock_timeline)
 
         assert result is not None
-        assert "ToDoResource" in result
-        assert "todo_write" in result
+        assert "todo list is currently empty" in result
+        assert "todo:todo_write" in result
 
     def test_returns_none_if_todo_write_called(self):
         """Test that reminder returns None if todo_write was called."""
@@ -470,4 +470,4 @@ class TestLazyValidityBehavior:
         result = manager.evaluate_all(mock_agent, mock_timeline)
 
         # TodoNeverCalledReminder should fire (no todo_write calls)
-        assert "ToDoResource" in result
+        assert "todo list is currently empty" in result

@@ -63,7 +63,7 @@ class LocalRepositoryMixin:
         """
         Compute codec prefix from agent's codec.
 
-        Returns "default" if codec is None or has "magic" in qualname,
+        Returns "default" if codec is None, not a class, or has "magic" in qualname,
         otherwise returns the codec's qualname.
 
         Args:
@@ -73,7 +73,10 @@ class LocalRepositoryMixin:
             Codec prefix string
         """
         codec = self._extract_codec_from_agent(agent)
-        if codec is None or "magic" in str(codec.__qualname__):
+        # Handle None, sentinel objects, and non-class values
+        if codec is None or not hasattr(codec, "__qualname__"):
+            return "default"
+        if "magic" in str(codec.__qualname__):
             return "default"
         return codec.__qualname__
 

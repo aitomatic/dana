@@ -99,12 +99,24 @@ class SkillLoader:
         """
         return list(self._skills.values())
 
+    def list_model_invocable(self) -> list[DanaSkill]:
+        """
+        List skills that can be invoked by the LLM.
+
+        Skills with disable_model_invocation=True are excluded.
+
+        Returns:
+            List of DanaSkill objects that can be model-invoked
+        """
+        return [skill for skill in self._skills.values() if not skill.disable_model_invocation]
+
     def get_prompt_descriptions(self, budget_chars: int = 15000) -> str:
         """
         Generate skill descriptions for system prompt (labels only).
 
         Creates a compact list of skill names and descriptions
-        suitable for including in the system prompt.
+        suitable for including in the system prompt. Only includes
+        skills that can be model-invoked (excludes disabled skills).
 
         Args:
             budget_chars: Maximum character budget for descriptions
@@ -112,16 +124,17 @@ class SkillLoader:
         Returns:
             Formatted string of skill descriptions
         """
-        if not self._skills:
+        model_invocable = self.list_model_invocable()
+        if not model_invocable:
             return ""
 
         lines = []
         total_chars = 0
 
-        for skill in sorted(self._skills.values(), key=lambda s: s.name):
+        for skill in sorted(model_invocable, key=lambda s: s.name):
             line = f"- {skill.name}: {skill.description}"
             if total_chars + len(line) > budget_chars:
-                lines.append(f"... and {len(self._skills) - len(lines)} more skills")
+                lines.append(f"... and {len(model_invocable) - len(lines)} more skills")
                 break
             lines.append(line)
             total_chars += len(line) + 1

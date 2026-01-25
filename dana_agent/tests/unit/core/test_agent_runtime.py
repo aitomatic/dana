@@ -271,7 +271,7 @@ def test_runtime_registry_passes_kwargs():
 
 
 def test_runtime_registry_select_runtime_classmethod():
-    from dana.core.runtime.anthropic_runtime import AnthropicRuntime
+    from dana.core.runtime.anthropic import AnthropicRuntime
 
     runtime = RuntimeRegistry.select_runtime(model="claude-3", provider="anthropic")
     # Should return AnthropicRuntime for anthropic provider

@@ -448,3 +448,73 @@ Execute ALL skill instructions above completely. Your final response is the ONLY
             List of all discovered DanaSkill objects
         """
         return self._skill_loader.list_skills()
+
+    def list_model_invocable(self) -> list[DanaSkill]:
+        """
+        List skills that can be invoked by the LLM.
+
+        Skills with disable_model_invocation=True are excluded.
+
+        Returns:
+            List of DanaSkill objects that can be model-invoked
+        """
+        return self._skill_loader.list_model_invocable()
+
+    def get_prompt_descriptions(self, budget_chars: int = 15000) -> str:
+        """
+        Generate skill descriptions for system prompt (markdown format).
+
+        Creates a compact list of skill names and descriptions
+        suitable for including in the system prompt. Only includes
+        skills that can be model-invoked (excludes disabled skills).
+
+        Args:
+            budget_chars: Maximum character budget for descriptions
+
+        Returns:
+            Formatted string of skill descriptions (markdown list)
+        """
+        return self._skill_loader.get_prompt_descriptions(budget_chars)
+
+    def get_prompt_context(self) -> str:
+        """
+        Get skill context for inclusion in the system prompt.
+
+        Returns available skills in a JSON format suitable for the system prompt,
+        excluding skills with disable_model_invocation=True and system metadata.
+
+        Returns:
+            JSON-formatted string with skill labels, or empty string if no skills
+        """
+        model_invocable = self._skill_loader.list_model_invocable()
+        if not model_invocable:
+            return ""
+
+        return self._format_skills_for_prompt(model_invocable)
+
+    def _format_skills_for_prompt(self, skills: list[DanaSkill]) -> str:
+        """
+        Format skills for inclusion in the system prompt.
+
+        Args:
+            skills: List of DanaSkill objects to format
+
+        Returns:
+            JSON-formatted string with skill names and descriptions
+        """
+        if not skills:
+            return ""
+
+        # Sort alphabetically by name
+        sorted_skills = sorted(skills, key=lambda s: s.name)
+
+        # Build skill entries with only name and description (no system metadata)
+        skill_entries = []
+        for skill in sorted_skills:
+            # Escape quotes in description
+            escaped_desc = skill.description.replace('"', '\\"')
+            skill_entries.append(f'{{"name": "{skill.name}", "description": "{escaped_desc}"}}')
+
+        skills_json = ", ".join(skill_entries)
+
+        return f'"available_skills": [{skills_json}], "skill_usage": "Use skills:invoke to execute a skill by name"'
