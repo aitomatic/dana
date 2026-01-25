@@ -68,6 +68,7 @@ class STARAgent(BaseSTARAgent):
         enable_web_search: bool = False,
         enable_code_execution: bool = False,
         enable_assistant: bool = True,
+        identity_override: str | None = None,
         **kwargs,
     ):
         """
@@ -97,6 +98,8 @@ class STARAgent(BaseSTARAgent):
             ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
             enable_skills: Whether to enable Claude Code skills resource discovery
             skills_output_dir: Directory to use for skill output files
+            identity_override: Optional identity string that overrides the class docstring.
+                Used by fork subagents to inject skill content as their identity.
             **kwargs: Additional arguments passed to components
         """
         # Initialize base class first (handles registration)
@@ -123,6 +126,7 @@ class STARAgent(BaseSTARAgent):
         self._repository_factory = repository_factory
         codec_provided = codec is not _CODEC_SENTINEL
         self._codec = codec
+        self._identity_override = identity_override
 
         if runtime is None:
             if codec is None:

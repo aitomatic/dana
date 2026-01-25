@@ -271,6 +271,9 @@ class LocalPromptAPI(PromptAPIProtocol):
 
     @property
     def identity(self) -> str:
+        # Check for identity override (used by fork subagents with skill content)
+        if hasattr(self._agent, "_identity_override") and self._agent._identity_override:
+            return self._agent._identity_override
         return f"{self._agent.__class__.__doc__}"
 
     @property

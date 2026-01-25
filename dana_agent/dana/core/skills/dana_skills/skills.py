@@ -249,6 +249,8 @@ Follow the skill instructions above. The skill content will remain in your conte
         - Is the same type as the parent agent
         - Has the same LLM configuration
         - Has restricted resources based on allowed-tools
+        - Uses a unique agent_id to avoid inheriting parent's persisted prompts
+        - Overrides identity with skill content
 
         Args:
             skill: The skill being executed (contains allowed-tools)
@@ -256,18 +258,21 @@ Follow the skill instructions above. The skill content will remain in your conte
         Returns:
             Configured subagent ready for execution
         """
+
         from dana.core.agent.star_agent import STARAgent
 
-        # Create subagent with same configuration as parent
+        # Create subagent with unique ID to avoid inheriting parent's persisted prompts
+        # The identity_override ensures the skill content becomes the fork's identity
         subagent = STARAgent(
             agent_type=f"{self._agent.agent_type}",
-            agent_id=f"{self._agent.object_id}",
+            agent_id=f"fork-{skill.name}",
             llm_provider=self._agent._llm_config.get("provider"),
             model=self._agent._llm_config.get("model"),
             codec=self._agent._codec,
             auto_register=False,  # Don't register fork agents
             max_context_tokens=self._agent._timeline.max_context_tokens,
             enable_assistant=False,
+            identity_override=skill.content,  # Skill content becomes the fork's identity
         )
 
         subagent.set_session_id(f"{self._agent._session_id}-{skill.name}")

@@ -3,14 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from dana.common.llm.llm import LLM
-from dana.common.llm.types import LLMMessage
+from dana.common.llm.types import LLMMessage, LLMResponse
 from dana.common.observable import observable
 from dana.core.agent.timeline import TimelineProtocol
 from dana.core.knowledge.prompts import LocalPromptAPI
-from dana.core.knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
+from dana.core.knowledge.prompts.codecs import AbstractCodec, CSXMLCodec, NativeToolsCodec
 from dana.core.runtime.base import AgentRuntime
 
-from ..base import ParsedResponse, TodoItem
+from ..base import ParsedResponse
 
 
 if TYPE_CHECKING:
@@ -32,14 +32,46 @@ class CodecRuntime(AgentRuntime):
         use_native_tools: bool | None = None,
         codec: type[AbstractCodec] = CSXMLCodec,
     ):
+        # Auto-detect use_native_tools based on codec type if not explicitly set
+        if use_native_tools is None:
+            use_native_tools = codec is NativeToolsCodec
+
         super().__init__(
             model=model, temperature=temperature, max_tokens=max_tokens, llm=llm, provider=provider, use_native_tools=use_native_tools
         )
         self._codec = codec
         self._prompt_api = None
+        self._last_native_tools_state: bool | None = None  # Track for cache invalidation
 
-    # def validate_done_output(self, done: bool | None, has_tool_calls: bool, has_response: bool) -> str:
-    #     return True
+    def validate_done_output(self, done: bool | None, has_tool_calls: bool, has_response: bool) -> str:
+        """Validate the output format and return the next action.
+
+        For native tools mode, the validation is less strict:
+        - Having both response and tool_calls is valid (LLM can explain while calling tools)
+        - done=False requires tool_calls
+        - done=True requires response (no pending tool calls)
+        """
+        if done is None:
+            return "retry"
+
+        if self._use_native_tools:
+            # Native tools mode: more flexible validation
+            if done and has_tool_calls:
+                return "retry"  # Can't be done with pending tool calls
+            if not done and not has_tool_calls:
+                return "retry"  # Not done but no tools - invalid
+            return "exit" if done else "continue"
+
+        # XML codec mode: stricter validation (original behavior)
+        if done and has_tool_calls:
+            return "retry"
+        if not done and has_response:
+            return "retry"
+        if not done and not has_tool_calls:
+            return "retry"
+        if done and not has_response:
+            return "retry"
+        return "exit" if done else "continue"
 
     def _get_prompt_api(self, agent: STARAgent) -> LocalPromptAPI:
         if self._prompt_api is None:
@@ -50,6 +82,7 @@ class CodecRuntime(AgentRuntime):
         prompt_api = self._get_prompt_api(agent)
         return prompt_api.system_prompt
 
+    @observable
     def build_prompt(self, agent, timeline: TimelineProtocol, learned_context: str | None = None) -> list[LLMMessage]:
         self._agent = agent
         messages = []
@@ -79,12 +112,17 @@ class CodecRuntime(AgentRuntime):
             timeline_messages = timeline.to_llm_messages()
             messages.extend(timeline_messages)
 
+        if self._agent._reminder_manager:
+            reminders = self._agent._reminder_manager.evaluate_all(self._agent, timeline)
+            if reminders:
+                messages.append(LLMMessage(role="user", content=reminders))
+
         self._log_prompt_build(agent, system_prompt, timeline, messages)
 
         return messages
 
     @observable
-    def call_llm(self, messages: list[LLMMessage]) -> str:
+    def call_llm(self, messages: list[LLMMessage]) -> LLMResponse:
         llm = self._resolve_llm()
         tools = self._native_tools if self._native_tools else None
         response = llm.chat_response_sync(
@@ -96,10 +134,10 @@ class CodecRuntime(AgentRuntime):
             tools=tools,
         )
         self._last_llm_response = response
-        return response.content
+        return response
 
     @observable
-    async def call_llm_async(self, messages: list[LLMMessage]) -> str:
+    async def call_llm_async(self, messages: list[LLMMessage]) -> LLMResponse:
         llm = self._resolve_llm()
         tools = self._native_tools if self._native_tools else None
         response = await llm.chat_response(
@@ -111,48 +149,54 @@ class CodecRuntime(AgentRuntime):
             tools=tools,
         )
         self._last_llm_response = response
-        return response.content
+        return response
 
     @observable
-    def parse_response(self, raw: str | dict | Any) -> ParsedResponse:
-        if raw is None:
-            return ParsedResponse(done=None, reasoning=None, response=None, tool_calls=[], todo_list=None)
-
-        # Ensure raw is a string - LLM providers sometimes return unexpected types
-        if not isinstance(raw, str):
-            raw = str(raw)
-
-        content = raw.strip()
-        done = None
-        response_text = None
+    def parse_response(self, response: LLMResponse) -> ParsedResponse:
+        content = str(response.content).strip() if response.content else ""
         tool_calls: list[dict[str, Any]] = []
-        todo_list: list[TodoItem] | None = None
         reasoning = None
+        response_text = None
+        done = None
 
-        # Check for native tool calls from the LLM response
-        if self._use_native_tools is False:
+        # 1. Check for native tool calls from API response FIRST
+        #    (Both OpenAI and Anthropic providers return tool_calls in compatible format)
+        if response.tool_calls:
+            tool_calls.extend(self._to_tool_call_dicts(response.tool_calls))
+
+        # 2. Parse content for thinking/response using codec
+        #    (Works for both CSXMLCodec and NativeToolsCodec)
+        if content:
             parsed_codec_response = self._codec.parse_response(content)
+            reasoning = parsed_codec_response.thinking
+            response_text = parsed_codec_response.response
 
-            # Convert ToolCall objects to expected dict format for execute_tools
-            if parsed_codec_response.tool_calls:
+            # 3. Extract tool_calls from XML if NOT using native tools
+            #    (XML codecs return tool_calls from parsed text)
+            if not self._use_native_tools and parsed_codec_response.tool_calls:
                 for tc in parsed_codec_response.tool_calls:
                     # Build function name: "object_id:method" or "class_name:method"
                     identifier = tc.object_id or tc.class_name
-                    if identifier:
-                        function_name = f"{identifier}:{tc.name}"
-                    else:
-                        function_name = tc.name
+                    function_name = f"{identifier}:{tc.name}" if identifier else tc.name
                     tool_calls.append({"function": function_name, "arguments": tc.parameters})
 
-            reasoning = parsed_codec_response.thinking  # Fixed: was .reasoning
-            response_text = parsed_codec_response.response
-            done = len(tool_calls) == 0  # Fixed: done=True only when no tool calls
-            todo_list = []
+        # 4. Determine done flag based on tool calls
+        #    - If there are tool calls, we're not done (need to execute them)
+        #    - If no tool calls, we're done (can return response)
+        done = len(tool_calls) == 0
 
         return ParsedResponse(
             done=done,
             reasoning=reasoning,
             response=response_text if response_text else None,
             tool_calls=tool_calls,
-            todo_list=todo_list,
+            todo_list=[],
         )
+
+    def execute_tools(self, agent: STARAgent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        res = super().execute_tools(agent, tool_calls)
+        return res
+
+    async def execute_tools_async(self, agent: STARAgent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        res = await super().execute_tools_async(agent, tool_calls)
+        return res

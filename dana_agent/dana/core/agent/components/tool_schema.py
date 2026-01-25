@@ -6,7 +6,9 @@ Generates OpenAI-compatible tool schemas from DANA resources and workflows.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args, get_origin
+
+from pydantic import BaseModel
 
 from dana.common.utils.misc import Misc
 
@@ -32,15 +34,33 @@ PYTHON_TO_JSON_TYPE = {
 }
 
 
-def _python_type_to_json_schema(python_type: str) -> dict:
+def _python_type_to_json_schema(python_type: str, type_object: Any | None = None) -> dict:
     """Convert Python type string to JSON Schema.
 
     Args:
         python_type: Python type string (e.g., "str", "list[str]", "dict[str, Any]")
+        type_object: Optional actual type object for Pydantic model support
 
     Returns:
         JSON Schema dict with type and optional items/additionalProperties
     """
+    # Handle Pydantic models via type_object (takes priority)
+    if type_object is not None:
+        # Handle list[PydanticModel]
+        origin = get_origin(type_object)
+        if origin is list:
+            args = get_args(type_object)
+            if args:
+                item_type = args[0]
+                if isinstance(item_type, type) and issubclass(item_type, BaseModel):
+                    item_schema = _get_pydantic_schema(item_type)
+                    return {"type": "array", "items": item_schema}
+
+        # Handle direct PydanticModel
+        if isinstance(type_object, type) and issubclass(type_object, BaseModel):
+            return _get_pydantic_schema(type_object)
+
+    # Fall back to string-based type parsing
     # Handle common type variations
     base_type = python_type.split("[")[0].strip()  # Get base type before generics
     base_type_clean = base_type.replace("Optional[", "").replace("]", "")
@@ -66,6 +86,56 @@ def _python_type_to_json_schema(python_type: str) -> dict:
         return {"type": "object", "additionalProperties": True}
 
     return {"type": json_type}
+
+
+def _get_pydantic_schema(model_class: type[BaseModel]) -> dict:
+    """Get JSON schema from a Pydantic model, inlining any $defs.
+
+    Args:
+        model_class: A Pydantic BaseModel class
+
+    Returns:
+        JSON Schema dict with properties inlined (no $defs)
+    """
+    schema = model_class.model_json_schema()
+
+    # If there are $defs (nested models), inline them
+    defs = schema.pop("$defs", None)
+    if defs:
+        schema = _inline_refs(schema, defs)
+
+    return schema
+
+
+def _inline_refs(schema: dict, defs: dict) -> dict:
+    """Recursively replace $ref with actual definitions.
+
+    Args:
+        schema: Schema that may contain $ref references
+        defs: Dictionary of definitions to inline
+
+    Returns:
+        Schema with all $ref replaced by their definitions
+    """
+    if isinstance(schema, dict):
+        # Handle $ref replacement
+        if "$ref" in schema:
+            ref_path = schema["$ref"]
+            # Extract definition name from "#/$defs/DefinitionName"
+            if ref_path.startswith("#/$defs/"):
+                def_name = ref_path.split("/")[-1]
+                if def_name in defs:
+                    # Replace $ref with the actual definition (recursively inline)
+                    return _inline_refs(defs[def_name].copy(), defs)
+            return schema
+
+        # Recursively process all dict values
+        return {k: _inline_refs(v, defs) for k, v in schema.items()}
+
+    if isinstance(schema, list):
+        return [_inline_refs(item, defs) for item in schema]
+
+    return schema
 
 
 def _method_signature_to_schema(
@@ -99,7 +169,8 @@ def _method_signature_to_schema(
             continue
 
         # Get base schema from type (may include items for arrays, etc.)
-        param_schema = _python_type_to_json_schema(param.type)
+        # Pass type_object for Pydantic model support
+        param_schema = _python_type_to_json_schema(param.type, param.type_object)
         # Add description
         param_schema["description"] = param.description or f"Parameter {param.name}"
 

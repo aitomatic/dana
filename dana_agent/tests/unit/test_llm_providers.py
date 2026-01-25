@@ -127,7 +127,7 @@ class TestAzureProvider:
     @pytest.fixture
     def provider(self):
         """Create AzureProvider instance for testing"""
-        with patch("dana.common.llm.providers.azure.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.azure.AsyncAzureOpenAI"):
             from dana.common.llm.providers.azure import AzureProvider
 
             return AzureProvider(
@@ -137,9 +137,13 @@ class TestAzureProvider:
     def test_init(self, provider):
         """Test AzureProvider initialization"""
         assert provider.api_key == "test-key"
-        assert provider.base_url == "https://test.openai.azure.com/?api-version=2024-02-15-preview"
         assert provider.api_version == "2024-02-15-preview"
         assert provider.model == "gpt-35-turbo"
+        assert provider.deployment_name == "gpt-35-turbo"
+
+    def test_supports_native_tools(self, provider):
+        """Test that Azure provider supports native tools"""
+        assert provider.supports_native_tools is True
 
     @pytest.mark.asyncio
     async def test_chat_success(self, provider):
@@ -147,6 +151,7 @@ class TestAzureProvider:
         mock_response = Mock()
         mock_response.choices = [Mock()]
         mock_response.choices[0].message.content = "Hello from Azure!"
+        mock_response.choices[0].message.tool_calls = None
         mock_response.choices[0].finish_reason = "stop"
         mock_response.model = "gpt-35-turbo"
         mock_response.usage = Mock()
@@ -167,6 +172,43 @@ class TestAzureProvider:
             assert response.model == "gpt-35-turbo"
             assert response.finish_reason == "stop"
             assert response.usage == {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
+            assert response.tool_calls is None
+
+    @pytest.mark.asyncio
+    async def test_chat_with_tool_calls(self, provider):
+        """Test chat with native tool calls in response"""
+        mock_tool_call = Mock()
+        mock_tool_call.id = "call_123"
+        mock_tool_call.type = "function"
+        mock_tool_call.function = Mock()
+        mock_tool_call.function.name = "get_weather"
+        mock_tool_call.function.arguments = '{"location": "Paris"}'
+
+        mock_response = Mock()
+        mock_response.choices = [Mock()]
+        mock_response.choices[0].message.content = ""
+        mock_response.choices[0].message.tool_calls = [mock_tool_call]
+        mock_response.choices[0].finish_reason = "tool_calls"
+        mock_response.model = "gpt-35-turbo"
+        mock_response.usage = Mock()
+        mock_response.usage.prompt_tokens = 15
+        mock_response.usage.completion_tokens = 10
+        mock_response.usage.total_tokens = 25
+
+        # Create an async mock for the create method
+        async def mock_create(*args, **kwargs):
+            return mock_response
+
+        with patch.object(provider.client.chat.completions, "create", side_effect=mock_create):
+            tools = [{"type": "function", "function": {"name": "get_weather", "parameters": {}}}]
+            messages = [LLMMessage(role="user", content="What's the weather in Paris?")]
+            response = await provider.chat(messages, tools=tools)
+
+            assert isinstance(response, LLMResponse)
+            assert response.content == ""
+            assert response.finish_reason == "tool_calls"
+            assert response.tool_calls is not None
+            assert len(response.tool_calls) == 1
 
     @pytest.mark.asyncio
     async def test_chat_api_error(self, provider):

@@ -50,6 +50,136 @@ class TestTimelineEntry:
         assert not response_entry.is_caller_message()
         assert not response_entry.is_resource_result()
 
+    def test_timeline_entry_to_dict_basic(self):
+        """Test to_dict() serializes basic fields correctly."""
+        timestamp = datetime(2024, 1, 15, 10, 30, 45)
+        entry = TimelineEntry(
+            entry_type=TimelineEntryType.USER_MESSAGE,
+            content="Hello world",
+            timestamp=timestamp,
+            metadata={"key": "value"},
+        )
+
+        result = entry.to_dict()
+
+        assert result["type"] == "user_message"
+        assert result["content"] == "Hello world"
+        assert result["timestamp"] == "2024-01-15T10:30:45"
+        assert result["metadata"] == {"key": "value"}
+        assert result["is_latest_user_message"] is False
+        assert result["ephemeral"] is False
+        # Optional fields should not be present when None
+        assert "tool_call_id" not in result
+        assert "tool_calls" not in result
+
+    def test_timeline_entry_to_dict_with_tool_call_id(self):
+        """Test to_dict() includes tool_call_id when present."""
+        entry = TimelineEntry(
+            entry_type=TimelineEntryType.RESOURCE_RESULT,
+            content="Tool result",
+            tool_call_id="call_abc123",
+        )
+
+        result = entry.to_dict()
+
+        assert result["tool_call_id"] == "call_abc123"
+        assert "tool_calls" not in result
+
+    def test_timeline_entry_to_dict_with_tool_calls(self):
+        """Test to_dict() includes tool_calls when present."""
+        tool_calls = [{"id": "call_abc123", "type": "function", "function": {"name": "get_weather", "arguments": "{}"}}]
+        entry = TimelineEntry(
+            entry_type=TimelineEntryType.TOOL_CALL,
+            content="Calling get_weather",
+            tool_calls=tool_calls,
+        )
+
+        result = entry.to_dict()
+
+        assert result["tool_calls"] == tool_calls
+        assert "tool_call_id" not in result
+
+    def test_timeline_entry_from_dict_basic(self):
+        """Test from_dict() deserializes basic fields correctly."""
+        data = {
+            "type": "user_message",
+            "content": "Hello world",
+            "timestamp": "2024-01-15T10:30:45",
+            "metadata": {"key": "value"},
+            "is_latest_user_message": False,
+            "ephemeral": False,
+        }
+
+        entry = TimelineEntry.from_dict(data)
+
+        assert entry.entry_type == TimelineEntryType.USER_MESSAGE
+        assert entry.content == "Hello world"
+        assert entry.timestamp == datetime(2024, 1, 15, 10, 30, 45)
+        assert entry.metadata == {"key": "value"}
+        assert entry.is_latest_user_message is False
+        assert entry.ephemeral is False
+        assert entry.tool_call_id is None
+        assert entry.tool_calls is None
+
+    def test_timeline_entry_from_dict_with_tool_call_id(self):
+        """Test from_dict() deserializes tool_call_id correctly."""
+        data = {
+            "type": "resource_result",
+            "content": "Tool result",
+            "timestamp": "2024-01-15T10:30:45",
+            "tool_call_id": "call_abc123",
+        }
+
+        entry = TimelineEntry.from_dict(data)
+
+        assert entry.tool_call_id == "call_abc123"
+        assert entry.tool_calls is None
+
+    def test_timeline_entry_from_dict_with_tool_calls(self):
+        """Test from_dict() deserializes tool_calls correctly."""
+        tool_calls = [{"id": "call_abc123", "type": "function", "function": {"name": "get_weather", "arguments": "{}"}}]
+        data = {
+            "type": "tool_call",
+            "content": "Calling get_weather",
+            "timestamp": "2024-01-15T10:30:45",
+            "tool_calls": tool_calls,
+        }
+
+        entry = TimelineEntry.from_dict(data)
+
+        assert entry.tool_calls == tool_calls
+        assert entry.tool_call_id is None
+
+    def test_timeline_entry_roundtrip_with_tool_fields(self):
+        """Test round-trip serialization preserves tool_call_id and tool_calls."""
+        # Test with tool_call_id
+        entry_with_id = TimelineEntry(
+            entry_type=TimelineEntryType.RESOURCE_RESULT,
+            content="Tool result",
+            timestamp=datetime(2024, 1, 15, 10, 30, 45),
+            tool_call_id="call_abc123",
+        )
+
+        roundtrip_entry = TimelineEntry.from_dict(entry_with_id.to_dict())
+
+        assert roundtrip_entry.entry_type == entry_with_id.entry_type
+        assert roundtrip_entry.content == entry_with_id.content
+        assert roundtrip_entry.timestamp == entry_with_id.timestamp
+        assert roundtrip_entry.tool_call_id == entry_with_id.tool_call_id
+
+        # Test with tool_calls
+        tool_calls = [{"id": "call_xyz789", "type": "function", "function": {"name": "search", "arguments": '{"q":"test"}'}}]
+        entry_with_calls = TimelineEntry(
+            entry_type=TimelineEntryType.TOOL_CALL,
+            content="Calling search",
+            timestamp=datetime(2024, 1, 15, 10, 31, 0),
+            tool_calls=tool_calls,
+        )
+
+        roundtrip_entry2 = TimelineEntry.from_dict(entry_with_calls.to_dict())
+
+        assert roundtrip_entry2.tool_calls == entry_with_calls.tool_calls
+
 
 class TestTimeline:
     """Test Timeline functionality."""
@@ -164,7 +294,7 @@ class TestTimeline:
 
     def test_to_llm_messages_with_roles(self, timeline):
         """Test LLM message conversion with different entry types.
-        
+
         Note: Consecutive assistant messages (without tool_calls) are merged
         to avoid confusing LLMs like OpenAI's models.
         """
@@ -423,3 +553,135 @@ class TestTimelineWithRepository:
 
         with pytest.raises(ValueError, match="repository is None"):
             timeline.save("test-session")
+
+    def test_timeline_save_and_read_with_tool_call_id(self):
+        """Test that tool_call_id is persisted and restored correctly."""
+        agent = MockAgentForTimeline()
+        agent._session_id = "test-session-tool-id"
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
+
+        # Add entry with tool_call_id (tool result)
+        entry = TimelineEntry(
+            entry_type=TimelineEntryType.RESOURCE_RESULT,
+            content="Weather data: sunny, 72F",
+            timestamp=datetime(2024, 1, 15, 10, 30, 45),
+            tool_call_id="call_abc123",
+        )
+        timeline.add_entry(entry)
+
+        session_id = agent._session_id
+        timeline.save(session_id)
+
+        # Read back and verify tool_call_id is preserved
+        read_entries = list(timeline.read_since(checkpoint=0))
+        assert len(read_entries) == 1
+        assert read_entries[0].tool_call_id == "call_abc123"
+        assert read_entries[0].content == "Weather data: sunny, 72F"
+
+    def test_timeline_save_and_read_with_tool_calls(self):
+        """Test that tool_calls array is persisted and restored correctly."""
+        agent = MockAgentForTimeline()
+        agent._session_id = "test-session-tool-calls"
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
+
+        # Add entry with tool_calls (assistant message with tool invocations)
+        tool_calls = [
+            {
+                "id": "call_abc123",
+                "type": "function",
+                "function": {"name": "get_weather", "arguments": '{"location": "NYC"}'},
+            }
+        ]
+        entry = TimelineEntry(
+            entry_type=TimelineEntryType.TOOL_CALL,
+            content="",
+            timestamp=datetime(2024, 1, 15, 10, 30, 45),
+            tool_calls=tool_calls,
+        )
+        timeline.add_entry(entry)
+
+        session_id = agent._session_id
+        timeline.save(session_id)
+
+        # Read back and verify tool_calls is preserved
+        read_entries = list(timeline.read_since(checkpoint=0))
+        assert len(read_entries) == 1
+        assert read_entries[0].tool_calls == tool_calls
+        assert read_entries[0].tool_calls[0]["id"] == "call_abc123"
+        assert read_entries[0].tool_calls[0]["function"]["name"] == "get_weather"
+
+    def test_timeline_save_and_read_full_tool_sequence(self):
+        """Test that a complete tool call sequence is persisted correctly."""
+        agent = MockAgentForTimeline()
+        agent._session_id = "test-session-full-sequence"
+        timeline = Timeline(max_context_tokens=1000, agent=agent)
+
+        # 1. User message
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content="What's the weather in NYC?",
+                timestamp=datetime(2024, 1, 15, 10, 30, 0),
+            )
+        )
+
+        # 2. Assistant with tool_calls
+        tool_calls = [
+            {
+                "id": "call_weather123",
+                "type": "function",
+                "function": {"name": "get_weather", "arguments": '{"location": "NYC"}'},
+            }
+        ]
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.TOOL_CALL,
+                content="",
+                timestamp=datetime(2024, 1, 15, 10, 30, 1),
+                tool_calls=tool_calls,
+            )
+        )
+
+        # 3. Tool result with tool_call_id
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.RESOURCE_RESULT,
+                content='{"temp": 72, "condition": "sunny"}',
+                timestamp=datetime(2024, 1, 15, 10, 30, 2),
+                tool_call_id="call_weather123",
+            )
+        )
+
+        # 4. Assistant response
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.AGENT_RESPONSE,
+                content="The weather in NYC is sunny with a temperature of 72F.",
+                timestamp=datetime(2024, 1, 15, 10, 30, 3),
+            )
+        )
+
+        session_id = agent._session_id
+        timeline.save(session_id)
+
+        # Read back and verify entire sequence
+        read_entries = list(timeline.read_since(checkpoint=0))
+        assert len(read_entries) == 4
+
+        # Verify user message
+        assert read_entries[0].entry_type == TimelineEntryType.USER_MESSAGE
+        assert read_entries[0].content == "What's the weather in NYC?"
+
+        # Verify assistant with tool_calls
+        assert read_entries[1].entry_type == TimelineEntryType.TOOL_CALL
+        assert read_entries[1].tool_calls is not None
+        assert len(read_entries[1].tool_calls) == 1
+        assert read_entries[1].tool_calls[0]["id"] == "call_weather123"
+
+        # Verify tool result with tool_call_id
+        assert read_entries[2].entry_type == TimelineEntryType.RESOURCE_RESULT
+        assert read_entries[2].tool_call_id == "call_weather123"
+
+        # Verify final response
+        assert read_entries[3].entry_type == TimelineEntryType.AGENT_RESPONSE
+        assert "72F" in read_entries[3].content
