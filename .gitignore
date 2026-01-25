@@ -106,3 +106,5 @@ skill_output/
 .dana_backup
 
 .local_backup
+
+**/__pycache__
