@@ -10,6 +10,9 @@ from __future__ import annotations
 import fnmatch
 from typing import TYPE_CHECKING, Any
 
+from dana.core.knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
+
+
 if TYPE_CHECKING:
     from . import AgentRuntime
 
@@ -90,6 +93,21 @@ class RuntimeRegistry:
             An instantiated AgentRuntime.
         """
         return cls.get_default().select(model=model, provider=provider, **kwargs)
+
+    @classmethod
+    def select_codec_runtime(
+        cls,
+        model: str | None = None,
+        provider: str = "anthropic",
+        codec: type[AbstractCodec] = CSXMLCodec,
+        **kwargs: Any,
+    ) -> AgentRuntime:
+        """
+        Select the appropriate codec runtime.
+        """
+        from .codec import CodecRuntime
+
+        return CodecRuntime(model=model, provider=provider, codec=codec, **kwargs)
 
     @classmethod
     def reset_default(cls) -> None:

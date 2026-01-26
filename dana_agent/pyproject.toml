@@ -54,6 +54,7 @@ dependencies = [
     "ollama>=0.6.0",
     "pydantic-settings>=2.11.0",
     "rank-bm25>=0.2.2",
+    "rdflib>=7.5.0",
 ]
 
 # Command-line entry points

@@ -44,7 +44,9 @@ def test_default_runtime_build_prompt():
     class MockLLM:
         pass
 
-    agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False)
+    agent = STARAgent(
+        agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False
+    )
     runtime = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
     timeline = Timeline(agent=agent)
     timeline.add_entry(
@@ -102,7 +104,9 @@ def test_default_runtime_execute_tools():
         def echo(self, message: str) -> str:
             return f"echo:{message}"
 
-    agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False)
+    agent = STARAgent(
+        agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False
+    )
     resource = EchoResource()
     agent.with_resources(resource)
 
@@ -115,13 +119,22 @@ def test_default_runtime_execute_tools():
 
 def test_star_agent_with_runtime_parameter():
     runtime = DefaultRuntime()
-    agent = STARAgent(agent_type="runtime-test", runtime=runtime, auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False)
+    agent = STARAgent(
+        agent_type="runtime-test",
+        runtime=runtime,
+        auto_register=False,
+        enable_web_search=False,
+        enable_skills=False,
+        enable_code_execution=False,
+    )
 
     assert agent._runtime is runtime
 
 
 def test_star_agent_default_runtime():
-    agent = STARAgent(agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False)
+    agent = STARAgent(
+        agent_type="runtime-test", auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False
+    )
 
     # Runtime is auto-selected based on provider - should be an AgentRuntime subclass
     assert isinstance(agent._runtime, AgentRuntime)
@@ -175,7 +188,14 @@ def test_think_uses_runtime_methods():
             return ""
 
     runtime = TrackingRuntime()
-    agent = STARAgent(agent_type="runtime-test", runtime=runtime, auto_register=False, enable_web_search=False, enable_skills=False, enable_code_execution=False)
+    agent = STARAgent(
+        agent_type="runtime-test",
+        runtime=runtime,
+        auto_register=False,
+        enable_web_search=False,
+        enable_skills=False,
+        enable_code_execution=False,
+    )
 
     agent.query(message="hello")
 

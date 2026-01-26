@@ -2,7 +2,7 @@
 Azure Provider Implementation
 """
 
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI
 import structlog
 
 from ...config import config_manager
@@ -15,6 +15,17 @@ logger = structlog.get_logger()
 class AzureProvider(LLMProvider):
     """Azure OpenAI provider."""
 
+    @property
+    def supports_native_tools(self) -> bool:
+        """Azure OpenAI supports native function/tool calling.
+
+        The tool result flow is properly implemented:
+        1. tool_call_id is stored when parsing native tool calls
+        2. Tool results are sent with role="tool" and matching tool_call_id
+        3. Assistant messages with tool_calls are properly formatted
+        """
+        return True
+
     def __init__(
         self, api_key: str | None = None, model: str = "gpt-35-turbo", base_url: str | None = None, api_version: str | None = None
     ):
@@ -23,11 +34,12 @@ class AzureProvider(LLMProvider):
 
         Args:
             api_key: Azure OpenAI API key (defaults to AZURE_OPENAI_API_KEY env var)
-            model: Model to use
-            base_url: Azure OpenAI endpoint URL
+            model: Model/deployment name to use
+            base_url: Azure OpenAI endpoint URL (e.g., https://your-resource.openai.azure.com)
             api_version: Azure OpenAI API version
         """
         self.model = model
+        self.deployment_name = model
 
         # Get API key from parameter, env var, or config
         if api_key:
@@ -40,48 +52,39 @@ class AzureProvider(LLMProvider):
             api_key_env = config.get("api_key_env") if config else "AZURE_OPENAI_API_KEY"
             raise ValueError(f"Azure OpenAI API key not found. Set {api_key_env} environment variable.")
 
-        # Get base URL from parameter, env var, or config
+        # Get base URL (Azure endpoint) from parameter, env var, or config
         if base_url:
-            self.base_url = base_url
+            azure_endpoint = base_url
         else:
-            self.base_url = config_manager.get_provider_base_url("azure")
+            azure_endpoint = config_manager.get_provider_base_url("azure")
+
+        if not azure_endpoint:
+            raise ValueError("Azure OpenAI endpoint URL not found. Set AZURE_OPENAI_API_URL environment variable.")
+
+        # Clean up the endpoint URL - remove trailing slashes
+        azure_endpoint = azure_endpoint.rstrip("/")
 
         # Get API version from parameter, env var, or config
         if api_version:
             self.api_version = api_version
         else:
-            self.api_version = config_manager.get_provider_api_version("azure")
+            self.api_version = config_manager.get_provider_api_version("azure") or "2024-02-15-preview"
 
-        # Construct proper Azure OpenAI endpoint URL
-        # Azure URLs should be: https://{resource}.openai.azure.com/openai/deployments/{deployment}/chat/completions
+        # Use the dedicated Azure OpenAI client
+        self.client = AsyncAzureOpenAI(
+            api_key=self.api_key,
+            azure_endpoint=azure_endpoint,
+            api_version=self.api_version,
+        )
 
-        # For deployment-based endpoints, append the model/deployment name to the URL
-        if self.base_url and "/deployments" in self.base_url and not self.base_url.endswith("/deployments/"):
-            # URL ends with /deployments, append the model name
-            self.base_url += f"/{self.model}"
-            self.deployment_name = self.model
-        elif self.base_url and "/deployments/" in self.base_url:
-            # URL already has deployment name, extract it
-            deployment_name = self.base_url.split("/deployments/")[1].split("/")[0]
-            self.deployment_name = deployment_name
-        else:
-            self.deployment_name = self.model
+    async def chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> LLMResponse:
+        """Send messages to Azure OpenAI and get a response.
 
-        # Ensure URL ends with /
-        if self.base_url and not self.base_url.endswith("/"):
-            self.base_url += "/"
-
-        # Add API version as query parameter
-        if self.api_version and self.base_url:
-            separator = "&" if "?" in self.base_url else "?"
-            self.base_url += f"{separator}api-version={self.api_version}"
-
-        # Use OpenAI client with Azure endpoint
-        client_kwargs = {"api_key": self.api_key, "base_url": self.base_url}
-        self.client = AsyncOpenAI(**client_kwargs)
-
-    async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
-        """Send messages to Azure OpenAI and get a response."""
+        Args:
+            messages: List of conversation messages
+            tools: Optional list of tool schemas for native function calling
+            **kwargs: Additional parameters passed to the API
+        """
         try:
             # Convert our message format to OpenAI format
             openai_messages = []
@@ -90,24 +93,87 @@ class AzureProvider(LLMProvider):
                     openai_messages.append({"role": "system", "content": msg.content})
                 elif msg.role == "user":
                     openai_messages.append({"role": "user", "content": msg.content})
+                elif msg.role == "tool":
+                    # Tool result message - requires tool_call_id
+                    openai_messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": msg.tool_call_id,
+                            "content": msg.content,
+                        }
+                    )
                 elif msg.role == "assistant":
-                    openai_messages.append({"role": "assistant", "content": msg.content})
+                    # Check if this assistant message has native tool_calls
+                    if msg.tool_calls:
+                        # Format tool_calls for Azure OpenAI API
+                        formatted_tool_calls = []
+                        for tc in msg.tool_calls:
+                            formatted_tool_calls.append(
+                                {
+                                    "id": tc.get("tool_call_id", ""),
+                                    "type": "function",
+                                    "function": {
+                                        "name": tc.get("function", ""),
+                                        "arguments": str(tc.get("arguments", {})),
+                                    },
+                                }
+                            )
+                        openai_messages.append(
+                            {
+                                "role": "assistant",
+                                "content": msg.content or None,
+                                "tool_calls": formatted_tool_calls,
+                            }
+                        )
+                    else:
+                        openai_messages.append({"role": "assistant", "content": msg.content})
+
+            # Build request parameters - filter out our custom parameters and None values
+            # Note: Some newer Azure OpenAI models reject null values for max_tokens
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["json_mode"] and v is not None}
+            request_kwargs = {"model": self.deployment_name, "messages": openai_messages, **filtered_kwargs}
+
+            # Add tools if provided
+            if tools:
+                request_kwargs["tools"] = tools
+                request_kwargs["tool_choice"] = "auto"
+
+            # Enable JSON mode when requested (works with or without tools)
+            if kwargs.get("json_mode", False):
+                request_kwargs["response_format"] = {"type": "json_object"}
 
             # Call Azure OpenAI API
-            response = await self.client.chat.completions.create(model=self.deployment_name, messages=openai_messages, **kwargs)
+            response = await self.client.chat.completions.create(**request_kwargs)
 
             # Convert response to our format
-            return LLMResponse(
-                content=response.choices[0].message.content,
-                model=response.model,
-                usage={
+            choice = response.choices[0]
+            message = choice.message
+
+            # Handle both text responses and function calls
+            if hasattr(message, "tool_calls") and message.tool_calls:
+                # Pass through function calls for base_agent to handle
+                content = message.content or ""
+                tool_calls = message.tool_calls
+            else:
+                # Standard text response
+                content = message.content or ""
+                tool_calls = None
+
+            # Build usage dict
+            usage = None
+            if response.usage:
+                usage = {
                     "prompt_tokens": response.usage.prompt_tokens,
                     "completion_tokens": response.usage.completion_tokens,
                     "total_tokens": response.usage.total_tokens,
                 }
-                if response.usage
-                else None,
-                finish_reason=response.choices[0].finish_reason,
+
+            return LLMResponse(
+                content=content,
+                model=response.model,
+                usage=usage,
+                finish_reason=choice.finish_reason,
+                tool_calls=tool_calls,
             )
 
         except Exception as e:

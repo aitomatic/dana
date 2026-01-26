@@ -78,40 +78,43 @@ class OpenAIProvider(LLMProvider):
                     openai_messages.append({"role": "user", "content": msg.content})
                 elif msg.role == "tool":
                     # Tool result message - requires tool_call_id
-                    openai_messages.append({
-                        "role": "tool",
-                        "tool_call_id": msg.tool_call_id,
-                        "content": msg.content,
-                    })
+                    openai_messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": msg.tool_call_id,
+                            "content": msg.content,
+                        }
+                    )
                 elif msg.role == "assistant":
                     # Check if this assistant message has native tool_calls
                     if msg.tool_calls:
                         # Format tool_calls for OpenAI API
                         formatted_tool_calls = []
                         for tc in msg.tool_calls:
-                            formatted_tool_calls.append({
-                                "id": tc.get("tool_call_id", ""),
-                                "type": "function",
-                                "function": {
-                                    "name": tc.get("function", ""),
-                                    "arguments": str(tc.get("arguments", {})),
-                                },
-                            })
-                        openai_messages.append({
-                            "role": "assistant",
-                            "content": msg.content or None,
-                            "tool_calls": formatted_tool_calls,
-                        })
+                            formatted_tool_calls.append(
+                                {
+                                    "id": tc.get("tool_call_id", ""),
+                                    "type": "function",
+                                    "function": {
+                                        "name": tc.get("function", ""),
+                                        "arguments": str(tc.get("arguments", {})),
+                                    },
+                                }
+                            )
+                        openai_messages.append(
+                            {
+                                "role": "assistant",
+                                "content": msg.content or None,
+                                "tool_calls": formatted_tool_calls,
+                            }
+                        )
                     else:
                         openai_messages.append({"role": "assistant", "content": msg.content})
 
-            # Build request parameters - filter out our custom parameters
-            filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["json_mode"]}
-            request_kwargs = {
-                "model": self.model,
-                "messages": openai_messages,
-                **filtered_kwargs
-            }
+            # Build request parameters - filter out our custom parameters and None values
+            # Note: Some newer OpenAI models (e.g., gpt-5.x) reject null values for max_tokens
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["json_mode"] and v is not None}
+            request_kwargs = {"model": self.model, "messages": openai_messages, **filtered_kwargs}
 
             # Add tools if provided
             if tools:

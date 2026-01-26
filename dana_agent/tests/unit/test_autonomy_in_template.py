@@ -1,7 +1,5 @@
 """Test that autonomy instructions are properly placed in the system prompt template."""
 
-import pytest
-
 from dana.core.agent.star_agent import STARAgent
 from dana.core.knowledge.prompts.codecs import CSXMLCodec, KLXMLCodec
 from dana.core.knowledge.prompts.prompt_api import TEMPLATE_SYSTEM_PROMPT
@@ -17,11 +15,11 @@ class TestAutonomyInTemplate:
 
     def test_template_contains_key_autonomy_rules(self):
         """Verify the template contains key autonomy rules."""
-        # Check for critical autonomy instructions
-        assert "STRICT OUTPUT FORMAT" in TEMPLATE_SYSTEM_PROMPT
-        assert "<done>" in TEMPLATE_SYSTEM_PROMPT
-        assert "<function_call>" in TEMPLATE_SYSTEM_PROMPT
-        assert "<response>" in TEMPLATE_SYSTEM_PROMPT
+        # Check for critical autonomy sections (current template structure)
+        assert "<autonomy>" in TEMPLATE_SYSTEM_PROMPT
+        assert "</autonomy>" in TEMPLATE_SYSTEM_PROMPT
+        assert "<decision_framework>" in TEMPLATE_SYSTEM_PROMPT
+        assert "{{tool_instruction_prompt}}" in TEMPLATE_SYSTEM_PROMPT  # Codec-specific output format
 
     def test_template_no_todo_resource_reference(self):
         """Verify the template no longer mentions the todo-resource."""

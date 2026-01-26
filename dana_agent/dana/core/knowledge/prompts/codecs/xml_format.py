@@ -229,6 +229,7 @@ FORMAT RULES:
         return content if content else None
 
     @classmethod
+    @override
     def parse_response(cls, xml_string: str) -> ParsedCodecResponse:
         """
         Parse XML response string with thinking and multiple tool calls.
@@ -566,6 +567,7 @@ FORMAT RULES:
         return content if content else None
 
     @classmethod
+    @override
     def parse_response(cls, xml_string: str) -> ParsedCodecResponse:
         """
         Parse XML response string with thinking and multiple tool calls.

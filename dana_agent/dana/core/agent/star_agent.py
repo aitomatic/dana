@@ -22,12 +22,13 @@ from dana.common.protocols import AgentProtocol, DictParams, Notifiable, Resourc
 from dana.common.protocols.types import LearningPhase
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
-from ..knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
+from ..knowledge.prompts.codecs import AbstractCodec
 from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from ..runtime import AgentRuntime
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, LearnerProtocol, State
 from .components.observer import ObserverProtocol
+from .compressed_timeline import CompressedTimeline
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
@@ -67,6 +68,7 @@ class STARAgent(BaseSTARAgent):
         enable_web_search: bool = False,
         enable_code_execution: bool = False,
         enable_assistant: bool = True,
+        identity_override: str | None = None,
         **kwargs,
     ):
         """
@@ -96,6 +98,8 @@ class STARAgent(BaseSTARAgent):
             ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
             enable_skills: Whether to enable Claude Code skills resource discovery
             skills_output_dir: Directory to use for skill output files
+            identity_override: Optional identity string that overrides the class docstring.
+                Used by fork subagents to inject skill content as their identity.
             **kwargs: Additional arguments passed to components
         """
         # Initialize base class first (handles registration)
@@ -121,9 +125,8 @@ class STARAgent(BaseSTARAgent):
         self._session_id = str(uuid4())
         self._repository_factory = repository_factory
         codec_provided = codec is not _CODEC_SENTINEL
-        if codec is _CODEC_SENTINEL:
-            codec = CSXMLCodec
         self._codec = codec
+        self._identity_override = identity_override
 
         if runtime is None:
             if codec is None:
@@ -138,7 +141,7 @@ class STARAgent(BaseSTARAgent):
                 from dana.core.runtime.legacy import LegacyRuntime
 
                 runtime = LegacyRuntime()
-            else:
+            elif codec is _CODEC_SENTINEL:
                 # Use the runtime registry to choose the appropriate runtime
                 from dana.core.runtime import RuntimeRegistry
 
@@ -149,6 +152,16 @@ class STARAgent(BaseSTARAgent):
                         DeprecationWarning,
                         stacklevel=2,
                     )
+            elif isinstance(codec, type) and issubclass(codec, AbstractCodec):
+                from dana.core.runtime import RuntimeRegistry
+
+                warnings.warn(
+                    "The codec parameter is deprecated; pass runtime=... instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                # use_native_tools=None allows auto-detection based on provider support
+                runtime = RuntimeRegistry.select_codec_runtime(provider=llm_provider, model=model, codec=codec, use_native_tools=None)
         else:
             if codec_provided:
                 warnings.warn(
@@ -182,11 +195,14 @@ class STARAgent(BaseSTARAgent):
         # Determine storage_config for timeline and event_log
 
         # Initialize timeline at agent level with agent, codec, and storage_config
-        self._timeline = Timeline(
-            max_context_tokens=max_context_tokens,
-            agent=self,
-            repository_factory=self._repository_factory,
-        )
+        if codec_provided:
+            self._timeline = CompressedTimeline(agent=self, repository_factory=self._repository_factory)
+        else:
+            self._timeline = Timeline(
+                max_context_tokens=max_context_tokens,
+                agent=self,
+                repository_factory=self._repository_factory,
+            )
 
         # Initialize EventLog API (only if observer AND codec provided)
         # Events ONLY come from Observer - no observer = no EventLog
@@ -233,9 +249,41 @@ class STARAgent(BaseSTARAgent):
             )
             self.with_agents(assistant)
 
+        # Initialize reminder system for system-reminder injection.
+        # Reminders check validity lazily during evaluate(), so order doesn't matter.
+        from dana.core.reminder import ReminderManager
+
+        self._reminder_manager = ReminderManager()
+        self._star_loop_count = 0  # Tracks iterations within current query
+
     def set_session_id(self, session_id: str) -> None:
         """Set the session id for the agent."""
         self._session_id = session_id
+
+    def register_reminder(self, reminder) -> None:
+        """
+        Register a custom reminder for system-reminder injection.
+
+        Reminders are evaluated during each STAR loop iteration and injected
+        into the LLM prompt when their trigger conditions are met.
+
+        Args:
+            reminder: Any object matching Reminder protocol.
+                Must have: name attribute and evaluate(agent, timeline) method.
+
+        Example:
+            >>> class MyReminder:
+            ...     name = "domain_context"
+            ...
+            ...     def evaluate(self, agent, timeline) -> str | None:
+            ...         if getattr(agent, "_star_loop_count", 0) == 1:
+            ...             return "Remember: This is a financial analysis task."
+            ...         return None
+            >>>
+            >>> agent.register_reminder(MyReminder())
+        """
+        if self._reminder_manager is not None:
+            self._reminder_manager.register(reminder)
 
     @property
     def llm_client(self) -> LLM:
@@ -331,6 +379,9 @@ class STARAgent(BaseSTARAgent):
             self.set_session_id(new_session_id)
         session_id = self._session_id
 
+        # Reset STAR loop counter for new query
+        self._star_loop_count = 0
+
         # Set session_id for EventLog if it exists
         if hasattr(self, "_event_log") and self._event_log is not None:
             self._event_log._current_session_id = session_id
@@ -353,6 +404,9 @@ class STARAgent(BaseSTARAgent):
         if new_session_id is not None:
             self.set_session_id(new_session_id)
         session_id = self._session_id
+
+        # Reset STAR loop counter for new query
+        self._star_loop_count = 0
 
         # Set session_id for EventLog if it exists
         if hasattr(self, "_event_log") and self._event_log is not None:
@@ -559,6 +613,9 @@ class STARAgent(BaseSTARAgent):
               - caller_type (str): Type of caller (agent or human)
               - caller_id (str): ID of the caller (agent.object_id or user) for conversation tracking.
         """
+
+        # Increment STAR loop counter at the start of each iteration
+        self._star_loop_count += 1
 
         # Input parameter checking
         trace_inputs = trace_inputs or {}
