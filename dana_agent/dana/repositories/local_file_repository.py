@@ -63,7 +63,7 @@ class LocalRepositoryMixin:
         """
         Compute codec prefix from agent's codec.
 
-        Returns "default" if codec is None or has "magic" in qualname,
+        Returns "default" if codec is None, not a class, or has "magic" in qualname,
         otherwise returns the codec's qualname.
 
         Args:
@@ -73,7 +73,10 @@ class LocalRepositoryMixin:
             Codec prefix string
         """
         codec = self._extract_codec_from_agent(agent)
-        if codec is None or "magic" in str(codec.__qualname__):
+        # Handle None, sentinel objects, and non-class values
+        if codec is None or not hasattr(codec, "__qualname__"):
+            return "default"
+        if "magic" in str(codec.__qualname__):
             return "default"
         return codec.__qualname__
 
@@ -267,27 +270,17 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
             session_id: Session identifier
             entries: List of TimelineEntry objects to save
         """
-        from dana.core.agent.timeline import _sanitize_for_json
-
         # Create session folder
         session_folder = self._events_path / session_id
         session_folder.mkdir(parents=True, exist_ok=True)
 
-        # Save timeline to JSON
+        # Save timeline to JSON using TimelineEntry.to_dict() for consistent serialization
         timeline_file = session_folder / "timeline.json"
         timeline_data = {
             "session_id": session_id,
             "agent_id": self._agent.object_id,
             "agent_type": self._agent.agent_type if hasattr(self._agent, "agent_type") else None,
-            "entries": [
-                {
-                    "timestamp": entry.timestamp.isoformat(),
-                    "type": entry.entry_type.value,
-                    "content": entry.content,
-                    "metadata": _sanitize_for_json(entry.metadata),
-                }
-                for entry in entries
-            ],
+            "entries": [entry.to_dict() for entry in entries],
         }
         with open(timeline_file, "w") as f:
             json.dump(timeline_data, f, indent=2)
@@ -304,8 +297,7 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
         Yields:
             TimelineEntry objects from the session
         """
-
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+        from dana.core.agent.timeline import TimelineEntry
 
         session_folder = self._events_path / session_id
         timeline_file = session_folder / "timeline.json"
@@ -319,14 +311,7 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
                 entries_data = timeline_data.get("entries", [])
                 for entry_data in entries_data:
                     try:
-                        entry_type_str = entry_data.get("type", "user_message")
-                        entry_type = TimelineEntryType(entry_type_str)
-                        entry = TimelineEntry(
-                            entry_type=entry_type,
-                            timestamp=datetime.fromisoformat(entry_data["timestamp"]),
-                            content=entry_data.get("content", ""),
-                            metadata=entry_data.get("metadata", {}),
-                        )
+                        entry = TimelineEntry.from_dict(entry_data)
                         yield entry
                     except Exception as e:
                         logger.warning(f"Failed to parse timeline entry: {e}")

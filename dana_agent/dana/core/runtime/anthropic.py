@@ -21,6 +21,7 @@ from dana.core.runtime.base import AgentRuntime
 
 ANTHROPIC_SYSTEM_PROMPT_JSON = """{
   "identity": "{{identity}}",
+  {{resource_context}}
   "output_format": {
     "description": "Respond with ONLY a valid JSON object. No markdown code blocks, no explanations outside the JSON.",
     "schema": {
@@ -53,6 +54,8 @@ ANTHROPIC_SYSTEM_PROMPT_JSON = """{
 }"""
 
 ANTHROPIC_SYSTEM_PROMPT_NATIVE_TOOLS = """You are an AI assistant. {{identity}}
+
+{{resource_context}}
 
 <use_parallel_tool_calls>
 CRITICAL: You MUST invoke all independent tool calls simultaneously in a single response.

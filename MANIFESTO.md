@@ -51,35 +51,8 @@ Imagine an enterprise where:
 The answer is a new architectural layer: **Cognitive Ontology**—a living knowledge graph that captures not just *what* your enterprise knows, but *how* things connect and *why* decisions get made.
 
 Think of it as your organization's brain—not a static database, but a living map that grows smarter with every interaction.
+![Cognitive Ontology](./images/ontology.png)
 
-```
-         TODAY                                      TOMORROW
-         ─────                                      ────────
-
-    ┌─────────────────┐                        ┌─────────────────┐
-    │     Experts     │                        │     Experts     │
-    │  (can't scale)  │                        │   (amplified)   │
-    └────────┬────────┘                        └────────┬────────┘
-             │                                          │
-             │                                          ▼
-             │                                 ┌─────────────────┐
-             │                                 │   AI Agents     │
-             │                                 │ (navigate map)  │
-             │                                 └────────┬────────┘
-             │                                          │
-             │                                          ▼
-             │                                 ┌─────────────────┐
-             │                                 │   Cognitive     │
-             │                                 │   Ontology      │
-             │                                 │  (living map)   │
-             │                                 └────────┬────────┘
-             │                                          │
-             ▼                                          ▼
-    ┌─────────────────┐                        ┌─────────────────┐
-    │      Data       │                        │      Data       │
-    │ (disconnected)  │                        │  (connected)    │
-    └─────────────────┘                        └─────────────────┘
-```
 *The Cognitive Enterprise transformation: Today, experts struggle to scale their knowledge across disconnected data. Tomorrow, a living cognitive ontology sits between your data and your people—enabling AI agents to navigate institutional knowledge while experts focus on what only humans can do.*
 
 In this map, everything connects:

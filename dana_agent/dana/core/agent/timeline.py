@@ -5,7 +5,6 @@ This module provides a unified, chronological record of all agent interactions
 with efficient context management to prevent context window explosion.
 """
 
-from abc import abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -172,6 +171,51 @@ class TimelineEntry:
             True if this is a resource result
         """
         return self.entry_type == TimelineEntryType.RESOURCE_RESULT
+
+    def to_dict(self) -> dict:
+        """
+        Serialize entry to dictionary for persistence.
+
+        Returns:
+            Dictionary representation of the entry
+        """
+        result = {
+            "timestamp": self.timestamp.isoformat(),
+            "type": self.entry_type.value,
+            "content": self.content,
+            "metadata": _sanitize_for_json(self.metadata),
+            "is_latest_user_message": self.is_latest_user_message,
+            "ephemeral": self.ephemeral,
+        }
+        # Only include optional fields if they have values
+        if self.tool_call_id is not None:
+            result["tool_call_id"] = self.tool_call_id
+        if self.tool_calls is not None:
+            result["tool_calls"] = _sanitize_for_json(self.tool_calls)
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "TimelineEntry":
+        """
+        Deserialize entry from dictionary.
+
+        Args:
+            data: Dictionary representation of the entry
+
+        Returns:
+            TimelineEntry instance
+        """
+        entry_type = TimelineEntryType(data.get("type", "user_message"))
+        return cls(
+            entry_type=entry_type,
+            content=data.get("content", ""),
+            timestamp=datetime.fromisoformat(data["timestamp"]),
+            metadata=data.get("metadata", {}),
+            is_latest_user_message=data.get("is_latest_user_message", False),
+            tool_call_id=data.get("tool_call_id"),
+            tool_calls=data.get("tool_calls"),
+            ephemeral=data.get("ephemeral", False),
+        )
 
 
 @runtime_checkable
@@ -534,18 +578,10 @@ class Timeline:
 
                     # Handle native tool results (OpenAI format)
                     if entry.tool_call_id:
-                        context_messages.append(LLMMessage(
-                            role="tool",
-                            content=content,
-                            tool_call_id=entry.tool_call_id
-                        ))
+                        context_messages.append(LLMMessage(role="tool", content=content, tool_call_id=entry.tool_call_id))
                     # Handle assistant messages with native tool calls
                     elif entry.tool_calls:
-                        context_messages.append(LLMMessage(
-                            role="assistant",
-                            content=content,
-                            tool_calls=entry.tool_calls
-                        ))
+                        context_messages.append(LLMMessage(role="assistant", content=content, tool_calls=entry.tool_calls))
                     else:
                         role = self._get_entry_role(entry, default_role)
                         context_messages.append(LLMMessage(role=role, content=content))
@@ -573,18 +609,10 @@ class Timeline:
 
             # Handle native tool results (OpenAI format)
             if entry.tool_call_id:
-                messages.append(LLMMessage(
-                    role="tool",
-                    content=content,
-                    tool_call_id=entry.tool_call_id
-                ))
+                messages.append(LLMMessage(role="tool", content=content, tool_call_id=entry.tool_call_id))
             # Handle assistant messages with native tool calls
             elif entry.tool_calls:
-                messages.append(LLMMessage(
-                    role="assistant",
-                    content=content,
-                    tool_calls=entry.tool_calls
-                ))
+                messages.append(LLMMessage(role="assistant", content=content, tool_calls=entry.tool_calls))
             else:
                 role = self._get_entry_role(entry, default_role)
                 messages.append(LLMMessage(role=role, content=content))
@@ -593,16 +621,15 @@ class Timeline:
         # OpenAI models can get confused by multiple consecutive assistant messages
         merged_messages = []
         for msg in messages:
-            if (merged_messages and
-                msg.role == "assistant" and
-                merged_messages[-1].role == "assistant" and
-                not msg.tool_calls and
-                not merged_messages[-1].tool_calls):
+            if (
+                merged_messages
+                and msg.role == "assistant"
+                and merged_messages[-1].role == "assistant"
+                and not msg.tool_calls
+                and not merged_messages[-1].tool_calls
+            ):
                 # Merge into previous assistant message
-                merged_messages[-1] = LLMMessage(
-                    role="assistant",
-                    content=f"{merged_messages[-1].content}\n{msg.content}".strip()
-                )
+                merged_messages[-1] = LLMMessage(role="assistant", content=f"{merged_messages[-1].content}\n{msg.content}".strip())
             else:
                 merged_messages.append(msg)
 
@@ -867,7 +894,9 @@ class Timeline:
         # Filter out ephemeral entries before saving
         persistent_entries = [e for e in self.timeline if not e.ephemeral]
         self._repository.save(session_id, persistent_entries)
-        logger.info(f"Saved timeline with {len(persistent_entries)} entries for session {session_id} (excluded {len(self.timeline) - len(persistent_entries)} ephemeral)")
+        logger.info(
+            f"Saved timeline with {len(persistent_entries)} entries for session {session_id} (excluded {len(self.timeline) - len(persistent_entries)} ephemeral)"
+        )
 
     def read_since(self, checkpoint: int) -> Iterator[TimelineEntry]:
         """
@@ -943,7 +972,11 @@ class Timeline:
         total = 0
         for entry in entries:
             # Rough estimation: 1.3 tokens per word
-            total += len(entry.content.split()) * 1.3
+            try:
+                total += len(str(entry.content).split()) * 1.3
+            except Exception as e:
+                logger.error(f"Error estimating token count for entry: {e}")
+                continue
         return int(total)
 
     def compress_old_entries(self, summary: str) -> int:

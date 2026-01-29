@@ -12,10 +12,10 @@ Key features:
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from dataclasses import dataclass, field
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from structlog import get_logger
 
@@ -25,9 +25,9 @@ from dana.core.agent.timeline import (
     TimelineConfig,
     TimelineEntry,
     TimelineEntryType,
-    TimelineProtocol,
 )
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
+
 
 if TYPE_CHECKING:
     from dana.core.agent.base_agent import BaseAgent
@@ -91,7 +91,7 @@ class CompressedTimeline(Timeline):
         max_tokens_until_compression: int = 32000,
         max_recent_entries_to_keep: int = 20,
         cutoff_when_token_reach: int | None = None,
-        agent: "BaseAgent | None" = None,
+        agent: BaseAgent | None = None,
         repository_factory: RepositoryFactory = DEFAULT_REPOSITORY_FACTORY,
         llm_call_fn: Callable[[str], str] | None = None,
         llm_call_async_fn: Callable[[str], Any] | None = None,
@@ -146,9 +146,7 @@ class CompressedTimeline(Timeline):
     @property
     def cutoff_when_token_reach(self) -> int:
         """Get token cutoff for recent entries."""
-        return self._compressed_config.cutoff_when_token_reach or int(
-            0.3 * self._compressed_config.max_tokens_until_compression
-        )
+        return self._compressed_config.cutoff_when_token_reach or int(0.3 * self._compressed_config.max_tokens_until_compression)
 
     def set_llm_call_fn(self, fn: Callable[[str], str]) -> None:
         """Set the synchronous LLM call function."""
@@ -206,6 +204,26 @@ class CompressedTimeline(Timeline):
 
         return default_call_async_fn
 
+    def _estimate_entries_tokens(self, entries: list[TimelineEntry]) -> int:
+        """
+        Estimate token count for timeline entries.
+
+        Args:
+            entries: List of TimelineEntry objects
+
+        Returns:
+            Estimated token count
+        """
+        total = 0
+        for entry in entries:
+            # Rough estimation: 4 characters per token
+            try:
+                total += self._estimate_entry_tokens(entry)
+            except Exception as e:
+                logger.error(f"Error estimating token count for entry: {e}")
+                continue
+        return int(total)
+
     def needs_compression(self) -> bool:
         """
         Check if timeline compression is needed.
@@ -259,11 +277,9 @@ class CompressedTimeline(Timeline):
                 if entry.tool_calls and entries_to_keep:
                     # This is a tool_call entry, check if we have its results in kept entries
                     has_orphaned_results = any(
-                        e.tool_call_id is not None for e in entries_to_keep
-                        if not any(
-                            kept.tool_calls for kept in entries_to_keep
-                            if kept.timestamp < e.timestamp
-                        )
+                        e.tool_call_id is not None
+                        for e in entries_to_keep
+                        if not any(kept.tool_calls for kept in entries_to_keep if kept.timestamp < e.timestamp)
                     )
                     if has_orphaned_results:
                         # Include this tool_call to avoid orphaning results
@@ -337,8 +353,8 @@ class CompressedTimeline(Timeline):
         Returns:
             Estimated token count
         """
-        # Rough estimation: 1.3 tokens per word
-        return int(len(entry.content.split()) * 1.3)
+        # Rough estimation: 4 characters per token
+        return int(len(str(entry.content)) / 4)
 
     def build_compression_prompt(self) -> str | None:
         """
@@ -673,9 +689,7 @@ Respond with ONLY a JSON object containing the summary:
         if compressed_context:
             # Check if we already have a summary message (to avoid duplication)
             has_summary = any(
-                msg.content.startswith("[Previous context summary]")
-                or msg.content.startswith("[SUMMARY]")
-                for msg in messages
+                msg.content.startswith("[Previous context summary]") or msg.content.startswith("[SUMMARY]") for msg in messages
             )
 
             if not has_summary:

@@ -29,6 +29,7 @@ from dana.core.runtime.base import AgentRuntime
 
 TEMPLATE_SYSTEM_PROMPT_JSON = """{
   "identity": "{{identity}}",
+  {{resource_context}}
   "output_format": {
     "description": "You MUST respond with ONLY a valid JSON object. No markdown, no plain text, no explanations outside JSON.",
     "schema": {
@@ -67,6 +68,7 @@ TEMPLATE_SYSTEM_PROMPT_JSON = """{
 
 TEMPLATE_SYSTEM_PROMPT_NATIVE_TOOLS = """{
   "identity": "{{identity}}",
+  {{resource_context}}
   "output_format": {
     "description": "Respond with ONLY valid JSON. Tools are called via the API.",
     "schema": {
