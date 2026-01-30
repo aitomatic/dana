@@ -241,8 +241,18 @@ def format_memories(memories: list[dict[str, Any]], max_words: int = 1500) -> st
         total_words += memory_words
         lines.append(f"- [{score:.2f}] [{identity}] {text}")
 
+    # Infer identity from most recent memory
+    recent_identity = None
+    for m in memories:
+        if m.get("identity"):
+            recent_identity = m.get("identity")
+            break  # First in list is most recent/relevant
+
     lines.append("")
-    lines.append("_Use [REMEMBER: ...] to save important discoveries._")
+    if recent_identity:
+        lines.append(f"_You are **{recent_identity}**. Use [REMEMBER identity={recent_identity}: ...] to save discoveries._")
+    else:
+        lines.append("_Use [REMEMBER identity=<your-agent>: ...] to save discoveries._")
 
     return "\n".join(lines)
 
