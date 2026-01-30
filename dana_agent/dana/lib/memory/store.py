@@ -417,8 +417,8 @@ class MemoryStore:
         except Exception:
             return 0
 
-    def list_identitys(self) -> list[str]:
-        """List all identitys in the store.
+    def list_identities(self) -> list[str]:
+        """List all identities in the store.
 
         Returns:
             List of unique identity names.
@@ -427,7 +427,7 @@ class MemoryStore:
             return []
 
         try:
-            # Fetch all and extract unique identitys
+            # Fetch all and extract unique identities
             results = self._table.search().limit(10000).to_list()
             return list(set(r["identity"] for r in results))
         except Exception:
@@ -458,11 +458,11 @@ class MemoryStore:
         Returns:
             Dictionary with status information.
         """
-        identitys = self.list_identitys()
+        identities = self.list_identities()
         return {
             "store_path": str(self.store_path),
             "total_memories": self.count(),
-            "identitys": {d: self.count(identity=d) for d in identitys},
+            "identities": {d: self.count(identity=d) for d in identities},
             "embedding_model": (
                 "openai/text-embedding-3-small"
                 if os.getenv("OPENAI_API_KEY")

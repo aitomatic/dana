@@ -14,7 +14,7 @@ Usage:
     # Store a memory
     memory = store.store(
         "When VAV damper is at 100% but zone is warm, check AHU first",
-        domain="hvac",
+        identity="hvac",
         source="session",
     )
 
@@ -24,12 +24,12 @@ Usage:
         print(f"[{memory.score:.2f}] {memory.text}")
 
     # Index a directory of markdown files
-    store.index_directory("./learnings/", domain="ontologist")
+    store.index_directory("./learnings/", identity="ontologist")
 
 CLI:
-    dana-memory store "memory text" --domain hvac
+    dana-memory store "memory text" --identity hvac
     dana-memory query "query text" --limit 3 --json
-    dana-memory index ./docs/ --domain docs
+    dana-memory index ./docs/ --identity docs
     dana-memory status
 """
 

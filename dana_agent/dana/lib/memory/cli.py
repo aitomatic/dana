@@ -115,12 +115,12 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f"Store path: {status['store_path']}")
         print(f"Embedding model: {status['embedding_model']}")
         print(f"Total memories: {status['total_memories']}")
-        if status["identitys"]:
-            print("Domains:")
-            for identity, count in sorted(status["identitys"].items()):
+        if status["identities"]:
+            print("Identities:")
+            for identity, count in sorted(status["identities"].items()):
                 print(f"  {identity}: {count}")
         else:
-            print("Domains: (none)")
+            print("Identities: (none)")
 
     return 0
 
@@ -279,7 +279,7 @@ def cmd_hooks_install(args: argparse.Namespace) -> int:
     print("  DANA_MEMORY_ENABLED=1        # Enable memory injection")
     print("  DANA_MEMORY_MIN_SCORE=0.3    # Minimum relevance score")
     print("  DANA_MEMORY_LIMIT=3          # Max memories to inject")
-    print("  DANA_MEMORY_DOMAIN=          # Filter by identity (optional)")
+    print("  DANA_MEMORY_IDENTITY=        # Filter by identity (optional)")
 
     return 0
 
