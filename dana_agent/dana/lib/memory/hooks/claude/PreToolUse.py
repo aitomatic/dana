@@ -15,6 +15,7 @@ Configuration (environment variables):
     DANA_MEMORY_ENABLED=1       Enable memory injection (default: 1)
     DANA_MEMORY_MIN_SCORE=0.3   Minimum relevance score (default: 0.3)
     DANA_MEMORY_LIMIT=3         Max memories to inject (default: 3)
+    DANA_MEMORY_MAX_WORDS=1500  Max total words in payload (default: 1500)
     DANA_MEMORY_IDENTITY=         Filter by identity (default: all)
     DANA_MEMORY_TOOLS=          Comma-separated tools to trigger on (default: all)
     DANA_MEMORY_SKIP_TOOLS=     Comma-separated tools to skip (default: Glob,Grep,Bash)
@@ -44,6 +45,7 @@ def get_config() -> dict[str, Any]:
         "enabled": os.getenv("DANA_MEMORY_ENABLED", "1") == "1",
         "min_score": float(os.getenv("DANA_MEMORY_MIN_SCORE", "0.3")),
         "limit": int(os.getenv("DANA_MEMORY_LIMIT", "3")),
+        "max_words": int(os.getenv("DANA_MEMORY_MAX_WORDS", "1500")),
         "identity": os.getenv("DANA_MEMORY_IDENTITY", ""),
         "tools": [t.strip() for t in os.getenv("DANA_MEMORY_TOOLS", "").split(",") if t.strip()],
         "skip_tools": [
@@ -203,21 +205,36 @@ def query_memories(query: str, config: dict[str, Any]) -> list[dict[str, Any]]:
         return []
 
 
-def format_memories(memories: list[dict[str, Any]]) -> str:
-    """Format memories for injection into Claude's context."""
+def format_memories(memories: list[dict[str, Any]], max_words: int = 1500) -> str:
+    """Format memories for injection into Claude's context.
+
+    Args:
+        memories: List of memory dicts with text, score, identity fields
+        max_words: Maximum total words across all memories (default: 1500)
+    """
     if not memories:
         return ""
 
     lines = ["**Relevant memories:**"]
+    total_words = 0
+
     for m in memories:
         score = m.get("score", 0)
         text = m.get("text", "")
         identity = m.get("identity", "")
 
-        # Truncate long memories
-        if len(text) > 200:
-            text = text[:200] + "..."
+        memory_words = len(text.split())
 
+        # Check if adding this memory would exceed the limit
+        if total_words + memory_words > max_words:
+            # Truncate to fit remaining budget
+            remaining = max_words - total_words
+            if remaining > 0:
+                text = " ".join(text.split()[:remaining]) + "..."
+                lines.append(f"- [{score:.2f}] [{identity}] {text}")
+            break
+
+        total_words += memory_words
         lines.append(f"- [{score:.2f}] [{identity}] {text}")
 
     return "\n".join(lines)
@@ -294,7 +311,7 @@ def main() -> int:
     save_injected_ids(session_id, injected_ids | new_ids)
 
     # Format and inject
-    message = format_memories(new_memories)
+    message = format_memories(new_memories, max_words=config["max_words"])
     print(json.dumps({"continue": True, "message": message}))
     return 0
 
