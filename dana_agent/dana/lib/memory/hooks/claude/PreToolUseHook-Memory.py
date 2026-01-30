@@ -11,8 +11,8 @@ This hook fires before Claude executes a tool. It:
 3. Injects relevant memories into Claude's context
 
 Installation:
-    1. Copy this file to ~/.claude/hooks/PreToolUse.py
-    2. Make it executable: chmod +x ~/.claude/hooks/PreToolUse.py
+    1. Copy this file to ~/.claude/hooks/PreToolUseHook-Memory.py
+    2. Make it executable: chmod +x ~/.claude/hooks/PreToolUseHook-Memory.py
     3. Ensure dana-memory is available in PATH
 
 Configuration (environment variables):

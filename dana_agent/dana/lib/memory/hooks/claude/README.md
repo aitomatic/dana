@@ -4,19 +4,19 @@ Two hooks that enable persistent memory across Claude Code sessions:
 
 | Hook | File | Purpose |
 |------|------|---------|
-| PreToolUse | `PreToolUse.py` | **RECALL** - retrieves relevant memories before tool use |
-| Stop | `Stop.py` | **STORE** - saves `[REMEMBER: ...]` patterns after Claude's turn |
+| PreToolUse | `PreToolUseHook-Memory.py` | **RECALL** - retrieves relevant memories before tool use |
+| Stop | `StopHook-Memory.py` | **STORE** - saves `[REMEMBER: ...]` patterns after Claude's turn |
 
 ## Installation
 
 ```bash
 # Copy hooks to Claude Code hooks directory
-cp PreToolUse.py ~/.claude/hooks/
-cp Stop.py ~/.claude/hooks/
+cp PreToolUseHook-Memory.py ~/.claude/hooks/
+cp StopHook-Memory.py ~/.claude/hooks/
 
 # Make executable
-chmod +x ~/.claude/hooks/PreToolUse.py
-chmod +x ~/.claude/hooks/Stop.py
+chmod +x ~/.claude/hooks/PreToolUseHook-Memory.py
+chmod +x ~/.claude/hooks/StopHook-Memory.py
 ```
 
 ## Configuration

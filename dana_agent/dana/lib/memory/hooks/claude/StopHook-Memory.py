@@ -6,8 +6,8 @@ This hook fires when Claude finishes a turn. It:
 2. Stores each matched memory via dana-memory
 
 Installation:
-    1. Copy this file to ~/.claude/hooks/Stop.py
-    2. Make it executable: chmod +x ~/.claude/hooks/Stop.py
+    1. Copy this file to ~/.claude/hooks/StopHook-Memory.py
+    2. Make it executable: chmod +x ~/.claude/hooks/StopHook-Memory.py
     3. Ensure dana-memory is available in PATH
 
 Configuration (environment variables):
