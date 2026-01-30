@@ -8,6 +8,9 @@ Usage:
     dana-memory list [--domain DOMAIN] [--limit N]
     dana-memory delete ID
     dana-memory clear [--domain DOMAIN] [--force]
+    dana-memory hooks install [--target TARGET]
+    dana-memory hooks status
+    dana-memory hooks uninstall [--target TARGET]
 
 Requires: pip install dana[memory]
 """
@@ -15,7 +18,10 @@ Requires: pip install dana[memory]
 from __future__ import annotations
 
 import argparse
+import importlib.resources
 import json
+import shutil
+import stat
 import sys
 from pathlib import Path
 
@@ -199,6 +205,155 @@ def cmd_clear(args: argparse.Namespace) -> int:
     return 0
 
 
+# =============================================================================
+# Hooks commands
+# =============================================================================
+
+AVAILABLE_HOOKS = {
+    "claude": {
+        "name": "Claude Code",
+        "hooks_dir": Path.home() / ".claude" / "hooks",
+        "files": ["PreToolUse.py"],
+        "package": "dana.lib.memory.hooks.claude",
+    },
+}
+
+
+def get_hook_source_path(target: str, filename: str) -> Path:
+    """Get the source path for a hook file from the package."""
+    hook_info = AVAILABLE_HOOKS[target]
+    package = hook_info["package"]
+
+    # Use importlib.resources to find the hook file in the package
+    try:
+        if sys.version_info >= (3, 11):
+            files = importlib.resources.files(package)
+            return Path(str(files.joinpath(filename)))
+        else:
+            # Python 3.9-3.10 compatibility
+            with importlib.resources.path(package, filename) as p:
+                return p
+    except (ModuleNotFoundError, FileNotFoundError, TypeError):
+        # Fall back to __file__-based resolution
+        this_dir = Path(__file__).parent
+        return this_dir / "hooks" / target / filename
+
+
+def cmd_hooks_install(args: argparse.Namespace) -> int:
+    """Install hooks for an agent system."""
+    target = args.target
+
+    if target not in AVAILABLE_HOOKS:
+        print(f"Error: Unknown target '{target}'", file=sys.stderr)
+        print(f"Available targets: {', '.join(AVAILABLE_HOOKS.keys())}", file=sys.stderr)
+        return 1
+
+    hook_info = AVAILABLE_HOOKS[target]
+    hooks_dir = hook_info["hooks_dir"]
+
+    # Create hooks directory if needed
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+
+    installed = []
+    for filename in hook_info["files"]:
+        source = get_hook_source_path(target, filename)
+        dest = hooks_dir / filename
+
+        if not source.exists():
+            print(f"Error: Hook source not found: {source}", file=sys.stderr)
+            return 1
+
+        # Copy hook file
+        shutil.copy2(source, dest)
+
+        # Make executable
+        dest.chmod(dest.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        installed.append(filename)
+
+    print(f"Installed {hook_info['name']} hooks to {hooks_dir}:")
+    for f in installed:
+        print(f"  - {f}")
+
+    print()
+    print("Configure with environment variables:")
+    print("  DANA_MEMORY_ENABLED=1        # Enable memory injection")
+    print("  DANA_MEMORY_MIN_SCORE=0.3    # Minimum relevance score")
+    print("  DANA_MEMORY_LIMIT=3          # Max memories to inject")
+    print("  DANA_MEMORY_DOMAIN=          # Filter by domain (optional)")
+
+    return 0
+
+
+def cmd_hooks_status(args: argparse.Namespace) -> int:
+    """Show status of installed hooks."""
+    found_any = False
+
+    for target, hook_info in AVAILABLE_HOOKS.items():
+        hooks_dir = hook_info["hooks_dir"]
+        print(f"{hook_info['name']} ({target}):")
+        print(f"  Directory: {hooks_dir}")
+
+        if not hooks_dir.exists():
+            print("  Status: Not installed")
+            print()
+            continue
+
+        installed = []
+        missing = []
+        for filename in hook_info["files"]:
+            hook_path = hooks_dir / filename
+            if hook_path.exists():
+                installed.append(filename)
+                found_any = True
+            else:
+                missing.append(filename)
+
+        if installed:
+            print(f"  Installed: {', '.join(installed)}")
+        if missing:
+            print(f"  Missing: {', '.join(missing)}")
+
+        print()
+
+    if not found_any:
+        print("No hooks installed. Run 'dana-memory hooks install claude' to install.")
+
+    return 0
+
+
+def cmd_hooks_uninstall(args: argparse.Namespace) -> int:
+    """Uninstall hooks for an agent system."""
+    target = args.target
+
+    if target not in AVAILABLE_HOOKS:
+        print(f"Error: Unknown target '{target}'", file=sys.stderr)
+        print(f"Available targets: {', '.join(AVAILABLE_HOOKS.keys())}", file=sys.stderr)
+        return 1
+
+    hook_info = AVAILABLE_HOOKS[target]
+    hooks_dir = hook_info["hooks_dir"]
+
+    if not hooks_dir.exists():
+        print(f"No hooks installed for {hook_info['name']}")
+        return 0
+
+    removed = []
+    for filename in hook_info["files"]:
+        hook_path = hooks_dir / filename
+        if hook_path.exists():
+            hook_path.unlink()
+            removed.append(filename)
+
+    if removed:
+        print(f"Removed {hook_info['name']} hooks:")
+        for f in removed:
+            print(f"  - {f}")
+    else:
+        print(f"No hooks found to remove for {hook_info['name']}")
+
+    return 0
+
+
 def main() -> int:
     """Main CLI entry point."""
     # Check if dependencies are available
@@ -266,6 +421,24 @@ def main() -> int:
     p_clear.add_argument("--domain", "-d", help="Only clear this domain")
     p_clear.add_argument("--force", "-f", action="store_true", help="Skip confirmation")
     p_clear.set_defaults(func=cmd_clear)
+
+    # hooks (with nested subcommands)
+    p_hooks = subparsers.add_parser("hooks", help="Manage agent hooks")
+    hooks_subparsers = p_hooks.add_subparsers(dest="hooks_command", required=True)
+
+    # hooks install
+    p_hooks_install = hooks_subparsers.add_parser("install", help="Install hooks for an agent system")
+    p_hooks_install.add_argument("target", nargs="?", default="claude", help="Target agent system (default: claude)")
+    p_hooks_install.set_defaults(func=cmd_hooks_install)
+
+    # hooks status
+    p_hooks_status = hooks_subparsers.add_parser("status", help="Show installed hooks status")
+    p_hooks_status.set_defaults(func=cmd_hooks_status)
+
+    # hooks uninstall
+    p_hooks_uninstall = hooks_subparsers.add_parser("uninstall", help="Uninstall hooks for an agent system")
+    p_hooks_uninstall.add_argument("target", nargs="?", default="claude", help="Target agent system (default: claude)")
+    p_hooks_uninstall.set_defaults(func=cmd_hooks_uninstall)
 
     args = parser.parse_args()
     return args.func(args)
