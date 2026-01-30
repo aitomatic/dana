@@ -1,13 +1,13 @@
 """CLI for dana-memory.
 
 Usage:
-    dana-memory store "memory text" [--source SOURCE] [--domain DOMAIN]
-    dana-memory query "query text" [--limit N] [--min-score F] [--domain D] [--json]
-    dana-memory index PATH [--domain DOMAIN] [--glob PATTERN]
+    dana-memory store "memory text" [--source SOURCE] [--identity DOMAIN]
+    dana-memory query "query text" [--limit N] [--min-score F] [--identity D] [--json]
+    dana-memory index PATH [--identity DOMAIN] [--glob PATTERN]
     dana-memory status
-    dana-memory list [--domain DOMAIN] [--limit N]
+    dana-memory list [--identity DOMAIN] [--limit N]
     dana-memory delete ID
-    dana-memory clear [--domain DOMAIN] [--force]
+    dana-memory clear [--identity DOMAIN] [--force]
     dana-memory hooks install [--target TARGET]
     dana-memory hooks status
     dana-memory hooks uninstall [--target TARGET]
@@ -40,13 +40,13 @@ def cmd_store(args: argparse.Namespace) -> int:
     memory = store.store(
         text=args.text,
         source=args.source,
-        domain=args.domain,
+        identity=args.identity,
     )
 
     if args.json:
         print(json.dumps(memory.to_dict(), indent=2))
     else:
-        print(f"Stored memory {memory.id} in domain '{memory.domain}'")
+        print(f"Stored memory {memory.id} in identity '{memory.identity}'")
 
     return 0
 
@@ -58,7 +58,7 @@ def cmd_query(args: argparse.Namespace) -> int:
         text=args.text,
         limit=args.limit,
         min_score=args.min_score,
-        domain=args.domain,
+        identity=args.identity,
         source=args.source,
     )
 
@@ -74,7 +74,7 @@ def cmd_query(args: argparse.Namespace) -> int:
             text_preview = m.text[:100] + "..." if len(m.text) > 100 else m.text
             text_preview = text_preview.replace("\n", " ")
             print(f"[{m.score:.2f}] {m.id}  {text_preview}")
-            print(f"       domain={m.domain} source={m.source} created={m.created.date()}")
+            print(f"       identity={m.identity} source={m.source} created={m.created.date()}")
             print()
 
     return 0
@@ -92,14 +92,14 @@ def cmd_index(args: argparse.Namespace) -> int:
     print(f"Indexing {path} with pattern '{args.glob}'...")
     count = store.index_directory(
         path=path,
-        domain=args.domain,
+        identity=args.identity,
         glob_pattern=args.glob,
     )
 
     if args.json:
-        print(json.dumps({"indexed": count, "path": str(path), "domain": args.domain}))
+        print(json.dumps({"indexed": count, "path": str(path), "identity": args.identity}))
     else:
-        print(f"Indexed {count} memories into domain '{args.domain}'")
+        print(f"Indexed {count} memories into identity '{args.identity}'")
 
     return 0
 
@@ -115,10 +115,10 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f"Store path: {status['store_path']}")
         print(f"Embedding model: {status['embedding_model']}")
         print(f"Total memories: {status['total_memories']}")
-        if status["domains"]:
+        if status["identitys"]:
             print("Domains:")
-            for domain, count in sorted(status["domains"].items()):
-                print(f"  {domain}: {count}")
+            for identity, count in sorted(status["identitys"].items()):
+                print(f"  {identity}: {count}")
         else:
             print("Domains: (none)")
 
@@ -137,8 +137,8 @@ def cmd_list(args: argparse.Namespace) -> int:
 
     try:
         query = store._table.search().limit(args.limit)
-        if args.domain:
-            query = query.where(f'domain = "{args.domain}"')
+        if args.identity:
+            query = query.where(f'identity = "{args.identity}"')
         results = query.to_list()
     except Exception as e:
         print(f"Error listing memories: {e}", file=sys.stderr)
@@ -150,7 +150,7 @@ def cmd_list(args: argparse.Namespace) -> int:
                 "id": r["id"],
                 "text": r["text"],
                 "source": r["source"],
-                "domain": r["domain"],
+                "identity": r["identity"],
                 "created": r["created"],
             }
             for r in results
@@ -164,7 +164,7 @@ def cmd_list(args: argparse.Namespace) -> int:
         for r in results:
             text_preview = r["text"][:80] + "..." if len(r["text"]) > 80 else r["text"]
             text_preview = text_preview.replace("\n", " ")
-            print(f"{r['id']}  [{r['domain']}] {text_preview}")
+            print(f"{r['id']}  [{r['identity']}] {text_preview}")
 
     return 0
 
@@ -185,8 +185,8 @@ def cmd_delete(args: argparse.Namespace) -> int:
 def cmd_clear(args: argparse.Namespace) -> int:
     """Clear memories."""
     if not args.force:
-        if args.domain:
-            prompt = f"Clear all memories in domain '{args.domain}'? [y/N] "
+        if args.identity:
+            prompt = f"Clear all memories in identity '{args.identity}'? [y/N] "
         else:
             prompt = "Clear ALL memories? [y/N] "
         response = input(prompt)
@@ -195,10 +195,10 @@ def cmd_clear(args: argparse.Namespace) -> int:
             return 0
 
     store = MemoryStore()
-    count = store.clear(domain=args.domain)
+    count = store.clear(identity=args.identity)
 
-    if args.domain:
-        print(f"Cleared {count} memories from domain '{args.domain}'")
+    if args.identity:
+        print(f"Cleared {count} memories from identity '{args.identity}'")
     else:
         print(f"Cleared {count} memories")
 
@@ -279,7 +279,7 @@ def cmd_hooks_install(args: argparse.Namespace) -> int:
     print("  DANA_MEMORY_ENABLED=1        # Enable memory injection")
     print("  DANA_MEMORY_MIN_SCORE=0.3    # Minimum relevance score")
     print("  DANA_MEMORY_LIMIT=3          # Max memories to inject")
-    print("  DANA_MEMORY_DOMAIN=          # Filter by domain (optional)")
+    print("  DANA_MEMORY_DOMAIN=          # Filter by identity (optional)")
 
     return 0
 
@@ -377,7 +377,7 @@ def main() -> int:
     p_store = subparsers.add_parser("store", help="Store a memory")
     p_store.add_argument("text", help="Memory text to store")
     p_store.add_argument("--source", default="agent", help="Memory source (default: agent)")
-    p_store.add_argument("--domain", default="general", help="Memory domain (default: general)")
+    p_store.add_argument("--identity", default="general", help="Memory identity (default: general)")
     p_store.add_argument("--json", action="store_true", help="Output as JSON")
     p_store.set_defaults(func=cmd_store)
 
@@ -386,7 +386,7 @@ def main() -> int:
     p_query.add_argument("text", help="Query text")
     p_query.add_argument("--limit", "-n", type=int, default=5, help="Max results (default: 5)")
     p_query.add_argument("--min-score", type=float, default=0.0, help="Min similarity score 0-1")
-    p_query.add_argument("--domain", "-d", help="Filter by domain")
+    p_query.add_argument("--identity", "-d", help="Filter by identity")
     p_query.add_argument("--source", "-s", help="Filter by source")
     p_query.add_argument("--json", action="store_true", help="Output as JSON")
     p_query.set_defaults(func=cmd_query)
@@ -394,7 +394,7 @@ def main() -> int:
     # index
     p_index = subparsers.add_parser("index", help="Index a directory")
     p_index.add_argument("path", help="Directory path to index")
-    p_index.add_argument("--domain", default="docs", help="Domain for indexed memories")
+    p_index.add_argument("--identity", default="docs", help="Domain for indexed memories")
     p_index.add_argument("--glob", default="**/*.md", help="File glob pattern (default: **/*.md)")
     p_index.add_argument("--json", action="store_true", help="Output as JSON")
     p_index.set_defaults(func=cmd_index)
@@ -406,7 +406,7 @@ def main() -> int:
 
     # list
     p_list = subparsers.add_parser("list", help="List memories")
-    p_list.add_argument("--domain", "-d", help="Filter by domain")
+    p_list.add_argument("--identity", "-d", help="Filter by identity")
     p_list.add_argument("--limit", "-n", type=int, default=20, help="Max results (default: 20)")
     p_list.add_argument("--json", action="store_true", help="Output as JSON")
     p_list.set_defaults(func=cmd_list)
@@ -418,7 +418,7 @@ def main() -> int:
 
     # clear
     p_clear = subparsers.add_parser("clear", help="Clear memories")
-    p_clear.add_argument("--domain", "-d", help="Only clear this domain")
+    p_clear.add_argument("--identity", "-d", help="Only clear this identity")
     p_clear.add_argument("--force", "-f", action="store_true", help="Skip confirmation")
     p_clear.set_defaults(func=cmd_clear)
 

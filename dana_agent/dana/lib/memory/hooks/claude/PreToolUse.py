@@ -15,7 +15,7 @@ Configuration (environment variables):
     DANA_MEMORY_ENABLED=1       Enable memory injection (default: 1)
     DANA_MEMORY_MIN_SCORE=0.3   Minimum relevance score (default: 0.3)
     DANA_MEMORY_LIMIT=3         Max memories to inject (default: 3)
-    DANA_MEMORY_DOMAIN=         Filter by domain (default: all)
+    DANA_MEMORY_IDENTITY=         Filter by identity (default: all)
     DANA_MEMORY_TOOLS=          Comma-separated tools to trigger on (default: all)
     DANA_MEMORY_SKIP_TOOLS=     Comma-separated tools to skip (default: Glob,Grep,Bash)
 
@@ -29,11 +29,12 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import Any
 
 
@@ -43,7 +44,7 @@ def get_config() -> dict[str, Any]:
         "enabled": os.getenv("DANA_MEMORY_ENABLED", "1") == "1",
         "min_score": float(os.getenv("DANA_MEMORY_MIN_SCORE", "0.3")),
         "limit": int(os.getenv("DANA_MEMORY_LIMIT", "3")),
-        "domain": os.getenv("DANA_MEMORY_DOMAIN", ""),
+        "identity": os.getenv("DANA_MEMORY_IDENTITY", ""),
         "tools": [t.strip() for t in os.getenv("DANA_MEMORY_TOOLS", "").split(",") if t.strip()],
         "skip_tools": [
             t.strip()
@@ -51,6 +52,45 @@ def get_config() -> dict[str, Any]:
             if t.strip()
         ],
     }
+
+
+# =============================================================================
+# Session-based deduplication
+# =============================================================================
+
+def get_session_id(transcript: list[dict[str, Any]]) -> str:
+    """Generate session ID from first transcript message."""
+    if not transcript:
+        return "empty"
+    first_msg = transcript[0]
+    content = str(first_msg.get("content", ""))[:500]
+    return hashlib.md5(content.encode()).hexdigest()[:12]
+
+
+def get_cache_path(session_id: str) -> Path:
+    """Get path to session cache file."""
+    return Path(f"/tmp/dana-memory-{session_id}.json")
+
+
+def load_injected_ids(session_id: str) -> set[str]:
+    """Load set of already-injected memory IDs for this session."""
+    cache_path = get_cache_path(session_id)
+    try:
+        if cache_path.exists():
+            data = json.loads(cache_path.read_text())
+            return set(data.get("injected_ids", []))
+    except (json.JSONDecodeError, OSError):
+        pass
+    return set()
+
+
+def save_injected_ids(session_id: str, ids: set[str]) -> None:
+    """Save injected memory IDs for this session."""
+    cache_path = get_cache_path(session_id)
+    try:
+        cache_path.write_text(json.dumps({"injected_ids": list(ids)}))
+    except OSError:
+        pass
 
 
 def extract_last_thinking(transcript: list[dict[str, Any]]) -> str:
@@ -113,17 +153,27 @@ def extract_recent_context(transcript: list[dict[str, Any]], max_chars: int = 20
 
 def query_memories(query: str, config: dict[str, Any]) -> list[dict[str, Any]]:
     """Query dana-memory for relevant memories."""
-    cmd = [
-        "dana-memory",
+    # Get project path for uv run (required if dana-memory not in PATH)
+    project_path = os.getenv("DANA_PROJECT_PATH", "")
+
+    if project_path:
+        cmd = [
+            "uv", "run", "--project", os.path.expanduser(project_path),
+            "dana-memory",
+        ]
+    else:
+        cmd = ["dana-memory"]
+
+    cmd.extend([
         "query",
         query[-1500:],  # Limit query length
         "--limit",
         str(config["limit"] * 2),  # Fetch extra for filtering
         "--json",
-    ]
+    ])
 
-    if config["domain"]:
-        cmd.extend(["--domain", config["domain"]])
+    if config["identity"]:
+        cmd.extend(["--identity", config["identity"]])
 
     try:
         result = subprocess.run(
@@ -162,13 +212,13 @@ def format_memories(memories: list[dict[str, Any]]) -> str:
     for m in memories:
         score = m.get("score", 0)
         text = m.get("text", "")
-        domain = m.get("domain", "")
+        identity = m.get("identity", "")
 
         # Truncate long memories
         if len(text) > 200:
             text = text[:200] + "..."
 
-        lines.append(f"- [{score:.2f}] [{domain}] {text}")
+        lines.append(f"- [{score:.2f}] [{identity}] {text}")
 
     return "\n".join(lines)
 
@@ -221,6 +271,10 @@ def main() -> int:
         print(json.dumps({"continue": True}))
         return 0
 
+    # Get session ID and load already-injected memories
+    session_id = get_session_id(transcript)
+    injected_ids = load_injected_ids(session_id)
+
     # Query memories
     memories = query_memories(thinking, config)
 
@@ -228,8 +282,19 @@ def main() -> int:
         print(json.dumps({"continue": True}))
         return 0
 
+    # Filter out already-injected memories
+    new_memories = [m for m in memories if m.get("id") not in injected_ids]
+
+    if not new_memories:
+        print(json.dumps({"continue": True}))
+        return 0
+
+    # Track newly injected IDs
+    new_ids = {m.get("id") for m in new_memories if m.get("id")}
+    save_injected_ids(session_id, injected_ids | new_ids)
+
     # Format and inject
-    message = format_memories(memories)
+    message = format_memories(new_memories)
     print(json.dumps({"continue": True, "message": message}))
     return 0
 

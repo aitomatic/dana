@@ -1,16 +1,16 @@
 """Semantic memory store using LanceDB.
 
 A persistent, queryable memory store for agents. Supports:
-- Storing memories with metadata (source, domain, timestamps)
+- Storing memories with metadata (source, identity, timestamps)
 - Semantic search using vector embeddings
-- Metadata filtering (by domain, source, date)
+- Metadata filtering (by identity, source, date)
 - Indexing markdown directories
 
 Usage:
     from dana.lib.memory import MemoryStore
 
     store = MemoryStore()
-    store.store("VAV damper at 100% but zone warm -> check AHU first", domain="hvac")
+    store.store("VAV damper at 100% but zone warm -> check AHU first", identity="hvac")
     results = store.query("debugging VAV temperature issues", limit=3)
 """
 
@@ -104,7 +104,7 @@ class Memory:
     id: str
     text: str
     source: str
-    domain: str
+    identity: str
     created: datetime
     score: float = 0.0  # Populated on query results
 
@@ -114,7 +114,7 @@ class Memory:
             "id": self.id,
             "text": self.text,
             "source": self.source,
-            "domain": self.domain,
+            "identity": self.identity,
             "created": self.created.isoformat(),
             "score": self.score,
         }
@@ -169,7 +169,7 @@ class MemoryStore:
                             "id": "__schema__",
                             "text": "",
                             "source": "",
-                            "domain": "",
+                            "identity": "",
                             "created": datetime.now().isoformat(),
                             "vector": vector,
                         }
@@ -183,7 +183,7 @@ class MemoryStore:
         self,
         text: str,
         source: str = "agent",
-        domain: str = "general",
+        identity: str = "general",
         created: datetime | None = None,
     ) -> Memory:
         """Store a new memory.
@@ -191,7 +191,7 @@ class MemoryStore:
         Args:
             text: The memory content.
             source: Where this memory came from (e.g., "session", "user", "ontology").
-            domain: Domain category (e.g., "hvac", "general", "coding").
+            identity: Domain category (e.g., "hvac", "general", "coding").
             created: Timestamp (defaults to now).
 
         Returns:
@@ -214,7 +214,7 @@ class MemoryStore:
                     id=row["id"],
                     text=row["text"],
                     source=row["source"],
-                    domain=row["domain"],
+                    identity=row["identity"],
                     created=datetime.fromisoformat(row["created"]),
                 )
         except Exception:
@@ -227,7 +227,7 @@ class MemoryStore:
                     "id": memory_id,
                     "text": text,
                     "source": source,
-                    "domain": domain,
+                    "identity": identity,
                     "created": created.isoformat(),
                     "vector": vector,
                 }
@@ -238,7 +238,7 @@ class MemoryStore:
             id=memory_id,
             text=text,
             source=source,
-            domain=domain,
+            identity=identity,
             created=created,
         )
 
@@ -247,7 +247,7 @@ class MemoryStore:
         text: str,
         limit: int = 5,
         min_score: float = 0.0,
-        domain: str | None = None,
+        identity: str | None = None,
         source: str | None = None,
     ) -> list[Memory]:
         """Query for relevant memories.
@@ -256,7 +256,7 @@ class MemoryStore:
             text: The query text.
             limit: Maximum number of results.
             min_score: Minimum similarity score (0-1, higher is more similar).
-            domain: Filter by domain (optional).
+            identity: Filter by identity (optional).
             source: Filter by source (optional).
 
         Returns:
@@ -272,8 +272,8 @@ class MemoryStore:
 
         # Add filters
         filters = []
-        if domain:
-            filters.append(f'domain = "{domain}"')
+        if identity:
+            filters.append(f'identity = "{identity}"')
         if source:
             filters.append(f'source = "{source}"')
         if filters:
@@ -301,7 +301,7 @@ class MemoryStore:
                     id=row["id"],
                     text=row["text"],
                     source=row["source"],
-                    domain=row["domain"],
+                    identity=row["identity"],
                     created=datetime.fromisoformat(row["created"]),
                     score=score,
                 )
@@ -315,7 +315,7 @@ class MemoryStore:
     def index_directory(
         self,
         path: Path | str,
-        domain: str = "docs",
+        identity: str = "docs",
         source: str = "indexed",
         glob_pattern: str = "**/*.md",
     ) -> int:
@@ -323,7 +323,7 @@ class MemoryStore:
 
         Args:
             path: Directory path to index.
-            domain: Domain to assign to indexed memories.
+            identity: Domain to assign to indexed memories.
             source: Source to assign to indexed memories.
             glob_pattern: Glob pattern for files to index.
 
@@ -350,11 +350,11 @@ class MemoryStore:
                             self.store(
                                 text=f"[{rel_path} chunk {i + 1}]\n{chunk}",
                                 source=source,
-                                domain=domain,
+                                identity=identity,
                             )
                             count += 1
                     else:
-                        self.store(text=text, source=source, domain=domain)
+                        self.store(text=text, source=source, identity=identity)
                         count += 1
                 except Exception as e:
                     # Skip files that can't be read
@@ -391,11 +391,11 @@ class MemoryStore:
         except Exception:
             return False
 
-    def clear(self, domain: str | None = None) -> int:
+    def clear(self, identity: str | None = None) -> int:
         """Clear memories.
 
         Args:
-            domain: If specified, only clear memories in this domain.
+            identity: If specified, only clear memories in this identity.
                    If None, clear all memories.
 
         Returns:
@@ -405,10 +405,10 @@ class MemoryStore:
             return 0
 
         try:
-            if domain:
+            if identity:
                 # Count before delete (approximate)
-                count = len(self._table.search().where(f'domain = "{domain}"').limit(10000).to_list())
-                self._table.delete(f'domain = "{domain}"')
+                count = len(self._table.search().where(f'identity = "{identity}"').limit(10000).to_list())
+                self._table.delete(f'identity = "{identity}"')
             else:
                 count = self._table.count_rows()
                 self._db.drop_table(self.table_name)
@@ -417,27 +417,27 @@ class MemoryStore:
         except Exception:
             return 0
 
-    def list_domains(self) -> list[str]:
-        """List all domains in the store.
+    def list_identitys(self) -> list[str]:
+        """List all identitys in the store.
 
         Returns:
-            List of unique domain names.
+            List of unique identity names.
         """
         if self._table is None:
             return []
 
         try:
-            # Fetch all and extract unique domains
+            # Fetch all and extract unique identitys
             results = self._table.search().limit(10000).to_list()
-            return list(set(r["domain"] for r in results))
+            return list(set(r["identity"] for r in results))
         except Exception:
             return []
 
-    def count(self, domain: str | None = None) -> int:
+    def count(self, identity: str | None = None) -> int:
         """Count memories.
 
         Args:
-            domain: If specified, count only memories in this domain.
+            identity: If specified, count only memories in this identity.
 
         Returns:
             Number of memories.
@@ -446,8 +446,8 @@ class MemoryStore:
             return 0
 
         try:
-            if domain:
-                return len(self._table.search().where(f'domain = "{domain}"').limit(100000).to_list())
+            if identity:
+                return len(self._table.search().where(f'identity = "{identity}"').limit(100000).to_list())
             return self._table.count_rows()
         except Exception:
             return 0
@@ -458,11 +458,11 @@ class MemoryStore:
         Returns:
             Dictionary with status information.
         """
-        domains = self.list_domains()
+        identitys = self.list_identitys()
         return {
             "store_path": str(self.store_path),
             "total_memories": self.count(),
-            "domains": {d: self.count(domain=d) for d in domains},
+            "identitys": {d: self.count(identity=d) for d in identitys},
             "embedding_model": (
                 "openai/text-embedding-3-small"
                 if os.getenv("OPENAI_API_KEY")
