@@ -15,7 +15,7 @@ Configuration (environment variables):
     DANA_MEMORY_ENABLED=1       Enable memory injection (default: 1)
     DANA_MEMORY_MIN_SCORE=0.3   Minimum relevance score (default: 0.3)
     DANA_MEMORY_LIMIT=3         Max memories to inject (default: 3)
-    DANA_MEMORY_DOMAIN=         Filter by domain (default: all)
+    DANA_MEMORY_IDENTITY=         Filter by identity (default: all)
     DANA_MEMORY_TOOLS=          Comma-separated tools to trigger on (default: all)
     DANA_MEMORY_SKIP_TOOLS=     Comma-separated tools to skip (default: Glob,Grep,Bash)
 
@@ -44,7 +44,7 @@ def get_config() -> dict[str, Any]:
         "enabled": os.getenv("DANA_MEMORY_ENABLED", "1") == "1",
         "min_score": float(os.getenv("DANA_MEMORY_MIN_SCORE", "0.3")),
         "limit": int(os.getenv("DANA_MEMORY_LIMIT", "3")),
-        "domain": os.getenv("DANA_MEMORY_DOMAIN", ""),
+        "identity": os.getenv("DANA_MEMORY_IDENTITY", ""),
         "tools": [t.strip() for t in os.getenv("DANA_MEMORY_TOOLS", "").split(",") if t.strip()],
         "skip_tools": [
             t.strip()
@@ -172,8 +172,8 @@ def query_memories(query: str, config: dict[str, Any]) -> list[dict[str, Any]]:
         "--json",
     ])
 
-    if config["domain"]:
-        cmd.extend(["--domain", config["domain"]])
+    if config["identity"]:
+        cmd.extend(["--identity", config["identity"]])
 
     try:
         result = subprocess.run(
@@ -212,13 +212,13 @@ def format_memories(memories: list[dict[str, Any]]) -> str:
     for m in memories:
         score = m.get("score", 0)
         text = m.get("text", "")
-        domain = m.get("domain", "")
+        identity = m.get("identity", "")
 
         # Truncate long memories
         if len(text) > 200:
             text = text[:200] + "..."
 
-        lines.append(f"- [{score:.2f}] [{domain}] {text}")
+        lines.append(f"- [{score:.2f}] [{identity}] {text}")
 
     return "\n".join(lines)
 
