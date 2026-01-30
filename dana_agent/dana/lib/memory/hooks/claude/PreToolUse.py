@@ -113,14 +113,24 @@ def extract_recent_context(transcript: list[dict[str, Any]], max_chars: int = 20
 
 def query_memories(query: str, config: dict[str, Any]) -> list[dict[str, Any]]:
     """Query dana-memory for relevant memories."""
-    cmd = [
-        "dana-memory",
+    # Get project path for uv run (required if dana-memory not in PATH)
+    project_path = os.getenv("DANA_PROJECT_PATH", "")
+
+    if project_path:
+        cmd = [
+            "uv", "run", "--project", os.path.expanduser(project_path),
+            "dana-memory",
+        ]
+    else:
+        cmd = ["dana-memory"]
+
+    cmd.extend([
         "query",
         query[-1500:],  # Limit query length
         "--limit",
         str(config["limit"] * 2),  # Fetch extra for filtering
         "--json",
-    ]
+    ])
 
     if config["domain"]:
         cmd.extend(["--domain", config["domain"]])
