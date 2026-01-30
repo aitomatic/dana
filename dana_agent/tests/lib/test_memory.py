@@ -8,7 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from dana.lib.memory import Memory, MemoryStore
+from dana.lib.memory import Memory, MemoryStore, available
+
+pytestmark = pytest.mark.skipif(
+    not available(),
+    reason="dana[memory] optional dependencies not installed",
+)
 
 
 @pytest.fixture
