@@ -29,11 +29,12 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import Any
 
 
@@ -51,6 +52,45 @@ def get_config() -> dict[str, Any]:
             if t.strip()
         ],
     }
+
+
+# =============================================================================
+# Session-based deduplication
+# =============================================================================
+
+def get_session_id(transcript: list[dict[str, Any]]) -> str:
+    """Generate session ID from first transcript message."""
+    if not transcript:
+        return "empty"
+    first_msg = transcript[0]
+    content = str(first_msg.get("content", ""))[:500]
+    return hashlib.md5(content.encode()).hexdigest()[:12]
+
+
+def get_cache_path(session_id: str) -> Path:
+    """Get path to session cache file."""
+    return Path(f"/tmp/dana-memory-{session_id}.json")
+
+
+def load_injected_ids(session_id: str) -> set[str]:
+    """Load set of already-injected memory IDs for this session."""
+    cache_path = get_cache_path(session_id)
+    try:
+        if cache_path.exists():
+            data = json.loads(cache_path.read_text())
+            return set(data.get("injected_ids", []))
+    except (json.JSONDecodeError, OSError):
+        pass
+    return set()
+
+
+def save_injected_ids(session_id: str, ids: set[str]) -> None:
+    """Save injected memory IDs for this session."""
+    cache_path = get_cache_path(session_id)
+    try:
+        cache_path.write_text(json.dumps({"injected_ids": list(ids)}))
+    except OSError:
+        pass
 
 
 def extract_last_thinking(transcript: list[dict[str, Any]]) -> str:
@@ -231,6 +271,10 @@ def main() -> int:
         print(json.dumps({"continue": True}))
         return 0
 
+    # Get session ID and load already-injected memories
+    session_id = get_session_id(transcript)
+    injected_ids = load_injected_ids(session_id)
+
     # Query memories
     memories = query_memories(thinking, config)
 
@@ -238,8 +282,19 @@ def main() -> int:
         print(json.dumps({"continue": True}))
         return 0
 
+    # Filter out already-injected memories
+    new_memories = [m for m in memories if m.get("id") not in injected_ids]
+
+    if not new_memories:
+        print(json.dumps({"continue": True}))
+        return 0
+
+    # Track newly injected IDs
+    new_ids = {m.get("id") for m in new_memories if m.get("id")}
+    save_injected_ids(session_id, injected_ids | new_ids)
+
     # Format and inject
-    message = format_memories(memories)
+    message = format_memories(new_memories)
     print(json.dumps({"continue": True, "message": message}))
     return 0
 
