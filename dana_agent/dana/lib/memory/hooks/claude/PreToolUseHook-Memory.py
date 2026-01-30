@@ -241,6 +241,9 @@ def format_memories(memories: list[dict[str, Any]], max_words: int = 1500) -> st
         total_words += memory_words
         lines.append(f"- [{score:.2f}] [{identity}] {text}")
 
+    lines.append("")
+    lines.append("_Use [REMEMBER: ...] to save important discoveries._")
+
     return "\n".join(lines)
 
 
