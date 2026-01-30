@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Claude Code PreToolUse hook for semantic memory injection.
+"""Claude Code PreToolUse hook for memory recall.
+
+Part of the dana-memory system:
+- PreToolUse (this file): RECALL - retrieves relevant memories before tool use
+- Stop: STORE - saves [REMEMBER: ...] patterns after Claude's turn
 
 This hook fires before Claude executes a tool. It:
 1. Extracts the last thinking block from the conversation
