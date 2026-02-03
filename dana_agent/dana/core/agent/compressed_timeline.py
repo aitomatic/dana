@@ -854,7 +854,15 @@ Respond with ONLY a JSON object containing the summary:
         summary: str,
     ) -> int:
         """
-        Apply compression by storing summary and updating timeline.
+        Apply compression by storing summary and updating timeline and native messages.
+
+        This method updates both the legacy TimelineEntry list (self.timeline) and the
+        native message list (self._native_messages) to maintain consistency.
+
+        For native messages:
+        - Creates a summary NativeMessage with role='system'
+        - Preserves recent NativeMessages (within max_recent_entries_to_keep)
+        - Removes compressed native messages
 
         Args:
             entries_to_keep: Entries to preserve
@@ -865,30 +873,64 @@ Respond with ONLY a JSON object containing the summary:
             Number of entries compressed
         """
         compressed_count = len(entries_to_compress)
+        compression_timestamp = datetime.now()
+
+        # Calculate how many native messages to keep
+        # We need to keep messages corresponding to entries_to_keep
+        native_messages_to_keep_count = len(entries_to_keep)
+
+        # Create summary as a NativeMessage with role='system'
+        summary_native_message = NativeMessage(
+            role="system",
+            content=f"[SUMMARY] {summary}",
+            metadata={
+                COMPRESSED_CONTEXT_KEY: summary,
+                COMPRESSION_TIMESTAMP_KEY: compression_timestamp.isoformat(),
+                COMPRESSED_ENTRIES_COUNT_KEY: compressed_count,
+            },
+            timestamp=compression_timestamp,
+        )
 
         if not entries_to_keep:
             # Edge case: create a summary entry if nothing to keep
             summary_entry = TimelineEntry(
                 entry_type=TimelineEntryType.TIMELINE_SUMMARY,
                 content=summary,
-                timestamp=entries_to_compress[0].timestamp if entries_to_compress else datetime.now(),
+                timestamp=entries_to_compress[0].timestamp if entries_to_compress else compression_timestamp,
                 metadata={
                     COMPRESSED_CONTEXT_KEY: summary,
-                    COMPRESSION_TIMESTAMP_KEY: datetime.now().isoformat(),
+                    COMPRESSION_TIMESTAMP_KEY: compression_timestamp.isoformat(),
                     COMPRESSED_ENTRIES_COUNT_KEY: compressed_count,
                 },
             )
             self.timeline = [summary_entry]
+
+            # Update native messages: only the summary
+            self._native_messages = [summary_native_message]
+
             return compressed_count
 
         # Store compressed context in metadata of the oldest kept entry
         oldest_kept = entries_to_keep[0]
         oldest_kept.metadata[COMPRESSED_CONTEXT_KEY] = summary
-        oldest_kept.metadata[COMPRESSION_TIMESTAMP_KEY] = datetime.now().isoformat()
+        oldest_kept.metadata[COMPRESSION_TIMESTAMP_KEY] = compression_timestamp.isoformat()
         oldest_kept.metadata[COMPRESSED_ENTRIES_COUNT_KEY] = compressed_count
 
         # Update timeline to only contain kept entries
         self.timeline = entries_to_keep
+
+        # Update native messages: summary + recent messages
+        # Get the native messages corresponding to kept entries (from the end)
+        recent_native_messages = self._native_messages[-native_messages_to_keep_count:] if native_messages_to_keep_count > 0 else []
+
+        # Also update metadata on the first kept native message
+        if recent_native_messages:
+            recent_native_messages[0].metadata[COMPRESSED_CONTEXT_KEY] = summary
+            recent_native_messages[0].metadata[COMPRESSION_TIMESTAMP_KEY] = compression_timestamp.isoformat()
+            recent_native_messages[0].metadata[COMPRESSED_ENTRIES_COUNT_KEY] = compressed_count
+
+        # New native messages list: summary + kept native messages
+        self._native_messages = [summary_native_message] + recent_native_messages
 
         return compressed_count
 
@@ -940,11 +982,18 @@ Respond with ONLY a JSON object containing the summary:
         """
         Get the compressed context from the timeline if available.
 
-        Looks for compressed context metadata in timeline entries.
+        Looks for compressed context metadata in both native messages and
+        timeline entries (for backward compatibility).
 
         Returns:
             Compressed context string or None if not available
         """
+        # First check native messages (preferred source after compression)
+        for msg in self._native_messages:
+            if COMPRESSED_CONTEXT_KEY in msg.metadata:
+                return msg.metadata[COMPRESSED_CONTEXT_KEY]
+
+        # Fall back to timeline entries (for backward compatibility)
         for entry in self.timeline:
             if COMPRESSED_CONTEXT_KEY in entry.metadata:
                 return entry.metadata[COMPRESSED_CONTEXT_KEY]
