@@ -1321,7 +1321,7 @@ Respond with ONLY a JSON object containing the summary:
             # Load native messages directly
             self._native_messages = [NativeMessage.from_dict(msg) for msg in native_messages]
             logger.info(
-                f"Loaded {len(self.timeline)} timeline entries with " f"{len(self._native_messages)} native messages from separate storage"
+                f"Loaded {len(self.timeline)} timeline entries with {len(self._native_messages)} native messages from separate storage"
             )
         else:
             # Pure legacy format - load entries and convert to native
@@ -1449,3 +1449,200 @@ Respond with ONLY a JSON object containing the summary:
             tool_call_id=tool_call_id,
             tool_calls=tool_calls,
         )
+
+    # Type aliases for provider-specific message formats
+    OpenAIMessage = dict[str, Any]
+    AnthropicMessage = dict[str, Any]
+
+    def to_openai_messages(
+        self,
+        max_tokens: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Convert native messages to OpenAI API message format.
+
+        OpenAI message format:
+        - System: {"role": "system", "content": "..."}
+        - User: {"role": "user", "content": "..."}
+        - Assistant: {"role": "assistant", "content": "...", "tool_calls": [...]}
+        - Tool: {"role": "tool", "tool_call_id": "...", "content": "..."}
+
+        Tool calls format:
+        - {"id": "...", "type": "function", "function": {"name": "...", "arguments": "{...}"}}
+
+        Args:
+            max_tokens: Maximum tokens to include (applies sliding window)
+
+        Returns:
+            List of OpenAI-formatted message dicts
+        """
+        import json
+
+        # Get LLM messages (applies token limiting and handles compressed context)
+        llm_messages = self.to_llm_messages(max_tokens=max_tokens)
+
+        openai_messages: list[dict[str, Any]] = []
+        for msg in llm_messages:
+            if msg.role == "system":
+                openai_messages.append({"role": "system", "content": msg.content})
+            elif msg.role == "user":
+                openai_messages.append({"role": "user", "content": msg.content})
+            elif msg.role == "tool":
+                openai_messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": msg.tool_call_id,
+                        "content": msg.content,
+                    }
+                )
+            elif msg.role == "assistant":
+                if msg.tool_calls:
+                    # Format tool_calls for OpenAI API
+                    formatted_tool_calls = []
+                    for tc in msg.tool_calls:
+                        if isinstance(tc, dict):
+                            tc_id = tc.get("id", "")
+                            tc_name = tc.get("name", "")
+                            tc_args = tc.get("arguments", {})
+                        else:
+                            tc_id = getattr(tc, "id", "")
+                            tc_name = getattr(tc, "name", "")
+                            tc_args = getattr(tc, "arguments", {})
+
+                        # OpenAI requires arguments as JSON string
+                        if isinstance(tc_args, dict):
+                            tc_args = json.dumps(tc_args)
+                        elif not isinstance(tc_args, str):
+                            tc_args = str(tc_args)
+
+                        formatted_tool_calls.append(
+                            {
+                                "id": tc_id,
+                                "type": "function",
+                                "function": {
+                                    "name": tc_name,
+                                    "arguments": tc_args,
+                                },
+                            }
+                        )
+                    openai_messages.append(
+                        {
+                            "role": "assistant",
+                            "content": msg.content or None,
+                            "tool_calls": formatted_tool_calls,
+                        }
+                    )
+                else:
+                    openai_messages.append({"role": "assistant", "content": msg.content})
+
+        return openai_messages
+
+    def to_anthropic_messages(
+        self,
+        max_tokens: int | None = None,
+    ) -> tuple[str | None, list[dict[str, Any]]]:
+        """
+        Convert native messages to Anthropic API message format.
+
+        Anthropic message format differs from OpenAI:
+        - System message is returned separately (not in messages array)
+        - User: {"role": "user", "content": "..."} or {"role": "user", "content": [{"type": "text", "text": "..."}]}
+        - Assistant: {"role": "assistant", "content": "..."} or with content blocks
+        - Tool use: {"role": "assistant", "content": [{"type": "text", "text": "..."}, {"type": "tool_use", "id": "...", "name": "...", "input": {...}}]}
+        - Tool result: {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "...", "content": "..."}]}
+
+        Note: Consecutive tool results are combined into a single user message.
+
+        Args:
+            max_tokens: Maximum tokens to include (applies sliding window)
+
+        Returns:
+            Tuple of (system_message, messages) where system_message is the content
+            of the system message (or None) and messages is a list of Anthropic-formatted
+            message dicts.
+        """
+        # Get LLM messages (applies token limiting and handles compressed context)
+        llm_messages = self.to_llm_messages(max_tokens=max_tokens)
+
+        system_message: str | None = None
+        anthropic_messages: list[dict[str, Any]] = []
+
+        for msg in llm_messages:
+            if msg.role == "system":
+                # Anthropic handles system message separately
+                # Combine multiple system messages if present
+                if system_message is None:
+                    system_message = msg.content
+                else:
+                    system_message = f"{system_message}\n\n{msg.content}"
+            elif msg.role == "user":
+                anthropic_messages.append({"role": "user", "content": msg.content})
+            elif msg.role == "tool":
+                # Tool result - Anthropic uses tool_result content block in user message
+                tool_result_block = {
+                    "type": "tool_result",
+                    "tool_use_id": msg.tool_call_id,
+                    "content": msg.content,
+                }
+                # Check if the last message is already a user message with tool_result blocks
+                # If so, append to it (for parallel tool results)
+                if (
+                    anthropic_messages
+                    and anthropic_messages[-1].get("role") == "user"
+                    and isinstance(anthropic_messages[-1].get("content"), list)
+                    and anthropic_messages[-1]["content"]
+                    and anthropic_messages[-1]["content"][0].get("type") == "tool_result"
+                ):
+                    # Append to existing tool results
+                    anthropic_messages[-1]["content"].append(tool_result_block)
+                else:
+                    # Create new user message with tool_result
+                    anthropic_messages.append(
+                        {
+                            "role": "user",
+                            "content": [tool_result_block],
+                        }
+                    )
+            elif msg.role == "assistant":
+                if msg.tool_calls:
+                    # Format as content blocks with tool_use
+                    content_blocks: list[dict[str, Any]] = []
+                    if msg.content:
+                        content_blocks.append({"type": "text", "text": msg.content})
+                    for tc in msg.tool_calls:
+                        if isinstance(tc, dict):
+                            tc_id = tc.get("id", "")
+                            tc_name = tc.get("name", "")
+                            tc_input = tc.get("arguments", {})
+                        else:
+                            tc_id = getattr(tc, "id", "")
+                            tc_name = getattr(tc, "name", "")
+                            tc_input = getattr(tc, "arguments", {})
+
+                        # Anthropic expects input as dict, not string
+                        if isinstance(tc_input, str):
+                            import json
+
+                            try:
+                                tc_input = json.loads(tc_input)
+                            except json.JSONDecodeError:
+                                tc_input = {"raw": tc_input}
+
+                        content_blocks.append(
+                            {
+                                "type": "tool_use",
+                                "id": tc_id,
+                                "name": tc_name,
+                                "input": tc_input,
+                            }
+                        )
+                    anthropic_messages.append(
+                        {
+                            "role": "assistant",
+                            "content": content_blocks,
+                        }
+                    )
+                else:
+                    anthropic_messages.append({"role": "assistant", "content": msg.content})
+
+        return system_message, anthropic_messages
