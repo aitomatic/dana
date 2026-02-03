@@ -554,6 +554,51 @@ class CompressedTimeline(Timeline):
 
         return default_call_async_fn
 
+    def _estimate_native_message_tokens(self, message: NativeMessage) -> int:
+        """
+        Estimate token count for a single NativeMessage.
+
+        Uses a character-based heuristic (4 characters per token), which is
+        a reasonable approximation for most LLM tokenizers.
+
+        Args:
+            message: NativeMessage to estimate
+
+        Returns:
+            Estimated token count
+        """
+        # Base content tokens
+        total = len(message.content) // 4
+
+        # Add tokens for tool_calls if present
+        if message.tool_calls:
+            for tc in message.tool_calls:
+                # Estimate tokens for tool call structure: id, name, arguments
+                total += len(tc.id) // 4
+                total += len(tc.name) // 4
+                total += len(str(tc.arguments)) // 4
+
+        return total
+
+    def _estimate_native_messages_list_tokens(self, messages: list[NativeMessage]) -> int:
+        """
+        Estimate token count for a list of NativeMessage objects.
+
+        Args:
+            messages: List of NativeMessage objects
+
+        Returns:
+            Estimated token count
+        """
+        total = 0
+        for msg in messages:
+            try:
+                total += self._estimate_native_message_tokens(msg)
+            except Exception as e:
+                logger.error(f"Error estimating token count for native message: {e}")
+                continue
+        return total
+
     def _estimate_entries_tokens(self, entries: list[TimelineEntry]) -> int:
         """
         Estimate token count for timeline entries.
@@ -579,6 +624,7 @@ class CompressedTimeline(Timeline):
         Check if timeline compression is needed.
 
         Compression is needed when total tokens exceed max_tokens_until_compression.
+        Uses native message token counts for more accurate estimation.
 
         Returns:
             True if compression should be triggered
@@ -587,16 +633,20 @@ class CompressedTimeline(Timeline):
             return False
 
         # Need at least some entries to compress
-        if len(self.timeline) <= self._compressed_config.max_recent_entries_to_keep:
+        if len(self._native_messages) <= self._compressed_config.max_recent_entries_to_keep:
             return False
 
-        # Estimate current token usage
-        current_tokens = self._estimate_entries_tokens(self.timeline)
+        # Estimate current token usage using native messages
+        current_tokens = self._estimate_native_messages_list_tokens(self._native_messages)
         return current_tokens > self._compressed_config.max_tokens_until_compression
 
     def get_entries_to_keep_and_compress(self) -> tuple[list[TimelineEntry], list[TimelineEntry]]:
         """
         Determine which entries to keep and which to compress.
+
+        This method now derives its result from native message partitioning to ensure
+        consistency. The partitioning is based on native message token estimation
+        which is more accurate than TimelineEntry-based estimation.
 
         Iterates from latest to oldest, keeping entries until:
         - Token count reaches cutoff_when_token_reach, OR
@@ -610,45 +660,20 @@ class CompressedTimeline(Timeline):
         if not self.timeline:
             return [], []
 
-        entries_to_keep: list[TimelineEntry] = []
-        current_tokens = 0
-        entry_count = 0
+        # Use native message partitioning as the source of truth
+        native_to_keep, _ = self.get_native_messages_to_keep_and_compress()
 
-        # Iterate from latest to oldest
-        for entry in reversed(self.timeline):
-            entry_tokens = self._estimate_entry_tokens(entry)
+        # The number of entries to keep should match the number of native messages to keep
+        # because each TimelineEntry corresponds to one NativeMessage
+        entries_to_keep_count = len(native_to_keep)
 
-            # Check if we've hit our limits
-            would_exceed_tokens = (current_tokens + entry_tokens) > self.cutoff_when_token_reach
-            would_exceed_entries = entry_count >= self.max_recent_entries_to_keep
-
-            if would_exceed_tokens or would_exceed_entries:
-                # Check if we need to include this entry to keep tool pairs together
-                if entry.tool_calls and entries_to_keep:
-                    # This is a tool_call entry, check if we have its results in kept entries
-                    has_orphaned_results = any(
-                        e.tool_call_id is not None
-                        for e in entries_to_keep
-                        if not any(kept.tool_calls for kept in entries_to_keep if kept.timestamp < e.timestamp)
-                    )
-                    if has_orphaned_results:
-                        # Include this tool_call to avoid orphaning results
-                        entries_to_keep.insert(0, entry)
-                        current_tokens += entry_tokens
-                        entry_count += 1
-                        continue
-                break
-
-            entries_to_keep.insert(0, entry)
-            current_tokens += entry_tokens
-            entry_count += 1
-
-        # Ensure we don't break tool_call/tool_result pairs at the boundary
-        entries_to_keep = self._ensure_tool_pair_integrity(entries_to_keep)
-
-        # Everything not kept should be compressed
-        kept_set = set(id(e) for e in entries_to_keep)
-        entries_to_compress = [e for e in self.timeline if id(e) not in kept_set]
+        # Get entries from the end of timeline (most recent)
+        if entries_to_keep_count >= len(self.timeline):
+            entries_to_keep = self.timeline[:]
+            entries_to_compress = []
+        else:
+            entries_to_keep = self.timeline[-entries_to_keep_count:] if entries_to_keep_count > 0 else []
+            entries_to_compress = self.timeline[:-entries_to_keep_count] if entries_to_keep_count > 0 else self.timeline[:]
 
         return entries_to_keep, entries_to_compress
 
@@ -692,6 +717,109 @@ class CompressedTimeline(Timeline):
                 break
 
         return additional_entries + entries
+
+    def get_native_messages_to_keep_and_compress(self) -> tuple[list[NativeMessage], list[NativeMessage]]:
+        """
+        Determine which native messages to keep and which to compress.
+
+        Iterates from latest to oldest, keeping messages until:
+        - Token count reaches cutoff_when_token_reach, OR
+        - Message count reaches max_recent_entries_to_keep
+
+        Ensures tool_call/tool_result pairs are not split.
+
+        Returns:
+            Tuple of (messages_to_keep, messages_to_compress)
+        """
+        if not self._native_messages:
+            return [], []
+
+        messages_to_keep: list[NativeMessage] = []
+        current_tokens = 0
+        message_count = 0
+
+        # Iterate from latest to oldest
+        for msg in reversed(self._native_messages):
+            msg_tokens = self._estimate_native_message_tokens(msg)
+
+            # Check if we've hit our limits
+            would_exceed_tokens = (current_tokens + msg_tokens) > self.cutoff_when_token_reach
+            would_exceed_entries = message_count >= self.max_recent_entries_to_keep
+
+            if would_exceed_tokens or would_exceed_entries:
+                # Check if we need to include this message to keep tool pairs together
+                if msg.tool_calls and messages_to_keep:
+                    # This is a tool_call message, check if we have its results in kept messages
+                    has_orphaned_results = any(
+                        m.tool_call_id is not None
+                        for m in messages_to_keep
+                        if not any(kept.tool_calls for kept in messages_to_keep if kept.timestamp < m.timestamp)
+                    )
+                    if has_orphaned_results:
+                        # Include this tool_call to avoid orphaning results
+                        messages_to_keep.insert(0, msg)
+                        current_tokens += msg_tokens
+                        message_count += 1
+                        continue
+                break
+
+            messages_to_keep.insert(0, msg)
+            current_tokens += msg_tokens
+            message_count += 1
+
+        # Ensure we don't break tool_call/tool_result pairs at the boundary
+        messages_to_keep = self._ensure_native_message_tool_pair_integrity(messages_to_keep)
+
+        # Everything not kept should be compressed
+        kept_set = set(id(m) for m in messages_to_keep)
+        messages_to_compress = [m for m in self._native_messages if id(m) not in kept_set]
+
+        return messages_to_keep, messages_to_compress
+
+    def _ensure_native_message_tool_pair_integrity(self, messages: list[NativeMessage]) -> list[NativeMessage]:
+        """
+        Ensure tool_call and tool_result pairs are kept together for native messages.
+
+        If messages start with tool results without their tool_calls,
+        we need to expand backwards in the original native message list.
+
+        Args:
+            messages: List of NativeMessage to check
+
+        Returns:
+            Messages with complete tool pairs
+        """
+        if not messages:
+            return messages
+
+        # Check if first messages are orphaned tool results
+        first_idx = 0
+        while first_idx < len(messages) and messages[first_idx].tool_call_id:
+            first_idx += 1
+
+        if first_idx == 0:
+            # No orphaned tool results at the start
+            return messages
+
+        # Find the tool_call for these orphaned results in the original native messages list
+        try:
+            msg_idx = self._native_messages.index(messages[0])
+        except ValueError:
+            return messages
+
+        if msg_idx <= 0:
+            return messages
+
+        # Look backwards in the original native messages for the tool_call
+        additional_messages: list[NativeMessage] = []
+        for i in range(msg_idx - 1, -1, -1):
+            msg = self._native_messages[i]
+            additional_messages.insert(0, msg)
+            if msg.tool_calls:
+                # Found the tool_call, stop looking
+                break
+
+        return additional_messages + messages
 
     def _estimate_entry_tokens(self, entry: TimelineEntry) -> int:
         """
