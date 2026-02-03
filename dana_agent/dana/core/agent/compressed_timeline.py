@@ -962,25 +962,37 @@ Respond with ONLY a JSON object containing the summary:
     def to_llm_messages(
         self,
         max_tokens: int | None = None,
-        default_role: str = "user",
+        default_role: str = "user",  # noqa: ARG002 - kept for TimelineProtocol compatibility
         separate_latest_user: bool = False,
     ) -> list[LLMMessage]:
         """
-        Convert timeline entries to LLM messages, including compressed context.
+        Convert native messages to LLM messages for provider consumption.
 
-        If compressed context exists in the timeline, it will be prepended
-        as a system message containing the conversation history summary.
+        This method returns individual messages from the native storage, preserving
+        the original message structure. Unlike the parent implementation that works
+        with TimelineEntry objects, this directly uses the NativeMessage list.
+
+        If compression has occurred:
+        - A summary system message is prepended
+        - Recent individual messages follow (not a single compressed blob)
+
+        Token limiting is applied via sliding window on native messages, keeping
+        tool_call/tool_result pairs together.
 
         Args:
             max_tokens: Maximum tokens to include (overrides max_context_tokens)
-            default_role: Default role for entries without specific mapping
+            default_role: Default role for entries without specific mapping. Unused
+                in this implementation since NativeMessage has explicit roles, but
+                kept for TimelineProtocol compatibility.
             separate_latest_user: If True, separates latest user message
 
         Returns:
             List of LLMMessage objects in chronological order
         """
-        # Get base messages from parent
-        messages = super().to_llm_messages(max_tokens, default_role, separate_latest_user)
+        token_limit = max_tokens or self.max_context_tokens
+
+        # Convert native messages to LLMMessage
+        messages = [msg.to_llm_message() for msg in self._native_messages]
 
         # If we have compressed context, prepend it as a system message
         compressed_context = self.get_compressed_context()
@@ -995,7 +1007,7 @@ Respond with ONLY a JSON object containing the summary:
                     role="system",
                     content=f"[Previous context summary] {compressed_context}",
                 )
-                # Insert after any existing system messages (like CONTEXT)
+                # Insert at the beginning (or after other system messages)
                 insert_idx = 0
                 for i, msg in enumerate(messages):
                     if msg.role == "system":
@@ -1004,7 +1016,130 @@ Respond with ONLY a JSON object containing the summary:
                         break
                 messages.insert(insert_idx, summary_message)
 
+        # Handle separate_latest_user: separate the latest user message
+        if separate_latest_user and messages:
+            # Find the latest user message
+            latest_user_idx = None
+            for i in range(len(messages) - 1, -1, -1):
+                if messages[i].role == "user":
+                    latest_user_idx = i
+                    break
+
+            if latest_user_idx is not None:
+                latest_user_msg = messages[latest_user_idx]
+                context_messages = messages[:latest_user_idx] + messages[latest_user_idx + 1 :]
+
+                # Apply token limit to context
+                if self._estimate_native_messages_tokens(context_messages) > token_limit:
+                    context_messages = self._apply_token_limit_to_messages(context_messages, token_limit)
+
+                # Append latest user message at the end
+                context_messages.append(latest_user_msg)
+                return context_messages
+
+        # Apply token limit if needed
+        if self._estimate_native_messages_tokens(messages) > token_limit:
+            messages = self._apply_token_limit_to_messages(messages, token_limit)
+
         return messages
+
+    def _estimate_native_messages_tokens(self, messages: list[LLMMessage]) -> int:
+        """
+        Estimate token count for a list of LLMMessage objects.
+
+        Args:
+            messages: List of LLMMessage objects
+
+        Returns:
+            Estimated token count
+        """
+        total = 0
+        for msg in messages:
+            # Rough estimation: 4 characters per token
+            total += len(msg.content) // 4
+            # Add tokens for tool_calls if present
+            if msg.tool_calls:
+                for tc in msg.tool_calls:
+                    if isinstance(tc, dict):
+                        total += len(str(tc)) // 4
+                    else:
+                        total += len(str(tc)) // 4
+        return total
+
+    def _apply_token_limit_to_messages(self, messages: list[LLMMessage], max_tokens: int) -> list[LLMMessage]:
+        """
+        Apply token limit to messages using sliding window approach.
+
+        Preserves message integrity by keeping tool_call/tool_result pairs together.
+        Always includes the most recent messages and any system messages.
+
+        Args:
+            messages: List of LLMMessage objects
+            max_tokens: Maximum tokens to include
+
+        Returns:
+            List of LLMMessage objects within token limit
+        """
+        if not messages:
+            return []
+
+        # Group messages into atomic units that must stay together:
+        # - assistant with tool_calls + following tool results
+        # - single messages (user, system, assistant without tool_calls)
+        groups: list[list[LLMMessage]] = []
+        i = 0
+        while i < len(messages):
+            msg = messages[i]
+            if msg.role == "assistant" and msg.tool_calls:
+                # Start a group with assistant + all following tool results
+                group = [msg]
+                i += 1
+                while i < len(messages) and messages[i].role == "tool":
+                    group.append(messages[i])
+                    i += 1
+                groups.append(group)
+            else:
+                groups.append([msg])
+                i += 1
+
+        # Collect system message groups (they should always be included)
+        system_groups: list[list[LLMMessage]] = []
+        non_system_groups: list[list[LLMMessage]] = []
+        for group in groups:
+            if group[0].role == "system":
+                system_groups.append(group)
+            else:
+                non_system_groups.append(group)
+
+        # Calculate tokens for system messages
+        system_tokens = sum(self._estimate_native_messages_tokens(g) for g in system_groups)
+        available_tokens = max_tokens - system_tokens
+
+        # Build result from most recent non-system groups, respecting token limit
+        result_groups: list[list[LLMMessage]] = []
+        current_tokens = 0
+
+        for group in reversed(non_system_groups):
+            group_tokens = self._estimate_native_messages_tokens(group)
+
+            if current_tokens + group_tokens > available_tokens:
+                # Always include at least the most recent group
+                if not result_groups:
+                    result_groups.insert(0, group)
+                    current_tokens += group_tokens
+                break
+
+            result_groups.insert(0, group)
+            current_tokens += group_tokens
+
+        # Reconstruct final message list: system messages first, then selected groups
+        result: list[LLMMessage] = []
+        for group in system_groups:
+            result.extend(group)
+        for group in result_groups:
+            result.extend(group)
+
+        return result
 
     def load_from_entries(self, entries: list[TimelineEntry]) -> None:
         """
