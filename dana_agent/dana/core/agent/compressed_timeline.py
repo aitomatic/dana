@@ -454,6 +454,58 @@ class CompressedTimeline(Timeline):
         """
         return self._native_messages
 
+    def set_context(self, context: dict[str, Any]) -> None:
+        """
+        Set or replace the ephemeral runtime context entry.
+
+        Overrides the parent set_context() to also update the native messages list.
+        This removes any existing CONTEXT entries from both self.timeline and
+        self._native_messages, then adds a fresh one to both.
+
+        Args:
+            context: Dictionary with context info (e.g., timestamp, user, timezone)
+        """
+        # Remove existing CONTEXT native messages
+        self._native_messages = [
+            msg for msg in self._native_messages if not (msg.role == "system" and msg.metadata.get("ephemeral", False))
+        ]
+
+        # Call parent implementation (handles timeline and creates entry)
+        super().set_context(context)
+
+        # The parent inserts the context entry at the beginning of self.timeline
+        # Get the context entry that was just added
+        context_entry = self.timeline[0] if self.timeline else None
+        if context_entry and context_entry.entry_type == TimelineEntryType.CONTEXT:
+            # Convert to native message and insert at the beginning
+            native_msg = self._timeline_entry_to_native_message(context_entry)
+            native_msg.metadata["ephemeral"] = True
+            self._native_messages.insert(0, native_msg)
+
+    def clear_old_entries(self, before_timestamp: datetime) -> int:
+        """
+        Remove entries before timestamp from both timeline and native messages.
+
+        Overrides the parent clear_old_entries() to also remove corresponding
+        native messages, maintaining consistency between the two lists.
+
+        Args:
+            before_timestamp: Remove entries before this timestamp
+
+        Returns:
+            Number of entries removed
+        """
+        original_count = len(self.timeline)
+
+        # Remove from timeline
+        self.timeline = [entry for entry in self.timeline if entry.timestamp >= before_timestamp]
+
+        # Remove from native messages
+        self._native_messages = [msg for msg in self._native_messages if msg.timestamp >= before_timestamp]
+
+        removed_count = original_count - len(self.timeline)
+        return removed_count
+
     def _get_default_llm_call_fn(self) -> Callable[[str], str] | None:
         """
         Get a default LLM call function using the agent's runtime.
@@ -1007,6 +1059,46 @@ Respond with ONLY a JSON object containing the summary:
             True if compressed context exists in any entry's metadata
         """
         return self.get_compressed_context() is not None
+
+    def compress_old_entries(self, summary: str) -> int:
+        """
+        Compress old timeline entries into a summary entry.
+
+        This method implements the TimelineProtocol interface for compression.
+        It replaces old entries with a summary, updating both self.timeline
+        and self._native_messages to maintain consistency.
+
+        For CompressedTimeline, this method uses the same logic as _apply_compression()
+        but accepts an externally provided summary (e.g., from LLM-based summarization).
+
+        Args:
+            summary: The summary text to use for the compressed entries
+
+        Returns:
+            Number of entries that were compressed
+        """
+        entries_to_keep, entries_to_compress = self.get_entries_to_keep_and_compress()
+
+        if not entries_to_compress:
+            return 0
+
+        # Apply compression with the provided summary
+        return self._apply_compression(entries_to_keep, entries_to_compress, summary)
+
+    def get_entries_for_compression(self) -> list[TimelineEntry]:
+        """
+        Get the entries that would be compressed.
+
+        This method implements the TimelineProtocol interface and returns
+        the entries that would be replaced by a summary during compression.
+        It uses the CompressedTimeline's own partitioning logic which respects
+        token limits and recent entry counts.
+
+        Returns:
+            List of old entries that would be replaced by a summary
+        """
+        _, entries_to_compress = self.get_entries_to_keep_and_compress()
+        return entries_to_compress
 
     def to_llm_messages(
         self,
