@@ -80,6 +80,8 @@ class AgentRuntime(ABC):
         self._native_tools = None
         self._use_native_tools = use_native_tools
         self._last_llm_response: LLMResponse | None = None
+        # Registry mapping custom tool names (from @named_tool) to (object, method_name)
+        self._tool_name_registry: dict[str, tuple[Any, str]] = {}
 
     # -------------------------------------------------------------------------
     # Properties
@@ -198,6 +200,9 @@ class AgentRuntime(ABC):
 
         # Build native tools first (affects system prompt choice)
         self._build_native_tools_if_supported(agent)
+
+        # Build tool name registry for @named_tool decorated methods
+        self._build_tool_name_registry(agent)
 
         # Inject ephemeral runtime context
         runtime_context = self._get_runtime_context()
@@ -571,6 +576,35 @@ class AgentRuntime(ABC):
             workflows=getattr(agent, "_workflows", []),
         )
 
+    def _build_tool_name_registry(self, agent) -> None:
+        """Build mapping from custom tool names to (object, method_name).
+
+        This registry enables execution of tools decorated with @named_tool
+        by mapping their custom names back to the actual objects and methods.
+        """
+        self._tool_name_registry.clear()
+
+        # Register resources
+        for resource in getattr(agent, "_resources", []):
+            for method_name, method in Misc.extract_tool_use_methods(resource):
+                sig = Misc.parse_method_signature(method, object_id=getattr(resource, "object_id", None))
+                if sig.tool_name:
+                    self._tool_name_registry[sig.tool_name] = (resource, method_name)
+
+        # Register workflows
+        for workflow in getattr(agent, "_workflows", []):
+            if hasattr(workflow, "execute"):
+                sig = Misc.parse_method_signature(workflow.execute, object_id=getattr(workflow, "object_id", None))
+                if sig.tool_name:
+                    self._tool_name_registry[sig.tool_name] = (workflow, "execute")
+
+        # Register sub-agents (they expose query method)
+        for sub_agent in getattr(agent, "_agents", []):
+            if hasattr(sub_agent, "query"):
+                sig = Misc.parse_method_signature(sub_agent.query, object_id=getattr(sub_agent, "agent_type", None))
+                if sig.tool_name:
+                    self._tool_name_registry[sig.tool_name] = (sub_agent, "query")
+
     def _build_resource_context(self, agent) -> str:
         """Build additional context from resources that implement get_prompt_context().
 
@@ -914,6 +948,25 @@ class AgentRuntime(ABC):
         function_name = tool_call.get("function", "")
         arguments = tool_call.get("arguments", {})
 
+        # Check custom tool name registry first (for @named_tool decorated methods)
+        if function_name in self._tool_name_registry:
+            obj, method_name = self._tool_name_registry[function_name]
+            method = getattr(obj, method_name)
+            arguments = self._validate_n_cast_method_arguments(method, arguments)
+            try:
+                if asyncio.iscoroutinefunction(method):
+                    result = Misc.safe_asyncio_run(method, **arguments)
+                else:
+                    result = method(**arguments)
+                return self._create_tool_success("resource", function_name, result)
+            except Exception as exc:
+                return self._create_tool_error(
+                    "execution_error",
+                    function_name,
+                    f"Error executing call {function_name}: {exc}\n{traceback.format_exc()}",
+                )
+
+        # Fall back to standard parsing for auto-generated names
         parsed = self._parse_function_name(function_name)
         if not parsed:
             return self._create_tool_error("format_error", function_name, "Expected ClassName:methodName or object_id__method format")
@@ -963,6 +1016,25 @@ class AgentRuntime(ABC):
         function_name = tool_call.get("function", "")
         arguments = tool_call.get("arguments", {})
 
+        # Check custom tool name registry first (for @named_tool decorated methods)
+        if function_name in self._tool_name_registry:
+            obj, method_name = self._tool_name_registry[function_name]
+            method = getattr(obj, method_name)
+            arguments = self._validate_n_cast_method_arguments(method, arguments)
+            try:
+                if asyncio.iscoroutinefunction(method):
+                    result = await method(**arguments)
+                else:
+                    result = method(**arguments)
+                return self._create_tool_success("resource", function_name, result)
+            except Exception as exc:
+                return self._create_tool_error(
+                    "execution_error",
+                    function_name,
+                    f"Error executing call {function_name}: {exc}\n{traceback.format_exc()}",
+                )
+
+        # Fall back to standard parsing for auto-generated names
         parsed = self._parse_function_name(function_name)
         if not parsed:
             return self._create_tool_error("format_error", function_name, "Expected ClassName:methodName or object_id__method format")

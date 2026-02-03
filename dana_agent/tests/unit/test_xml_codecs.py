@@ -5,8 +5,10 @@ This module tests the parse_method_call functionality for both codec classes,
 ensuring they can parse XML method call strings back into ToolCall objects.
 """
 
+from dana.common.llm.types import LLMResponse
 from dana.common.schemas.tool_call import MethodSignature, ParameterInfo, ParsedCodecResponse, ToolCall
 from dana.core.knowledge.prompts.codecs.xml_format import CSXMLCodec, KLXMLCodec
+from dana.core.runtime.codec.codec_without_native_tool_use import CodecRuntimeWithoutNativeToolUse
 
 
 class TestToolCallSchemas:
@@ -48,6 +50,26 @@ class TestToolCallSchemas:
         assert tool_call.class_name == "SearchResource"
         assert tool_call.object_id is None
         assert tool_call.name == "search"
+        assert tool_call.parameters == {"query": "test"}
+
+    def test_tool_call_with_tool_name(self):
+        """Test ToolCall with custom tool_name field."""
+        tool_call = ToolCall(name="Glob", tool_name="Glob", parameters={"pattern": "**/*.py"})
+
+        assert tool_call.class_name is None
+        assert tool_call.object_id is None
+        assert tool_call.name == "Glob"
+        assert tool_call.tool_name == "Glob"
+        assert tool_call.parameters == {"pattern": "**/*.py"}
+
+    def test_tool_call_without_tool_name(self):
+        """Test ToolCall without tool_name (legacy format)."""
+        tool_call = ToolCall(class_name="SearchResource", object_id="search-1", name="search", parameters={"query": "test"})
+
+        assert tool_call.class_name == "SearchResource"
+        assert tool_call.object_id == "search-1"
+        assert tool_call.name == "search"
+        assert tool_call.tool_name is None
         assert tool_call.parameters == {"query": "test"}
 
 
@@ -141,6 +163,54 @@ description</description>
         assert result.name == "myMethod"
         assert result.parameters == {}
 
+    def test_parse_custom_tool_name_no_colon(self):
+        """Test parsing custom tool name format (no colon)."""
+        xml_string = """<Glob>
+<pattern>**/*.py</pattern>
+</Glob>"""
+
+        result = KLXMLCodec.parse_method_call(xml_string)
+
+        assert isinstance(result, ToolCall)
+        assert result.class_name is None
+        assert result.object_id is None
+        assert result.name == "Glob"
+        assert result.tool_name == "Glob"
+        assert result.parameters == {"pattern": "**/*.py"}
+
+    def test_parse_custom_tool_name_with_multiple_params(self):
+        """Test parsing custom tool name with multiple parameters."""
+        xml_string = """<Read>
+<file_path>/path/to/file.py</file_path>
+<offset>10</offset>
+<limit>100</limit>
+</Read>"""
+
+        result = KLXMLCodec.parse_method_call(xml_string)
+
+        assert isinstance(result, ToolCall)
+        assert result.class_name is None
+        assert result.object_id is None
+        assert result.name == "Read"
+        assert result.tool_name == "Read"
+        assert result.parameters == {"file_path": "/path/to/file.py", "offset": "10", "limit": "100"}
+
+    def test_parse_legacy_format_no_tool_name(self):
+        """Test that legacy format (Class:method) does NOT set tool_name."""
+        xml_string = """<ontology:get_connected_nodes>
+<node_id>1</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>"""
+
+        result = KLXMLCodec.parse_method_call(xml_string)
+
+        assert isinstance(result, ToolCall)
+        assert result.class_name == "ontology"
+        assert result.object_id == "ontology"
+        assert result.name == "get_connected_nodes"
+        assert result.tool_name is None  # Should be None for legacy format
+        assert result.parameters == {"node_id": "1", "direction": "both"}
+
 
 class TestCSXMLCodecParseMethodCall:
     """Test CSXMLCodec.parse_method_call functionality."""
@@ -221,6 +291,60 @@ class TestCSXMLCodecParseMethodCall:
         assert result.class_name == "MyResource"
         assert result.name == "myMethod"
         assert result.parameters == {}
+
+    def test_parse_custom_tool_name_no_colon(self):
+        """Test parsing custom tool name format (no colon)."""
+        xml_string = """<function_call>
+<invoke name="Glob">
+<parameter name="pattern">**/*.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_method_call(xml_string)
+
+        assert isinstance(result, ToolCall)
+        assert result.class_name is None
+        assert result.object_id is None
+        assert result.name == "Glob"
+        assert result.tool_name == "Glob"
+        assert result.parameters == {"pattern": "**/*.py"}
+
+    def test_parse_custom_tool_name_with_multiple_params(self):
+        """Test parsing custom tool name with multiple parameters."""
+        xml_string = """<function_call>
+<invoke name="Read">
+<parameter name="file_path">/path/to/file.py</parameter>
+<parameter name="offset">10</parameter>
+<parameter name="limit">100</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_method_call(xml_string)
+
+        assert isinstance(result, ToolCall)
+        assert result.class_name is None
+        assert result.object_id is None
+        assert result.name == "Read"
+        assert result.tool_name == "Read"
+        assert result.parameters == {"file_path": "/path/to/file.py", "offset": "10", "limit": "100"}
+
+    def test_parse_legacy_format_no_tool_name(self):
+        """Test that legacy format (Class:method) does NOT set tool_name."""
+        xml_string = """<function_call>
+<invoke name="ontology:get_connected_nodes">
+<parameter name="node_id">1</parameter>
+<parameter name="direction">both</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_method_call(xml_string)
+
+        assert isinstance(result, ToolCall)
+        assert result.class_name == "ontology"
+        assert result.object_id == "ontology"
+        assert result.name == "get_connected_nodes"
+        assert result.tool_name is None  # Should be None for legacy format
+        assert result.parameters == {"node_id": "1", "direction": "both"}
 
 
 class TestXMLCodecsRoundTrip:
@@ -1098,3 +1222,235 @@ This is the response content."""
         assert result.response is not None
         assert "This is the response content." in result.response
         assert result.tool_calls is None
+
+
+class TestCustomToolNameFunctionNameConstruction:
+    """Test that runtime correctly constructs function names using tool_name field."""
+
+    def test_csxml_custom_tool_name_in_parse_response(self):
+        """Test CSXMLCodec parse_response sets tool_name for custom tool names."""
+        xml_string = """<thinking>
+Searching for files.
+</thinking>
+<function_call>
+<invoke name="Glob">
+<parameter name="pattern">**/*.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].tool_name == "Glob"
+        assert result.tool_calls[0].object_id is None
+        assert result.tool_calls[0].class_name is None
+
+    def test_klxml_custom_tool_name_not_supported_in_parse_response(self):
+        """Test KLXMLCodec parse_response does NOT support custom tool names (by design).
+
+        KLXMLCodec's parse_response only looks for <ClassName:methodName> patterns.
+        Custom tool names without colons are only supported in parse_method_call.
+        """
+        xml_string = """<thinking>
+Searching for files.
+</thinking>
+<Glob>
+<pattern>**/*.py</pattern>
+</Glob>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        # KLXMLCodec doesn't recognize <Glob> as a tool call in parse_response
+        # because it only looks for <Class:method> patterns
+        assert result.tool_calls is None
+        assert result.thinking == "Searching for files."
+
+    def test_csxml_legacy_format_no_tool_name_in_parse_response(self):
+        """Test CSXMLCodec parse_response does NOT set tool_name for legacy format."""
+        xml_string = """<thinking>
+Getting connected nodes.
+</thinking>
+<function_call>
+<invoke name="ontology:get_connected_nodes">
+<parameter name="node_id">1</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].tool_name is None
+        assert result.tool_calls[0].object_id == "ontology"
+        assert result.tool_calls[0].class_name == "ontology"
+        assert result.tool_calls[0].name == "get_connected_nodes"
+
+    def test_klxml_legacy_format_no_tool_name_in_parse_response(self):
+        """Test KLXMLCodec parse_response does NOT set tool_name for legacy format."""
+        xml_string = """<thinking>
+Getting connected nodes.
+</thinking>
+<ontology:get_connected_nodes>
+<node_id>1</node_id>
+</ontology:get_connected_nodes>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].tool_name is None
+        assert result.tool_calls[0].object_id == "ontology"
+        assert result.tool_calls[0].class_name == "ontology"
+        assert result.tool_calls[0].name == "get_connected_nodes"
+
+    def test_csxml_multiple_tool_calls_mixed_formats(self):
+        """Test CSXMLCodec with mixed custom and legacy tool call formats."""
+        xml_string = """<thinking>
+Multiple tool calls.
+</thinking>
+<function_call>
+<invoke name="Glob">
+<parameter name="pattern">**/*.py</parameter>
+</invoke>
+<invoke name="ontology:get_nodes">
+<parameter name="limit">10</parameter>
+</invoke>
+<invoke name="Read">
+<parameter name="file_path">/path/to/file.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 3
+
+        # First tool call: custom name "Glob"
+        assert result.tool_calls[0].tool_name == "Glob"
+        assert result.tool_calls[0].object_id is None
+
+        # Second tool call: legacy format "ontology:get_nodes"
+        assert result.tool_calls[1].tool_name is None
+        assert result.tool_calls[1].object_id == "ontology"
+        assert result.tool_calls[1].name == "get_nodes"
+
+        # Third tool call: custom name "Read"
+        assert result.tool_calls[2].tool_name == "Read"
+        assert result.tool_calls[2].object_id is None
+
+
+class TestRuntimeFunctionNameConstruction:
+    """Test that CodecRuntime correctly constructs function names from ToolCall."""
+
+    def test_runtime_uses_tool_name_for_custom_tools(self):
+        """Test runtime uses tool_name directly for custom tool names (no colon)."""
+        xml_string = """<thinking>
+Searching for files.
+</thinking>
+<function_call>
+<invoke name="Glob">
+<parameter name="pattern">**/*.py</parameter>
+</invoke>
+</function_call>"""
+
+        runtime = CodecRuntimeWithoutNativeToolUse()
+        response = runtime.parse_response(LLMResponse(content=xml_string, model="test"))
+
+        assert response.tool_calls is not None
+        assert len(response.tool_calls) == 1
+        # Function name should be just "Glob", NOT "Glob:Glob"
+        assert response.tool_calls[0]["function"] == "Glob"
+        assert response.tool_calls[0]["arguments"] == {"pattern": "**/*.py"}
+
+    def test_runtime_uses_identifier_method_for_legacy_format(self):
+        """Test runtime uses identifier:method format for legacy tool calls."""
+        xml_string = """<thinking>
+Getting connected nodes.
+</thinking>
+<function_call>
+<invoke name="ontology:get_connected_nodes">
+<parameter name="node_id">1</parameter>
+<parameter name="direction">both</parameter>
+</invoke>
+</function_call>"""
+
+        runtime = CodecRuntimeWithoutNativeToolUse()
+        response = runtime.parse_response(LLMResponse(content=xml_string, model="test"))
+
+        assert response.tool_calls is not None
+        assert len(response.tool_calls) == 1
+        # Function name should be "ontology:get_connected_nodes"
+        assert response.tool_calls[0]["function"] == "ontology:get_connected_nodes"
+        assert response.tool_calls[0]["arguments"] == {"node_id": "1", "direction": "both"}
+
+    def test_runtime_mixed_tool_call_formats(self):
+        """Test runtime handles mixed custom and legacy tool call formats."""
+        xml_string = """<thinking>
+Multiple tool calls with different formats.
+</thinking>
+<function_call>
+<invoke name="Glob">
+<parameter name="pattern">**/*.py</parameter>
+</invoke>
+<invoke name="ontology:get_nodes">
+<parameter name="limit">10</parameter>
+</invoke>
+<invoke name="Read">
+<parameter name="file_path">/path/to/file.py</parameter>
+</invoke>
+</function_call>"""
+
+        runtime = CodecRuntimeWithoutNativeToolUse()
+        response = runtime.parse_response(LLMResponse(content=xml_string, model="test"))
+
+        assert response.tool_calls is not None
+        assert len(response.tool_calls) == 3
+
+        # First: custom name "Glob"
+        assert response.tool_calls[0]["function"] == "Glob"
+
+        # Second: legacy format "ontology:get_nodes"
+        assert response.tool_calls[1]["function"] == "ontology:get_nodes"
+
+        # Third: custom name "Read"
+        assert response.tool_calls[2]["function"] == "Read"
+
+    def test_runtime_klxml_custom_tool_names_not_supported_in_parse_response(self):
+        """Test runtime with KLXMLCodec does NOT support custom tool names in parse_response.
+
+        KLXMLCodec's parse_response only recognizes <ClassName:methodName> patterns.
+        Custom tool names are only supported when calling parse_method_call directly.
+        """
+        xml_string = """<thinking>
+Searching for files.
+</thinking>
+<Glob>
+<pattern>**/*.py</pattern>
+</Glob>"""
+
+        runtime = CodecRuntimeWithoutNativeToolUse(codec=KLXMLCodec)
+        response = runtime.parse_response(LLMResponse(content=xml_string, model="test"))
+
+        # KLXMLCodec doesn't recognize <Glob> as a tool call in parse_response
+        assert response.tool_calls == []
+        assert response.done is True  # No tool calls means done
+
+    def test_runtime_legacy_format_with_klxml_codec(self):
+        """Test runtime with KLXMLCodec for legacy format."""
+        xml_string = """<thinking>
+Getting connected nodes.
+</thinking>
+<ontology:get_connected_nodes>
+<node_id>1</node_id>
+<direction>both</direction>
+</ontology:get_connected_nodes>"""
+
+        runtime = CodecRuntimeWithoutNativeToolUse(codec=KLXMLCodec)
+        response = runtime.parse_response(LLMResponse(content=xml_string, model="test"))
+
+        assert response.tool_calls is not None
+        assert len(response.tool_calls) == 1
+        # Function name should be "ontology:get_connected_nodes"
+        assert response.tool_calls[0]["function"] == "ontology:get_connected_nodes"
+        assert response.tool_calls[0]["arguments"] == {"node_id": "1", "direction": "both"}

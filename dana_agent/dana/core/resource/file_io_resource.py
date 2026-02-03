@@ -5,7 +5,7 @@ Provides read() and write() tools mirroring Claude Code's file I/O signatures.
 
 from pathlib import Path
 
-from dana.common.protocols.war import tool_use
+from dana.common.protocols.war import named_tool
 from dana.core.resource.base_resource import BaseResource
 
 
@@ -38,7 +38,7 @@ class FileIOResource(BaseResource):
             return path
         return self._base_path / path
 
-    @tool_use
+    @named_tool(name="Read")
     async def read(self, file_path: str, offset: int | None = None, limit: int | None = 2000) -> str:
         """Read file contents with line numbers (cat -n format).
 
@@ -93,34 +93,3 @@ class FileIOResource(BaseResource):
             return f"Error: Permission denied: {resolved_path}"
         except Exception as e:
             return f"Error reading file: {e}"
-
-    @tool_use
-    async def write(self, file_path: str, content: str) -> str:
-        """Create a new file with content. Does not overwrite existing files.
-
-        Args:
-            file_path: Absolute path to the file to write
-            content: Content to write to the file
-
-        Returns:
-            Success message with file path, or error if file already exists.
-        """
-        resolved_path = self._resolve_path(file_path)
-
-        # Check if file already exists
-        if resolved_path.exists():
-            return f"Error: File already exists: {resolved_path}. Cannot overwrite existing files. Use edit() for modifications."
-
-        try:
-            # Create parent directories if they don't exist
-            resolved_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Write content
-            resolved_path.write_text(content, encoding="utf-8")
-
-            return f"Successfully wrote {len(content)} characters to {resolved_path}"
-
-        except PermissionError:
-            return f"Error: Permission denied: {resolved_path}"
-        except Exception as e:
-            return f"Error writing file: {e}"

@@ -153,11 +153,15 @@ def _method_signature_to_schema(
     Returns:
         OpenAI-compatible tool schema dictionary
     """
-    # Build function name: object_id__method_name (OpenAI requires ^[a-zA-Z0-9_-]+$)
-    # Replace dots and other invalid chars with underscores
-    safe_object_id = object_id.replace(".", "_").replace("-", "_")
-    safe_method_name = method_sig.name.replace(".", "_").replace("-", "_")
-    function_name = f"{safe_object_id}__{safe_method_name}"
+    # Use custom tool_name if provided via @named_tool decorator
+    if method_sig.tool_name:
+        function_name = method_sig.tool_name
+    else:
+        # Build function name: object_id__method_name (OpenAI requires ^[a-zA-Z0-9_-]+$)
+        # Replace dots and other invalid chars with underscores
+        safe_object_id = object_id.replace(".", "_").replace("-", "_")
+        safe_method_name = method_sig.name.replace(".", "_").replace("-", "_")
+        function_name = f"{safe_object_id}__{safe_method_name}"
 
     # Build parameters schema
     properties = {}

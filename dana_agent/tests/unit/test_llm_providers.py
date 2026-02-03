@@ -66,6 +66,97 @@ class TestOpenAIProvider:
                 await provider.chat(messages)
 
 
+class TestOpenAIModelCompatibility:
+    """Unit tests for OpenAI model-specific parameter filtering."""
+
+    def test_get_model_family_gpt5_mini(self):
+        """Test that gpt-5-mini is recognized as gpt-5 family."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        assert OpenAIProvider._get_model_family("gpt-5-mini") == "gpt-5"
+
+    def test_get_model_family_gpt5_turbo(self):
+        """Test that gpt-5-turbo is recognized as gpt-5 family."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        assert OpenAIProvider._get_model_family("gpt-5-turbo") == "gpt-5"
+
+    def test_get_model_family_gpt5_exact(self):
+        """Test that exact gpt-5 match works."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        assert OpenAIProvider._get_model_family("gpt-5") == "gpt-5"
+
+    def test_get_model_family_gpt4o_no_match(self):
+        """Test that gpt-4o is not matched (no restrictions)."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        assert OpenAIProvider._get_model_family("gpt-4o") is None
+
+    def test_get_model_family_gpt4_no_match(self):
+        """Test that gpt-4 is not matched (no restrictions)."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        assert OpenAIProvider._get_model_family("gpt-4") is None
+
+    def test_get_model_family_gpt50_no_match(self):
+        """Test that gpt-50 is NOT matched as gpt-5 (boundary check)."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        # gpt-50 should NOT match gpt-5 (50 != 5-)
+        assert OpenAIProvider._get_model_family("gpt-50") is None
+
+    def test_filter_params_removes_temperature_zero_for_gpt5(self):
+        """Test that temperature=0 is removed for gpt-5 models."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        params = {"temperature": 0, "max_tokens": 100}
+        filtered = OpenAIProvider._filter_params_for_model("gpt-5-mini", params)
+
+        assert "temperature" not in filtered
+        assert filtered["max_tokens"] == 100
+
+    def test_filter_params_keeps_temperature_one_for_gpt5(self):
+        """Test that temperature=1 is kept for gpt-5 models."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        params = {"temperature": 1, "max_tokens": 100}
+        filtered = OpenAIProvider._filter_params_for_model("gpt-5-mini", params)
+
+        assert filtered["temperature"] == 1
+        assert filtered["max_tokens"] == 100
+
+    def test_filter_params_removes_temperature_half_for_gpt5(self):
+        """Test that temperature=0.5 is removed for gpt-5 models."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        params = {"temperature": 0.5}
+        filtered = OpenAIProvider._filter_params_for_model("gpt-5-mini", params)
+
+        assert "temperature" not in filtered
+
+    def test_filter_params_unchanged_for_gpt4(self):
+        """Test that params are unchanged for gpt-4 models."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        params = {"temperature": 0, "max_tokens": 100}
+        filtered = OpenAIProvider._filter_params_for_model("gpt-4o", params)
+
+        assert filtered["temperature"] == 0
+        assert filtered["max_tokens"] == 100
+
+    def test_filter_params_does_not_mutate_original(self):
+        """Test that original params dict is not mutated."""
+        from dana.common.llm.providers.openai import OpenAIProvider
+
+        params = {"temperature": 0, "max_tokens": 100}
+        OpenAIProvider._filter_params_for_model("gpt-5-mini", params)
+
+        # Original should be unchanged
+        assert params["temperature"] == 0
+        assert params["max_tokens"] == 100
+
+
 class TestAnthropicProvider:
     """Unit tests for Anthropic provider"""
 

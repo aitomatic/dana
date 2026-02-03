@@ -10,7 +10,7 @@ from __future__ import annotations
 import fnmatch
 from typing import TYPE_CHECKING, Any
 
-from dana.core.knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
+from dana.core.knowledge.prompts.codecs import AbstractCodec, CSXMLCodec, NativeToolsCodec
 
 
 if TYPE_CHECKING:
@@ -100,14 +100,36 @@ class RuntimeRegistry:
         model: str | None = None,
         provider: str = "anthropic",
         codec: type[AbstractCodec] = CSXMLCodec,
+        use_native_tools: bool | None = None,
         **kwargs: Any,
     ) -> AgentRuntime:
         """
         Select the appropriate codec runtime.
-        """
-        from .codec import CodecRuntime
 
-        return CodecRuntime(model=model, provider=provider, codec=codec, **kwargs)
+        Args:
+            model: The model name (e.g., "claude-3-opus-20240229").
+            provider: The provider name (e.g., "anthropic", "openai").
+            codec: The codec class to use for encoding/decoding.
+            use_native_tools: Whether to use native tool calling. If None, auto-detected
+                from codec type (NativeToolsCodec = True, others = False).
+            **kwargs: Additional kwargs passed to the runtime constructor.
+
+        Returns:
+            An instantiated CodecRuntime subclass (CodecRuntimeWithNativeToolUse or
+            CodecRuntimeWithoutNativeToolUse).
+        """
+        # Auto-detect use_native_tools if not specified
+        if use_native_tools is None:
+            use_native_tools = codec is NativeToolsCodec
+
+        if use_native_tools:
+            from .codec import CodecRuntimeWithNativeToolUse
+
+            return CodecRuntimeWithNativeToolUse(model=model, provider=provider, codec=codec, **kwargs)
+        else:
+            from .codec import CodecRuntimeWithoutNativeToolUse
+
+            return CodecRuntimeWithoutNativeToolUse(model=model, provider=provider, codec=codec, **kwargs)
 
     @classmethod
     def reset_default(cls) -> None:

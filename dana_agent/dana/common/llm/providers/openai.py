@@ -12,8 +12,81 @@ from ..types import LLMMessage, LLMProvider, LLMResponse
 logger = structlog.get_logger()
 
 
+# Model families with known parameter restrictions.
+# Key is a model prefix that will be matched against the model name.
+# Discovered via live testing - different model series have different constraints.
+MODEL_RESTRICTIONS: dict[str, dict] = {
+    "gpt-5": {
+        # GPT-5 series rejects temperature values other than the default (1)
+        "temperature": {"allowed_values": [1], "default": 1},
+    },
+    # Add more restrictions as discovered from compatibility tests
+}
+
+
 class OpenAIProvider(LLMProvider):
     """OpenAI API provider."""
+
+    @staticmethod
+    def _get_model_family(model: str) -> str | None:
+        """Extract model family from model name for restriction lookup.
+
+        Matches model prefixes defined in MODEL_RESTRICTIONS.
+        E.g., 'gpt-5-mini' -> 'gpt-5', 'gpt-4o' -> None (no restrictions)
+        """
+        for family_prefix in MODEL_RESTRICTIONS:
+            # Match prefix with boundary (e.g., "gpt-5" matches "gpt-5-mini" but not "gpt-50")
+            if model.startswith(family_prefix) and (len(model) == len(family_prefix) or model[len(family_prefix)] in "-_"):
+                return family_prefix
+        return None
+
+    @staticmethod
+    def _filter_params_for_model(model: str, params: dict) -> dict:
+        """Filter/adjust parameters based on model-specific restrictions.
+
+        Some OpenAI model series (e.g., gpt-5.x) have different parameter
+        constraints than earlier models. This method removes or adjusts
+        parameters that would cause API errors for specific models.
+
+        Args:
+            model: The model name (e.g., "gpt-5-mini")
+            params: The parameters to filter
+
+        Returns:
+            Filtered parameters safe for the model
+        """
+        family = OpenAIProvider._get_model_family(model)
+        if not family:
+            return params
+
+        restrictions = MODEL_RESTRICTIONS.get(family, {})
+        if not restrictions:
+            return params
+
+        filtered = params.copy()
+        adjustments_made = []
+
+        for param_name, restriction in restrictions.items():
+            if param_name not in filtered:
+                continue
+
+            current_value = filtered[param_name]
+            allowed_values = restriction.get("allowed_values")
+
+            if allowed_values is not None and current_value not in allowed_values:
+                # Remove the parameter - let the API use its default
+                del filtered[param_name]
+                adjustments_made.append(f"{param_name}={current_value} removed (model only supports {allowed_values})")
+
+        if adjustments_made:
+            logger.debug(
+                "Adjusted parameters for model compatibility",
+                model=model,
+                model_family=family,
+                adjustments=adjustments_made,
+            )
+
+        return filtered
 
     @property
     def supports_native_tools(self) -> bool:
@@ -114,6 +187,10 @@ class OpenAIProvider(LLMProvider):
             # Build request parameters - filter out our custom parameters and None values
             # Note: Some newer OpenAI models (e.g., gpt-5.x) reject null values for max_tokens
             filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["json_mode"] and v is not None}
+
+            # Apply model-specific parameter filtering (e.g., gpt-5 doesn't support temperature=0)
+            filtered_kwargs = self._filter_params_for_model(self.model, filtered_kwargs)
+
             request_kwargs = {"model": self.model, "messages": openai_messages, **filtered_kwargs}
 
             # Add tools if provided

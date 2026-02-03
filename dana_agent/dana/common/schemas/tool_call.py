@@ -42,6 +42,7 @@ class MethodSignature(BaseModel):
     class_name: str | None = None
     object_id: str | None = None
     name: str
+    tool_name: str | None = None  # Custom name from @named_tool decorator
     description: str
     parameters: list[ParameterInfo]
 
@@ -62,6 +63,7 @@ class ToolCall(BaseModel):
     class_name: str | None = None
     object_id: str | None = None
     name: str
+    tool_name: str | None = None  # Custom name (no colon) - takes priority over identifier:name
     parameters: dict[str, Any]
 
 
