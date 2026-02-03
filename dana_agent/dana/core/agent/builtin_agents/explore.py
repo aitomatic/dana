@@ -1,6 +1,6 @@
 from dana.core.agent.star_agent import STARAgent
 from dana.core.knowledge.prompts.codecs import AbstractCodec, NativeToolsCodec
-from dana.core.resource import BashResource, FileEditResource, FileIOResource, SearchResource, TaskResource, ToDoResource
+from dana.core.resource import BashResource, FileEditResource, FileIOResource, SearchResource, ToDoResource
 
 
 IDENTITY = """
@@ -73,10 +73,20 @@ Recent commits:
 
 class ExploreAgent(STARAgent):
     """
-    ExploreAgent is a agent that explores the web.
+    ExploreAgent is an agent specialized for exploring codebases.
     """
 
     MAX_ITERATIONS = 50
+
+    TASK_TOOL_DESCRIPTION = (
+        "Fast agent specialized for exploring codebases. Use this when you need to "
+        'quickly find files by patterns (eg. "src/components/**/*.tsx"), search code '
+        'for keywords (eg. "API endpoints"), or answer questions about the codebase '
+        '(eg. "how do API endpoints work?"). When calling this agent, specify the '
+        'desired thoroughness level: "quick" for basic searches, "medium" for '
+        'moderate exploration, or "very thorough" for comprehensive analysis across '
+        "multiple locations and naming conventions."
+    )
 
     def __init__(
         self,
@@ -112,7 +122,7 @@ class ExploreAgent(STARAgent):
             ToDoResource(resource_id="todo"),
             FileEditResource(resource_id="file-edit"),
             SearchResource(resource_id="search"),
-            TaskResource(resource_id="task"),
+            # TaskResource(resource_id="task"),
         )
 
 

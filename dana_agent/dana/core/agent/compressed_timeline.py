@@ -218,7 +218,7 @@ class CompressedTimelineConfig(TimelineConfig):
     """Configuration for compressed timeline with enhanced context management."""
 
     # Maximum tokens before compression is triggered
-    max_tokens_until_compression: int = 32000
+    max_tokens_until_compression: int = 80000
 
     # Maximum number of recent entries to keep uncompressed
     max_recent_entries_to_keep: int = 20

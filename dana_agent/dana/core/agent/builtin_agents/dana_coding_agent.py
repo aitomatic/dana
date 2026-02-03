@@ -1,3 +1,4 @@
+from dana.core.agent.builtin_agents.explore import ExploreAgent
 from dana.core.agent.star_agent import STARAgent
 from dana.core.knowledge.prompts.codecs import AbstractCodec, NativeToolsCodec
 from dana.core.resource import BashResource, FileEditResource, FileIOResource, SearchResource, TaskResource, ToDoResource
@@ -126,7 +127,7 @@ class DanaCodingAgent(STARAgent):
         llm_provider: str,
         model: str,
         codec: type[AbstractCodec] = NativeToolsCodec,
-        max_context_tokens: int = 100000,
+        max_context_tokens: int = 200000,
         enable_skills: bool = False,
         enable_assistant: bool = False,
         identity_override: str | None = IDENTITY,
@@ -144,19 +145,27 @@ class DanaCodingAgent(STARAgent):
             identity_override=identity_override,
             **kwargs,
         )
-
-        _prompt_api = self._runtime._get_prompt_api(self)
-        _prompt_api._template_system_prompt = IDENTITY
+        if hasattr(self._runtime, "_get_prompt_api"):
+            _prompt_api = self._runtime._get_prompt_api(self)
+            _prompt_api._template_system_prompt = IDENTITY
+        else:
+            raise ValueError(
+                f"{self.__class__.__name__} only works with `dana_agent/dana/core/runtime/codec` runtimes. You are using {self._runtime.__class__.__name__}."
+            )
+        explore_agent = ExploreAgent(
+            agent_id="explore-test-123", agent_type="explore_agent", llm_provider="openai", model="gpt-5-mini", max_context_tokens=100000
+        )
         self.with_resources(
             BashResource(resource_id="bash"),
             FileIOResource(resource_id="file-io"),
             ToDoResource(resource_id="todo"),
             FileEditResource(resource_id="file-edit"),
             SearchResource(resource_id="search"),
-            TaskResource(resource_id="task"),
+            TaskResource(resource_id="task", agents={"explore": explore_agent}),
         )
 
 
 if __name__ == "__main__":
-    agent = DanaCodingAgent(agent_id="explore-test-123", agent_type="explore_agent", llm_provider="openai", model="gpt-5-mini")
-    print(agent.query(message=""))
+    agent = DanaCodingAgent(agent_id="dana-coding-agent", agent_type="dana_coding_agent", llm_provider="openai", model="gpt-5")
+    # print(agent.coverse(initial_message=input("Enter your message: ")))
+    print(agent.coverse(initial_message="Scan the code base and brief me on how STARAgent is being used and integrated with runtime"))
