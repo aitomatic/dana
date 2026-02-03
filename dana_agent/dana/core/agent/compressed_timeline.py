@@ -305,6 +305,9 @@ class CompressedTimeline(Timeline):
         self._llm_call_fn = llm_call_fn
         self._llm_call_async_fn = llm_call_async_fn
 
+        # Internal storage for native message format
+        self._native_messages: list[NativeMessage] = []
+
     @property
     def max_tokens_until_compression(self) -> int:
         """Get max tokens threshold."""
@@ -327,6 +330,129 @@ class CompressedTimeline(Timeline):
     def set_llm_call_async_fn(self, fn: Callable[[str], Any]) -> None:
         """Set the async LLM call function."""
         self._llm_call_async_fn = fn
+
+    def add_entry(self, entry: TimelineEntry) -> None:
+        """
+        Add entry to timeline, converting to native message format.
+
+        Overrides the parent add_entry() to convert TimelineEntry to NativeMessage
+        before storing internally. The original entry is still added to self.timeline
+        for backward compatibility.
+
+        Mapping:
+        - USER_MESSAGE -> role='user'
+        - AGENT_RESPONSE -> role='assistant'
+        - AGENT_THOUGHTS -> role='assistant'
+        - TOOL_CALL -> role='assistant' with tool_calls
+        - RESOURCE_RESULT -> role='tool'
+        - WORKFLOW_RESULT -> role='tool'
+        - TIMELINE_SUMMARY -> role='system'
+        - CONTEXT -> role='system'
+        - Other -> role='assistant' (default)
+
+        Args:
+            entry: TimelineEntry to add
+        """
+        # Add to parent timeline for backward compatibility
+        super().add_entry(entry)
+
+        # Convert to native message and store
+        native_msg = self._timeline_entry_to_native_message(entry)
+        self._native_messages.append(native_msg)
+
+    def _timeline_entry_to_native_message(self, entry: TimelineEntry) -> NativeMessage:
+        """
+        Convert a TimelineEntry to NativeMessage format.
+
+        Mapping rules:
+        - USER_MESSAGE -> role='user'
+        - AGENT_RESPONSE, AGENT_THOUGHTS, AGENT_LEARNING, SUB_AGENT_RESPONSE, TODO_LIST
+          -> role='assistant'
+        - TOOL_CALL -> role='assistant' with tool_calls
+        - RESOURCE_RESULT, WORKFLOW_RESULT -> role='tool' with tool_call_id
+        - TIMELINE_SUMMARY, CONTEXT -> role='system'
+        - Other -> role='assistant' (default)
+
+        Args:
+            entry: TimelineEntry to convert
+
+        Returns:
+            NativeMessage in provider-agnostic format
+        """
+        role: NativeMessageRole
+        tool_calls: list[NativeToolCall] | None = None
+        tool_call_id: str | None = None
+
+        # Map entry type to role
+        if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+            role = "user"
+        elif entry.entry_type in (
+            TimelineEntryType.TIMELINE_SUMMARY,
+            TimelineEntryType.CONTEXT,
+        ):
+            role = "system"
+        elif entry.entry_type in (
+            TimelineEntryType.RESOURCE_RESULT,
+            TimelineEntryType.WORKFLOW_RESULT,
+        ):
+            role = "tool"
+            tool_call_id = entry.tool_call_id
+        elif entry.entry_type == TimelineEntryType.TOOL_CALL:
+            role = "assistant"
+            # Convert entry.tool_calls to NativeToolCall list
+            if entry.tool_calls:
+                tool_calls = []
+                for tc in entry.tool_calls:
+                    # Handle both dict and object formats
+                    if isinstance(tc, dict):
+                        tc_id = tc.get("id", "")
+                        tc_name = tc.get("name") or tc.get("function", {}).get("name", "")
+                        tc_args = tc.get("arguments") or tc.get("function", {}).get("arguments", {})
+                        # Handle string arguments (JSON string from OpenAI format)
+                        if isinstance(tc_args, str):
+                            import json
+
+                            try:
+                                tc_args = json.loads(tc_args)
+                            except json.JSONDecodeError:
+                                tc_args = {"raw": tc_args}
+                    else:
+                        # Object with attributes
+                        tc_id = getattr(tc, "id", "")
+                        tc_name = getattr(tc, "name", "") or getattr(getattr(tc, "function", None), "name", "")
+                        tc_args = getattr(tc, "arguments", {}) or getattr(getattr(tc, "function", None), "arguments", {})
+                        if isinstance(tc_args, str):
+                            import json
+
+                            try:
+                                tc_args = json.loads(tc_args)
+                            except json.JSONDecodeError:
+                                tc_args = {"raw": tc_args}
+
+                    tool_calls.append(NativeToolCall(id=tc_id, name=tc_name, arguments=tc_args))
+        else:
+            # Default: AGENT_RESPONSE, AGENT_THOUGHTS, AGENT_LEARNING, SUB_AGENT_RESPONSE,
+            # TODO_LIST, UNKNOWN_TOOL_CALL, FAILED_TOOL_CALL
+            role = "assistant"
+
+        return NativeMessage(
+            role=role,
+            content=entry.content,
+            tool_calls=tool_calls,
+            tool_call_id=tool_call_id,
+            metadata=entry.metadata.copy() if entry.metadata else {},
+            timestamp=entry.timestamp,
+        )
+
+    @property
+    def native_messages(self) -> list[NativeMessage]:
+        """
+        Get the list of native messages.
+
+        Returns:
+            List of NativeMessage objects in chronological order
+        """
+        return self._native_messages
 
     def _get_default_llm_call_fn(self) -> Callable[[str], str] | None:
         """
