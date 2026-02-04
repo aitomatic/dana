@@ -260,7 +260,7 @@ class CompressedTimeline(Timeline):
 
     def __init__(
         self,
-        max_tokens_until_compression: int = 32000,
+        max_tokens_until_compression: int = 80000,
         max_recent_entries_to_keep: int = 20,
         cutoff_when_token_reach: int | None = None,
         agent: BaseAgent | None = None,
@@ -405,9 +405,28 @@ class CompressedTimeline(Timeline):
                 for tc in entry.tool_calls:
                     # Handle both dict and object formats
                     if isinstance(tc, dict):
-                        tc_id = tc.get("id", "")
-                        tc_name = tc.get("name") or tc.get("function", {}).get("name", "")
-                        tc_args = tc.get("arguments") or tc.get("function", {}).get("arguments", {})
+                        # Support multiple formats:
+                        # 1. Runtime format: {"function": "name", "arguments": {...}, "tool_call_id": "..."}
+                        # 2. OpenAI nested: {"id": "...", "function": {"name": "...", "arguments": "..."}}
+                        # 3. Direct format: {"id": "...", "name": "...", "arguments": {...}}
+                        tc_id = tc.get("id", "") or tc.get("tool_call_id", "")
+
+                        # Get function name - handle both string and nested dict formats
+                        tc_function = tc.get("function")
+                        if isinstance(tc_function, str):
+                            # Runtime format: "function" is the name string
+                            tc_name = tc_function
+                        elif isinstance(tc_function, dict):
+                            # OpenAI nested format: "function" is {"name": "...", "arguments": "..."}
+                            tc_name = tc_function.get("name", "")
+                        else:
+                            # Direct format: "name" key exists
+                            tc_name = tc.get("name", "")
+
+                        # Get arguments - handle both direct and nested formats
+                        tc_args = tc.get("arguments")
+                        if tc_args is None and isinstance(tc_function, dict):
+                            tc_args = tc_function.get("arguments", {})
                         # Handle string arguments (JSON string from OpenAI format)
                         if isinstance(tc_args, str):
                             import json
@@ -416,6 +435,9 @@ class CompressedTimeline(Timeline):
                                 tc_args = json.loads(tc_args)
                             except json.JSONDecodeError:
                                 tc_args = {"raw": tc_args}
+                        # Default to empty dict if still None
+                        if tc_args is None:
+                            tc_args = {}
                     else:
                         # Object with attributes
                         tc_id = getattr(tc, "id", "")

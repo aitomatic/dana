@@ -66,6 +66,107 @@ class TestOpenAIProvider:
                 await provider.chat(messages)
 
 
+class TestOpenAIReasoningTokens:
+    """Unit tests for OpenAI reasoning tokens parsing (thinking models)"""
+
+    @pytest.fixture
+    def provider(self):
+        """Create OpenAIProvider instance for testing"""
+        with patch("dana.common.llm.providers.openai.AsyncOpenAI"):
+            from dana.common.llm.providers.openai import OpenAIProvider
+
+            return OpenAIProvider(api_key="test-key", model="gpt-5-thinking-mini")
+
+    @pytest.mark.asyncio
+    async def test_chat_with_reasoning_tokens(self, provider):
+        """Test that reasoning_tokens are parsed from thinking model response"""
+        mock_response = Mock()
+        mock_response.choices = [Mock()]
+        mock_response.choices[0].message.content = "The answer is 42"
+        mock_response.choices[0].message.tool_calls = None
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.model = "gpt-5-thinking-mini"
+
+        # Mock usage with completion_tokens_details containing reasoning_tokens
+        mock_response.usage = Mock()
+        mock_response.usage.prompt_tokens = 50
+        mock_response.usage.completion_tokens = 200
+        mock_response.usage.total_tokens = 250
+        mock_response.usage.prompt_tokens_details = None
+
+        # This is the key part - completion_tokens_details with reasoning_tokens
+        mock_completion_details = Mock()
+        mock_completion_details.reasoning_tokens = 150
+        mock_response.usage.completion_tokens_details = mock_completion_details
+
+        async def mock_create(*args, **kwargs):
+            return mock_response
+
+        with patch.object(provider.client.chat.completions, "create", side_effect=mock_create):
+            messages = [LLMMessage(role="user", content="What is the meaning of life?")]
+            response = await provider.chat(messages)
+
+            assert isinstance(response, LLMResponse)
+            assert response.content == "The answer is 42"
+            assert response.model == "gpt-5-thinking-mini"
+            assert response.reasoning_tokens == 150
+
+    @pytest.mark.asyncio
+    async def test_chat_without_reasoning_tokens(self, provider):
+        """Test that reasoning_tokens is None for non-thinking models"""
+        mock_response = Mock()
+        mock_response.choices = [Mock()]
+        mock_response.choices[0].message.content = "Hello!"
+        mock_response.choices[0].message.tool_calls = None
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.model = "gpt-4"
+        mock_response.usage = Mock()
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_response.usage.total_tokens = 15
+        mock_response.usage.prompt_tokens_details = None
+        mock_response.usage.completion_tokens_details = None  # No reasoning details
+
+        async def mock_create(*args, **kwargs):
+            return mock_response
+
+        with patch.object(provider.client.chat.completions, "create", side_effect=mock_create):
+            messages = [LLMMessage(role="user", content="Hello")]
+            response = await provider.chat(messages)
+
+            assert response.reasoning_tokens is None
+
+    @pytest.mark.asyncio
+    async def test_chat_with_zero_reasoning_tokens(self, provider):
+        """Test that zero reasoning_tokens is treated as None (falsy)"""
+        mock_response = Mock()
+        mock_response.choices = [Mock()]
+        mock_response.choices[0].message.content = "Quick response"
+        mock_response.choices[0].message.tool_calls = None
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.model = "gpt-5-thinking-mini"
+        mock_response.usage = Mock()
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_response.usage.total_tokens = 15
+        mock_response.usage.prompt_tokens_details = None
+
+        # Zero reasoning tokens (model didn't use thinking)
+        mock_completion_details = Mock()
+        mock_completion_details.reasoning_tokens = 0
+        mock_response.usage.completion_tokens_details = mock_completion_details
+
+        async def mock_create(*args, **kwargs):
+            return mock_response
+
+        with patch.object(provider.client.chat.completions, "create", side_effect=mock_create):
+            messages = [LLMMessage(role="user", content="Hi")]
+            response = await provider.chat(messages)
+
+            # Zero is falsy, so reasoning_tokens should be None
+            assert response.reasoning_tokens is None
+
+
 class TestOpenAIModelCompatibility:
     """Unit tests for OpenAI model-specific parameter filtering."""
 

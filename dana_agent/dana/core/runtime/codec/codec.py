@@ -217,14 +217,30 @@ class CodecRuntime(CodecRuntimeBase):
         if response.tool_calls:
             tool_calls.extend(self._to_tool_call_dicts(response.tool_calls))
 
-        # 2. Parse content for thinking/response using codec
-        #    (Works for both CSXMLCodec and NativeToolsCodec)
-        if content:
+        # 2. Check for provider's reasoning_content (e.g., DeepSeek, future Claude extended thinking)
+        #    This takes precedence over XML tag parsing since it's the native format
+        if response.reasoning_content:
+            reasoning = response.reasoning_content
+            # Still parse content for response_text and potential XML tool_calls
+            if content:
+                parsed_codec_response = self._codec.parse_response(content)
+                response_text = parsed_codec_response.response
+                # Extract tool_calls from XML if NOT using native tools
+                if not self._use_native_tools and parsed_codec_response.tool_calls:
+                    for tc in parsed_codec_response.tool_calls:
+                        if tc.tool_name:
+                            function_name = tc.tool_name
+                        else:
+                            identifier = tc.object_id or tc.class_name
+                            function_name = f"{identifier}:{tc.name}" if identifier else tc.name
+                        tool_calls.append({"function": function_name, "arguments": tc.parameters})
+        elif content:
+            # 3. Fall back to codec parsing (XML <thinking> tags)
             parsed_codec_response = self._codec.parse_response(content)
             reasoning = parsed_codec_response.thinking
             response_text = parsed_codec_response.response
 
-            # 3. Extract tool_calls from XML if NOT using native tools
+            # 4. Extract tool_calls from XML if NOT using native tools
             #    (XML codecs return tool_calls from parsed text)
             if not self._use_native_tools and parsed_codec_response.tool_calls:
                 for tc in parsed_codec_response.tool_calls:
@@ -236,7 +252,7 @@ class CodecRuntime(CodecRuntimeBase):
                         function_name = f"{identifier}:{tc.name}" if identifier else tc.name
                     tool_calls.append({"function": function_name, "arguments": tc.parameters})
 
-        # 4. Determine done flag based on tool calls
+        # 5. Determine done flag based on tool calls
         #    - If there are tool calls, we're not done (need to execute them)
         #    - If no tool calls, we're done (can return response)
         done = len(tool_calls) == 0

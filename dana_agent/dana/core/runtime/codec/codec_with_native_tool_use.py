@@ -96,14 +96,21 @@ class CodecRuntimeWithNativeToolUse(CodecRuntimeBase):
         if response.tool_calls:
             tool_calls.extend(self._to_tool_call_dicts(response.tool_calls))
 
-        # 2. Parse content for thinking/response using codec
-        #    (NativeToolsCodec extracts <thinking> tags if present)
-        if content:
+        # 2. Check for provider's reasoning_content (e.g., DeepSeek, future Claude extended thinking)
+        #    This takes precedence over XML tag parsing since it's the native format
+        if response.reasoning_content:
+            reasoning = response.reasoning_content
+            # Still parse content for response_text (if any text content beyond reasoning)
+            if content:
+                parsed_codec_response = self._codec.parse_response(content)
+                response_text = parsed_codec_response.response
+        elif content:
+            # 3. Fall back to codec parsing (XML <thinking> tags)
             parsed_codec_response = self._codec.parse_response(content)
             reasoning = parsed_codec_response.thinking
             response_text = parsed_codec_response.response
 
-        # 3. Determine done flag based on tool calls
+        # 4. Determine done flag based on tool calls
         #    - If there are tool calls, we're not done (need to execute them)
         #    - If no tool calls, we're done (can return response)
         done = len(tool_calls) == 0

@@ -16,7 +16,7 @@ import warnings
 import structlog
 
 from dana.common.config import config_manager
-from dana.common.llm.llm import LLM
+from dana.common.llm import LLM
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
@@ -879,11 +879,18 @@ class STARAgent(BaseSTARAgent):
                     else:  # unknown
                         entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
 
+                    # Ensure content is a string (tool results may be dicts)
+                    result_content = tool_result.get("result", "Unknown tool result")
+                    if not isinstance(result_content, str):
+                        import json
+
+                        result_content = json.dumps(result_content)
+
                     # Include tool_call_id for OpenAI native tool support
                     self._timeline.add_entry(
                         TimelineEntry(
                             entry_type=entry_type,
-                            content=tool_result.get("result", "Unknown tool result"),
+                            content=result_content,
                             tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
@@ -1214,11 +1221,18 @@ class STARAgent(BaseSTARAgent):
                     else:  # unknown
                         entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
 
+                    # Ensure content is a string (tool results may be dicts)
+                    result_content = tool_result.get("result", "Unknown tool result")
+                    if not isinstance(result_content, str):
+                        import json
+
+                        result_content = json.dumps(result_content)
+
                     # Include tool_call_id for OpenAI native tool support
                     self._timeline.add_entry(
                         TimelineEntry(
                             entry_type=entry_type,
-                            content=tool_result.get("result", "Unknown tool result"),
+                            content=result_content,
                             tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
