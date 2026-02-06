@@ -17,6 +17,7 @@ from rich.live import Live
 from rich.text import Text
 
 from dana.cli.components.spinner import SpinnerComponent
+from dana.cli.components.status_line import StatusLineComponent
 from dana.cli.components.stream_display import StreamDisplayComponent
 from dana.cli.components.tool_card import ToolCardComponent
 from dana.cli.state import RenderState
@@ -48,8 +49,10 @@ class RichCLIRenderer(Notifiable):
         self._spinner = SpinnerComponent()
         self._stream_display = StreamDisplayComponent(max_visible_lines=20, line_threshold=max_output_lines)
         self._tool_card = ToolCardComponent()
+        self._status_line = StatusLineComponent()
         self._pending_tool_cards: list[dict[str, Any]] = []
         self._live: Live | None = None
+        self._agent_stack: list[str] = []  # Track parent agent IDs for subagent transitions
 
     def _ensure_live(self) -> None:
         """Start the Live context if not already running."""
@@ -95,8 +98,8 @@ class RichCLIRenderer(Notifiable):
     def _refresh_display(self) -> None:
         """Update the Live display with current state.
 
-        Renders spinner and streaming text together. Streaming text
-        appears below the spinner so both are visible simultaneously.
+        Renders spinner, streaming text, and status line together.
+        Status line is displayed at the bottom of the terminal output.
         """
         if self._live is None:
             return
@@ -109,10 +112,65 @@ class RichCLIRenderer(Notifiable):
         if self._stream_display.buffer:
             renderables.append(self._stream_display.render())
 
+        # Status line at bottom
+        status_text = self._status_line.render()
+        if status_text:
+            renderables.append(Text.from_markup(f"[dim]{status_text}[/dim]"))
+
         if renderables:
             self._live.update(Group(*renderables))
         else:
             self._live.update(Text(""))
+
+    def _update_agent_context(self, notifier: object) -> None:
+        """Extract agent context from notifier and update state + status line.
+
+        Detects subagent transitions by tracking agent_id changes.
+        When a new agent_id appears, the previous one is pushed onto the stack.
+        When a previous agent_id reappears, we pop back to it (subagent completed).
+        """
+        new_agent_id = getattr(notifier, "object_id", "unknown")
+        old_agent_id = self.state.current_agent_id
+
+        # Detect agent transitions
+        if old_agent_id and new_agent_id != old_agent_id:
+            if new_agent_id in self._agent_stack:
+                # Returning to a parent agent - pop stack back to it
+                while self._agent_stack and self._agent_stack[-1] != new_agent_id:
+                    self._agent_stack.pop()
+                if self._agent_stack:
+                    self._agent_stack.pop()
+            else:
+                # New subagent invoked - push current agent onto stack
+                self._agent_stack.append(old_agent_id)
+
+        self.state.current_agent_id = new_agent_id
+
+        # Extract model from notifier (try llm_client.model, then _llm_config)
+        llm_client = getattr(notifier, "llm_client", None)
+        if llm_client:
+            self.state.current_model = getattr(llm_client, "model", "")
+        else:
+            llm_config = getattr(notifier, "_llm_config", {})
+            if isinstance(llm_config, dict):
+                self.state.current_model = llm_config.get("model", "")
+
+        # Extract turn info from notifier
+        star_loop_count = getattr(notifier, "_star_loop_count", 0)
+        if isinstance(star_loop_count, int):
+            self.state.current_turn = star_loop_count
+
+        max_turns = getattr(notifier, "max_turns", 0)
+        if isinstance(max_turns, int):
+            self.state.max_turns = max_turns
+
+        # Update status line from state
+        self._status_line.update(
+            agent_id=self.state.current_agent_id,
+            model=self.state.current_model,
+            turn=self.state.current_turn,
+            max_turns=self.state.max_turns,
+        )
 
     def notify(self, notifier: object, message: DictParams) -> None:
         """Receive a broadcast message and route to the appropriate handler.
@@ -121,8 +179,8 @@ class RichCLIRenderer(Notifiable):
             notifier: The agent sending the notification.
             message: The notification message containing trace data.
         """
-        # Update agent context from notifier
-        self.state.current_agent_id = getattr(notifier, "object_id", "unknown")
+        # Update agent context and status line from notifier
+        self._update_agent_context(notifier)
 
         if message.get("trace_percepts"):
             self._handle_see(notifier, message["trace_percepts"])

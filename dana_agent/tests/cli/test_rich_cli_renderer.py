@@ -1,4 +1,4 @@
-"""Tests for RichCLIRenderer message routing, spinner, and streaming integration."""
+"""Tests for RichCLIRenderer message routing, spinner, streaming, and status line integration."""
 
 from unittest.mock import MagicMock, patch
 
@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from dana.cli.components.spinner import SpinnerComponent
+from dana.cli.components.status_line import StatusLineComponent
 from dana.cli.components.stream_display import StreamDisplayComponent
 from dana.cli.components.tool_card import ToolCardComponent
 from dana.cli.rich_cli_renderer import RichCLIRenderer
@@ -14,9 +15,19 @@ from dana.cli.rich_cli_renderer import RichCLIRenderer
 class _FakeAgent:
     """Minimal fake agent for testing notify()."""
 
-    def __init__(self, object_id: str = "test-agent") -> None:
+    def __init__(
+        self,
+        object_id: str = "test-agent",
+        model: str = "",
+        star_loop_count: int = 0,
+        max_turns: int = 0,
+    ) -> None:
         self.object_id = object_id
         self.agent_type = "star"
+        if model:
+            self.llm_client = type("LLMClient", (), {"model": model})()
+        self._star_loop_count = star_loop_count
+        self.max_turns = max_turns
 
 
 class TestRichCLIRendererInit:
@@ -75,6 +86,14 @@ class TestRichCLIRendererInit:
     def test_pending_tool_cards_initially_empty(self) -> None:
         renderer = RichCLIRenderer()
         assert renderer._pending_tool_cards == []
+
+    def test_has_status_line_component(self) -> None:
+        renderer = RichCLIRenderer()
+        assert isinstance(renderer._status_line, StatusLineComponent)
+
+    def test_agent_stack_initially_empty(self) -> None:
+        renderer = RichCLIRenderer()
+        assert renderer._agent_stack == []
 
     def test_live_initially_none(self) -> None:
         renderer = RichCLIRenderer()
@@ -886,3 +905,302 @@ class TestStreamDisplayIntegration:
         )
         assert renderer._stream_display.buffer == "I'll check that for you"
         assert len(renderer._pending_tool_cards) == 1
+
+
+class TestStatusLineIntegration:
+    """Test status line updates through RichCLIRenderer handlers."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        """Create a renderer with Live mocked to avoid terminal output."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        """Replace _ensure_live, _stop_live, _refresh_display with no-ops."""
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_status_line_updates_on_notify(self) -> None:
+        """Status line updates with agent context on each broadcast."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent(object_id="my-agent", model="gpt-4", star_loop_count=2, max_turns=5)
+
+        renderer.notify(agent, {"trace_percepts": {"caller_message": "hello"}})
+
+        assert renderer._status_line.agent_id == "my-agent"
+        assert renderer._status_line.model == "gpt-4"
+        assert renderer._status_line.turn == 2
+        assert renderer._status_line.max_turns == 5
+
+    def test_status_line_render_format(self) -> None:
+        """Status line renders with correct format from agent context."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent(object_id="agent-1", model="claude-3", star_loop_count=1, max_turns=3)
+
+        renderer.notify(agent, {"trace_percepts": {"caller_message": "hi"}})
+
+        status = renderer._status_line.render()
+        assert "agent-1" in status
+        assert "claude-3" in status
+        assert "turn 1/3" in status
+
+    def test_status_line_no_turn_when_zero(self) -> None:
+        """Turn info hidden when turn is 0."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent(object_id="agent-1", model="claude-3", star_loop_count=0, max_turns=5)
+
+        renderer.notify(agent, {"trace_percepts": {"caller_message": "hi"}})
+
+        status = renderer._status_line.render()
+        assert "agent-1" in status
+        assert "turn" not in status
+
+    def test_status_line_updates_on_each_broadcast(self) -> None:
+        """Status line updates with each notify call."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        agent1 = _FakeAgent(object_id="agent-1", model="gpt-4", star_loop_count=1, max_turns=3)
+        renderer.notify(agent1, {"trace_percepts": {"caller_message": "hi"}})
+        assert renderer._status_line.agent_id == "agent-1"
+
+        agent2 = _FakeAgent(object_id="agent-1", model="gpt-4", star_loop_count=2, max_turns=3)
+        renderer.notify(agent2, {"trace_thoughts": {"done": False}})
+        assert renderer._status_line.turn == 2
+
+    def test_state_updates_model_from_llm_client(self) -> None:
+        """Model is extracted from notifier's llm_client attribute."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent(object_id="test", model="gpt-4-turbo")
+
+        renderer.notify(agent, {"trace_percepts": {"caller_message": "hi"}})
+        assert renderer.state.current_model == "gpt-4-turbo"
+
+    def test_state_updates_model_from_llm_config_fallback(self) -> None:
+        """Model falls back to _llm_config dict when no llm_client."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent(object_id="test")  # No model = no llm_client
+        agent._llm_config = {"model": "claude-3-haiku"}  # type: ignore[attr-defined]
+
+        renderer.notify(agent, {"trace_percepts": {"caller_message": "hi"}})
+        assert renderer.state.current_model == "claude-3-haiku"
+
+    def test_state_updates_turn_info(self) -> None:
+        """Turn and max_turns are extracted from notifier."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent(object_id="test", star_loop_count=3, max_turns=10)
+
+        renderer.notify(agent, {"trace_percepts": {"caller_message": "hi"}})
+        assert renderer.state.current_turn == 3
+        assert renderer.state.max_turns == 10
+
+
+class TestSubagentTransitions:
+    """Test status line behavior during agent transitions."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_subagent_invocation_pushes_parent(self) -> None:
+        """When a new agent_id appears, parent is pushed onto stack."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        parent = _FakeAgent(object_id="parent-agent")
+        child = _FakeAgent(object_id="child-agent")
+
+        renderer.notify(parent, {"trace_percepts": {"caller_message": "hi"}})
+        assert renderer.state.current_agent_id == "parent-agent"
+        assert renderer._agent_stack == []
+
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        assert renderer.state.current_agent_id == "child-agent"
+        assert renderer._agent_stack == ["parent-agent"]
+
+    def test_subagent_completion_pops_stack(self) -> None:
+        """When parent agent_id reappears, stack pops back to it."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        parent = _FakeAgent(object_id="parent-agent")
+        child = _FakeAgent(object_id="child-agent")
+
+        # Parent → Child
+        renderer.notify(parent, {"trace_percepts": {"caller_message": "hi"}})
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        assert renderer._agent_stack == ["parent-agent"]
+
+        # Child → Parent (subagent completes)
+        renderer.notify(parent, {"trace_thoughts": {"done": False}})
+        assert renderer.state.current_agent_id == "parent-agent"
+        assert renderer._agent_stack == []
+
+    def test_status_updates_to_subagent(self) -> None:
+        """Status line shows subagent info during subagent execution."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        parent = _FakeAgent(object_id="parent", model="gpt-4", star_loop_count=1, max_turns=5)
+        child = _FakeAgent(object_id="child-task", model="gpt-3.5", star_loop_count=1, max_turns=3)
+
+        renderer.notify(parent, {"trace_percepts": {"caller_message": "hi"}})
+        assert renderer._status_line.agent_id == "parent"
+        assert renderer._status_line.model == "gpt-4"
+
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        assert renderer._status_line.agent_id == "child-task"
+        assert renderer._status_line.model == "gpt-3.5"
+
+    def test_status_returns_to_parent_after_subagent(self) -> None:
+        """Status line returns to parent agent info when subagent completes."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        parent = _FakeAgent(object_id="parent", model="gpt-4", star_loop_count=2, max_turns=5)
+        child = _FakeAgent(object_id="child", model="gpt-3.5", star_loop_count=1, max_turns=3)
+
+        renderer.notify(parent, {"trace_percepts": {"caller_message": "hi"}})
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        assert renderer._status_line.agent_id == "child"
+
+        renderer.notify(parent, {"trace_thoughts": {"done": False}})
+        assert renderer._status_line.agent_id == "parent"
+        assert renderer._status_line.model == "gpt-4"
+
+    def test_nested_subagents(self) -> None:
+        """Handles nested subagent transitions (parent → child → grandchild → parent)."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        parent = _FakeAgent(object_id="parent")
+        child = _FakeAgent(object_id="child")
+        grandchild = _FakeAgent(object_id="grandchild")
+
+        renderer.notify(parent, {"trace_percepts": {"caller_message": "hi"}})
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        renderer.notify(grandchild, {"trace_thoughts": {"done": False}})
+        assert renderer._agent_stack == ["parent", "child"]
+        assert renderer.state.current_agent_id == "grandchild"
+
+        # Grandchild completes → child
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        assert renderer._agent_stack == ["parent"]
+        assert renderer.state.current_agent_id == "child"
+
+        # Child completes → parent
+        renderer.notify(parent, {"trace_thoughts": {"done": False}})
+        assert renderer._agent_stack == []
+        assert renderer.state.current_agent_id == "parent"
+
+    def test_same_agent_id_no_stack_change(self) -> None:
+        """Consecutive broadcasts from the same agent don't modify the stack."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        agent = _FakeAgent(object_id="agent-1")
+
+        renderer.notify(agent, {"trace_percepts": {"caller_message": "hi"}})
+        renderer.notify(agent, {"trace_thoughts": {"done": False}})
+        renderer.notify(agent, {"trace_outputs": {"tool_calls": []}})
+
+        assert renderer._agent_stack == []
+        assert renderer.state.current_agent_id == "agent-1"
+
+
+class TestStatusLineInRefreshDisplay:
+    """Test that status line appears in refresh display output."""
+
+    def test_refresh_includes_status_line(self) -> None:
+        """Status line text appears in Live display when agent context is set."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+
+        # Set status line content
+        renderer._status_line.update(agent_id="my-agent", model="gpt-4", turn=1, max_turns=3)
+        renderer._refresh_display()
+
+        mock_live.update.assert_called_once()
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        # Spinner + status line = 2 renderables
+        assert len(group.renderables) == 2
+
+    def test_refresh_includes_status_with_stream(self) -> None:
+        """Status line, spinner, and stream text all render together."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+        renderer._stream_display.append_chunk("Some text")
+        renderer._status_line.update(agent_id="agent", model="model")
+
+        renderer._refresh_display()
+
+        mock_live.update.assert_called_once()
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        # Spinner + stream + status line = 3
+        assert len(group.renderables) == 3
+
+    def test_refresh_status_line_at_bottom(self) -> None:
+        """Status line is the last renderable in the group (at bottom)."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+        renderer._status_line.update(agent_id="agent-1", model="gpt-4", turn=1, max_turns=5)
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        last_renderable = group.renderables[-1]
+        # Last renderable should contain status line text (dimmed)
+        rendered_text = str(last_renderable)
+        assert "agent-1" in rendered_text
+
+    def test_refresh_no_status_when_empty(self) -> None:
+        """No status line renderable when status line renders empty string."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+        # Status line has no content set
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        # Only spinner, no status line
+        assert len(group.renderables) == 1
+
+    def test_status_only_when_spinner_stopped(self) -> None:
+        """Status line shows even when spinner is not running."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._status_line.update(agent_id="agent", model="model")
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        assert len(group.renderables) == 1  # Only status line

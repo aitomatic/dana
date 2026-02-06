@@ -25,7 +25,10 @@
 - Use `patch.object(renderer.console, "print")` with `side_effect=lambda p: printed_panels.append(p)` to capture printed Panels in tests
 - StreamDisplayComponent returns `rich.text.Text` renderables - no Live context dependency, compose into Group for Live display
 - StreamDisplayComponent integration: `_handle_think()` streams response text (non-done), `_handle_see()` clears buffer for new STAR loop
-- `_refresh_display()` composes spinner + stream display into `Group()` for Live - both visible simultaneously
+- `_refresh_display()` composes spinner + stream display + status line into `Group()` for Live - all visible simultaneously
+- Agent model: extract from `notifier.llm_client.model` with fallback to `notifier._llm_config["model"]`
+- Agent turn: `notifier._star_loop_count` (private int), `notifier.max_turns` (public int)
+- Subagent detection: track agent_id changes with `_agent_stack` - push parent on new ID, pop on known ID return
 
 ---
 
@@ -157,4 +160,41 @@
   - `done=True` response is printed via `console.print()` (persisted), not streamed (transient)
   - StreamDisplayComponent.buffer being truthy is a simple check for whether to include stream in display
   - ruff catches unused local variables - watch for test helpers that create agents not used in the test
+---
+
+## 2026-02-06 - US-009
+- Implemented StatusLineComponent in `dana/cli/components/status_line.py`
+- Displays persistent status line with agent ID, model name, and turn progress
+- `update(agent_id, model, turn, max_turns)` sets all fields; `render()` returns formatted string
+- Format: `agent_id | model | turn N/M` - turn info hidden when turn is 0
+- Empty parts are excluded (no leading/trailing separators)
+- Updated `dana/cli/components/__init__.py` to export StatusLineComponent
+- Created `tests/cli/test_status_line.py` with 19 tests across 5 test classes
+- Total test count: 171 tests across all CLI test files
+- Files changed: `dana/cli/components/__init__.py`, `dana/cli/components/status_line.py`, `tests/cli/test_status_line.py`
+- **Learnings for future iterations:**
+  - StatusLineComponent is pure Python (no rich dependency) - returns plain `str` from `render()`
+  - Simple components that return strings are the easiest to test - no mocking needed
+  - `" | ".join(parts)` with conditional part inclusion is a clean pattern for multi-field status lines
+  - Properties with `@property` decorator provide read-only access to internal state for testing
+---
+
+## 2026-02-06 - US-010
+- Integrated StatusLineComponent into RichCLIRenderer for persistent status display
+- Added `_update_agent_context()` method to extract agent_id, model, turn, max_turns from notifier
+- Model extracted from `notifier.llm_client.model` with fallback to `notifier._llm_config["model"]`
+- Turn info extracted from `notifier._star_loop_count` and `notifier.max_turns`
+- `_refresh_display()` now renders status line at bottom (after spinner and stream text), dimmed
+- Implemented subagent transition tracking via `_agent_stack`: pushes parent on new subagent, pops on return
+- Nested subagent support: parent → child → grandchild → child → parent
+- `_FakeAgent` test helper extended with model, star_loop_count, max_turns parameters
+- Added 4 new test classes: TestStatusLineIntegration (7 tests), TestSubagentTransitions (6 tests), TestStatusLineInRefreshDisplay (5 tests), plus 2 init tests
+- Total test count: 191 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_rich_cli_renderer.py`
+- **Learnings for future iterations:**
+  - Agent model info not in broadcasts - must extract from notifier attributes: `notifier.llm_client.model` or `notifier._llm_config`
+  - Turn count from `notifier._star_loop_count` (private), max_turns from `notifier.max_turns` (public)
+  - Subagent detection via agent_id change: new ID = push parent to stack, known ID = pop back to it
+  - Status line renders as `Text.from_markup(f"[dim]{status_text}[/dim]")` for visual distinction
+  - `_update_agent_context()` called from `notify()` before routing - ensures status is always current
 ---
