@@ -10,6 +10,7 @@ Usage:
     agent.with_notifiable(renderer)
 """
 
+import threading
 from typing import Any
 
 from rich.console import Console, Group, RenderableType
@@ -56,6 +57,7 @@ class RichCLIRenderer(Notifiable):
         self._pending_tool_cards: list[dict[str, Any]] = []
         self._live: Live | None = None
         self._agent_stack: list[str] = []  # Track parent agent IDs for subagent transitions
+        self._lock = threading.Lock()
 
     def _ensure_live(self) -> None:
         """Start the Live context if not already running."""
@@ -194,25 +196,28 @@ class RichCLIRenderer(Notifiable):
     def notify(self, notifier: object, message: DictParams) -> None:
         """Receive a broadcast message and route to the appropriate handler.
 
+        Thread-safe: acquires lock before mutating any shared state.
+
         Args:
             notifier: The agent sending the notification.
             message: The notification message containing trace data.
         """
-        # Update agent context and status line from notifier
-        self._update_agent_context(notifier)
+        with self._lock:
+            # Update agent context and status line from notifier
+            self._update_agent_context(notifier)
 
-        if message.get("trace_percepts"):
-            self._handle_see(notifier, message["trace_percepts"])
-        if message.get("trace_thoughts"):
-            self._handle_think(notifier, message["trace_thoughts"])
-        if message.get("trace_outputs"):
-            self._handle_act(notifier, message["trace_outputs"])
-        if message.get("trace_learning"):
-            self._handle_reflect(notifier, message["trace_learning"])
-        if message.get("workflow_progress"):
-            self._handle_workflow(notifier, message["workflow_progress"])
-        if message.get("skill_progress"):
-            self._handle_skill(notifier, message["skill_progress"])
+            if message.get("trace_percepts"):
+                self._handle_see(notifier, message["trace_percepts"])
+            if message.get("trace_thoughts"):
+                self._handle_think(notifier, message["trace_thoughts"])
+            if message.get("trace_outputs"):
+                self._handle_act(notifier, message["trace_outputs"])
+            if message.get("trace_learning"):
+                self._handle_reflect(notifier, message["trace_learning"])
+            if message.get("workflow_progress"):
+                self._handle_workflow(notifier, message["workflow_progress"])
+            if message.get("skill_progress"):
+                self._handle_skill(notifier, message["skill_progress"])
 
     def _handle_see(self, notifier: object, data: DictParams) -> None:
         """Handle SEE phase (trace_percepts) broadcasts.
@@ -342,47 +347,53 @@ class RichCLIRenderer(Notifiable):
     def select_up(self) -> None:
         """Move selection up among current turn results.
 
+        Thread-safe: acquires lock before mutating state.
         Wraps around to the last result if at the top.
         Only operates on current_turn_results (recent/interactive).
         """
-        count = len(self.state.current_turn_results)
-        if count == 0:
-            return
+        with self._lock:
+            count = len(self.state.current_turn_results)
+            if count == 0:
+                return
 
-        if self.state.selected_index <= 0:
-            self.state.selected_index = count - 1
-        else:
-            self.state.selected_index -= 1
+            if self.state.selected_index <= 0:
+                self.state.selected_index = count - 1
+            else:
+                self.state.selected_index -= 1
 
     def select_down(self) -> None:
         """Move selection down among current turn results.
 
+        Thread-safe: acquires lock before mutating state.
         Wraps around to the first result if at the bottom.
         Only operates on current_turn_results (recent/interactive).
         """
-        count = len(self.state.current_turn_results)
-        if count == 0:
-            return
+        with self._lock:
+            count = len(self.state.current_turn_results)
+            if count == 0:
+                return
 
-        if self.state.selected_index >= count - 1:
-            self.state.selected_index = 0
-        else:
-            self.state.selected_index += 1
+            if self.state.selected_index >= count - 1:
+                self.state.selected_index = 0
+            else:
+                self.state.selected_index += 1
 
     def toggle_expand(self) -> None:
         """Toggle expand/collapse for the currently selected result.
 
+        Thread-safe: acquires lock before mutating state.
         Only operates on current_turn_results (recent/interactive).
         No-op if no result is selected or index is out of range.
         """
-        idx = self.state.selected_index
-        if idx < 0 or idx >= len(self.state.current_turn_results):
-            return
+        with self._lock:
+            idx = self.state.selected_index
+            if idx < 0 or idx >= len(self.state.current_turn_results):
+                return
 
-        if idx in self.state.expanded_indices:
-            self.state.expanded_indices.discard(idx)
-        else:
-            self.state.expanded_indices.add(idx)
+            if idx in self.state.expanded_indices:
+                self.state.expanded_indices.discard(idx)
+            else:
+                self.state.expanded_indices.add(idx)
 
     def _handle_reflect(self, notifier: object, data: DictParams) -> None:
         """Handle REFLECT phase (trace_learning) broadcasts."""
