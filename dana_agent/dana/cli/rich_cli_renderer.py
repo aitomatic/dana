@@ -8,11 +8,18 @@ Supports graceful degradation for limited terminals:
 - Narrow terminals (<80 cols): truncates content to fit
 - Terminal resize: adapts without crashing
 
-Usage:
-    from dana.cli.rich_cli_renderer import RichCLIRenderer
+Usage with DanaCodingAgent (or any agent extending Notifier)::
 
+    from dana.cli.rich_cli_renderer import RichCLIRenderer
+    from dana.apps.dana.thought_logger import ThoughtLogger
+
+    # Create renderer and attach to agent alongside ThoughtLogger
     renderer = RichCLIRenderer(verbose=True, show_tool_calls=True)
-    agent.with_notifiable(renderer)
+    logger = ThoughtLogger(verbose=True)
+    agent.with_notifiable(renderer, logger)
+
+    # Both receive broadcasts from the agent's STAR loop automatically.
+    # No changes required to the agent code.
 """
 
 import signal

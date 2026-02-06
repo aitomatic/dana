@@ -47,6 +47,8 @@
 - Tests with `Console(force_terminal=False)` have `color_system=None` → triggers no-color path; use `Console(force_terminal=True)` for tests that expect rich/color behavior
 - `signal.signal()` with MagicMock as handler doesn't work: Python converts MagicMock via `__int__()` → use real functions as signal handler mocks in tests
 - `_truncate_for_width()` accounts for panel borders (6 chars) and has a minimum of 10 chars
+- Integration testing: extend `Notifier` class directly (not mock) to test real `with_notifiable()` + `broadcast()` flow
+- ThoughtLogger(verbose=False, show_tool_calls=False) to silence output during integration tests
 
 ---
 
@@ -358,4 +360,24 @@
   - Use `is` (identity) not `==` (equality) when comparing signal handlers to SIG_DFL/SIG_IGN constants
   - `signal.signal()` raises ValueError from non-main threads → wrap in try/except
   - SIGWINCH not available on Windows → guard with `hasattr(signal, "SIGWINCH")`
+---
+
+## 2026-02-06 - US-018
+- Created integration test file `tests/cli/test_integration.py` with 19 tests across 6 test classes
+- Test classes: TestWithNotifiableAttachment (4 tests), TestBroadcastToRenderer (3 tests), TestAlongsideThoughtLogger (3 tests), TestFullConversationSimulation (5 tests), TestSubagentSimulation (1 test), TestRendererDoesNotRequireAgentChanges (3 tests)
+- Used real `Notifier` base class (not _FakeAgent) to test actual `with_notifiable()` + `broadcast()` flow
+- Verified RichCLIRenderer works alongside ThoughtLogger without interference
+- Verified Notifier's exception handling: renderer failure doesn't break other notifiables
+- Simulated complete STAR loop: SEE → THINK → ACT → THINK(done) with tool calls and results
+- Simulated multi-turn conversation with recent→historical result transitions
+- Simulated streaming response chunks, todo list progress, subagent transitions
+- Updated RichCLIRenderer docstring with usage example showing DanaCodingAgent integration
+- Total test count: 392 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_integration.py`
+- **Learnings for future iterations:**
+  - `_FakeNotifierAgent(Notifier)` extends the real Notifier class for integration tests - provides actual `with_notifiable()`, `broadcast()`, `remove_notifiable()` methods
+  - ThoughtLogger(verbose=False, show_tool_calls=False) silences output for tests where you only need to verify it doesn't interfere
+  - Notifier.broadcast() catches exceptions in notifiables (logs + continues) - test this by replacing `notify` with a failing function
+  - `type: ignore[method-assign,assignment]` needed when replacing a method with a function that has different param names than the protocol
+  - DanaCodingAgent doesn't need to exist yet - any class extending Notifier inherits the full notifiable protocol
 ---
