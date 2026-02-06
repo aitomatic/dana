@@ -1,4 +1,4 @@
-"""Tests for RichCLIRenderer message routing and spinner integration."""
+"""Tests for RichCLIRenderer message routing, spinner, and streaming integration."""
 
 from unittest.mock import MagicMock, patch
 
@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from dana.cli.components.spinner import SpinnerComponent
+from dana.cli.components.stream_display import StreamDisplayComponent
 from dana.cli.components.tool_card import ToolCardComponent
 from dana.cli.rich_cli_renderer import RichCLIRenderer
 
@@ -58,6 +59,14 @@ class TestRichCLIRendererInit:
     def test_has_spinner_component(self) -> None:
         renderer = RichCLIRenderer()
         assert isinstance(renderer._spinner, SpinnerComponent)
+
+    def test_has_stream_display_component(self) -> None:
+        renderer = RichCLIRenderer()
+        assert isinstance(renderer._stream_display, StreamDisplayComponent)
+
+    def test_stream_display_uses_max_output_lines(self) -> None:
+        renderer = RichCLIRenderer(max_output_lines=30)
+        assert renderer._stream_display._line_threshold == 30
 
     def test_has_tool_card_component(self) -> None:
         renderer = RichCLIRenderer()
@@ -703,3 +712,177 @@ class TestToolCardIntegration:
         ]
         renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
         assert len(renderer._pending_tool_cards) == 2
+
+
+class TestStreamDisplayIntegration:
+    """Test streaming text display through RichCLIRenderer handlers."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        """Create a renderer with Live mocked to avoid terminal output."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        """Replace _ensure_live, _stop_live, _refresh_display with no-ops."""
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_handle_think_streams_response_text(self) -> None:
+        """Response text in THINK broadcasts is appended to stream display."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "response": "Hello "})
+        assert renderer._stream_display.buffer == "Hello "
+
+    def test_handle_think_accumulates_chunks(self) -> None:
+        """Multiple THINK broadcasts accumulate text in stream display."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "response": "Hello "})
+        renderer._handle_think(agent, {"done": False, "response": "world!"})
+        assert renderer._stream_display.buffer == "Hello world!"
+
+    def test_handle_think_no_stream_when_empty_response(self) -> None:
+        """Empty response does not add to stream display."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "response": ""})
+        assert renderer._stream_display.buffer == ""
+
+    def test_handle_think_no_stream_when_no_response(self) -> None:
+        """Missing response key does not add to stream display."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False})
+        assert renderer._stream_display.buffer == ""
+
+    def test_handle_see_clears_stream_display(self) -> None:
+        """SEE phase clears the stream display for a new STAR loop."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Accumulate some text
+        renderer._handle_think(agent, {"done": False, "response": "first response"})
+        assert renderer._stream_display.buffer == "first response"
+
+        # New STAR loop via SEE should clear
+        renderer._handle_see(agent, {"caller_message": "new question"})
+        assert renderer._stream_display.buffer == ""
+
+    def test_stream_display_clears_between_star_loops(self) -> None:
+        """Stream display resets between consecutive STAR loops."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # First loop
+        renderer._handle_see(agent, {"caller_message": "first"})
+        renderer._handle_think(agent, {"done": False, "response": "answer 1"})
+        assert renderer._stream_display.buffer == "answer 1"
+
+        renderer._handle_think(agent, {"done": True, "response": "final 1"})
+
+        # Second loop - SEE should clear stream
+        renderer._handle_see(agent, {"caller_message": "second"})
+        assert renderer._stream_display.buffer == ""
+
+        renderer._handle_think(agent, {"done": False, "response": "answer 2"})
+        assert renderer._stream_display.buffer == "answer 2"
+
+    def test_handle_think_done_does_not_stream(self) -> None:
+        """When done=True, response is printed (not streamed)."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": True, "response": "Final answer"})
+        # Stream should be empty - done response is printed, not streamed
+        assert renderer._stream_display.buffer == ""
+
+    def test_stream_display_calls_refresh(self) -> None:
+        """Streaming text triggers a display refresh."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "response": "chunk"})
+        renderer._refresh_display.assert_called()  # type: ignore[attr-defined]
+
+    def test_refresh_display_includes_stream_text(self) -> None:
+        """_refresh_display includes stream display content in Live update."""
+        renderer = self._make_renderer()
+
+        # Use real _refresh_display but mock Live
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+
+        # Add some streamed text
+        renderer._stream_display.append_chunk("Streaming text here")
+        renderer._refresh_display()
+
+        # Live.update should have been called with a Group containing both
+        mock_live.update.assert_called_once()
+        group = mock_live.update.call_args[0][0]
+        # Group should contain spinner text + stream text
+        assert hasattr(group, "renderables")
+        assert len(group.renderables) == 2
+
+    def test_refresh_display_shows_stream_only_when_spinner_stopped(self) -> None:
+        """Stream text shows even if spinner is not running."""
+        renderer = self._make_renderer()
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        # Spinner not running, but stream has content
+        renderer._stream_display.append_chunk("Some text")
+        renderer._refresh_display()
+
+        mock_live.update.assert_called_once()
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        assert len(group.renderables) == 1  # Only stream text
+
+    def test_refresh_display_empty_when_no_content(self) -> None:
+        """Refresh shows empty text when neither spinner nor stream has content."""
+        renderer = self._make_renderer()
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._refresh_display()
+
+        mock_live.update.assert_called_once()
+        # Should be an empty Text
+        arg = mock_live.update.call_args[0][0]
+        from rich.text import Text
+
+        assert isinstance(arg, Text)
+        assert str(arg) == ""
+
+    def test_stream_and_tool_calls_coexist(self) -> None:
+        """Streaming text and tool calls work together in THINK phase."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # THINK with both response and tool_calls
+        renderer._handle_think(
+            agent,
+            {
+                "done": False,
+                "response": "I'll check that for you",
+                "tool_calls": [{"function": "bash", "arguments": {"command": "ls"}}],
+            },
+        )
+        assert renderer._stream_display.buffer == "I'll check that for you"
+        assert len(renderer._pending_tool_cards) == 1

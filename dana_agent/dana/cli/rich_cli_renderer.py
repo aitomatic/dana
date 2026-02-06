@@ -17,6 +17,7 @@ from rich.live import Live
 from rich.text import Text
 
 from dana.cli.components.spinner import SpinnerComponent
+from dana.cli.components.stream_display import StreamDisplayComponent
 from dana.cli.components.tool_card import ToolCardComponent
 from dana.cli.state import RenderState
 from dana.common.protocols import DictParams, Notifiable
@@ -45,6 +46,7 @@ class RichCLIRenderer(Notifiable):
         self.max_output_lines = max_output_lines
         self.state = RenderState()
         self._spinner = SpinnerComponent()
+        self._stream_display = StreamDisplayComponent(max_visible_lines=20, line_threshold=max_output_lines)
         self._tool_card = ToolCardComponent()
         self._pending_tool_cards: list[dict[str, Any]] = []
         self._live: Live | None = None
@@ -91,7 +93,11 @@ class RichCLIRenderer(Notifiable):
             self._ensure_live()
 
     def _refresh_display(self) -> None:
-        """Update the Live display with current state."""
+        """Update the Live display with current state.
+
+        Renders spinner and streaming text together. Streaming text
+        appears below the spinner so both are visible simultaneously.
+        """
         if self._live is None:
             return
 
@@ -99,6 +105,9 @@ class RichCLIRenderer(Notifiable):
 
         if self._spinner.running:
             renderables.append(Text.from_markup(f"[bold cyan]⠋[/bold cyan] {self._spinner.text}"))
+
+        if self._stream_display.buffer:
+            renderables.append(self._stream_display.render())
 
         if renderables:
             self._live.update(Group(*renderables))
@@ -132,8 +141,12 @@ class RichCLIRenderer(Notifiable):
         """Handle SEE phase (trace_percepts) broadcasts.
 
         Updates spinner to SEE phase with perception count info.
+        Clears the stream display for the new STAR loop.
         """
         self.state.current_phase = "SEE"
+
+        # Clear stream display for new STAR loop (new user message)
+        self._stream_display.clear()
 
         self._ensure_live()
         if not self._spinner.running:
@@ -148,12 +161,14 @@ class RichCLIRenderer(Notifiable):
         """Handle THINK phase (trace_thoughts) broadcasts.
 
         Updates spinner to THINK phase. Extracts tool_calls for intent display.
-        Renders tool cards for each tool call. Stops spinner when done=True.
+        Renders tool cards for each tool call. Streams response text to
+        StreamDisplayComponent. Stops spinner when done=True.
         """
         self.state.current_phase = "THINK"
 
         done = data.get("done", False)
         tool_calls = data.get("tool_calls", [])
+        response = data.get("response", "")
 
         if done:
             self._flush_tool_cards()
@@ -161,10 +176,13 @@ class RichCLIRenderer(Notifiable):
             self._stop_live()
 
             # Print final response if available
-            response = data.get("response", "")
             if response and self.verbose:
                 self.console.print(Text(str(response)))
             return
+
+        # Stream response text if available
+        if response:
+            self._stream_display.append_chunk(str(response))
 
         self._ensure_live()
         if not self._spinner.running:

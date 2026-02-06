@@ -1,0 +1,160 @@
+## Codebase Patterns
+- Notifiable protocol: Extend `Notifiable` ABC from `dana.common.protocols.notifiable`, implement `notify(self, notifier: object, message: DictParams) -> None`
+- DictParams is `dict[str, Any]` from `dana.common.protocols.types`
+- Broadcast keys used by agents: `trace_percepts`, `trace_thoughts`, `trace_outputs`, `trace_learning`, `workflow_progress`, `skill_progress`
+- Tests live in `dana_agent/tests/` with structure mirroring source (e.g., `tests/cli/` for `dana/cli/`)
+- Use `uv run pytest` and `uv run ruff check` and `uv run mypy --ignore-missing-imports` for quality checks
+- mypy requires generic type parameters (e.g., `list[Any]` not bare `list`)
+- ThoughtLogger in `dana/apps/dana/thought_logger.py` is the reference Notifiable implementation
+- Agent properties available via getattr: `object_id`, `agent_type`
+- `rich` is available as a transitive dependency (not in pyproject.toml directly)
+- ruff enforces import sorting (`isort`-style) - run `uv run ruff check --fix` after modifying `__init__.py` imports
+- Stub handler methods with unused params are fine for Pyright warnings - they'll be filled in later stories
+- `rich.spinner.Spinner.text` returns `rich.text.Text` (not `str`) - track text as plain string separately for testability
+- Components package lives at `dana/cli/components/` - each component in its own file, exported from `__init__.py`
+- `rich.live.Live` manages flicker-free updates: `_ensure_live()` to start, `_stop_live()` to teardown, `_refresh_display()` to update
+- Mock `_ensure_live`, `_stop_live`, `_refresh_display` in tests to avoid terminal output while testing handler logic
+- Broadcast data: `trace_thoughts` has `done` (bool), `response` (str), `tool_calls` (list[dict]), `reasoning` (str), `todo_list` (list)
+- Broadcast data: `trace_outputs` has `tool_calls` (list[dict]), `tool_results` (list[dict])
+- Broadcast data: `trace_percepts` has `caller_message` (str), `perception` (str)
+- Tool call dict structure: `{"function": "tool_name", "arguments": {...}}`
+- `rich.panel.Panel.renderable` provides body content, `str(panel.title)` for title text in test assertions
+- Tool type classification in `ToolCardComponent._classify_tool()` - extend for new tool types
+- Tool card integration: `_handle_think()` queues tool cards to `_pending_tool_cards`, `_handle_act()` and `done=True` flush them via `_flush_tool_cards()`
+- `_flush_tool_cards()` temporarily stops Live, prints panels via `console.print()`, then restarts Live - cards persist in terminal history
+- Use `patch.object(renderer.console, "print")` with `side_effect=lambda p: printed_panels.append(p)` to capture printed Panels in tests
+- StreamDisplayComponent returns `rich.text.Text` renderables - no Live context dependency, compose into Group for Live display
+- StreamDisplayComponent integration: `_handle_think()` streams response text (non-done), `_handle_see()` clears buffer for new STAR loop
+- `_refresh_display()` composes spinner + stream display into `Group()` for Live - both visible simultaneously
+
+---
+
+## 2026-02-06 - US-001
+- Implemented RenderState dataclass in `dana/cli/state.py`
+- Created `dana/cli/__init__.py` package init with RenderState export
+- Created `tests/cli/__init__.py` and `tests/cli/test_state.py` with 5 tests
+- Files changed: `dana/cli/__init__.py`, `dana/cli/state.py`, `tests/cli/__init__.py`, `tests/cli/test_state.py`
+- **Learnings for future iterations:**
+  - mypy strict mode requires `list[Any]`, `set[int]` etc. - bare generic types fail typecheck
+  - Dataclass mutable default fields need `field(default_factory=...)` pattern
+  - Use `from typing import Any` for generic type params in dataclasses
+---
+
+## 2026-02-06 - US-002
+- Implemented RichCLIRenderer in `dana/cli/rich_cli_renderer.py`
+- Implements Notifiable protocol with `notify()` routing to 6 stub handlers
+- Constructor accepts: `console`, `verbose`, `show_tool_calls`, `show_reasoning`, `max_output_lines`
+- Routes: `trace_percepts`→`_handle_see`, `trace_thoughts`→`_handle_think`, `trace_outputs`→`_handle_act`, `trace_learning`→`_handle_reflect`, `workflow_progress`→`_handle_workflow`, `skill_progress`→`_handle_skill`
+- Updated `dana/cli/__init__.py` to export RichCLIRenderer
+- Created `tests/cli/test_rich_cli_renderer.py` with 18 tests (init, routing, agent context, protocol)
+- Files changed: `dana/cli/__init__.py`, `dana/cli/rich_cli_renderer.py`, `tests/cli/test_rich_cli_renderer.py`
+- **Learnings for future iterations:**
+  - ruff enforces isort-style import sorting - auto-fix with `uv run ruff check --fix`
+  - Use `unittest.mock.patch.object` to verify routing without implementing handler logic
+  - ThoughtLogger uses `getattr(notifier, "object_id", "unknown")` pattern for safe agent ID extraction
+  - Handlers receive `(notifier, data)` where `data` is the inner dict (not the full message)
+---
+
+## 2026-02-06 - US-003
+- Implemented SpinnerComponent in `dana/cli/components/spinner.py`
+- Created `dana/cli/components/__init__.py` package with SpinnerComponent export
+- SpinnerComponent wraps `rich.spinner.Spinner` with phase-aware text updates
+- Phase text: SEE="Processing...", THINK="Thinking...", ACT="Executing {tools}...", REFLECT="Reflecting..."
+- ACT phase accepts context with `tools` list for comma-separated tool names
+- `start()`/`stop()` manage running state
+- Created `tests/cli/test_spinner.py` with 17 tests (init, start/stop, all phases, transitions, import)
+- Files changed: `dana/cli/components/__init__.py`, `dana/cli/components/spinner.py`, `tests/cli/test_spinner.py`
+- **Learnings for future iterations:**
+  - `rich.spinner.Spinner.text` returns `rich.text.Text`, not `str` - comparing directly to strings fails
+  - Track text as plain `str` in a separate `_text` field for clean API and testability
+  - `Spinner.update(text=...)` converts strings to `Text` objects internally
+  - Components follow pattern: own file in `dana/cli/components/`, exported from package `__init__.py`
+---
+
+## 2026-02-06 - US-004
+- Integrated SpinnerComponent into RichCLIRenderer handlers
+- `_handle_see()` starts spinner and updates to SEE phase with perception context
+- `_handle_think()` updates to THINK phase, extracts tool_calls for intent; stops spinner+Live when `done=True`
+- `_handle_act()` updates to ACT phase with tool names from `tool_calls` in trace_outputs
+- Added `_ensure_live()`, `_stop_live()`, `_refresh_display()` for `rich.live.Live` context management
+- `_refresh_display()` renders spinner text via `Group()` into the Live display
+- Handlers update `state.current_phase` for state tracking
+- When `done=True`, prints final response via `console.print()` (if verbose and non-empty)
+- Added 25 new tests: TestSpinnerIntegration (20 tests) and TestLiveContextManagement (5 tests)
+- Total test count: 67 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_rich_cli_renderer.py`
+- **Learnings for future iterations:**
+  - Use `Console(force_terminal=False)` for test Console instances to avoid terminal-dependent behavior
+  - Mock `_ensure_live`, `_stop_live`, `_refresh_display` with `MagicMock()` to test handler logic without Live context
+  - `type: ignore[method-assign]` needed when replacing methods with MagicMock on instances
+  - `type: ignore[attr-defined]` needed when calling `.assert_called()` on mocked methods
+  - `rich.console.Group` combines multiple renderables for `Live.update()`
+  - `Live(transient=True)` removes the live display when stopped (clean output)
+---
+
+## 2026-02-06 - US-005
+- Implemented ToolCardComponent in `dana/cli/components/tool_card.py`
+- Renders tool invocations as `rich.panel.Panel` with icon + tool name header
+- Tool type classification: bash (🔧), file-io (📁), search (🔍), task (🤖), other (⚡)
+- Parameter formatting per tool type: bash shows command (truncated >100 chars), file-io shows path, search shows pattern+path, task shows agent_id+prompt[:50]
+- Updated `dana/cli/components/__init__.py` to export ToolCardComponent
+- Created `tests/cli/test_tool_card.py` with 27 tests across 7 test classes
+- Total test count: 94 tests across all CLI test files
+- Files changed: `dana/cli/components/__init__.py`, `dana/cli/components/tool_card.py`, `tests/cli/test_tool_card.py`
+- **Learnings for future iterations:**
+  - `rich.panel.Panel` accepts `title`, `title_align`, `border_style`, `expand` for customization
+  - `Panel.renderable` gives access to the body content for testing assertions
+  - Tool classification uses a simple name-based lookup - extend `_classify_tool()` for new tool types
+  - `Panel.title` returns a `Text` object - use `str(result.title)` for string comparisons in tests
+---
+
+## 2026-02-06 - US-006
+- Integrated ToolCardComponent into RichCLIRenderer for tool card display during STAR loop
+- `_handle_think()` queues tool_calls to `_pending_tool_cards` when `show_tool_calls=True`
+- `_handle_act()` flushes pending tool cards before spinner update (cards render before spinner)
+- `_handle_think(done=True)` also flushes remaining cards before stopping spinner
+- `_flush_tool_cards()` stops Live, prints panels via `console.print()`, restarts Live - cards persist in history
+- Added `_tool_card` (ToolCardComponent) and `_pending_tool_cards` (list) to renderer constructor
+- Added 13 new tests in TestToolCardIntegration class: queuing, flushing, ordering, show_tool_calls toggle, etc.
+- Total test count: 109 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_rich_cli_renderer.py`
+- **Learnings for future iterations:**
+  - Tool cards print outside Live context (via `console.print`) so they persist in terminal scrollback
+  - `_flush_tool_cards()` must stop/restart Live to avoid interleaving with live display
+  - Use `patch.object(renderer.console, "print", side_effect=lambda p: panels.append(p))` to capture printed panels
+  - Test chronological order by checking `str(panel.title)` contains expected tool name for each panel
+---
+
+## 2026-02-06 - US-007
+- Implemented StreamDisplayComponent in `dana/cli/components/stream_display.py`
+- Accumulates text chunks via `append_chunk()`, renders as `rich.text.Text`
+- Line limiting: when lines exceed threshold (default 50), shows last N lines (default 20) with `[N lines above]` indicator
+- `clear()` resets buffer for new response cycle
+- `line_count` property tracks number of lines in buffer
+- Updated `dana/cli/components/__init__.py` to export StreamDisplayComponent
+- Created `tests/cli/test_stream_display.py` with 29 tests across 7 test classes
+- Total test count: 138 tests across all CLI test files
+- Files changed: `dana/cli/components/__init__.py`, `dana/cli/components/stream_display.py`, `tests/cli/test_stream_display.py`
+- **Learnings for future iterations:**
+  - `str.split("\n")` on "hello\n" gives `["hello", ""]` = 2 elements, so line count = newline_count + 1
+  - Empty buffer is a special case for line_count (return 0, not 1)
+  - StreamDisplayComponent is stateless regarding rendering - no rich.live dependency, just returns Text objects
+  - Components that produce renderables (not manage Live) are simpler to test - no mocking needed
+---
+
+## 2026-02-06 - US-008
+- Integrated StreamDisplayComponent into RichCLIRenderer for real-time LLM response streaming
+- `_handle_think()` extracts `response` text from non-done broadcasts and appends to StreamDisplayComponent
+- `_handle_see()` clears StreamDisplayComponent when a new STAR loop begins (new user message)
+- `_refresh_display()` composes spinner + stream text into `Group()` for simultaneous display via Live
+- Stream display line_threshold configured from `max_output_lines` constructor param
+- Added 13 new tests in TestStreamDisplayIntegration class: streaming, clearing, refresh composition, coexistence with tool cards
+- Total test count: 152 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_rich_cli_renderer.py`
+- **Learnings for future iterations:**
+  - `_refresh_display()` builds renderables list from spinner + stream_display.buffer, composes with `Group()`
+  - Stream text appears below spinner in Live display (order matters in renderables list)
+  - `done=True` response is printed via `console.print()` (persisted), not streamed (transient)
+  - StreamDisplayComponent.buffer being truthy is a simple check for whether to include stream in display
+  - ruff catches unused local variables - watch for test helpers that create agents not used in the test
+---
