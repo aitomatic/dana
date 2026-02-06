@@ -1,4 +1,4 @@
-"""Tests for RichCLIRenderer message routing, spinner, streaming, and status line integration."""
+"""Tests for RichCLIRenderer message routing, spinner, streaming, status line, and result panel integration."""
 
 from unittest.mock import MagicMock, patch
 
@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from dana.cli.components.progress_tracker import ProgressTrackerComponent
+from dana.cli.components.result_panel import ResultPanelComponent
 from dana.cli.components.spinner import SpinnerComponent
 from dana.cli.components.status_line import StatusLineComponent
 from dana.cli.components.stream_display import StreamDisplayComponent
@@ -1474,3 +1475,502 @@ class TestProgressTrackerInRefreshDisplay:
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
         assert len(group.renderables) == 1  # Only progress tracker
+
+
+class TestResultPanelIntegration:
+    """Test result panel creation and management through RichCLIRenderer handlers."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        """Create a renderer with Live mocked to avoid terminal output."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        """Replace _ensure_live, _stop_live, _refresh_display with no-ops."""
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_handle_act_creates_result_panels(self) -> None:
+        """Tool results in ACT broadcasts create ResultPanelComponent instances."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [
+            {"function": "bash", "output": "file1.py\nfile2.py", "exit_code": 0},
+        ]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        assert len(renderer.state.current_turn_results) == 1
+        panel = renderer.state.current_turn_results[0]
+        assert isinstance(panel, ResultPanelComponent)
+        assert panel.tool_name == "bash"
+        assert panel.output == "file1.py\nfile2.py"
+        assert panel.exit_code == 0
+        assert panel.is_recent is True
+
+    def test_handle_act_creates_multiple_result_panels(self) -> None:
+        """Multiple tool results create multiple ResultPanelComponents."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [
+            {"function": "bash", "output": "output1", "exit_code": 0},
+            {"function": "grep", "output": "output2", "exit_code": 0},
+            {"function": "read_file", "output": "output3", "exit_code": 0},
+        ]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        assert len(renderer.state.current_turn_results) == 3
+        assert renderer.state.current_turn_results[0].tool_name == "bash"
+        assert renderer.state.current_turn_results[1].tool_name == "grep"
+        assert renderer.state.current_turn_results[2].tool_name == "read_file"
+
+    def test_handle_act_no_results_no_panels(self) -> None:
+        """No tool_results creates no result panels."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_act(agent, {"tool_calls": []})
+        assert len(renderer.state.current_turn_results) == 0
+
+    def test_handle_act_empty_results_no_panels(self) -> None:
+        """Empty tool_results list creates no result panels."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": []})
+        assert len(renderer.state.current_turn_results) == 0
+
+    def test_handle_act_skips_non_dict_results(self) -> None:
+        """Non-dict items in tool_results are skipped."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [
+            {"function": "bash", "output": "ok", "exit_code": 0},
+            "not a dict",
+            42,
+            {"function": "grep", "output": "found", "exit_code": 0},
+        ]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+        assert len(renderer.state.current_turn_results) == 2
+
+    def test_handle_act_uses_tool_key_fallback(self) -> None:
+        """Falls back to 'tool' key when 'function' is not present."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [
+            {"tool": "custom_tool", "output": "result", "exit_code": 0},
+        ]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        assert len(renderer.state.current_turn_results) == 1
+        assert renderer.state.current_turn_results[0].tool_name == "custom_tool"
+
+    def test_handle_act_defaults_unknown_tool_name(self) -> None:
+        """Defaults to 'unknown' when neither 'function' nor 'tool' present."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [{"output": "something", "exit_code": 0}]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        assert renderer.state.current_turn_results[0].tool_name == "unknown"
+
+    def test_handle_act_defaults_exit_code_zero(self) -> None:
+        """Default exit_code is 0 when not provided."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [{"function": "bash", "output": "ok"}]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        assert renderer.state.current_turn_results[0].exit_code == 0
+
+    def test_handle_act_non_int_exit_code_defaults_zero(self) -> None:
+        """Non-integer exit_code defaults to 0."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [{"function": "bash", "output": "ok", "exit_code": "error"}]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        assert renderer.state.current_turn_results[0].exit_code == 0
+
+    def test_handle_act_accumulates_across_broadcasts(self) -> None:
+        """Multiple ACT broadcasts accumulate result panels."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_act(
+            agent,
+            {"tool_calls": [], "tool_results": [{"function": "bash", "output": "o1"}]},
+        )
+        renderer._handle_act(
+            agent,
+            {"tool_calls": [], "tool_results": [{"function": "grep", "output": "o2"}]},
+        )
+
+        assert len(renderer.state.current_turn_results) == 2
+        assert renderer.state.current_turn_results[0].tool_name == "bash"
+        assert renderer.state.current_turn_results[1].tool_name == "grep"
+
+    def test_new_results_are_recent(self) -> None:
+        """All newly created result panels have is_recent=True."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [
+            {"function": "bash", "output": "out1", "exit_code": 0},
+            {"function": "grep", "output": "out2", "exit_code": 0},
+        ]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        for panel in renderer.state.current_turn_results:
+            assert panel.is_recent is True
+
+
+class TestRecentToHistoricalTransition:
+    """Test that current_turn_results transition to historical on new STAR loop."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_see_moves_current_to_historical(self) -> None:
+        """SEE phase moves current_turn_results to historical_results."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Simulate ACT phase creating results
+        tool_results = [
+            {"function": "bash", "output": "output1", "exit_code": 0},
+            {"function": "grep", "output": "output2", "exit_code": 0},
+        ]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+        assert len(renderer.state.current_turn_results) == 2
+        assert len(renderer.state.historical_results) == 0
+
+        # New STAR loop (SEE) transitions results
+        renderer._handle_see(agent, {"caller_message": "new question"})
+        assert len(renderer.state.current_turn_results) == 0
+        assert len(renderer.state.historical_results) == 2
+
+    def test_historical_panels_marked_not_recent(self) -> None:
+        """Transitioned panels have is_recent=False."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [{"function": "bash", "output": "output", "exit_code": 0}]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+
+        # Verify initially recent
+        assert renderer.state.current_turn_results[0].is_recent is True
+
+        # Transition
+        renderer._handle_see(agent, {"caller_message": "next"})
+
+        # Now historical - should be not recent
+        assert renderer.state.historical_results[0].is_recent is False
+
+    def test_selection_resets_on_transition(self) -> None:
+        """selected_index resets to -1 when results transition to historical."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [
+            {"function": "bash", "output": "o1"},
+            {"function": "grep", "output": "o2"},
+        ]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+        renderer.state.selected_index = 1
+
+        renderer._handle_see(agent, {"caller_message": "next"})
+        assert renderer.state.selected_index == -1
+
+    def test_expanded_indices_clear_on_transition(self) -> None:
+        """expanded_indices clears when results transition to historical."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_results = [{"function": "bash", "output": "o1"}]
+        renderer._handle_act(agent, {"tool_calls": [], "tool_results": tool_results})
+        renderer.state.expanded_indices.add(0)
+
+        renderer._handle_see(agent, {"caller_message": "next"})
+        assert len(renderer.state.expanded_indices) == 0
+
+    def test_no_transition_when_no_current_results(self) -> None:
+        """SEE with no current results doesn't add empty entries to historical."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "first"})
+        assert len(renderer.state.historical_results) == 0
+        assert len(renderer.state.current_turn_results) == 0
+
+    def test_multiple_transitions_accumulate_history(self) -> None:
+        """Multiple STAR loops accumulate historical results."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # First turn
+        renderer._handle_act(
+            agent,
+            {"tool_calls": [], "tool_results": [{"function": "bash", "output": "turn1"}]},
+        )
+        assert len(renderer.state.current_turn_results) == 1
+
+        # Second turn (transition first to historical)
+        renderer._handle_see(agent, {"caller_message": "q2"})
+        renderer._handle_act(
+            agent,
+            {"tool_calls": [], "tool_results": [{"function": "grep", "output": "turn2"}]},
+        )
+        assert len(renderer.state.historical_results) == 1
+        assert len(renderer.state.current_turn_results) == 1
+
+        # Third turn (transition both to historical)
+        renderer._handle_see(agent, {"caller_message": "q3"})
+        assert len(renderer.state.historical_results) == 2
+        assert len(renderer.state.current_turn_results) == 0
+
+    def test_historical_order_preserved(self) -> None:
+        """Historical results maintain chronological order across transitions."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # First turn - 2 results
+        renderer._handle_act(
+            agent,
+            {
+                "tool_calls": [],
+                "tool_results": [
+                    {"function": "bash", "output": "first"},
+                    {"function": "grep", "output": "second"},
+                ],
+            },
+        )
+
+        # Second turn - 1 result
+        renderer._handle_see(agent, {"caller_message": "q2"})
+        renderer._handle_act(
+            agent,
+            {"tool_calls": [], "tool_results": [{"function": "read_file", "output": "third"}]},
+        )
+
+        # Third turn - transition all
+        renderer._handle_see(agent, {"caller_message": "q3"})
+
+        # Historical should have all 3 in order
+        assert len(renderer.state.historical_results) == 3
+        assert renderer.state.historical_results[0].tool_name == "bash"
+        assert renderer.state.historical_results[1].tool_name == "grep"
+        assert renderer.state.historical_results[2].tool_name == "read_file"
+
+    def test_full_star_loop_with_results(self) -> None:
+        """Verify complete STAR loop creates and transitions result panels."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # First STAR loop
+        renderer._handle_see(agent, {"caller_message": "hello"})
+        renderer._handle_think(
+            agent,
+            {"done": False, "tool_calls": [{"function": "bash", "arguments": {"command": "ls"}}]},
+        )
+        renderer._handle_act(
+            agent,
+            {
+                "tool_calls": [{"function": "bash"}],
+                "tool_results": [{"function": "bash", "output": "file1.py", "exit_code": 0}],
+            },
+        )
+        renderer._handle_think(agent, {"done": True, "response": "Found files"})
+
+        # Results are current
+        assert len(renderer.state.current_turn_results) == 1
+        assert renderer.state.current_turn_results[0].is_recent is True
+
+        # Second STAR loop starts - transition
+        renderer._handle_see(agent, {"caller_message": "next question"})
+        assert len(renderer.state.current_turn_results) == 0
+        assert len(renderer.state.historical_results) == 1
+        assert renderer.state.historical_results[0].is_recent is False
+
+
+class TestResultPanelsInRefreshDisplay:
+    """Test that result panels appear in refresh display output."""
+
+    def test_refresh_includes_current_turn_results(self) -> None:
+        """Current turn result panels appear in Live display."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+
+        # Add a current turn result
+        panel = ResultPanelComponent(tool_name="bash", output="hello", is_recent=True)
+        renderer.state.current_turn_results.append(panel)
+
+        renderer._refresh_display()
+
+        mock_live.update.assert_called_once()
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        assert len(group.renderables) == 1  # Just the result panel
+
+    def test_refresh_includes_historical_results(self) -> None:
+        """Historical result panels appear in Live display."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+
+        panel = ResultPanelComponent(tool_name="bash", output="old", is_recent=False)
+        renderer.state.historical_results.append(panel)
+
+        renderer._refresh_display()
+
+        mock_live.update.assert_called_once()
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        assert len(group.renderables) == 1
+
+    def test_refresh_historical_before_recent(self) -> None:
+        """Historical results render before recent results in display."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+
+        # Add historical
+        hist = ResultPanelComponent(tool_name="old_bash", output="old", is_recent=False)
+        renderer.state.historical_results.append(hist)
+
+        # Add current
+        curr = ResultPanelComponent(tool_name="new_bash", output="new", is_recent=True)
+        renderer.state.current_turn_results.append(curr)
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        renderables = group.renderables
+        assert len(renderables) == 2
+
+        # First should be historical (dim border)
+        assert renderables[0].border_style == "dim"
+        # Second should be recent (cyan border)
+        assert renderables[1].border_style == "cyan"
+
+    def test_refresh_historical_always_collapsed(self) -> None:
+        """Historical results are always rendered collapsed."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+
+        # Short output that would normally be expanded by default
+        hist = ResultPanelComponent(tool_name="bash", output="short", is_recent=False)
+        renderer.state.historical_results.append(hist)
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        panel = group.renderables[0]
+        # Collapsed summary should contain the tool_name summary text
+        body_text = str(panel.renderable)
+        assert "bash -> exit code" in body_text
+
+    def test_refresh_recent_uses_selection_state(self) -> None:
+        """Recent results use selected_index for highlight."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+
+        p0 = ResultPanelComponent(tool_name="bash", output="o1", is_recent=True)
+        p1 = ResultPanelComponent(tool_name="grep", output="o2", is_recent=True)
+        renderer.state.current_turn_results = [p0, p1]
+        renderer.state.selected_index = 1
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        panels = group.renderables
+        # First panel: not selected (cyan)
+        assert panels[0].border_style == "cyan"
+        # Second panel: selected (bold yellow)
+        assert panels[1].border_style == "bold yellow"
+
+    def test_refresh_recent_uses_expanded_indices(self) -> None:
+        """Recent results use expanded_indices for expand state."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+
+        # Long output (>= 10 lines) - would be collapsed by default
+        long_output = "\n".join(f"line {i}" for i in range(20))
+        p0 = ResultPanelComponent(tool_name="bash", output=long_output, is_recent=True)
+        renderer.state.current_turn_results = [p0]
+        renderer.state.expanded_indices = {0}  # Force expanded
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        panel = group.renderables[0]
+        # Expanded panel should show the actual output (not summary)
+        body_text = str(panel.renderable)
+        assert "line 0" in body_text
+        assert "line 19" in body_text
+
+    def test_refresh_all_components_with_results(self) -> None:
+        """All components render together: spinner + stream + results + progress + status."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+
+        renderer._spinner.start()
+        renderer._stream_display.append_chunk("Streaming...")
+
+        hist = ResultPanelComponent(tool_name="old", output="old", is_recent=False)
+        renderer.state.historical_results.append(hist)
+        curr = ResultPanelComponent(tool_name="new", output="new", is_recent=True)
+        renderer.state.current_turn_results.append(curr)
+
+        renderer._progress_tracker.update_todos([{"content": "Task", "status": "in_progress"}])
+        renderer._status_line.update(agent_id="agent", model="model")
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        # spinner + stream + historical + current + progress + status = 6
+        assert len(group.renderables) == 6

@@ -17,6 +17,7 @@ from rich.live import Live
 from rich.text import Text
 
 from dana.cli.components.progress_tracker import ProgressTrackerComponent
+from dana.cli.components.result_panel import ResultPanelComponent
 from dana.cli.components.spinner import SpinnerComponent
 from dana.cli.components.status_line import StatusLineComponent
 from dana.cli.components.stream_display import StreamDisplayComponent
@@ -100,8 +101,9 @@ class RichCLIRenderer(Notifiable):
     def _refresh_display(self) -> None:
         """Update the Live display with current state.
 
-        Renders spinner, streaming text, and status line together.
-        Status line is displayed at the bottom of the terminal output.
+        Renders components in order: spinner, streaming text, result panels
+        (historical collapsed, then recent interactive), progress tracker,
+        and status line at the bottom.
         """
         if self._live is None:
             return
@@ -113,6 +115,16 @@ class RichCLIRenderer(Notifiable):
 
         if self._stream_display.buffer:
             renderables.append(self._stream_display.render())
+
+        # Historical results (always collapsed, dimmed)
+        for panel in self.state.historical_results:
+            renderables.append(panel.render(expanded=False))
+
+        # Current turn results (interactive with keyboard navigation)
+        for i, panel in enumerate(self.state.current_turn_results):
+            is_selected = i == self.state.selected_index
+            is_expanded = i in self.state.expanded_indices
+            renderables.append(panel.render(expanded=is_expanded, selected=is_selected))
 
         # Progress tracker above status line
         progress_table = self._progress_tracker.render()
@@ -207,8 +219,18 @@ class RichCLIRenderer(Notifiable):
 
         Updates spinner to SEE phase with perception count info.
         Clears the stream display for the new STAR loop.
+        Transitions current_turn_results to historical_results.
         """
         self.state.current_phase = "SEE"
+
+        # Transition current turn results to historical
+        if self.state.current_turn_results:
+            for panel in self.state.current_turn_results:
+                panel.is_recent = False
+            self.state.historical_results.extend(self.state.current_turn_results)
+            self.state.current_turn_results = []
+            self.state.selected_index = -1
+            self.state.expanded_indices.clear()
 
         # Clear stream display for new STAR loop (new user message)
         self._stream_display.clear()
@@ -278,12 +300,31 @@ class RichCLIRenderer(Notifiable):
         """Handle ACT phase (trace_outputs) broadcasts.
 
         Flushes pending tool cards then updates spinner to ACT phase.
+        Creates ResultPanelComponent for each tool result.
         Cards render before spinner during ACT phase.
         """
         self.state.current_phase = "ACT"
 
         # Flush tool cards before spinner so they appear first
         self._flush_tool_cards()
+
+        # Create result panels from tool_results
+        tool_results = data.get("tool_results", [])
+        if tool_results and isinstance(tool_results, list):
+            for result in tool_results:
+                if isinstance(result, dict):
+                    tool_name = result.get("function", result.get("tool", "unknown"))
+                    output = result.get("output", "")
+                    exit_code = result.get("exit_code", 0)
+                    if not isinstance(exit_code, int):
+                        exit_code = 0
+                    panel = ResultPanelComponent(
+                        tool_name=str(tool_name),
+                        output=str(output),
+                        exit_code=exit_code,
+                        is_recent=True,
+                    )
+                    self.state.current_turn_results.append(panel)
 
         self._ensure_live()
         if not self._spinner.running:
