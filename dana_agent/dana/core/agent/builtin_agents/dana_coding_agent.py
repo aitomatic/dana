@@ -1,7 +1,7 @@
 from dana.core.agent.builtin_agents.explore import ExploreAgent
 from dana.core.agent.star_agent import STARAgent
 from dana.core.knowledge.prompts.codecs import AbstractCodec, NativeToolsCodec
-from dana.core.resource import BashResource, FileEditResource, FileIOResource, SearchResource, TaskResource, ToDoResource
+from dana.core.resource import BashResource, DanaSkillResource, FileEditResource, FileIOResource, SearchResource, TaskResource, ToDoResource
 
 
 IDENTITY = """
@@ -166,6 +166,7 @@ class DanaCodingAgent(STARAgent):
             FileEditResource(resource_id="file-edit"),
             SearchResource(resource_id="search"),
             TaskResource(resource_id="task", agents={"explore": explore_agent}),
+            DanaSkillResource(resource_id="skills", agent=self),
         )
 
 
