@@ -34,11 +34,12 @@ class ResultPanelComponent:
         """Whether this panel should be expanded by default (<10 lines)."""
         return self._line_count < 10
 
-    def render(self, expanded: bool | None = None) -> Panel:
+    def render(self, expanded: bool | None = None, selected: bool = False) -> Panel:
         """Render the result panel.
 
         Args:
             expanded: Override expand state. If None, uses default_expanded.
+            selected: Whether this panel is currently selected (keyboard nav highlight).
 
         Returns:
             A Rich Panel - collapsed shows summary, expanded shows full output.
@@ -51,22 +52,20 @@ class ResultPanelComponent:
         else:
             body = self._collapsed_summary()
 
-        if self.is_recent:
-            return Panel(
-                body,
-                title=self.tool_name,
-                title_align="left",
-                border_style="cyan",
-                expand=False,
-            )
+        if selected and self.is_recent:
+            border_style = "bold yellow"
+        elif self.is_recent:
+            border_style = "cyan"
         else:
-            return Panel(
-                body,
-                title=self.tool_name,
-                title_align="left",
-                border_style="dim",
-                expand=False,
-            )
+            border_style = "dim"
+
+        return Panel(
+            body,
+            title=self.tool_name,
+            title_align="left",
+            border_style=border_style,
+            expand=False,
+        )
 
     def _collapsed_summary(self) -> Text:
         """Generate collapsed summary text.

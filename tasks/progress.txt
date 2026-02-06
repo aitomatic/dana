@@ -29,6 +29,12 @@
 - Agent model: extract from `notifier.llm_client.model` with fallback to `notifier._llm_config["model"]`
 - Agent turn: `notifier._star_loop_count` (private int), `notifier.max_turns` (public int)
 - Subagent detection: track agent_id changes with `_agent_stack` - push parent on new ID, pop on known ID return
+- `rich.table.Table` stores cells in columns, NOT rows: access via `table.columns[col_index]._cells[row_index]`, NOT `table.rows[row_index]._cells[col_index]`
+- `_refresh_display()` render order: spinner → stream text → progress tracker → status line (top to bottom)
+- Use `list[RenderableType]` (from `rich.console`) when renderables list needs to hold mixed types (Text, Table, etc.)
+- ResultPanelComponent: stores state (tool_name, output, exit_code, is_recent), renders as Panel with collapse/expand
+- Recent panels: `border_style="cyan"`, historical panels: `border_style="dim"` for visual distinction
+- `Panel.border_style` is readable for test assertions
 
 ---
 
@@ -197,4 +203,86 @@
   - Subagent detection via agent_id change: new ID = push parent to stack, known ID = pop back to it
   - Status line renders as `Text.from_markup(f"[dim]{status_text}[/dim]")` for visual distinction
   - `_update_agent_context()` called from `notify()` before routing - ensures status is always current
+---
+
+## 2026-02-06 - US-011
+- Implemented ProgressTrackerComponent in `dana/cli/components/progress_tracker.py`
+- Displays todo progress as a `rich.table.Table` with status icons: ✔ (completed/green), ● (in_progress/yellow), ○ (pending/dim)
+- `update_todos(todo_items)` updates internal list (copies to avoid mutation)
+- `render()` returns a Table with icon + task columns, or None if no todos
+- `render_summary()` returns compact `[N/M] Current task` string for progress bar display
+- Properties: `completed_count`, `total_count`, `current_task` for querying state
+- Updated `dana/cli/components/__init__.py` to export ProgressTrackerComponent
+- Created `tests/cli/test_progress_tracker.py` with 34 tests across 8 test classes
+- Total test count: 225 tests across all CLI test files
+- Files changed: `dana/cli/components/__init__.py`, `dana/cli/components/progress_tracker.py`, `tests/cli/test_progress_tracker.py`
+- **Learnings for future iterations:**
+  - `rich.table.Table` stores cells in columns, NOT rows: `table.columns[col]._cells[row]`, not `row._cells[col]`
+  - `rich.table.Row` only has `style` and `end_section` attrs - no cell access
+  - Use a helper function `_get_cell(table, row, col)` to abstract this in tests
+  - ProgressTrackerComponent is pure-ish (depends only on rich.table + rich.text) - easy to test without mocking
+  - `render_summary()` provides a string alternative to `render()` - useful for integration into status line
+---
+
+## 2026-02-06 - US-012
+- Integrated ProgressTrackerComponent into RichCLIRenderer for real-time todo progress display
+- `_handle_think()` extracts `todo_list` from trace_thoughts broadcasts and updates ProgressTrackerComponent + RenderState
+- `_refresh_display()` renders progress tracker table above status line (order: spinner → stream → progress → status)
+- todo_list processed even on `done=True` broadcasts (before early return)
+- None or non-list todo_list values are safely ignored (won't clear existing todos)
+- Added `_progress_tracker` (ProgressTrackerComponent) to renderer constructor
+- Changed `renderables` type from `list[Text]` to `list[RenderableType]` to support Table objects
+- Added import for `ProgressTrackerComponent` and `RenderableType`
+- Added 15 new tests: TestProgressTrackerIntegration (9 tests) and TestProgressTrackerInRefreshDisplay (5 tests) + 1 init test
+- Total test count: 240 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_rich_cli_renderer.py`
+- **Learnings for future iterations:**
+  - `renderables` list type needed widening from `list[Text]` to `list[RenderableType]` when adding Table components
+  - `RenderableType` imported from `rich.console` (not `rich.protocol`)
+  - Progress tracker `render()` returns `None` when empty - safe to use `if table is not None` guard
+  - todo_list extraction placed before `done` check in `_handle_think()` so final broadcasts with todos are captured
+  - Existing tests unaffected because default ProgressTrackerComponent has no todos (render returns None)
+---
+
+## 2026-02-06 - US-013
+- Implemented ResultPanelComponent in `dana/cli/components/result_panel.py`
+- Renders tool results as `rich.panel.Panel` with collapse/expand support
+- Stores tool_name, output, exit_code, is_recent flag; computes line_count from output
+- `render(expanded)` returns Panel: expanded shows full output, collapsed shows summary
+- Collapsed summary format: `tool_name -> exit code N, M lines` (dimmed text)
+- Default expand: expanded if <10 lines, collapsed if >=10 lines
+- Visual distinction: recent panels have cyan border, historical panels have dim border
+- `is_recent` flag can be toggled for recent→historical transitions
+- Updated `dana/cli/components/__init__.py` to export ResultPanelComponent
+- Created `tests/cli/test_result_panel.py` with 32 tests across 8 test classes
+- Total test count: 272 tests across all CLI test files
+- Files changed: `dana/cli/components/__init__.py`, `dana/cli/components/result_panel.py`, `tests/cli/test_result_panel.py`
+- **Learnings for future iterations:**
+  - ResultPanelComponent is similar to ToolCardComponent but stores state (output, is_recent) unlike ToolCard which is stateless
+  - `Panel.border_style` is accessible as a property for testing assertions
+  - `expanded: bool | None = None` pattern allows default-or-override expand behavior
+  - `str.split("\n")` on N-line output produces N elements (e.g., `range(20)` joined by `\n` = 20 lines, not 21)
+  - Recent panels use cyan border for visual prominence; historical use dim for visual de-emphasis
+- Selected panels use `bold yellow` border for keyboard navigation highlight
+- Keyboard navigation methods: `select_up()`, `select_down()`, `toggle_expand()` on RichCLIRenderer
+---
+
+## 2026-02-06 - US-014
+- Implemented keyboard navigation for result panels in RichCLIRenderer
+- Added `select_up()`, `select_down()`, `toggle_expand()` methods to RichCLIRenderer
+- `select_up()`/`select_down()` navigate `state.selected_index` among `current_turn_results` with wrapping
+- `toggle_expand()` adds/removes `state.selected_index` from `state.expanded_indices`
+- All methods are no-ops when `current_turn_results` is empty (historical results are not navigable)
+- Added `selected` parameter to `ResultPanelComponent.render()` for visual highlight
+- Selected+recent panels: `bold yellow` border; unselected+recent: `cyan`; historical: `dim` (regardless of selected)
+- Simplified ResultPanelComponent.render() by deduplicating Panel construction into single return
+- Created `tests/cli/test_keyboard_navigation.py` with 27 tests across 7 test classes
+- Total test count: 299 tests across all CLI test files
+- Files changed: `dana/cli/components/result_panel.py`, `dana/cli/rich_cli_renderer.py`, `tests/cli/test_keyboard_navigation.py`
+- **Learnings for future iterations:**
+  - Keyboard state management is pure logic (no terminal key event handling) - methods manipulate RenderState
+  - `selected` is a render-time parameter, not stored on ResultPanelComponent - caller decides via state.selected_index
+  - Wrapping navigation: `select_down` from last goes to 0, `select_up` from 0 goes to last
+  - `expanded_indices` is a set, independent from `selected_index` - toggling is add/discard pattern
+  - Historical results are not selectable because navigation only counts `current_turn_results`
 ---

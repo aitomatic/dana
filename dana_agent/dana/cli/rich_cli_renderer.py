@@ -298,6 +298,51 @@ class RichCLIRenderer(Notifiable):
         self._spinner.update_phase("ACT", {"tools": tool_names} if tool_names else None)
         self._refresh_display()
 
+    def select_up(self) -> None:
+        """Move selection up among current turn results.
+
+        Wraps around to the last result if at the top.
+        Only operates on current_turn_results (recent/interactive).
+        """
+        count = len(self.state.current_turn_results)
+        if count == 0:
+            return
+
+        if self.state.selected_index <= 0:
+            self.state.selected_index = count - 1
+        else:
+            self.state.selected_index -= 1
+
+    def select_down(self) -> None:
+        """Move selection down among current turn results.
+
+        Wraps around to the first result if at the bottom.
+        Only operates on current_turn_results (recent/interactive).
+        """
+        count = len(self.state.current_turn_results)
+        if count == 0:
+            return
+
+        if self.state.selected_index >= count - 1:
+            self.state.selected_index = 0
+        else:
+            self.state.selected_index += 1
+
+    def toggle_expand(self) -> None:
+        """Toggle expand/collapse for the currently selected result.
+
+        Only operates on current_turn_results (recent/interactive).
+        No-op if no result is selected or index is out of range.
+        """
+        idx = self.state.selected_index
+        if idx < 0 or idx >= len(self.state.current_turn_results):
+            return
+
+        if idx in self.state.expanded_indices:
+            self.state.expanded_indices.discard(idx)
+        else:
+            self.state.expanded_indices.add(idx)
+
     def _handle_reflect(self, notifier: object, data: DictParams) -> None:
         """Handle REFLECT phase (trace_learning) broadcasts."""
 
