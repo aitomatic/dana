@@ -229,7 +229,7 @@ class TestSpinnerIntegration:
 
     def _make_renderer(self) -> RichCLIRenderer:
         """Create a renderer with Live mocked to avoid terminal output."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> MagicMock:
@@ -478,7 +478,7 @@ class TestLiveContextManagement:
     """Test _ensure_live, _stop_live, and _refresh_display methods."""
 
     def test_ensure_live_creates_live_instance(self) -> None:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         assert renderer._live is None
         renderer._ensure_live()
         assert renderer._live is not None
@@ -486,7 +486,7 @@ class TestLiveContextManagement:
         renderer._stop_live()
 
     def test_ensure_live_idempotent(self) -> None:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         renderer._ensure_live()
         first_live = renderer._live
         renderer._ensure_live()
@@ -495,7 +495,7 @@ class TestLiveContextManagement:
         renderer._stop_live()
 
     def test_stop_live_clears_instance(self) -> None:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         renderer._ensure_live()
         assert renderer._live is not None
         renderer._stop_live()
@@ -516,7 +516,7 @@ class TestToolCardIntegration:
 
     def _make_renderer(self) -> RichCLIRenderer:
         """Create a renderer with Live mocked to avoid terminal output."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> None:
@@ -744,7 +744,7 @@ class TestStreamDisplayIntegration:
 
     def _make_renderer(self) -> RichCLIRenderer:
         """Create a renderer with Live mocked to avoid terminal output."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> None:
@@ -918,7 +918,7 @@ class TestStatusLineIntegration:
 
     def _make_renderer(self) -> RichCLIRenderer:
         """Create a renderer with Live mocked to avoid terminal output."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> None:
@@ -1012,7 +1012,7 @@ class TestSubagentTransitions:
     """Test status line behavior during agent transitions."""
 
     def _make_renderer(self) -> RichCLIRenderer:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> None:
@@ -1131,7 +1131,7 @@ class TestStatusLineInRefreshDisplay:
 
     def test_refresh_includes_status_line(self) -> None:
         """Status line text appears in Live display when agent context is set."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1149,7 +1149,7 @@ class TestStatusLineInRefreshDisplay:
 
     def test_refresh_includes_status_with_stream(self) -> None:
         """Status line, spinner, and stream text all render together."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1167,7 +1167,7 @@ class TestStatusLineInRefreshDisplay:
 
     def test_refresh_status_line_at_bottom(self) -> None:
         """Status line is the last renderable in the group (at bottom)."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1184,7 +1184,7 @@ class TestStatusLineInRefreshDisplay:
 
     def test_refresh_no_status_when_empty(self) -> None:
         """No status line renderable when status line renders empty string."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1199,7 +1199,7 @@ class TestStatusLineInRefreshDisplay:
 
     def test_status_only_when_spinner_stopped(self) -> None:
         """Status line shows even when spinner is not running."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1217,7 +1217,7 @@ class TestProgressTrackerIntegration:
 
     def _make_renderer(self) -> RichCLIRenderer:
         """Create a renderer with Live mocked to avoid terminal output."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> None:
@@ -1367,7 +1367,7 @@ class TestProgressTrackerInRefreshDisplay:
 
     def test_refresh_includes_progress_tracker(self) -> None:
         """Progress tracker table appears in Live display when todos exist."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1390,7 +1390,7 @@ class TestProgressTrackerInRefreshDisplay:
 
     def test_refresh_no_progress_when_empty(self) -> None:
         """No progress tracker renderable when no todos exist."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1404,7 +1404,7 @@ class TestProgressTrackerInRefreshDisplay:
 
     def test_refresh_progress_above_status_line(self) -> None:
         """Progress tracker appears above status line in display order."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1437,7 +1437,7 @@ class TestProgressTrackerInRefreshDisplay:
 
     def test_refresh_all_components_together(self) -> None:
         """Spinner + stream + progress + status all render together."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1459,7 +1459,7 @@ class TestProgressTrackerInRefreshDisplay:
 
     def test_progress_only_when_spinner_stopped(self) -> None:
         """Progress tracker shows even when spinner is not running."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1482,7 +1482,7 @@ class TestResultPanelIntegration:
 
     def _make_renderer(self) -> RichCLIRenderer:
         """Create a renderer with Live mocked to avoid terminal output."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> None:
@@ -1647,7 +1647,7 @@ class TestRecentToHistoricalTransition:
     """Test that current_turn_results transition to historical on new STAR loop."""
 
     def _make_renderer(self) -> RichCLIRenderer:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         return renderer
 
     def _patch_live(self, renderer: RichCLIRenderer) -> None:
@@ -1830,7 +1830,7 @@ class TestResultPanelsInRefreshDisplay:
 
     def test_refresh_includes_current_turn_results(self) -> None:
         """Current turn result panels appear in Live display."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1848,7 +1848,7 @@ class TestResultPanelsInRefreshDisplay:
 
     def test_refresh_includes_historical_results(self) -> None:
         """Historical result panels appear in Live display."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1865,7 +1865,7 @@ class TestResultPanelsInRefreshDisplay:
 
     def test_refresh_historical_before_recent(self) -> None:
         """Historical results render before recent results in display."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1891,7 +1891,7 @@ class TestResultPanelsInRefreshDisplay:
 
     def test_refresh_historical_always_collapsed(self) -> None:
         """Historical results are always rendered collapsed."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1910,7 +1910,7 @@ class TestResultPanelsInRefreshDisplay:
 
     def test_refresh_recent_uses_selection_state(self) -> None:
         """Recent results use selected_index for highlight."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1931,7 +1931,7 @@ class TestResultPanelsInRefreshDisplay:
 
     def test_refresh_recent_uses_expanded_indices(self) -> None:
         """Recent results use expanded_indices for expand state."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
@@ -1953,7 +1953,7 @@ class TestResultPanelsInRefreshDisplay:
 
     def test_refresh_all_components_with_results(self) -> None:
         """All components render together: spinner + stream + results + progress + status."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live

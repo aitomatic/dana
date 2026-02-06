@@ -24,7 +24,7 @@ class _FakeAgent:
 
 def _make_renderer() -> RichCLIRenderer:
     """Create a renderer with Live/display mocked out."""
-    renderer = RichCLIRenderer(console=Console(force_terminal=False))
+    renderer = RichCLIRenderer(console=Console(force_terminal=True))
     renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
     renderer._stop_live = MagicMock()  # type: ignore[method-assign]
     renderer._refresh_display = MagicMock()  # type: ignore[method-assign]

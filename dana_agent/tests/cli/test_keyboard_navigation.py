@@ -10,7 +10,7 @@ class TestSelectDown:
     """Test select_down() navigation."""
 
     def _make_renderer_with_results(self, count: int = 3) -> RichCLIRenderer:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         for i in range(count):
             renderer.state.current_turn_results.append(ResultPanelComponent(tool_name=f"tool_{i}", output=f"output {i}"))
         return renderer
@@ -37,7 +37,7 @@ class TestSelectDown:
 
     def test_select_down_no_results_noop(self) -> None:
         """No-op when there are no current turn results."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         renderer.state.selected_index = -1
         renderer.select_down()
         assert renderer.state.selected_index == -1
@@ -54,7 +54,7 @@ class TestSelectUp:
     """Test select_up() navigation."""
 
     def _make_renderer_with_results(self, count: int = 3) -> RichCLIRenderer:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         for i in range(count):
             renderer.state.current_turn_results.append(ResultPanelComponent(tool_name=f"tool_{i}", output=f"output {i}"))
         return renderer
@@ -81,7 +81,7 @@ class TestSelectUp:
 
     def test_select_up_no_results_noop(self) -> None:
         """No-op when there are no current turn results."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         renderer.state.selected_index = -1
         renderer.select_up()
         assert renderer.state.selected_index == -1
@@ -98,7 +98,7 @@ class TestToggleExpand:
     """Test toggle_expand() for selected result."""
 
     def _make_renderer_with_results(self, count: int = 3) -> RichCLIRenderer:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         for i in range(count):
             renderer.state.current_turn_results.append(ResultPanelComponent(tool_name=f"tool_{i}", output=f"output {i}"))
         return renderer
@@ -143,7 +143,7 @@ class TestToggleExpand:
 
     def test_toggle_noop_when_no_results(self) -> None:
         """No-op when there are no current turn results."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         renderer.state.selected_index = 0
         renderer.toggle_expand()
         assert len(renderer.state.expanded_indices) == 0
@@ -167,7 +167,7 @@ class TestHistoricalNotSelectable:
 
     def test_navigation_only_counts_current_turn(self) -> None:
         """select_down only navigates current_turn_results, not historical."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         # Add historical results
         renderer.state.historical_results.append(ResultPanelComponent(tool_name="old", output="old output", is_recent=False))
@@ -183,7 +183,7 @@ class TestHistoricalNotSelectable:
 
     def test_toggle_only_affects_current_turn(self) -> None:
         """toggle_expand only works on current_turn_results."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         # Add historical results
         renderer.state.historical_results.append(ResultPanelComponent(tool_name="old", output="old output", is_recent=False))
@@ -198,7 +198,7 @@ class TestHistoricalNotSelectable:
 
     def test_empty_current_turn_with_historical_noop(self) -> None:
         """Navigation is no-op even if historical results exist but current is empty."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         renderer.state.historical_results.append(ResultPanelComponent(tool_name="old", output="old", is_recent=False))
         # No current turn results
@@ -243,7 +243,7 @@ class TestNavigationWorkflow:
     """Test navigation workflows combining multiple operations."""
 
     def _make_renderer_with_results(self, count: int = 3) -> RichCLIRenderer:
-        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
         for i in range(count):
             renderer.state.current_turn_results.append(ResultPanelComponent(tool_name=f"tool_{i}", output=f"output {i}"))
         return renderer

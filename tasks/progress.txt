@@ -35,6 +35,18 @@
 - ResultPanelComponent: stores state (tool_name, output, exit_code, is_recent), renders as Panel with collapse/expand
 - Recent panels: `border_style="cyan"`, historical panels: `border_style="dim"` for visual distinction
 - `Panel.border_style` is readable for test assertions
+- Broadcast data: `trace_outputs.tool_results` is `list[dict]` with keys: `function`/`tool` (name), `output` (str), `exit_code` (int)
+- Result panel lifecycle: created in `_handle_act()` (is_recent=True) → transitioned in `_handle_see()` (is_recent=False, moved to historical)
+- `_refresh_display()` render order: spinner → stream → historical results (collapsed) → current results (interactive) → progress → status
+- Thread safety: `notify()` acquires `_lock` at top level (all handlers run under lock); keyboard nav methods (`select_up`, `select_down`, `toggle_expand`) acquire lock independently
+- `threading.Lock()` returns an object, not a type - can't use `isinstance()` for type checking
+- Terminal capability detection: `console.color_system is not None` for color support, `console.width` for terminal width
+- No-color fallback: `_has_color=False` skips `_ensure_live()`, prints plain text via `console.print()` with phase prefix (e.g., `[SEE]`, `[THINK]`, `[ACT]`)
+- Tool cards in no-color mode: print `-> tool_name: key=value` instead of Panel rendering
+- SIGWINCH handler: install in `_install_resize_handler()`, chain to previous handler with `is` comparison (not `==`) for SIG_DFL/SIG_IGN
+- Tests with `Console(force_terminal=False)` have `color_system=None` → triggers no-color path; use `Console(force_terminal=True)` for tests that expect rich/color behavior
+- `signal.signal()` with MagicMock as handler doesn't work: Python converts MagicMock via `__int__()` → use real functions as signal handler mocks in tests
+- `_truncate_for_width()` accounts for panel borders (6 chars) and has a minimum of 10 chars
 
 ---
 
@@ -285,4 +297,65 @@
   - Wrapping navigation: `select_down` from last goes to 0, `select_up` from 0 goes to last
   - `expanded_indices` is a set, independent from `selected_index` - toggling is add/discard pattern
   - Historical results are not selectable because navigation only counts `current_turn_results`
+---
+
+## 2026-02-06 - US-015
+- Integrated result panels into RichCLIRenderer with recent/historical transition
+- `_handle_act()` creates `ResultPanelComponent` for each tool result in `trace_outputs.tool_results`
+- Tool result dict keys: `function` (or `tool` fallback) for name, `output` for content, `exit_code` for status
+- `_handle_see()` transitions `current_turn_results` to `historical_results` on new STAR loop
+- Transition sets `is_recent=False` on moved panels, resets `selected_index` to -1, clears `expanded_indices`
+- `_refresh_display()` renders historical (always collapsed) then recent (interactive with keyboard nav)
+- Display order in `_refresh_display()`: spinner → stream → historical results → current results → progress → status
+- Added `ResultPanelComponent` import to `rich_cli_renderer.py`
+- Added 11 tests in TestResultPanelIntegration, 8 tests in TestRecentToHistoricalTransition, 7 tests in TestResultPanelsInRefreshDisplay
+- Total test count: 325 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_rich_cli_renderer.py`
+- **Learnings for future iterations:**
+  - `trace_outputs.tool_results` is list of dicts with `function`/`tool`, `output`, `exit_code` keys
+  - Result panel creation happens in `_handle_act()`, transition happens in `_handle_see()` (new STAR loop)
+  - Historical panels always render collapsed (`expanded=False`) regardless of line count
+  - `_handle_see()` is the right place for recent→historical transition since it signals a new user message
+  - Selection state (`selected_index`, `expanded_indices`) must be reset during transition to avoid stale references
+  - `_refresh_display()` render order matters: historical before current ensures chronological display
+---
+
+## 2026-02-06 - US-016
+- Added thread safety to RichCLIRenderer via `threading.Lock`
+- Lock protects all state mutations: `notify()` wraps entire handler dispatch, `select_up()`/`select_down()`/`toggle_expand()` each acquire lock
+- `_lock` initialized in constructor as `threading.Lock()`
+- Lock scope: `notify()` acquires lock once at top level, so all handlers (`_handle_see`, `_handle_think`, `_handle_act`, etc.) run under lock without needing nested locks
+- Keyboard navigation methods acquire lock independently since they're called from different threads (UI thread)
+- Created `tests/cli/test_thread_safety.py` with 12 tests across 6 test classes
+- Test classes: TestLockExists, TestConcurrentBroadcasts, TestConcurrentKeyboardNavigation, TestConcurrentBroadcastsWithKeyboard, TestLockSerializesBroadcasts, TestNoDataCorruptionUnderLoad
+- Stress tests use `threading.Barrier` to synchronize thread starts for maximum contention
+- Total test count: 337 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_thread_safety.py`
+- **Learnings for future iterations:**
+  - `threading.Lock()` returns an object, not a type - `isinstance(lock, threading.Lock)` fails with TypeError; use `hasattr` checks instead
+  - Lock at `notify()` level is sufficient - handlers are always called within notify, so no nested locking needed
+  - `threading.Barrier(N)` is excellent for test contention - all threads wait until N arrive, then release simultaneously
+  - Keyboard navigation methods need independent locks because they're called from a different thread (UI/input thread) than broadcasts (agent thread)
+  - Python's GIL doesn't prevent all race conditions - list mutations (`append`, `extend`, `clear`) can still interleave between threads at the bytecode level
+---
+
+## 2026-02-06 - US-017
+- Added graceful degradation for limited terminals to RichCLIRenderer
+- Terminal capability detection: `_has_color` from `console.color_system`, `is_narrow` from `console.width < 80`, `terminal_width` property
+- No-color fallback: handlers print plain text with phase prefixes `[SEE]`, `[THINK]`, `[ACT]` instead of using Live context
+- Tool cards in no-color mode: print `-> tool_name: key=value` instead of rich Panel rendering
+- Narrow terminal: `_truncate_for_width()` truncates text with ellipsis, accounts for panel borders (6 chars), minimum 10 chars
+- SIGWINCH handler: `_install_resize_handler()` installs signal handler that calls `_refresh_display()` on resize, chains to previous handler
+- Handler chains using `is` comparison (not `==`) for SIG_DFL/SIG_IGN to avoid MagicMock `__int__()` confusion
+- Silently skips handler installation on Windows (no SIGWINCH) or non-main threads (ValueError from signal.signal)
+- Updated existing test files to use `Console(force_terminal=True)` instead of `Console(force_terminal=False)` to preserve rich behavior in tests
+- Created `tests/cli/test_graceful_degradation.py` with 36 tests across 7 test classes
+- Total test count: 373 tests across all CLI test files
+- Files changed: `dana/cli/rich_cli_renderer.py`, `tests/cli/test_graceful_degradation.py`, `tests/cli/test_rich_cli_renderer.py`, `tests/cli/test_keyboard_navigation.py`, `tests/cli/test_thread_safety.py`
+- **Learnings for future iterations:**
+  - `Console(force_terminal=False)` makes `color_system` return `None` → triggers no-color path; always use `Console(force_terminal=True)` for tests expecting rich behavior
+  - Python's `signal.signal()` converts MagicMock via `__int__()` → use real functions as signal handler mocks
+  - Use `is` (identity) not `==` (equality) when comparing signal handlers to SIG_DFL/SIG_IGN constants
+  - `signal.signal()` raises ValueError from non-main threads → wrap in try/except
+  - SIGWINCH not available on Windows → guard with `hasattr(signal, "SIGWINCH")`
 ---

@@ -3,6 +3,11 @@
 Implements the Notifiable protocol to receive STAR loop broadcasts and
 route them to phase-specific handlers for rich terminal display.
 
+Supports graceful degradation for limited terminals:
+- No color support: falls back to plain text output
+- Narrow terminals (<80 cols): truncates content to fit
+- Terminal resize: adapts without crashing
+
 Usage:
     from dana.cli.rich_cli_renderer import RichCLIRenderer
 
@@ -10,6 +15,7 @@ Usage:
     agent.with_notifiable(renderer)
 """
 
+import signal
 import threading
 from typing import Any
 
@@ -27,12 +33,21 @@ from dana.cli.state import RenderState
 from dana.common.protocols import DictParams, Notifiable
 
 
+# Minimum terminal width for rich rendering
+_MIN_RICH_WIDTH = 80
+
+
 class RichCLIRenderer(Notifiable):
     """A Notifiable that renders agent activity using Rich terminal components.
 
     Routes broadcast messages from agents to phase-specific handlers based
     on the broadcast key present in the message. Uses rich.live.Live for
     flicker-free terminal updates.
+
+    Graceful degradation:
+    - If the terminal has no color support, falls back to plain text output.
+    - If the terminal is narrower than 80 columns, tool card content is truncated.
+    - Terminal resize events (SIGWINCH) are handled without crashing.
     """
 
     def __init__(
@@ -59,8 +74,77 @@ class RichCLIRenderer(Notifiable):
         self._agent_stack: list[str] = []  # Track parent agent IDs for subagent transitions
         self._lock = threading.Lock()
 
+        # Detect terminal capabilities
+        self._has_color = self.console.color_system is not None
+        self._install_resize_handler()
+
+    def _install_resize_handler(self) -> None:
+        """Install a SIGWINCH handler to handle terminal resize gracefully.
+
+        Only installs on platforms that support SIGWINCH (Unix-like).
+        Falls back silently on Windows or when signal registration fails.
+        """
+        if not hasattr(signal, "SIGWINCH"):
+            return
+        try:
+            self._prev_sigwinch = signal.getsignal(signal.SIGWINCH)
+
+            def _on_resize(signum: int, frame: Any) -> None:
+                # Refresh display to adapt to new terminal size
+                try:
+                    self._refresh_display()
+                except Exception:
+                    pass  # Never crash on resize
+                # Chain to previous handler if it was callable
+                prev = self._prev_sigwinch
+                if callable(prev) and prev is not signal.SIG_DFL and prev is not signal.SIG_IGN:
+                    prev(signum, frame)
+
+            signal.signal(signal.SIGWINCH, _on_resize)
+        except (OSError, ValueError):
+            # signal.signal() can fail if not called from main thread
+            pass
+
+    @property
+    def has_color(self) -> bool:
+        """Whether the terminal supports color output."""
+        return self._has_color
+
+    @property
+    def terminal_width(self) -> int:
+        """Current terminal width in columns."""
+        return self.console.width
+
+    @property
+    def is_narrow(self) -> bool:
+        """Whether the terminal is narrower than the minimum width (80 cols)."""
+        return self.console.width < _MIN_RICH_WIDTH
+
+    def _truncate_for_width(self, text: str, max_width: int | None = None) -> str:
+        """Truncate text to fit within the terminal width.
+
+        Args:
+            text: The text to truncate.
+            max_width: Override max width. Defaults to console width - 6
+                       (accounting for panel borders and padding).
+
+        Returns:
+            Truncated text with ellipsis if needed.
+        """
+        if max_width is None:
+            # Account for panel borders (2 chars each side) + padding (1 char each side)
+            max_width = max(self.console.width - 6, 10)
+        if len(text) <= max_width:
+            return text
+        return text[: max_width - 1] + "…"
+
     def _ensure_live(self) -> None:
-        """Start the Live context if not already running."""
+        """Start the Live context if not already running.
+
+        Skipped if terminal has no color support (plain text mode).
+        """
+        if not self._has_color:
+            return
         if self._live is None:
             self._live = Live(
                 console=self.console,
@@ -81,6 +165,9 @@ class RichCLIRenderer(Notifiable):
         Tool cards are printed outside the Live context so they persist
         in terminal history. Live is temporarily stopped to avoid
         interleaving with the live display.
+
+        In no-color mode, prints plain text summaries instead of panels.
+        In narrow terminals, truncates content to fit.
         """
         if not self._pending_tool_cards:
             return
@@ -91,8 +178,20 @@ class RichCLIRenderer(Notifiable):
             self._stop_live()
 
         for tc in self._pending_tool_cards:
-            panel = self._tool_card.render(tc)
-            self.console.print(panel)
+            if not self._has_color:
+                # Plain text fallback: "-> tool_name: params"
+                func = tc.get("function", "unknown")
+                args = tc.get("arguments", {})
+                summary = f"-> {func}"
+                if args:
+                    params = ", ".join(f"{k}={v}" for k, v in args.items())
+                    if self.is_narrow:
+                        params = self._truncate_for_width(params)
+                    summary += f": {params}"
+                self.console.print(summary)
+            else:
+                panel = self._tool_card.render(tc)
+                self.console.print(panel)
 
         self._pending_tool_cards.clear()
 
@@ -247,7 +346,11 @@ class RichCLIRenderer(Notifiable):
         perception = data.get("perception", "")
         context = {"perception": perception} if perception else None
         self._spinner.update_phase("SEE", context)
-        self._refresh_display()
+
+        if not self._has_color:
+            self.console.print(f"[SEE] {self._spinner.text}")
+        else:
+            self._refresh_display()
 
     def _handle_think(self, notifier: object, data: DictParams) -> None:
         """Handle THINK phase (trace_thoughts) broadcasts.
@@ -275,7 +378,10 @@ class RichCLIRenderer(Notifiable):
 
             # Print final response if available
             if response and self.verbose:
-                self.console.print(Text(str(response)))
+                if self._has_color:
+                    self.console.print(Text(str(response)))
+                else:
+                    self.console.print(str(response))
             return
 
         # Stream response text if available
@@ -299,7 +405,10 @@ class RichCLIRenderer(Notifiable):
         else:
             self._spinner.update_phase("THINK")
 
-        self._refresh_display()
+        if not self._has_color:
+            self.console.print(f"[THINK] {self._spinner.text}")
+        else:
+            self._refresh_display()
 
     def _handle_act(self, notifier: object, data: DictParams) -> None:
         """Handle ACT phase (trace_outputs) broadcasts.
@@ -342,7 +451,11 @@ class RichCLIRenderer(Notifiable):
             tool_names = [tc.get("function", "unknown") for tc in tool_calls if isinstance(tc, dict)]
 
         self._spinner.update_phase("ACT", {"tools": tool_names} if tool_names else None)
-        self._refresh_display()
+
+        if not self._has_color:
+            self.console.print(f"[ACT] {self._spinner.text}")
+        else:
+            self._refresh_display()
 
     def select_up(self) -> None:
         """Move selection up among current turn results.
