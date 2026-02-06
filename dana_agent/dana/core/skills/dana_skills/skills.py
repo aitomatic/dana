@@ -409,7 +409,6 @@ Follow the skill instructions above. The skill content will remain in your conte
         Returns:
             Formatted task message for the subagent
         """
-        skill_content = skill.content
 
         scripts_note = ""
         if skill.scripts_dir:
@@ -426,13 +425,9 @@ This means:
 - Complete ALL instructions FIRST, then provide your final response
 - Your final response must be actionable/usable, not internal reasoning
 
-<skill name="{skill.name}">
-{skill_content}
-</skill>
-
-<context>
+<user_context>
 {context if context else "No additional context provided."}
-</context>
+</user_context>
 
 <parameters>
 {parameters if parameters else "No parameters provided."}
