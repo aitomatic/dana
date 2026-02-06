@@ -3,8 +3,10 @@
 from unittest.mock import MagicMock, patch
 
 from rich.console import Console
+from rich.panel import Panel
 
 from dana.cli.components.spinner import SpinnerComponent
+from dana.cli.components.tool_card import ToolCardComponent
 from dana.cli.rich_cli_renderer import RichCLIRenderer
 
 
@@ -56,6 +58,14 @@ class TestRichCLIRendererInit:
     def test_has_spinner_component(self) -> None:
         renderer = RichCLIRenderer()
         assert isinstance(renderer._spinner, SpinnerComponent)
+
+    def test_has_tool_card_component(self) -> None:
+        renderer = RichCLIRenderer()
+        assert isinstance(renderer._tool_card, ToolCardComponent)
+
+    def test_pending_tool_cards_initially_empty(self) -> None:
+        renderer = RichCLIRenderer()
+        assert renderer._pending_tool_cards == []
 
     def test_live_initially_none(self) -> None:
         renderer = RichCLIRenderer()
@@ -465,3 +475,231 @@ class TestLiveContextManagement:
     def test_refresh_display_noop_when_no_live(self) -> None:
         renderer = RichCLIRenderer()
         renderer._refresh_display()  # Should not raise
+
+
+class TestToolCardIntegration:
+    """Test tool card rendering through RichCLIRenderer handlers."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        """Create a renderer with Live mocked to avoid terminal output."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        """Replace _ensure_live, _stop_live, _refresh_display with no-ops."""
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_handle_think_queues_tool_cards(self) -> None:
+        """Tool calls in THINK phase are queued as pending tool cards."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [
+            {"function": "bash", "arguments": {"command": "ls"}},
+            {"function": "read_file", "arguments": {"path": "/tmp/test.py"}},
+        ]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+        assert len(renderer._pending_tool_cards) == 2
+        assert renderer._pending_tool_cards[0]["function"] == "bash"
+        assert renderer._pending_tool_cards[1]["function"] == "read_file"
+
+    def test_handle_think_no_tool_cards_when_show_tool_calls_false(self) -> None:
+        """Tool cards not queued when show_tool_calls is False."""
+        renderer = self._make_renderer()
+        renderer.show_tool_calls = False
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [{"function": "bash", "arguments": {"command": "ls"}}]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+        assert len(renderer._pending_tool_cards) == 0
+
+    def test_handle_think_no_tool_cards_when_empty_list(self) -> None:
+        """No tool cards queued when tool_calls is empty."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "tool_calls": []})
+        assert len(renderer._pending_tool_cards) == 0
+
+    def test_handle_think_no_tool_cards_when_missing(self) -> None:
+        """No tool cards queued when tool_calls is missing."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False})
+        assert len(renderer._pending_tool_cards) == 0
+
+    def test_handle_act_flushes_tool_cards(self) -> None:
+        """ACT phase flushes pending tool cards via console.print."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Queue some tool cards via THINK
+        tool_calls = [{"function": "bash", "arguments": {"command": "ls"}}]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+        assert len(renderer._pending_tool_cards) == 1
+
+        # ACT should flush them
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_act(agent, {"tool_calls": tool_calls})
+            assert mock_print.call_count == 1
+            # Verify a Panel was printed
+            printed_arg = mock_print.call_args[0][0]
+            assert isinstance(printed_arg, Panel)
+
+        # Queue should be empty after flush
+        assert len(renderer._pending_tool_cards) == 0
+
+    def test_handle_act_no_flush_when_no_pending(self) -> None:
+        """ACT phase does not call console.print when no tool cards pending."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_act(agent, {"tool_calls": []})
+            mock_print.assert_not_called()
+
+    def test_tool_cards_chronological_order(self) -> None:
+        """Tool cards are flushed in the order they were queued."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [
+            {"function": "bash", "arguments": {"command": "ls"}},
+            {"function": "grep", "arguments": {"pattern": "foo"}},
+            {"function": "read_file", "arguments": {"path": "/test"}},
+        ]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+
+        printed_panels: list[Panel] = []
+        with patch.object(renderer.console, "print", side_effect=lambda p: printed_panels.append(p)):
+            renderer._handle_act(agent, {"tool_calls": tool_calls})
+
+        assert len(printed_panels) == 3
+        assert "bash" in str(printed_panels[0].title)
+        assert "grep" in str(printed_panels[1].title)
+        assert "read_file" in str(printed_panels[2].title)
+
+    def test_tool_cards_render_before_spinner_in_act(self) -> None:
+        """Tool cards are flushed before spinner update in ACT phase."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Queue tool cards
+        tool_calls = [{"function": "bash", "arguments": {"command": "ls"}}]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+
+        # Track call order
+        call_order: list[str] = []
+
+        original_flush = renderer._flush_tool_cards
+        original_update = renderer._spinner.update_phase
+
+        def mock_flush() -> None:
+            call_order.append("flush")
+            original_flush()
+
+        def mock_update(phase: str, context: dict[str, object] | None = None) -> None:
+            call_order.append("spinner_update")
+            original_update(phase, context)
+
+        renderer._flush_tool_cards = mock_flush  # type: ignore[method-assign]
+        renderer._spinner.update_phase = mock_update  # type: ignore[method-assign]
+
+        with patch.object(renderer.console, "print"):
+            renderer._handle_act(agent, {"tool_calls": tool_calls})
+
+        assert call_order.index("flush") < call_order.index("spinner_update")
+
+    def test_handle_think_done_flushes_remaining_cards(self) -> None:
+        """When done=True, any remaining tool cards are flushed."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Queue tool cards
+        tool_calls = [{"function": "bash", "arguments": {"command": "ls"}}]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+        assert len(renderer._pending_tool_cards) == 1
+
+        # Done should flush remaining
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(agent, {"done": True, "response": "done"})
+            # One call for tool card, one for the response text
+            assert mock_print.call_count == 2
+
+        assert len(renderer._pending_tool_cards) == 0
+
+    def test_flush_tool_cards_empty_is_noop(self) -> None:
+        """_flush_tool_cards does nothing when queue is empty."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._flush_tool_cards()
+            mock_print.assert_not_called()
+
+    def test_multiple_think_broadcasts_accumulate_cards(self) -> None:
+        """Multiple THINK broadcasts accumulate tool cards."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(
+            agent,
+            {"done": False, "tool_calls": [{"function": "bash", "arguments": {}}]},
+        )
+        renderer._handle_think(
+            agent,
+            {"done": False, "tool_calls": [{"function": "grep", "arguments": {}}]},
+        )
+
+        assert len(renderer._pending_tool_cards) == 2
+        assert renderer._pending_tool_cards[0]["function"] == "bash"
+        assert renderer._pending_tool_cards[1]["function"] == "grep"
+
+    def test_tool_card_content_correct(self) -> None:
+        """Flushed tool cards contain correct tool information."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [
+            {"function": "bash", "arguments": {"command": "echo hello"}},
+        ]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+
+        printed_panels: list[Panel] = []
+        with patch.object(renderer.console, "print", side_effect=lambda p: printed_panels.append(p)):
+            renderer._flush_tool_cards()
+
+        assert len(printed_panels) == 1
+        panel = printed_panels[0]
+        assert "bash" in str(panel.title)
+        body_text = str(panel.renderable)
+        assert "echo hello" in body_text
+
+    def test_skips_non_dict_tool_calls(self) -> None:
+        """Non-dict items in tool_calls are skipped."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [
+            {"function": "bash", "arguments": {}},
+            "not a dict",
+            42,
+            {"function": "grep", "arguments": {}},
+        ]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+        assert len(renderer._pending_tool_cards) == 2

@@ -10,11 +10,14 @@ Usage:
     agent.with_notifiable(renderer)
 """
 
+from typing import Any
+
 from rich.console import Console, Group
 from rich.live import Live
 from rich.text import Text
 
 from dana.cli.components.spinner import SpinnerComponent
+from dana.cli.components.tool_card import ToolCardComponent
 from dana.cli.state import RenderState
 from dana.common.protocols import DictParams, Notifiable
 
@@ -42,6 +45,8 @@ class RichCLIRenderer(Notifiable):
         self.max_output_lines = max_output_lines
         self.state = RenderState()
         self._spinner = SpinnerComponent()
+        self._tool_card = ToolCardComponent()
+        self._pending_tool_cards: list[dict[str, Any]] = []
         self._live: Live | None = None
 
     def _ensure_live(self) -> None:
@@ -59,6 +64,31 @@ class RichCLIRenderer(Notifiable):
         if self._live is not None:
             self._live.stop()
             self._live = None
+
+    def _flush_tool_cards(self) -> None:
+        """Print any pending tool cards to the console and clear the queue.
+
+        Tool cards are printed outside the Live context so they persist
+        in terminal history. Live is temporarily stopped to avoid
+        interleaving with the live display.
+        """
+        if not self._pending_tool_cards:
+            return
+
+        # Stop Live temporarily so printed cards don't conflict
+        was_live = self._live is not None
+        if was_live:
+            self._stop_live()
+
+        for tc in self._pending_tool_cards:
+            panel = self._tool_card.render(tc)
+            self.console.print(panel)
+
+        self._pending_tool_cards.clear()
+
+        # Restart Live if it was running
+        if was_live:
+            self._ensure_live()
 
     def _refresh_display(self) -> None:
         """Update the Live display with current state."""
@@ -118,7 +148,7 @@ class RichCLIRenderer(Notifiable):
         """Handle THINK phase (trace_thoughts) broadcasts.
 
         Updates spinner to THINK phase. Extracts tool_calls for intent display.
-        Stops spinner when done=True.
+        Renders tool cards for each tool call. Stops spinner when done=True.
         """
         self.state.current_phase = "THINK"
 
@@ -126,6 +156,7 @@ class RichCLIRenderer(Notifiable):
         tool_calls = data.get("tool_calls", [])
 
         if done:
+            self._flush_tool_cards()
             self._spinner.stop()
             self._stop_live()
 
@@ -139,6 +170,12 @@ class RichCLIRenderer(Notifiable):
         if not self._spinner.running:
             self._spinner.start()
 
+        # Render tool cards for each tool call
+        if tool_calls and isinstance(tool_calls, list) and self.show_tool_calls:
+            for tc in tool_calls:
+                if isinstance(tc, dict):
+                    self._pending_tool_cards.append(tc)
+
         # Extract tool names from tool_calls for intent display
         if tool_calls and isinstance(tool_calls, list):
             tool_names = [tc.get("function", "unknown") for tc in tool_calls if isinstance(tc, dict)]
@@ -151,9 +188,13 @@ class RichCLIRenderer(Notifiable):
     def _handle_act(self, notifier: object, data: DictParams) -> None:
         """Handle ACT phase (trace_outputs) broadcasts.
 
-        Updates spinner to ACT phase with tool names from trace_outputs.
+        Flushes pending tool cards then updates spinner to ACT phase.
+        Cards render before spinner during ACT phase.
         """
         self.state.current_phase = "ACT"
+
+        # Flush tool cards before spinner so they appear first
+        self._flush_tool_cards()
 
         self._ensure_live()
         if not self._spinner.running:
