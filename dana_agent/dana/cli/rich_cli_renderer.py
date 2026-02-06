@@ -10,8 +10,11 @@ Usage:
     agent.with_notifiable(renderer)
 """
 
-from rich.console import Console
+from rich.console import Console, Group
+from rich.live import Live
+from rich.text import Text
 
+from dana.cli.components.spinner import SpinnerComponent
 from dana.cli.state import RenderState
 from dana.common.protocols import DictParams, Notifiable
 
@@ -20,7 +23,8 @@ class RichCLIRenderer(Notifiable):
     """A Notifiable that renders agent activity using Rich terminal components.
 
     Routes broadcast messages from agents to phase-specific handlers based
-    on the broadcast key present in the message.
+    on the broadcast key present in the message. Uses rich.live.Live for
+    flicker-free terminal updates.
     """
 
     def __init__(
@@ -37,6 +41,39 @@ class RichCLIRenderer(Notifiable):
         self.show_reasoning = show_reasoning
         self.max_output_lines = max_output_lines
         self.state = RenderState()
+        self._spinner = SpinnerComponent()
+        self._live: Live | None = None
+
+    def _ensure_live(self) -> None:
+        """Start the Live context if not already running."""
+        if self._live is None:
+            self._live = Live(
+                console=self.console,
+                refresh_per_second=10,
+                transient=True,
+            )
+            self._live.start()
+
+    def _stop_live(self) -> None:
+        """Stop the Live context if running."""
+        if self._live is not None:
+            self._live.stop()
+            self._live = None
+
+    def _refresh_display(self) -> None:
+        """Update the Live display with current state."""
+        if self._live is None:
+            return
+
+        renderables: list[Text] = []
+
+        if self._spinner.running:
+            renderables.append(Text.from_markup(f"[bold cyan]⠋[/bold cyan] {self._spinner.text}"))
+
+        if renderables:
+            self._live.update(Group(*renderables))
+        else:
+            self._live.update(Text(""))
 
     def notify(self, notifier: object, message: DictParams) -> None:
         """Receive a broadcast message and route to the appropriate handler.
@@ -62,13 +99,74 @@ class RichCLIRenderer(Notifiable):
             self._handle_skill(notifier, message["skill_progress"])
 
     def _handle_see(self, notifier: object, data: DictParams) -> None:
-        """Handle SEE phase (trace_percepts) broadcasts."""
+        """Handle SEE phase (trace_percepts) broadcasts.
+
+        Updates spinner to SEE phase with perception count info.
+        """
+        self.state.current_phase = "SEE"
+
+        self._ensure_live()
+        if not self._spinner.running:
+            self._spinner.start()
+
+        perception = data.get("perception", "")
+        context = {"perception": perception} if perception else None
+        self._spinner.update_phase("SEE", context)
+        self._refresh_display()
 
     def _handle_think(self, notifier: object, data: DictParams) -> None:
-        """Handle THINK phase (trace_thoughts) broadcasts."""
+        """Handle THINK phase (trace_thoughts) broadcasts.
+
+        Updates spinner to THINK phase. Extracts tool_calls for intent display.
+        Stops spinner when done=True.
+        """
+        self.state.current_phase = "THINK"
+
+        done = data.get("done", False)
+        tool_calls = data.get("tool_calls", [])
+
+        if done:
+            self._spinner.stop()
+            self._stop_live()
+
+            # Print final response if available
+            response = data.get("response", "")
+            if response and self.verbose:
+                self.console.print(Text(str(response)))
+            return
+
+        self._ensure_live()
+        if not self._spinner.running:
+            self._spinner.start()
+
+        # Extract tool names from tool_calls for intent display
+        if tool_calls and isinstance(tool_calls, list):
+            tool_names = [tc.get("function", "unknown") for tc in tool_calls if isinstance(tc, dict)]
+            self._spinner.update_phase("THINK", {"tool_calls": tool_names})
+        else:
+            self._spinner.update_phase("THINK")
+
+        self._refresh_display()
 
     def _handle_act(self, notifier: object, data: DictParams) -> None:
-        """Handle ACT phase (trace_outputs) broadcasts."""
+        """Handle ACT phase (trace_outputs) broadcasts.
+
+        Updates spinner to ACT phase with tool names from trace_outputs.
+        """
+        self.state.current_phase = "ACT"
+
+        self._ensure_live()
+        if not self._spinner.running:
+            self._spinner.start()
+
+        # Extract tool names from tool_calls in the output data
+        tool_calls = data.get("tool_calls", [])
+        tool_names: list[str] = []
+        if tool_calls and isinstance(tool_calls, list):
+            tool_names = [tc.get("function", "unknown") for tc in tool_calls if isinstance(tc, dict)]
+
+        self._spinner.update_phase("ACT", {"tools": tool_names} if tool_names else None)
+        self._refresh_display()
 
     def _handle_reflect(self, notifier: object, data: DictParams) -> None:
         """Handle REFLECT phase (trace_learning) broadcasts."""

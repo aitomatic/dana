@@ -1,9 +1,10 @@
-"""Tests for RichCLIRenderer message routing."""
+"""Tests for RichCLIRenderer message routing and spinner integration."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from rich.console import Console
 
+from dana.cli.components.spinner import SpinnerComponent
 from dana.cli.rich_cli_renderer import RichCLIRenderer
 
 
@@ -51,6 +52,14 @@ class TestRichCLIRendererInit:
 
         renderer = RichCLIRenderer()
         assert isinstance(renderer.state, RenderState)
+
+    def test_has_spinner_component(self) -> None:
+        renderer = RichCLIRenderer()
+        assert isinstance(renderer._spinner, SpinnerComponent)
+
+    def test_live_initially_none(self) -> None:
+        renderer = RichCLIRenderer()
+        assert renderer._live is None
 
 
 class TestNotifyRouting:
@@ -169,3 +178,290 @@ class TestNotifiableProtocol:
         from dana.cli import RichCLIRenderer as ImportedRenderer
 
         assert ImportedRenderer is RichCLIRenderer
+
+
+class TestSpinnerIntegration:
+    """Test spinner phase updates through handler methods."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        """Create a renderer with Live mocked to avoid terminal output."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> MagicMock:
+        """Replace _ensure_live and _stop_live with no-ops, _refresh_display too."""
+        mock_live = MagicMock()
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+        return mock_live
+
+    def test_handle_see_starts_spinner(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        assert renderer._spinner.running is False
+        renderer._handle_see(agent, {"caller_message": "hello"})
+        assert renderer._spinner.running is True
+
+    def test_handle_see_updates_phase(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"perception": "Perceived 3 tool result(s)"})
+        assert renderer.state.current_phase == "SEE"
+        assert renderer._spinner.text == "Processing..."
+
+    def test_handle_see_with_perception_context(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"perception": "Perceived 2 tool result(s)"})
+        # SpinnerComponent ignores unknown context keys for SEE phase
+        assert renderer._spinner.text == "Processing..."
+
+    def test_handle_think_updates_phase(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "tool_calls": []})
+        assert renderer.state.current_phase == "THINK"
+        assert renderer._spinner.text == "Thinking..."
+
+    def test_handle_think_starts_spinner(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False})
+        assert renderer._spinner.running is True
+
+    def test_handle_think_extracts_tool_calls(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [
+            {"function": "bash", "arguments": {"command": "ls"}},
+            {"function": "read_file", "arguments": {"path": "/tmp/test"}},
+        ]
+        renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
+        assert renderer.state.current_phase == "THINK"
+        # SpinnerComponent receives tool_calls in context but THINK phase
+        # still shows "Thinking..." (tool_calls context is for future use)
+        assert renderer._spinner.text == "Thinking..."
+
+    def test_handle_think_done_stops_spinner(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Start spinner first
+        renderer._handle_see(agent, {"caller_message": "hello"})
+        assert renderer._spinner.running is True
+
+        # Done=True should stop spinner
+        renderer._handle_think(agent, {"done": True, "response": "Here is the answer"})
+        assert renderer._spinner.running is False
+
+    def test_handle_think_done_stops_live(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": True, "response": "answer"})
+        renderer._stop_live.assert_called_once()  # type: ignore[attr-defined]
+
+    def test_handle_think_done_prints_response_when_verbose(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+        renderer.verbose = True
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(agent, {"done": True, "response": "Final answer"})
+            mock_print.assert_called_once()
+
+    def test_handle_think_done_no_print_when_not_verbose(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+        renderer.verbose = False
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(agent, {"done": True, "response": "Final answer"})
+            mock_print.assert_not_called()
+
+    def test_handle_think_done_no_print_empty_response(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+        renderer.verbose = True
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(agent, {"done": True, "response": ""})
+            mock_print.assert_not_called()
+
+    def test_handle_act_updates_phase(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [{"function": "bash", "arguments": {"command": "ls"}}]
+        renderer._handle_act(agent, {"tool_calls": tool_calls})
+        assert renderer.state.current_phase == "ACT"
+        assert renderer._spinner.text == "Executing bash..."
+
+    def test_handle_act_starts_spinner(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_act(agent, {"tool_calls": []})
+        assert renderer._spinner.running is True
+
+    def test_handle_act_multiple_tools(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        tool_calls = [
+            {"function": "bash", "arguments": {}},
+            {"function": "grep", "arguments": {}},
+        ]
+        renderer._handle_act(agent, {"tool_calls": tool_calls})
+        assert renderer._spinner.text == "Executing bash, grep..."
+
+    def test_handle_act_no_tool_calls(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_act(agent, {})
+        assert renderer._spinner.text == "Executing..."
+
+    def test_full_star_loop_phase_transitions(self) -> None:
+        """Verify spinner phases through a complete STAR loop."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # SEE phase
+        renderer._handle_see(agent, {"caller_message": "hello", "perception": ""})
+        assert renderer.state.current_phase == "SEE"
+        assert renderer._spinner.running is True
+        assert renderer._spinner.text == "Processing..."
+
+        # THINK phase (not done, has tool_calls)
+        renderer._handle_think(
+            agent,
+            {
+                "done": False,
+                "tool_calls": [{"function": "bash", "arguments": {"command": "ls"}}],
+                "reasoning": "I need to list files",
+            },
+        )
+        assert renderer.state.current_phase == "THINK"
+        assert renderer._spinner.running is True
+        assert renderer._spinner.text == "Thinking..."
+
+        # ACT phase
+        renderer._handle_act(
+            agent,
+            {
+                "tool_calls": [{"function": "bash", "arguments": {"command": "ls"}}],
+                "tool_results": [{"output": "file1.py\nfile2.py"}],
+            },
+        )
+        assert renderer.state.current_phase == "ACT"
+        assert renderer._spinner.running is True
+        assert renderer._spinner.text == "Executing bash..."
+
+        # THINK phase (done)
+        renderer._handle_think(
+            agent,
+            {"done": True, "response": "Found 2 files", "tool_calls": []},
+        )
+        assert renderer.state.current_phase == "THINK"
+        assert renderer._spinner.running is False
+
+    def test_spinner_survives_multiple_star_loops(self) -> None:
+        """Verify spinner restarts on new SEE phase after completion."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # First loop
+        renderer._handle_see(agent, {"caller_message": "first"})
+        assert renderer._spinner.running is True
+        renderer._handle_think(agent, {"done": True, "response": "done"})
+        assert renderer._spinner.running is False
+
+        # Second loop - spinner should restart
+        renderer._handle_see(agent, {"caller_message": "second"})
+        assert renderer._spinner.running is True
+
+    def test_handle_see_calls_refresh(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hi"})
+        renderer._refresh_display.assert_called()  # type: ignore[attr-defined]
+
+    def test_handle_think_calls_refresh_when_not_done(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False})
+        renderer._refresh_display.assert_called()  # type: ignore[attr-defined]
+
+    def test_handle_act_calls_refresh(self) -> None:
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_act(agent, {"tool_calls": []})
+        renderer._refresh_display.assert_called()  # type: ignore[attr-defined]
+
+
+class TestLiveContextManagement:
+    """Test _ensure_live, _stop_live, and _refresh_display methods."""
+
+    def test_ensure_live_creates_live_instance(self) -> None:
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        assert renderer._live is None
+        renderer._ensure_live()
+        assert renderer._live is not None
+        # Clean up
+        renderer._stop_live()
+
+    def test_ensure_live_idempotent(self) -> None:
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer._ensure_live()
+        first_live = renderer._live
+        renderer._ensure_live()
+        assert renderer._live is first_live
+        # Clean up
+        renderer._stop_live()
+
+    def test_stop_live_clears_instance(self) -> None:
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        renderer._ensure_live()
+        assert renderer._live is not None
+        renderer._stop_live()
+        assert renderer._live is None
+
+    def test_stop_live_noop_when_no_live(self) -> None:
+        renderer = RichCLIRenderer()
+        renderer._stop_live()  # Should not raise
+        assert renderer._live is None
+
+    def test_refresh_display_noop_when_no_live(self) -> None:
+        renderer = RichCLIRenderer()
+        renderer._refresh_display()  # Should not raise
