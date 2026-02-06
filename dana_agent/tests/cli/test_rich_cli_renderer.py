@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from rich.console import Console
 from rich.panel import Panel
 
+from dana.cli.components.progress_tracker import ProgressTrackerComponent
 from dana.cli.components.spinner import SpinnerComponent
 from dana.cli.components.status_line import StatusLineComponent
 from dana.cli.components.stream_display import StreamDisplayComponent
@@ -90,6 +91,10 @@ class TestRichCLIRendererInit:
     def test_has_status_line_component(self) -> None:
         renderer = RichCLIRenderer()
         assert isinstance(renderer._status_line, StatusLineComponent)
+
+    def test_has_progress_tracker_component(self) -> None:
+        renderer = RichCLIRenderer()
+        assert isinstance(renderer._progress_tracker, ProgressTrackerComponent)
 
     def test_agent_stack_initially_empty(self) -> None:
         renderer = RichCLIRenderer()
@@ -1204,3 +1209,268 @@ class TestStatusLineInRefreshDisplay:
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
         assert len(group.renderables) == 1  # Only status line
+
+
+class TestProgressTrackerIntegration:
+    """Test progress tracker updates through RichCLIRenderer handlers."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        """Create a renderer with Live mocked to avoid terminal output."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        """Replace _ensure_live, _stop_live, _refresh_display with no-ops."""
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_handle_think_updates_progress_tracker(self) -> None:
+        """todo_list in THINK broadcasts updates the progress tracker."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        todos = [
+            {"content": "Step 1", "status": "completed"},
+            {"content": "Step 2", "status": "in_progress"},
+            {"content": "Step 3", "status": "pending"},
+        ]
+        renderer._handle_think(agent, {"done": False, "todo_list": todos})
+
+        assert renderer._progress_tracker.total_count == 3
+        assert renderer._progress_tracker.completed_count == 1
+        assert renderer._progress_tracker.current_task == "Step 2"
+
+    def test_handle_think_updates_state_todo_items(self) -> None:
+        """todo_list in THINK broadcasts updates RenderState.todo_items."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        todos = [
+            {"content": "Task A", "status": "pending"},
+            {"content": "Task B", "status": "in_progress"},
+        ]
+        renderer._handle_think(agent, {"done": False, "todo_list": todos})
+
+        assert len(renderer.state.todo_items) == 2
+        assert renderer.state.todo_items[0]["content"] == "Task A"
+        assert renderer.state.todo_items[1]["content"] == "Task B"
+
+    def test_handle_think_no_todo_list_no_update(self) -> None:
+        """No update when todo_list is absent from broadcast."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "response": "text"})
+        assert renderer._progress_tracker.total_count == 0
+        assert renderer.state.todo_items == []
+
+    def test_handle_think_empty_todo_list_clears(self) -> None:
+        """Empty todo_list clears the progress tracker."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Set some todos first
+        todos = [{"content": "Task 1", "status": "pending"}]
+        renderer._handle_think(agent, {"done": False, "todo_list": todos})
+        assert renderer._progress_tracker.total_count == 1
+
+        # Empty list clears
+        renderer._handle_think(agent, {"done": False, "todo_list": []})
+        assert renderer._progress_tracker.total_count == 0
+
+    def test_handle_think_todo_list_updates_in_real_time(self) -> None:
+        """Progress updates as tasks complete across broadcasts."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Initial: 1 in_progress, 2 pending
+        todos_v1 = [
+            {"content": "Step 1", "status": "in_progress"},
+            {"content": "Step 2", "status": "pending"},
+            {"content": "Step 3", "status": "pending"},
+        ]
+        renderer._handle_think(agent, {"done": False, "todo_list": todos_v1})
+        assert renderer._progress_tracker.completed_count == 0
+        assert renderer._progress_tracker.current_task == "Step 1"
+
+        # Update: step 1 completed, step 2 in_progress
+        todos_v2 = [
+            {"content": "Step 1", "status": "completed"},
+            {"content": "Step 2", "status": "in_progress"},
+            {"content": "Step 3", "status": "pending"},
+        ]
+        renderer._handle_think(agent, {"done": False, "todo_list": todos_v2})
+        assert renderer._progress_tracker.completed_count == 1
+        assert renderer._progress_tracker.current_task == "Step 2"
+
+    def test_handle_think_done_with_todo_list(self) -> None:
+        """todo_list is processed even when done=True."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        todos = [
+            {"content": "Final task", "status": "completed"},
+        ]
+        renderer._handle_think(agent, {"done": True, "response": "done", "todo_list": todos})
+        assert renderer._progress_tracker.completed_count == 1
+        assert renderer._progress_tracker.total_count == 1
+
+    def test_handle_think_todo_list_none_ignored(self) -> None:
+        """Explicit None todo_list does not update progress tracker."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Set initial todos
+        todos = [{"content": "Task", "status": "pending"}]
+        renderer._handle_think(agent, {"done": False, "todo_list": todos})
+        assert renderer._progress_tracker.total_count == 1
+
+        # None should not clear
+        renderer._handle_think(agent, {"done": False, "todo_list": None})
+        assert renderer._progress_tracker.total_count == 1
+
+    def test_handle_think_todo_list_non_list_ignored(self) -> None:
+        """Non-list todo_list values are ignored."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_think(agent, {"done": False, "todo_list": "not a list"})
+        assert renderer._progress_tracker.total_count == 0
+
+    def test_progress_coexists_with_streaming(self) -> None:
+        """Progress tracker and streaming text work together."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        todos = [{"content": "Working on it", "status": "in_progress"}]
+        renderer._handle_think(
+            agent,
+            {"done": False, "response": "Processing...", "todo_list": todos},
+        )
+        assert renderer._stream_display.buffer == "Processing..."
+        assert renderer._progress_tracker.total_count == 1
+
+
+class TestProgressTrackerInRefreshDisplay:
+    """Test that progress tracker appears in refresh display output."""
+
+    def test_refresh_includes_progress_tracker(self) -> None:
+        """Progress tracker table appears in Live display when todos exist."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+
+        # Set some todos
+        renderer._progress_tracker.update_todos(
+            [
+                {"content": "Task 1", "status": "completed"},
+                {"content": "Task 2", "status": "in_progress"},
+            ]
+        )
+        renderer._refresh_display()
+
+        mock_live.update.assert_called_once()
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        # Spinner + progress tracker = 2 renderables
+        assert len(group.renderables) == 2
+
+    def test_refresh_no_progress_when_empty(self) -> None:
+        """No progress tracker renderable when no todos exist."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        # Only spinner, no progress tracker
+        assert len(group.renderables) == 1
+
+    def test_refresh_progress_above_status_line(self) -> None:
+        """Progress tracker appears above status line in display order."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+
+        # Set todos and status
+        renderer._progress_tracker.update_todos(
+            [
+                {"content": "Working", "status": "in_progress"},
+            ]
+        )
+        renderer._status_line.update(agent_id="agent-1", model="gpt-4", turn=1, max_turns=3)
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        # Spinner + progress + status = 3
+        assert len(group.renderables) == 3
+
+        # Last renderable should be status line (dimmed text with agent info)
+        last = group.renderables[-1]
+        assert "agent-1" in str(last)
+
+        # Second-to-last should be the progress table
+        from rich.table import Table
+
+        progress = group.renderables[-2]
+        assert isinstance(progress, Table)
+
+    def test_refresh_all_components_together(self) -> None:
+        """Spinner + stream + progress + status all render together."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        renderer._spinner.start()
+        renderer._stream_display.append_chunk("Some text")
+        renderer._progress_tracker.update_todos(
+            [
+                {"content": "Task", "status": "in_progress"},
+            ]
+        )
+        renderer._status_line.update(agent_id="agent", model="model")
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        # Spinner + stream + progress + status = 4
+        assert len(group.renderables) == 4
+
+    def test_progress_only_when_spinner_stopped(self) -> None:
+        """Progress tracker shows even when spinner is not running."""
+        renderer = RichCLIRenderer(console=Console(force_terminal=False))
+
+        mock_live = MagicMock()
+        renderer._live = mock_live
+        # Spinner NOT started
+        renderer._progress_tracker.update_todos(
+            [
+                {"content": "Task", "status": "pending"},
+            ]
+        )
+
+        renderer._refresh_display()
+
+        group = mock_live.update.call_args[0][0]
+        assert hasattr(group, "renderables")
+        assert len(group.renderables) == 1  # Only progress tracker

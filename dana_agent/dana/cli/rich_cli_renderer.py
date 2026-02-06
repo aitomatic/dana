@@ -12,10 +12,11 @@ Usage:
 
 from typing import Any
 
-from rich.console import Console, Group
+from rich.console import Console, Group, RenderableType
 from rich.live import Live
 from rich.text import Text
 
+from dana.cli.components.progress_tracker import ProgressTrackerComponent
 from dana.cli.components.spinner import SpinnerComponent
 from dana.cli.components.status_line import StatusLineComponent
 from dana.cli.components.stream_display import StreamDisplayComponent
@@ -50,6 +51,7 @@ class RichCLIRenderer(Notifiable):
         self._stream_display = StreamDisplayComponent(max_visible_lines=20, line_threshold=max_output_lines)
         self._tool_card = ToolCardComponent()
         self._status_line = StatusLineComponent()
+        self._progress_tracker = ProgressTrackerComponent()
         self._pending_tool_cards: list[dict[str, Any]] = []
         self._live: Live | None = None
         self._agent_stack: list[str] = []  # Track parent agent IDs for subagent transitions
@@ -104,13 +106,18 @@ class RichCLIRenderer(Notifiable):
         if self._live is None:
             return
 
-        renderables: list[Text] = []
+        renderables: list[RenderableType] = []
 
         if self._spinner.running:
             renderables.append(Text.from_markup(f"[bold cyan]⠋[/bold cyan] {self._spinner.text}"))
 
         if self._stream_display.buffer:
             renderables.append(self._stream_display.render())
+
+        # Progress tracker above status line
+        progress_table = self._progress_tracker.render()
+        if progress_table is not None:
+            renderables.append(progress_table)
 
         # Status line at bottom
         status_text = self._status_line.render()
@@ -227,6 +234,12 @@ class RichCLIRenderer(Notifiable):
         done = data.get("done", False)
         tool_calls = data.get("tool_calls", [])
         response = data.get("response", "")
+        todo_list = data.get("todo_list")
+
+        # Update progress tracker if todo_list is present
+        if todo_list is not None and isinstance(todo_list, list):
+            self._progress_tracker.update_todos(todo_list)
+            self.state.todo_items = list(todo_list)
 
         if done:
             self._flush_tool_cards()
