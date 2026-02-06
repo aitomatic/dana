@@ -128,8 +128,10 @@ class ExploreAgent(STARAgent):
 
 if __name__ == "__main__":
     agent = ExploreAgent(agent_id="explore-test-123", agent_type="explore_agent", llm_provider="openai", model="gpt-5-mini")
-    print(
-        agent.query(
-            message="Scan the repository to understand how the codec runtime is being used and integrated with StarAgent. Focus ONLY on codec runtime - do not explore other runtimes.\n\nSpecifically look for:\n1. Where codec runtime is defined and implemented\n2. How StarAgent uses or integrates with codec runtime\n3. The relationship between codec runtime and StarAgent\n4. Key classes, methods, and patterns used\n\nProvide a comprehensive summary of the codec runtime architecture and its integration with StarAgent."
-        )
-    )
+    # print(
+    #     agent.query(
+    #         message="Scan the repository to understand how the codec runtime is being used and integrated with StarAgent. Focus ONLY on codec runtime - do not explore other runtimes.\n\nSpecifically look for:\n1. Where codec runtime is defined and implemented\n2. How StarAgent uses or integrates with codec runtime\n3. The relationship between codec runtime and StarAgent\n4. Key classes, methods, and patterns used\n\nProvide a comprehensive summary of the codec runtime architecture and its integration with StarAgent."
+    #     )
+    # )
+
+    print(agent.query(message="Scan the code base and brief me on how STARAgent is being used and integrated with runtime"))
