@@ -101,6 +101,19 @@ class DanaSkillResource(BaseResource):
             # Main mode doesn't need await (just returns instructions)
             return self._execute_main(skill, context, parameters or {})
 
+    def _substitute_arguments(self, skill_content: str, parameters: dict[str, Any]) -> str:
+        """Replace $ARGUMENTS in skill content with parameter values (Claude Code compatible).
+
+        Skills that use $ARGUMENTS get inline substitution. Skills that read
+        <parameters> still work unchanged (backward compatible).
+        """
+        if "$ARGUMENTS" not in skill_content:
+            return skill_content
+        if not parameters:
+            return skill_content.replace("$ARGUMENTS", "")
+        args_str = parameters.get("args", "") or str(parameters)
+        return skill_content.replace("$ARGUMENTS", str(args_str))
+
     def _execute_main(
         self,
         skill: DanaSkill,
@@ -121,7 +134,7 @@ class DanaSkillResource(BaseResource):
         Returns:
             Dictionary with skill instructions
         """
-        skill_content = skill.content
+        skill_content = self._substitute_arguments(skill.content, parameters)
 
         # Build tool restriction note if applicable
         tools_note = ""
@@ -133,10 +146,12 @@ class DanaSkillResource(BaseResource):
         if skill.scripts_dir:
             scripts_note = f"\n\n**Scripts Available:** Run scripts from {skill.scripts_dir}/ - execute them, do not read the code."
 
+        base_dir_line = f"Base directory for this skill: {skill.path.parent}\n\n"
+
         return {
             "success": True,
             "mode": "main",
-            "instructions": f"""<skill name="{skill.name}">
+            "instructions": f"""{base_dir_line}<skill name="{skill.name}">
 {skill_content}
 </skill>
 
@@ -287,31 +302,28 @@ Follow the skill instructions above. The skill content will remain in your conte
                 if not isinstance(resource, DanaSkillResource):
                     subagent.with_resources(resource)
 
-        # Handle nested skills if skill declares allowed_skills
+        # Always provide skill access to fork subagents (matches Claude Code behavior)
         if skill.allowed_skills:
-            # Prevent self-recursion: exclude the current skill from allowed_skills
-            safe_allowed_skills = [s for s in skill.allowed_skills if s != skill.name]
+            # Restricted: only declared skills (minus self to prevent recursion)
+            safe = [s for s in skill.allowed_skills if s != skill.name]
+            loader = self._create_filtered_skill_loader(safe)
+        else:
+            # Unrestricted: all skills minus self to prevent recursion
+            all_except_self = [s for s in self._skill_loader._skills if s != skill.name]
+            loader = self._create_filtered_skill_loader(all_except_self)
 
-            if safe_allowed_skills:
-                filtered_skill_loader = self._create_filtered_skill_loader(safe_allowed_skills)
-                nested_skill_resource = DanaSkillResource(
-                    skill_loader=filtered_skill_loader,
-                    agent=subagent,  # Enable further nesting
-                    resource_id="skills",
-                )
-                subagent.with_resources(nested_skill_resource)
-                logger.info(
-                    "fork_with_nested_skills",
-                    skill=skill.name,
-                    nested_skills=safe_allowed_skills,
-                )
-            elif skill.name in skill.allowed_skills:
-                # Log when self-recursion was prevented
-                logger.info(
-                    "fork_self_recursion_prevented",
-                    skill=skill.name,
-                    message="Skill declared itself in allowed_skills - removed to prevent infinite loop",
-                )
+        nested_skill_resource = DanaSkillResource(
+            skill_loader=loader,
+            agent=subagent,
+            resource_id="skills",
+        )
+        subagent.with_resources(nested_skill_resource)
+
+        logger.info(
+            "fork_with_nested_skills",
+            skill=skill.name,
+            nested_skills=list(loader._skills.keys()),
+        )
 
         return subagent
 
@@ -410,6 +422,8 @@ Follow the skill instructions above. The skill content will remain in your conte
             Formatted task message for the subagent
         """
 
+        skill_content = self._substitute_arguments(skill.content, parameters)
+
         scripts_note = ""
         if skill.scripts_dir:
             scripts_note = f"\n\n**Scripts Available:** Run scripts from {skill.scripts_dir}/ - execute them, do not read the code."
@@ -424,6 +438,12 @@ This means:
 - Do NOT explain what you're about to do next
 - Complete ALL instructions FIRST, then provide your final response
 - Your final response must be actionable/usable, not internal reasoning
+
+Base directory for this skill: {skill.path.parent}
+
+<skill name="{skill.name}">
+{skill_content}
+</skill>
 
 <user_context>
 {context if context else "No additional context provided."}

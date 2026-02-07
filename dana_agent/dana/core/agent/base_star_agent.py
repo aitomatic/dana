@@ -221,6 +221,8 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
 
             for _ in range(self.MAX_ITERATIONS):
                 try:
+                    if self._object_id == "dana-coding-agent":
+                        print("Hello")
                     # _see is sync (no async ops needed)
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     # _think_async uses native async LLM call

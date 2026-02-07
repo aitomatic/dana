@@ -1,6 +1,7 @@
 from dana.core.agent.star_agent import STARAgent
 from dana.core.knowledge.prompts.codecs import AbstractCodec, NativeToolsCodec
 from dana.core.resource import BashResource, FileEditResource, FileIOResource, SearchResource, ToDoResource
+from dana.core.skills import DanaSkillResource
 
 
 IDENTITY = """
@@ -123,6 +124,7 @@ class ExploreAgent(STARAgent):
             FileEditResource(resource_id="file-edit"),
             SearchResource(resource_id="search"),
             # TaskResource(resource_id="task"),
+            DanaSkillResource(resource_id="skills", agent=self),
         )
 
 
@@ -134,4 +136,4 @@ if __name__ == "__main__":
     #     )
     # )
 
-    print(agent.query(message="Scan the code base and brief me on how STARAgent is being used and integrated with runtime"))
+    print(agent.query(message="Use your tool-doc-tester and explain to me what is it"))
