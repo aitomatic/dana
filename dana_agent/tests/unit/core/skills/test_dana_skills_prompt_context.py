@@ -281,8 +281,10 @@ class TestSubstituteArguments:
             context="",
             args="src/auth",
         )
-        assert "Analyze module: src/auth" in result["instructions"]
-        assert "$ARGUMENTS" not in result["instructions"]
+        assert result["message"] == "Launching skill: arg-skill"
+        assert "Analyze module: src/auth" in result["inject_as_user"]
+        assert "$ARGUMENTS" not in result["inject_as_user"]
+        assert "instructions" not in result
 
     def test_substitute_arguments_empty_when_no_args(self, tmp_path: Path):
         """$ARGUMENTS becomes empty string when args is empty."""
@@ -295,8 +297,8 @@ class TestSubstituteArguments:
             context="",
             args="",
         )
-        assert "Target:  done" in result["instructions"]
-        assert "$ARGUMENTS" not in result["instructions"]
+        assert "Target:  done" in result["inject_as_user"]
+        assert "$ARGUMENTS" not in result["inject_as_user"]
 
     def test_substitute_arguments_no_placeholder_untouched(self, tmp_path: Path):
         """Content without $ARGUMENTS is not modified."""
@@ -309,7 +311,7 @@ class TestSubstituteArguments:
             context="",
             args="should-not-appear-inline",
         )
-        assert "Plain instructions here." in result["instructions"]
+        assert "Plain instructions here." in result["inject_as_user"]
 
     def test_substitute_arguments_with_special_chars(self, tmp_path: Path):
         """Args with special characters are substituted verbatim."""
@@ -322,8 +324,8 @@ class TestSubstituteArguments:
             context="",
             args="-m 'Fix bug' --no-verify",
         )
-        assert "Run: -m 'Fix bug' --no-verify" in result["instructions"]
-        assert "$ARGUMENTS" not in result["instructions"]
+        assert "Run: -m 'Fix bug' --no-verify" in result["inject_as_user"]
+        assert "$ARGUMENTS" not in result["inject_as_user"]
 
 
 class TestBaseDirectoryPrefix:
@@ -340,7 +342,7 @@ class TestBaseDirectoryPrefix:
 
         result = resource._execute_main(skill, context="", args="")
 
-        assert f"Base directory for this skill: {skill_dir}" in result["instructions"]
+        assert f"Base directory for this skill: {skill_dir}" in result["inject_as_user"]
 
     def test_fork_task_message_includes_base_directory(self, tmp_path: Path):
         """Fork task message includes 'Base directory for this skill:' prefix."""

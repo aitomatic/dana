@@ -149,7 +149,8 @@ class DanaSkillResource(BaseResource):
         return {
             "success": True,
             "mode": "main",
-            "instructions": f"""{base_dir_line}<skill name="{skill.name}">
+            "message": f"Launching skill: {skill.name}",
+            "inject_as_user": f"""{base_dir_line}<skill name="{skill.name}">
 {skill_content}
 </skill>
 

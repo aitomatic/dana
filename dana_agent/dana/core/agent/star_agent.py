@@ -883,6 +883,12 @@ class STARAgent(BaseSTARAgent):
 
                     # Ensure content is a string (tool results may be dicts)
                     result_content = tool_result.get("result", "Unknown tool result")
+
+                    # Extract inject_as_user before serializing
+                    inject_content = None
+                    if isinstance(result_content, dict):
+                        inject_content = result_content.pop("inject_as_user", None)
+
                     if not isinstance(result_content, str):
                         import json
 
@@ -896,6 +902,15 @@ class STARAgent(BaseSTARAgent):
                             tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
+
+                    # Inject skill content as a separate user message for LLM attention
+                    if inject_content:
+                        self._timeline.add_entry(
+                            TimelineEntry(
+                                entry_type=TimelineEntryType.USER_MESSAGE,
+                                content=inject_content,
+                            )
+                        )
 
             # Add a system reminder to continue if task is not complete
             # Find original user request
@@ -1225,6 +1240,12 @@ class STARAgent(BaseSTARAgent):
 
                     # Ensure content is a string (tool results may be dicts)
                     result_content = tool_result.get("result", "Unknown tool result")
+
+                    # Extract inject_as_user before serializing
+                    inject_content = None
+                    if isinstance(result_content, dict):
+                        inject_content = result_content.pop("inject_as_user", None)
+
                     if not isinstance(result_content, str):
                         import json
 
@@ -1238,6 +1259,15 @@ class STARAgent(BaseSTARAgent):
                             tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
+
+                    # Inject skill content as a separate user message for LLM attention
+                    if inject_content:
+                        self._timeline.add_entry(
+                            TimelineEntry(
+                                entry_type=TimelineEntryType.USER_MESSAGE,
+                                content=inject_content,
+                            )
+                        )
 
         # Output parameter checking
         assert isinstance(tool_results, list)
