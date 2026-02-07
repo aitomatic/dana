@@ -181,6 +181,6 @@ if __name__ == "__main__":
     Scan the repo to understand how runtime codec is being used and integrated with StarAgent. Don't touch and read other runtime, just focus on codec runtime
     """
 
-    USER_PROMPT = ""
+    USER_PROMPT = "Use your test-fork-skill and explain to me what is it"
 
     print(asyncio.run(agent.aquery(message=USER_PROMPT)))

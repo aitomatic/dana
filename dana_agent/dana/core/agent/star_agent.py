@@ -269,16 +269,18 @@ class STARAgent(BaseSTARAgent):
 
         Args:
             reminder: Any object matching Reminder protocol.
-                Must have: name attribute and evaluate(agent, timeline) method.
+                Must have: name attribute and evaluate(agent, messages) method.
 
         Example:
             >>> class MyReminder:
             ...     name = "domain_context"
             ...
-            ...     def evaluate(self, agent, timeline) -> str | None:
+            ...     def evaluate(self, agent, messages) -> None:
             ...         if getattr(agent, "_star_loop_count", 0) == 1:
-            ...             return "Remember: This is a financial analysis task."
-            ...         return None
+            ...             messages.append(LLMMessage(
+            ...                 role="user",
+            ...                 content="<system-reminder>\\nFinancial analysis context.\\n</system-reminder>"
+            ...             ))
             >>>
             >>> agent.register_reminder(MyReminder())
         """

@@ -3,7 +3,7 @@ ReminderManager - Manages reminder evaluation and generation.
 
 Simplified design:
 - Reminders check validity lazily in evaluate(), not at registration
-- Single evaluate_all() method replaces separate evaluate() + format_reminders()
+- evaluate_all() passes messages to each reminder for direct mutation
 - No reload_builtins() needed - validity is checked at evaluation time
 """
 
@@ -13,12 +13,13 @@ from typing import TYPE_CHECKING
 
 import structlog
 
+from dana.common.llm.types import LLMMessage
+
 from .base import Reminder
 
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
-    from dana.core.agent.timeline import Timeline
 
 logger = structlog.get_logger()
 
@@ -29,13 +30,13 @@ class ReminderManager:
 
     Simplified design:
     - No agent parameter needed at construction (validity is lazy)
-    - evaluate_all() returns formatted XML directly
+    - evaluate_all() passes messages to each reminder for in-place mutation
     - add()/remove() for managing reminders
 
     Example:
         >>> manager = ReminderManager()
         >>> manager.add(TodoReminder())
-        >>> reminders_xml = manager.evaluate_all(agent, timeline)
+        >>> manager.evaluate_all(agent, messages)  # reminders mutate messages in place
     """
 
     def __init__(self, load_builtins: bool = True):
@@ -100,40 +101,25 @@ class ReminderManager:
         """Get the list of registered reminders."""
         return self._reminders
 
-    def evaluate_all(self, agent: STARAgent, timeline: Timeline) -> str:
+    def evaluate_all(self, agent: STARAgent, messages: list[LLMMessage]) -> None:
         """
-        Evaluate all reminders and return formatted XML.
+        Evaluate all reminders, letting each mutate the messages list.
 
         Each reminder's evaluate() method handles:
         - Validity checking (e.g., does agent have required resources?)
         - Trigger condition checking
-        - Prompt generation
+        - Message mutation (appending, inserting, etc.)
 
         Args:
             agent: The STARAgent instance
-            timeline: The current timeline
-
-        Returns:
-            Formatted string with XML-tagged reminders, or empty string if none fired
+            messages: The messages list for reminders to mutate in place
         """
-        prompts = []
-
         for reminder in self._reminders:
             try:
-                result = reminder.evaluate(agent, timeline)
-                if result:
-                    prompts.append(result)
-                    logger.debug("reminder_triggered", name=reminder.name)
+                reminder.evaluate(agent, messages)
             except Exception as e:
                 logger.warning(
                     "reminder_evaluate_error",
                     name=reminder.name,
                     error=str(e),
                 )
-
-        if not prompts:
-            return ""
-
-        # Format as XML-tagged content
-        formatted_parts = [f"<system-reminder>\n{prompt}\n</system-reminder>" for prompt in prompts]
-        return "\n".join(formatted_parts)

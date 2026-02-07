@@ -271,7 +271,7 @@ class TestSubstituteArguments:
         return resource, "arg-skill"
 
     def test_substitute_arguments_replaces_inline(self, tmp_path: Path):
-        """$ARGUMENTS in skill content is replaced with the 'args' parameter value."""
+        """$ARGUMENTS in skill content is replaced with the args string."""
         resource, name = self._make_resource(
             tmp_path,
             "---\nname: arg-skill\ndescription: test\n---\nAnalyze module: $ARGUMENTS",
@@ -279,13 +279,13 @@ class TestSubstituteArguments:
         result = resource._execute_main(
             resource._skill_loader.get_skill(name),
             context="",
-            parameters={"args": "src/auth"},
+            args="src/auth",
         )
         assert "Analyze module: src/auth" in result["instructions"]
         assert "$ARGUMENTS" not in result["instructions"]
 
-    def test_substitute_arguments_empty_when_no_params(self, tmp_path: Path):
-        """$ARGUMENTS becomes empty string when no parameters provided."""
+    def test_substitute_arguments_empty_when_no_args(self, tmp_path: Path):
+        """$ARGUMENTS becomes empty string when args is empty."""
         resource, name = self._make_resource(
             tmp_path,
             "---\nname: arg-skill\ndescription: test\n---\nTarget: $ARGUMENTS done",
@@ -293,7 +293,7 @@ class TestSubstituteArguments:
         result = resource._execute_main(
             resource._skill_loader.get_skill(name),
             context="",
-            parameters={},
+            args="",
         )
         assert "Target:  done" in result["instructions"]
         assert "$ARGUMENTS" not in result["instructions"]
@@ -307,22 +307,23 @@ class TestSubstituteArguments:
         result = resource._execute_main(
             resource._skill_loader.get_skill(name),
             context="",
-            parameters={"args": "should-not-appear-inline"},
+            args="should-not-appear-inline",
         )
         assert "Plain instructions here." in result["instructions"]
 
-    def test_substitute_arguments_uses_dict_str_fallback(self, tmp_path: Path):
-        """When 'args' key is missing, falls back to str(parameters)."""
+    def test_substitute_arguments_with_special_chars(self, tmp_path: Path):
+        """Args with special characters are substituted verbatim."""
         resource, name = self._make_resource(
             tmp_path,
-            "---\nname: arg-skill\ndescription: test\n---\nInput: $ARGUMENTS",
+            "---\nname: arg-skill\ndescription: test\n---\nRun: $ARGUMENTS",
         )
         result = resource._execute_main(
             resource._skill_loader.get_skill(name),
             context="",
-            parameters={"foo": "bar"},
+            args="-m 'Fix bug' --no-verify",
         )
-        assert "Input: {'foo': 'bar'}" in result["instructions"]
+        assert "Run: -m 'Fix bug' --no-verify" in result["instructions"]
+        assert "$ARGUMENTS" not in result["instructions"]
 
 
 class TestBaseDirectoryPrefix:
@@ -337,7 +338,7 @@ class TestBaseDirectoryPrefix:
         resource = DanaSkillResource(skill_loader=loader, auto_register=False)
         skill = loader.get_skill("dir-skill")
 
-        result = resource._execute_main(skill, context="", parameters={})
+        result = resource._execute_main(skill, context="", args="")
 
         assert f"Base directory for this skill: {skill_dir}" in result["instructions"]
 
@@ -350,7 +351,7 @@ class TestBaseDirectoryPrefix:
         resource = DanaSkillResource(skill_loader=loader, auto_register=False)
         skill = loader.get_skill("dir-skill")
 
-        msg = resource._build_fork_task_message(skill, context="", parameters={})
+        msg = resource._build_fork_task_message(skill, context="", args="")
 
         assert f"Base directory for this skill: {skill_dir}" in msg
 
@@ -367,7 +368,7 @@ class TestForkTaskMessageContent:
         resource = DanaSkillResource(skill_loader=loader, auto_register=False)
         skill = loader.get_skill("fork-content-skill")
 
-        msg = resource._build_fork_task_message(skill, context="user context", parameters={})
+        msg = resource._build_fork_task_message(skill, context="user context", args="")
 
         assert '<skill name="fork-content-skill">' in msg
         assert "These are the instructions." in msg
@@ -382,7 +383,7 @@ class TestForkTaskMessageContent:
         resource = DanaSkillResource(skill_loader=loader, auto_register=False)
         skill = loader.get_skill("fork-args-skill")
 
-        msg = resource._build_fork_task_message(skill, context="", parameters={"args": "mymodule"})
+        msg = resource._build_fork_task_message(skill, context="", args="mymodule")
 
         assert "Target: mymodule" in msg
         assert "$ARGUMENTS" not in msg

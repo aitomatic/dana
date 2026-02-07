@@ -2,7 +2,10 @@
 Built-in reminders for the Dana reminder system.
 
 These reminders use lazy validity checking - they check if required resources
-exist during evaluate() and return None if not applicable.
+exist during evaluate() and return early (no mutation) if not applicable.
+
+Reminders mutate the messages list directly, wrapping their own content
+in <system-reminder> XML tags.
 
 Reminders:
 - TodoNeverCalledReminder: Nudges agent to start using todo tracking
@@ -12,6 +15,8 @@ Reminders:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
+from dana.common.llm.types import LLMMessage
 
 
 if TYPE_CHECKING:
@@ -44,32 +49,37 @@ class TodoNeverCalledReminder:
         """
         self.turns_threshold = turns_threshold
 
-    def evaluate(self, agent: STARAgent, timeline: Timeline) -> str | None:
+    def evaluate(self, agent: STARAgent, messages: list[LLMMessage]) -> None:
         """
         Evaluate if the agent should be nudged to start using todo tracking.
 
+        Mutates messages by appending a system-reminder if the reminder fires.
+
         Args:
             agent: The STARAgent instance
-            timeline: The current timeline
-
-        Returns:
-            Nudge message, or None if reminder shouldn't fire
+            messages: The messages list to mutate in place
         """
         # Lazy validity check - does agent have ToDoResource?
         if not self._has_todo_resource(agent):
-            return None
+            return
 
         # Check turn count
         turn_count = getattr(agent, "_star_loop_count", 0)
         if turn_count < self.turns_threshold:
-            return None
+            return
+
+        # Get timeline from agent
+        timeline = getattr(agent, "_timeline", None)
+        if timeline is None:
+            return
 
         # Check if todo_write was ever called
         if self._todo_write_ever_called(timeline):
-            return None
+            return
 
-        # Generate prompt
-        return "This is a reminder that your todo list is currently empty. DO NOT mention this to the user explicitly because they are already aware. If you are working on tasks that would benefit from a todo list please use the `todo:todo_write` tool to create one. If not, please feel free to ignore. Again do not mention this message to the user."
+        # Generate prompt and append as message
+        prompt = "This is a reminder that your todo list is currently empty. DO NOT mention this to the user explicitly because they are already aware. If you are working on tasks that would benefit from a todo list please use the `todo:todo_write` tool to create one. If not, please feel free to ignore. Again do not mention this message to the user."
+        messages.append(LLMMessage(role="user", content=f"<system-reminder>\n{prompt}\n</system-reminder>"))
 
     def _has_todo_resource(self, agent: STARAgent) -> bool:
         """Check if the agent has a ToDoResource registered."""
@@ -87,6 +97,55 @@ class TodoNeverCalledReminder:
                 if "todo_write" in entry.content.lower():
                     return True
         return False
+
+
+class SkillReminder:
+    """
+    Remind the agent about available skills each turn.
+
+    Triggers when:
+    1. The agent has a DanaSkillResource registered
+    2. There are model-invocable skills available
+
+    Attributes:
+        name: "available_skills"
+    """
+
+    name: str = "available_skills"
+
+    def evaluate(self, agent: STARAgent, messages: list[LLMMessage]) -> None:
+        """
+        Append a system-reminder listing available skills.
+
+        Args:
+            agent: The STARAgent instance
+            messages: The messages list to mutate in place
+        """
+        skill_resource = self._get_skill_resource(agent)
+        if not skill_resource:
+            return
+
+        skills = skill_resource.list_model_invocable()
+        if not skills:
+            return
+
+        descriptions = skill_resource.get_prompt_descriptions()
+        content = (
+            f"The following skills are available for use with skills.invoke:\n"
+            f"{descriptions}\n"
+            f'Use skills.invoke(skill_name="<name>", args="<arguments>") to execute a skill.'
+        )
+        messages.append(LLMMessage(role="user", content=f"<system-reminder>\n{content}\n</system-reminder>"))
+
+    def _get_skill_resource(self, agent: STARAgent):
+        """Find DanaSkillResource on the agent, if any."""
+        from dana.core.skills.dana_skills.skills import DanaSkillResource
+
+        resources = getattr(agent, "_resources", [])
+        for r in resources:
+            if isinstance(r, DanaSkillResource):
+                return r
+        return None
 
 
 class TodoUpdateReminder:
@@ -117,39 +176,44 @@ class TodoUpdateReminder:
         self.turns_threshold = turns_threshold
         self.tokens_threshold = tokens_threshold
 
-    def evaluate(self, agent: STARAgent, timeline: Timeline) -> str | None:
+    def evaluate(self, agent: STARAgent, messages: list[LLMMessage]) -> None:
         """
         Evaluate if the agent should be nudged to update the todo list.
 
+        Mutates messages by appending a system-reminder if the reminder fires.
+
         Args:
             agent: The STARAgent instance
-            timeline: The current timeline
-
-        Returns:
-            Reminder message, or None if reminder shouldn't fire
+            messages: The messages list to mutate in place
         """
         # Lazy validity check - does agent have ToDoResource?
         if not self._has_todo_resource(agent):
-            return None
+            return
+
+        # Get timeline from agent
+        timeline = getattr(agent, "_timeline", None)
+        if timeline is None:
+            return
 
         # Find last todo_write call
         last_todo_call_index = self._find_last_todo_write_index(timeline)
 
         # If never called, don't trigger (let TodoNeverCalledReminder handle it)
         if last_todo_call_index == -1:
-            return None
+            return
 
         # Check if N entries since last call (~2 entries per turn: call + result)
         entries_since = len(timeline.timeline) - last_todo_call_index - 1
         if entries_since >= self.turns_threshold * 2:
-            return self._generate_prompt()
+            prompt = self._generate_prompt()
+            messages.append(LLMMessage(role="user", content=f"<system-reminder>\n{prompt}\n</system-reminder>"))
+            return
 
         # Check if K tokens since last call
         tokens_since = self._estimate_tokens_since(timeline, last_todo_call_index)
         if tokens_since >= self.tokens_threshold:
-            return self._generate_prompt()
-
-        return None
+            prompt = self._generate_prompt()
+            messages.append(LLMMessage(role="user", content=f"<system-reminder>\n{prompt}\n</system-reminder>"))
 
     def _has_todo_resource(self, agent: STARAgent) -> bool:
         """Check if the agent has a ToDoResource registered."""
@@ -193,6 +257,7 @@ def get_builtin_reminders() -> list:
         List of built-in reminder instances
     """
     return [
+        SkillReminder(),
         TodoNeverCalledReminder(),
         TodoUpdateReminder(),
     ]

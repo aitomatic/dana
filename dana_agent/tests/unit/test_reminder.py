@@ -3,18 +3,21 @@ Tests for the simplified system reminder mechanism.
 
 Tests cover:
 - Reminder protocol conformance
-- ReminderManager add/remove and evaluate_all
+- ReminderManager add/remove and evaluate_all (messages-based mutation)
 - Built-in reminders (TodoNeverCalled, TodoUpdate) with lazy validity
 - Integration verification
 """
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
+from dana.common.llm.types import LLMMessage
 from dana.core.reminder import (
     Reminder,
     ReminderManager,
 )
 from dana.core.reminder.rules.builtin import (
+    SkillReminder,
     TodoNeverCalledReminder,
     TodoUpdateReminder,
     get_builtin_reminders,
@@ -30,8 +33,8 @@ class TestReminderProtocol:
         class MyReminder:
             name = "my_reminder"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return "Test reminder."
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                messages.append(LLMMessage(role="user", content="Test reminder."))
 
         reminder = MyReminder()
         assert isinstance(reminder, Reminder)
@@ -71,8 +74,8 @@ class TestReminderManager:
         class MyReminder:
             name = "custom"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return "Custom reminder."
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                messages.append(LLMMessage(role="user", content="Custom reminder."))
 
         manager.add(MyReminder())
 
@@ -86,8 +89,8 @@ class TestReminderManager:
         class MyReminder:
             name = "test"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return None
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                pass
 
         manager.register(MyReminder())
 
@@ -100,8 +103,8 @@ class TestReminderManager:
         class MyReminder:
             name = "to_remove"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return None
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                pass
 
         manager.add(MyReminder())
         result = manager.remove("to_remove")
@@ -117,45 +120,45 @@ class TestReminderManager:
 
         assert result is False
 
-    def test_evaluate_all_returns_xml(self):
-        """Test that evaluate_all returns properly formatted XML."""
+    def test_evaluate_all_mutates_messages(self):
+        """Test that evaluate_all mutates the messages list."""
         manager = ReminderManager(load_builtins=False)
 
         class AlwaysReminder:
             name = "always"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return "Always triggers."
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                messages.append(LLMMessage(role="user", content="<system-reminder>\nAlways triggers.\n</system-reminder>"))
 
         manager.add(AlwaysReminder())
 
         mock_agent = MagicMock()
-        mock_timeline = MagicMock()
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        result = manager.evaluate_all(mock_agent, mock_timeline)
+        manager.evaluate_all(mock_agent, messages)
 
-        assert "<system-reminder>" in result
-        assert "</system-reminder>" in result
-        assert "Always triggers." in result
+        assert len(messages) == 2
+        assert "<system-reminder>" in messages[1].content
+        assert "Always triggers." in messages[1].content
 
-    def test_evaluate_all_empty_when_nothing_triggers(self):
-        """Test that evaluate_all returns empty string when no reminders trigger."""
+    def test_evaluate_all_no_mutation_when_nothing_triggers(self):
+        """Test that evaluate_all leaves messages unchanged when no reminders trigger."""
         manager = ReminderManager(load_builtins=False)
 
         class NeverReminder:
             name = "never"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return None
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                pass  # Does nothing — no mutation
 
         manager.add(NeverReminder())
 
         mock_agent = MagicMock()
-        mock_timeline = MagicMock()
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        result = manager.evaluate_all(mock_agent, mock_timeline)
+        manager.evaluate_all(mock_agent, messages)
 
-        assert result == ""
+        assert len(messages) == 1  # Unchanged
 
     def test_evaluate_all_multiple_reminders(self):
         """Test evaluate_all with multiple triggering reminders."""
@@ -164,27 +167,26 @@ class TestReminderManager:
         class FirstReminder:
             name = "first"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return "First reminder."
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                messages.append(LLMMessage(role="user", content="<system-reminder>\nFirst reminder.\n</system-reminder>"))
 
         class SecondReminder:
             name = "second"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return "Second reminder."
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                messages.append(LLMMessage(role="user", content="<system-reminder>\nSecond reminder.\n</system-reminder>"))
 
         manager.add(FirstReminder())
         manager.add(SecondReminder())
 
         mock_agent = MagicMock()
-        mock_timeline = MagicMock()
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        result = manager.evaluate_all(mock_agent, mock_timeline)
+        manager.evaluate_all(mock_agent, messages)
 
-        assert "First reminder." in result
-        assert "Second reminder." in result
-        # Each should be in its own system-reminder tag
-        assert result.count("<system-reminder>") == 2
+        assert len(messages) == 3  # Original + 2 appended
+        assert "First reminder." in messages[1].content
+        assert "Second reminder." in messages[2].content
 
     def test_evaluate_all_handles_exceptions(self):
         """Test that evaluate_all handles exceptions gracefully."""
@@ -193,46 +195,48 @@ class TestReminderManager:
         class BadReminder:
             name = "bad"
 
-            def evaluate(self, agent, timeline) -> str | None:
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
                 raise ValueError("Something went wrong")
 
         class GoodReminder:
             name = "good"
 
-            def evaluate(self, agent, timeline) -> str | None:
-                return "Good reminder."
+            def evaluate(self, agent, messages: list[LLMMessage]) -> None:
+                messages.append(LLMMessage(role="user", content="<system-reminder>\nGood reminder.\n</system-reminder>"))
 
         manager.add(BadReminder())
         manager.add(GoodReminder())
 
         mock_agent = MagicMock()
-        mock_timeline = MagicMock()
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        # Should not raise, and should still return the good reminder
-        result = manager.evaluate_all(mock_agent, mock_timeline)
+        # Should not raise, and should still append the good reminder
+        manager.evaluate_all(mock_agent, messages)
 
-        assert "Good reminder." in result
+        assert len(messages) == 2
+        assert "Good reminder." in messages[1].content
 
 
 class TestTodoNeverCalledReminder:
     """Tests for TodoNeverCalledReminder with lazy validity."""
 
-    def test_returns_none_without_todo_resource(self):
-        """Test that reminder returns None when agent has no ToDoResource."""
+    def test_skips_without_todo_resource(self):
+        """Test that reminder does not mutate messages when agent has no ToDoResource."""
         reminder = TodoNeverCalledReminder()
         mock_agent = MagicMock()
         mock_agent._resources = []  # No resources
         mock_agent._star_loop_count = 5
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = []
 
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = []
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        reminder.evaluate(mock_agent, messages)
 
-        assert result is None
+        assert len(messages) == 1  # No mutation
 
-    def test_returns_none_before_threshold(self):
-        """Test that reminder returns None before turn threshold."""
+    def test_skips_before_threshold(self):
+        """Test that reminder does not mutate messages before turn threshold."""
         from dana.core.resource.todo_resource import ToDoResource
 
         reminder = TodoNeverCalledReminder(turns_threshold=2)
@@ -240,16 +244,17 @@ class TestTodoNeverCalledReminder:
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
         mock_agent._star_loop_count = 1  # Below threshold
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = []
 
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = []
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        reminder.evaluate(mock_agent, messages)
 
-        assert result is None
+        assert len(messages) == 1  # No mutation
 
     def test_triggers_after_threshold_no_todo_calls(self):
-        """Test that reminder triggers after threshold with no todo_write calls."""
+        """Test that reminder appends message after threshold with no todo_write calls."""
         from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
 
@@ -259,21 +264,23 @@ class TestTodoNeverCalledReminder:
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
         mock_agent._star_loop_count = 3  # Above threshold
-
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = [
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = [
             TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="test"),
             TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="response"),
         ]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        assert result is not None
-        assert "todo list is currently empty" in result
-        assert "todo:todo_write" in result
+        reminder.evaluate(mock_agent, messages)
 
-    def test_returns_none_if_todo_write_called(self):
-        """Test that reminder returns None if todo_write was called."""
+        assert len(messages) == 2
+        assert "<system-reminder>" in messages[1].content
+        assert "todo list is currently empty" in messages[1].content
+        assert "todo:todo_write" in messages[1].content
+
+    def test_skips_if_todo_write_called(self):
+        """Test that reminder does not mutate messages if todo_write was called."""
         from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
 
@@ -283,35 +290,37 @@ class TestTodoNeverCalledReminder:
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
         mock_agent._star_loop_count = 3
-
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = [
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = [
             TimelineEntry(entry_type=TimelineEntryType.TOOL_CALL, content="todo_write(todos=[...])"),
         ]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        assert result is None
+        reminder.evaluate(mock_agent, messages)
+
+        assert len(messages) == 1  # No mutation
 
 
 class TestTodoUpdateReminder:
     """Tests for TodoUpdateReminder with lazy validity."""
 
-    def test_returns_none_without_todo_resource(self):
-        """Test that reminder returns None when agent has no ToDoResource."""
+    def test_skips_without_todo_resource(self):
+        """Test that reminder does not mutate messages when agent has no ToDoResource."""
         reminder = TodoUpdateReminder()
         mock_agent = MagicMock()
         mock_agent._resources = []  # No resources
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = []
 
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = []
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        reminder.evaluate(mock_agent, messages)
 
-        assert result is None
+        assert len(messages) == 1  # No mutation
 
-    def test_returns_none_if_never_called(self):
-        """Test that reminder returns None if todo_write was never called."""
+    def test_skips_if_never_called(self):
+        """Test that reminder does not mutate messages if todo_write was never called."""
         from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
 
@@ -320,19 +329,20 @@ class TestTodoUpdateReminder:
         mock_agent = MagicMock()
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
-
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = [
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = [
             TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="test"),
             TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="response"),
         ]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        assert result is None
+        reminder.evaluate(mock_agent, messages)
+
+        assert len(messages) == 1  # No mutation
 
     def test_triggers_after_turns_since_last_call(self):
-        """Test that reminder triggers after N turns since last todo_write call."""
+        """Test that reminder appends message after N turns since last todo_write call."""
         from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
 
@@ -341,10 +351,9 @@ class TestTodoUpdateReminder:
         mock_agent = MagicMock()
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
-
-        mock_timeline = MagicMock()
+        mock_agent._timeline = MagicMock()
         # todo_write called, then 4 more entries (2 turns worth)
-        mock_timeline.timeline = [
+        mock_agent._timeline.timeline = [
             TimelineEntry(entry_type=TimelineEntryType.TOOL_CALL, content="todo_write(todos=[...])"),
             TimelineEntry(entry_type=TimelineEntryType.RESOURCE_RESULT, content="result"),
             TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="test1"),
@@ -353,13 +362,16 @@ class TestTodoUpdateReminder:
             TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="response2"),
         ]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        assert result is not None
-        assert "todo list" in result.lower()
+        reminder.evaluate(mock_agent, messages)
+
+        assert len(messages) == 2
+        assert "<system-reminder>" in messages[1].content
+        assert "todo list" in messages[1].content.lower()
 
     def test_triggers_after_tokens_since_last_call(self):
-        """Test that reminder triggers after K tokens since last todo_write call."""
+        """Test that reminder appends message after K tokens since last todo_write call."""
         from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
 
@@ -368,20 +380,21 @@ class TestTodoUpdateReminder:
         mock_agent = MagicMock()
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
-
-        mock_timeline = MagicMock()
+        mock_agent._timeline = MagicMock()
         # todo_write called, then entries with lots of content
-        mock_timeline.timeline = [
+        mock_agent._timeline.timeline = [
             TimelineEntry(entry_type=TimelineEntryType.TOOL_CALL, content="todo_write(todos=[...])"),
             TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="x" * 500),  # ~125 tokens
         ]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        assert result is not None
+        reminder.evaluate(mock_agent, messages)
 
-    def test_returns_none_if_recently_called(self):
-        """Test that reminder returns None if todo_write was recently called."""
+        assert len(messages) == 2
+
+    def test_skips_if_recently_called(self):
+        """Test that reminder does not mutate messages if todo_write was recently called."""
         from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
 
@@ -390,17 +403,18 @@ class TestTodoUpdateReminder:
         mock_agent = MagicMock()
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
-
-        mock_timeline = MagicMock()
+        mock_agent._timeline = MagicMock()
         # todo_write called recently
-        mock_timeline.timeline = [
+        mock_agent._timeline.timeline = [
             TimelineEntry(entry_type=TimelineEntryType.TOOL_CALL, content="todo_write(todos=[...])"),
             TimelineEntry(entry_type=TimelineEntryType.RESOURCE_RESULT, content="result"),
         ]
 
-        result = reminder.evaluate(mock_agent, mock_timeline)
+        messages = [LLMMessage(role="user", content="Hello")]
 
-        assert result is None
+        reminder.evaluate(mock_agent, messages)
+
+        assert len(messages) == 1  # No mutation
 
 
 class TestGetBuiltinReminders:
@@ -411,13 +425,14 @@ class TestGetBuiltinReminders:
         reminders = get_builtin_reminders()
 
         assert isinstance(reminders, list)
-        assert len(reminders) == 2
+        assert len(reminders) == 3
 
     def test_returns_todo_reminders(self):
         """Test that it returns the todo reminders."""
         reminders = get_builtin_reminders()
         names = [r.name for r in reminders]
 
+        assert "available_skills" in names
         assert "todo_never_called" in names
         assert "todo_update" in names
 
@@ -435,20 +450,20 @@ class TestLazyValidityBehavior:
 
     def test_reminders_auto_skip_without_resource(self):
         """Test that reminders auto-skip when resource is not present."""
-        # This is the key behavior change - reminders check validity lazily
         manager = ReminderManager(load_builtins=True)
 
         mock_agent = MagicMock()
         mock_agent._resources = []  # No ToDoResource
         mock_agent._star_loop_count = 5
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = []
 
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = []
+        messages = [LLMMessage(role="user", content="Hello")]
 
         # Even though todo reminders are loaded, they should auto-skip
-        result = manager.evaluate_all(mock_agent, mock_timeline)
+        manager.evaluate_all(mock_agent, messages)
 
-        assert result == ""  # No reminders fired
+        assert len(messages) == 1  # No reminders fired
 
     def test_reminders_fire_when_resource_present(self):
         """Test that reminders fire when resource is present."""
@@ -461,13 +476,91 @@ class TestLazyValidityBehavior:
         mock_todo_resource = MagicMock(spec=ToDoResource)
         mock_agent._resources = [mock_todo_resource]
         mock_agent._star_loop_count = 5
-
-        mock_timeline = MagicMock()
-        mock_timeline.timeline = [
+        mock_agent._timeline = MagicMock()
+        mock_agent._timeline.timeline = [
             TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="test"),
         ]
 
-        result = manager.evaluate_all(mock_agent, mock_timeline)
+        messages = [LLMMessage(role="user", content="Hello")]
+
+        manager.evaluate_all(mock_agent, messages)
 
         # TodoNeverCalledReminder should fire (no todo_write calls)
-        assert "todo list is currently empty" in result
+        assert len(messages) >= 2
+        assert "todo list is currently empty" in messages[1].content
+
+
+class TestSkillReminder:
+    """Tests for SkillReminder with lazy validity."""
+
+    def test_skips_without_skill_resource(self):
+        """Test that reminder does not fire when agent has no DanaSkillResource."""
+        reminder = SkillReminder()
+        mock_agent = MagicMock()
+        mock_agent._resources = []
+
+        messages = [LLMMessage(role="user", content="Hello")]
+        reminder.evaluate(mock_agent, messages)
+
+        assert len(messages) == 1  # No mutation
+
+    def test_skips_when_no_model_invocable_skills(self):
+        """Test that reminder does not fire when there are no model-invocable skills."""
+        from dana.core.skills.dana_skills.skills import DanaSkillResource
+
+        reminder = SkillReminder()
+        mock_agent = MagicMock()
+        mock_skill_resource = MagicMock(spec=DanaSkillResource)
+        mock_skill_resource.list_model_invocable.return_value = []
+        mock_agent._resources = [mock_skill_resource]
+
+        messages = [LLMMessage(role="user", content="Hello")]
+        reminder.evaluate(mock_agent, messages)
+
+        assert len(messages) == 1  # No mutation
+
+    def test_fires_when_skills_available(self):
+        """Test that reminder appends message when skills are available."""
+        from dana.core.skills.dana_skills.models import DanaSkill
+        from dana.core.skills.dana_skills.skills import DanaSkillResource
+
+        reminder = SkillReminder()
+        mock_agent = MagicMock()
+        mock_skill_resource = MagicMock(spec=DanaSkillResource)
+        mock_skill_resource.list_model_invocable.return_value = [
+            DanaSkill(name="test-skill", description="A test skill", path=Path("/tmp/test")),
+        ]
+        mock_skill_resource.get_prompt_descriptions.return_value = "- test-skill: A test skill"
+        mock_agent._resources = [mock_skill_resource]
+
+        messages = [LLMMessage(role="user", content="Hello")]
+        reminder.evaluate(mock_agent, messages)
+
+        assert len(messages) == 2
+        assert "<system-reminder>" in messages[1].content
+        assert "test-skill" in messages[1].content
+        assert "skills.invoke" in messages[1].content
+
+    def test_reminder_content_format(self):
+        """Test the format of the reminder message."""
+        from dana.core.skills.dana_skills.models import DanaSkill
+        from dana.core.skills.dana_skills.skills import DanaSkillResource
+
+        reminder = SkillReminder()
+        mock_agent = MagicMock()
+        mock_skill_resource = MagicMock(spec=DanaSkillResource)
+        mock_skill_resource.list_model_invocable.return_value = [
+            DanaSkill(name="commit", description="Generate commit messages", path=Path("/tmp/test")),
+            DanaSkill(name="review", description="Code review helper", path=Path("/tmp/test")),
+        ]
+        mock_skill_resource.get_prompt_descriptions.return_value = "- commit: Generate commit messages\n- review: Code review helper"
+        mock_agent._resources = [mock_skill_resource]
+
+        messages = [LLMMessage(role="user", content="Hello")]
+        reminder.evaluate(mock_agent, messages)
+
+        content = messages[1].content
+        assert content.startswith("<system-reminder>")
+        assert content.endswith("</system-reminder>")
+        assert "commit" in content
+        assert "review" in content

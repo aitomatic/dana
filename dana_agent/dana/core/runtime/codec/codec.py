@@ -116,9 +116,7 @@ class CodecRuntimeBase(AgentRuntime):
             messages.extend(timeline_messages)
 
         if self._agent._reminder_manager:
-            reminders = self._agent._reminder_manager.evaluate_all(self._agent, timeline)
-            if reminders:
-                messages.append(LLMMessage(role="user", content=reminders))
+            self._agent._reminder_manager.evaluate_all(self._agent, messages)
 
         self._log_prompt_build(agent, system_prompt, timeline, messages)
 

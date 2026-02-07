@@ -362,7 +362,7 @@ use the skills resource to invoke it by name.
 
 {descriptions}
 
-To use a skill, call: skills.invoke(skill_name="<name>", context="<relevant context>")
+To use a skill, call: skills.invoke(skill_name="<name>", args="<arguments>")
 </available_skills>"""
         return ""
 
