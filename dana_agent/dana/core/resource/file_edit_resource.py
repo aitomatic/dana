@@ -387,7 +387,7 @@ class FileEditResource(BaseResource):
 
         # Check if file already exists
         if resolved_path.exists():
-            return f"Error: File already exists: {resolved_path}. Cannot overwrite existing files. Use edit() for modifications."
+            return f"Error: File already exists: {resolved_path}. Cannot overwrite existing files. Use Edit tool to make modifications."
 
         try:
             # Create parent directories if they don't exist
