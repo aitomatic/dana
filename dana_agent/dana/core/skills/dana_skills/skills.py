@@ -70,7 +70,6 @@ class DanaSkillResource(BaseResource):
     async def invoke(
         self,
         skill_name: str,
-        context: str = "",
         args: str = "",
     ) -> dict[str, Any]:
         """
@@ -78,7 +77,6 @@ class DanaSkillResource(BaseResource):
 
         Args:
             skill_name: Name of the skill to invoke (e.g., "commit-message")
-            context: Relevant context from the conversation that the skill needs
             args: Arguments string substituted into $ARGUMENTS in skill content
 
         Returns:
@@ -96,10 +94,9 @@ class DanaSkillResource(BaseResource):
         logger.info("invoking_skill", name=skill_name, context_mode=skill.context_mode)
 
         if skill.context_mode == "fork":
-            return await self._execute_fork(skill, context, args)
+            return await self._execute_fork(skill, args)
         else:
-            # Main mode doesn't need await (just returns instructions)
-            return self._execute_main(skill, context, args)
+            return self._execute_main(skill, args)
 
     def _substitute_arguments(self, skill_content: str, args: str) -> str:
         """Replace $ARGUMENTS in skill content with the args string.
@@ -115,34 +112,23 @@ class DanaSkillResource(BaseResource):
     def _execute_main(
         self,
         skill: DanaSkill,
-        context: str,
         args: str,
     ) -> dict[str, Any]:
         """
         Execute skill in main context (non-fork).
 
-        The skill content is returned to the agent. The agent should follow
-        the instructions in its response. Content stays in conversation history.
+        The skill content is injected as a user message via inject_as_user.
+        The LLM already has full conversation context, so no explicit context
+        parameter is needed (unlike fork mode where the subagent is isolated).
 
         Args:
             skill: The skill to execute
-            context: Context from the conversation
             args: Arguments string for $ARGUMENTS substitution
 
         Returns:
             Dictionary with skill instructions
         """
-        skill_content = self._substitute_arguments(skill.content, args)
-
-        # Build tool restriction note if applicable
-        tools_note = ""
-        if skill.allowed_tools:
-            tools_note = f"\n\n**Tool Restrictions:** You may only use: {', '.join(skill.allowed_tools)}"
-
-        # Build scripts note if applicable
-        scripts_note = ""
-        if skill.scripts_dir:
-            scripts_note = f"\n\n**Scripts Available:** Run scripts from {skill.scripts_dir}/ - execute them, do not read the code."
+        skill_body = self._substitute_arguments(skill.body, args)
 
         base_dir_line = f"Base directory for this skill: {skill.path.parent}\n\n"
 
@@ -150,21 +136,12 @@ class DanaSkillResource(BaseResource):
             "success": True,
             "mode": "main",
             "message": f"Launching skill: {skill.name}",
-            "inject_as_user": f"""{base_dir_line}<skill name="{skill.name}">
-{skill_content}
-</skill>
-
-<context>
-{context if context else "No additional context provided."}
-</context>{tools_note}{scripts_note}
-
-Follow the skill instructions above. The skill content will remain in your context for follow-up questions.""",
+            "inject_as_user": f"{base_dir_line}{skill_body}",
         }
 
     async def _execute_fork(
         self,
         skill: DanaSkill,
-        context: str,
         args: str,
     ) -> dict[str, Any]:
         """
@@ -173,7 +150,7 @@ Follow the skill instructions above. The skill content will remain in your conte
         Creates a subagent with:
         - Same agent type and system prompt as parent
         - Restricted tools based on allowed-tools in SKILL.md
-        - Skill content + context + args as the task
+        - Skill content + args as the task
 
         Only returns a summary - the subagent context is discarded after execution.
 
@@ -184,7 +161,7 @@ Follow the skill instructions above. The skill content will remain in your conte
         │   1. Loads SKILL.md                                         │
         │   2. Reads frontmatter (context: fork, allowed-tools)       │
         │   3. Creates subagent (same type, restricted tools)         │
-        │   4. Passes SKILL.md + context + args to subagent           │
+        │   4. Passes SKILL.md + args to subagent                     │
         │   5. Waits for subagent to complete                         │
         │   6. Returns summary to main agent (context discarded)      │
         │                                                             │
@@ -192,7 +169,6 @@ Follow the skill instructions above. The skill content will remain in your conte
 
         Args:
             skill: The skill to execute
-            context: Context from the conversation
             args: Arguments string for $ARGUMENTS substitution
 
         Returns:
@@ -205,14 +181,14 @@ Follow the skill instructions above. The skill content will remain in your conte
                 skill=skill.name,
                 message="No parent agent available for fork mode, falling back to main mode",
             )
-            return self._execute_main(skill, context, args)
+            return self._execute_main(skill, args)
 
         try:
             # Create subagent with restricted resources
             subagent = self._create_fork_subagent(skill)
 
             # Build the task message for the subagent
-            task_message = self._build_fork_task_message(skill, context, args)
+            task_message = self._build_fork_task_message(skill, args)
 
             logger.info(
                 "fork_executing",
@@ -402,7 +378,6 @@ Follow the skill instructions above. The skill content will remain in your conte
     def _build_fork_task_message(
         self,
         skill: DanaSkill,
-        context: str,
         args: str,
     ) -> str:
         """
@@ -410,23 +385,18 @@ Follow the skill instructions above. The skill content will remain in your conte
 
         Args:
             skill: The skill to execute
-            context: Context from the conversation
             args: Arguments string for $ARGUMENTS substitution
 
         Returns:
             Formatted task message for the subagent
         """
 
-        skill_content = self._substitute_arguments(skill.content, args)
-
-        scripts_note = ""
-        if skill.scripts_dir:
-            scripts_note = f"\n\n**Scripts Available:** Run scripts from {skill.scripts_dir}/ - execute them, do not read the code."
+        skill_body = self._substitute_arguments(skill.body, args)
 
         return f"""You are executing a forked skill in an isolated context.
 
 CRITICAL: Your entire conversation history will be DISCARDED after execution.
-ONLY your FINAL RESPONSE will be returned to the caller.
+ONLY your FINAL RESPONSE (Not thinking) will be returned to the caller.
 
 This means:
 - Do NOT provide status updates or partial progress
@@ -436,13 +406,7 @@ This means:
 
 Base directory for this skill: {skill.path.parent}
 
-<skill name="{skill.name}">
-{skill_content}
-</skill>
-
-<user_context>
-{context if context else "No additional context provided."}
-</user_context>{scripts_note}
+{skill_body}
 
 Execute ALL skill instructions above completely. Your final response is the ONLY output that will be seen - make it count."""
 
