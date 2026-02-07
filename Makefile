@@ -41,7 +41,7 @@ define run-in-packages
 endef
 
 # All targets are phony (don't create files)
-.PHONY: help list packages quickstart setup sync test test-agent test-lang test-studio clean dana studio-server \
+.PHONY: help list packages quickstart setup sync test test-agent test-lang test-studio clean dana dana-code studio-server \
 	install-ollama start-ollama install-vllm start-vllm
 
 # =============================================================================
@@ -71,6 +71,7 @@ help: ## Show available commands
 	@echo ""
 	@echo "\033[1mRun:\033[0m"
 	@echo "  \033[36mdana\033[0m            🚀 Start the Dana REPL"
+	@echo "  \033[36mdana-code\033[0m       🤖 Start Dana Code (interactive coding agent)"
 	@echo "  \033[36mstudio-server\033[0m   🎨 Start Dana Studio server"
 	@echo ""
 	@echo "\033[1mLLM Infrastructure:\033[0m"
@@ -218,6 +219,10 @@ clean: ## Clean build artifacts and remove .venv
 dana: ## Start the Dana REPL
 	@echo "🚀 Starting Dana REPL..."
 	$(UV_CMD) run dana
+
+dana-code: ## Start Dana Code (interactive coding agent)
+	@echo "Starting Dana Code..."
+	$(UV_CMD) run dana-code
 
 studio-server: ## Start Dana Studio server
 	@echo "🎨 Starting Dana Studio server..."

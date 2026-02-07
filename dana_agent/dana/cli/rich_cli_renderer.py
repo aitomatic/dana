@@ -430,13 +430,16 @@ class RichCLIRenderer(Notifiable):
         self._flush_tool_cards()
 
         # Create result panels from tool_results
+        # Runtime returns: {"type", "target", "result", "success"}
+        # Map to renderer fields: tool_name, output, exit_code
         tool_results = data.get("tool_results", [])
         if tool_results and isinstance(tool_results, list):
             for result in tool_results:
                 if isinstance(result, dict):
-                    tool_name = result.get("function", result.get("tool", "unknown"))
-                    output = result.get("output", "")
-                    exit_code = result.get("exit_code", 0)
+                    tool_name = result.get("target", result.get("function", result.get("tool", "unknown")))
+                    output = result.get("result", result.get("output", ""))
+                    success = result.get("success", True)
+                    exit_code = result.get("exit_code", 0 if success else 1)
                     if not isinstance(exit_code, int):
                         exit_code = 0
                     panel = ResultPanelComponent(
