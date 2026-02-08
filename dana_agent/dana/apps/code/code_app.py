@@ -1,5 +1,6 @@
 """Dana Code Application - Wires DanaCodingAgent with RichCLIRenderer."""
 
+import importlib.metadata
 import logging
 import os
 import sys
@@ -99,21 +100,37 @@ class DanaCodeApp:
         self.renderer = RichCLIRenderer(verbose=True, show_tool_calls=True)
         self.agent.with_notifiable(self.renderer)
 
-        print(f"Agent ready (provider={llm_provider}, model={model})\n")
+        self._print_banner(llm_provider, model)
+
+    def _print_banner(self, provider: str, model: str) -> None:
+        """Print a Rich-formatted startup banner."""
+        from rich.console import Console
+        from rich.text import Text
+
+        try:
+            version = importlib.metadata.version("dana-agent")
+        except importlib.metadata.PackageNotFoundError:
+            version = "dev"
+
+        cwd = os.getcwd().replace(os.path.expanduser("~"), "~")
+
+        console = Console()
+        banner = Text()
+        banner.append(f"\n  Dana Code v{version}\n", style="bold")
+        banner.append(f"  {provider} · {model}\n", style="dim")
+        banner.append(f"  {cwd}\n", style="dim")
+        console.print(banner)
 
     def run(self):
         """Run the interactive loop."""
-        print("\nDana Code - Interactive Coding Agent")
-        print("Type /help for commands, /exit to quit.\n")
-
         self._initialize_agent()
 
         while True:
             try:
                 if PROMPT_TOOLKIT_AVAILABLE and self.session:
-                    user_input = self.session.prompt("You: ")
+                    user_input = self.session.prompt("❯ ")
                 else:
-                    user_input = input("You: ")
+                    user_input = input("❯ ")
 
                 if not user_input.strip():
                     continue
@@ -195,7 +212,14 @@ Commands:
             # Only print response if renderer is not in verbose mode
             # (verbose renderer already prints the final response)
             if response and not self.renderer.verbose:
-                print(f"\n{response}\n")
+                try:
+                    from rich.markdown import Markdown
+
+                    self.renderer.console.print()
+                    self.renderer.console.print(Markdown(str(response)))
+                    self.renderer.console.print()
+                except ImportError:
+                    print(f"\n{response}\n")
 
         except Exception as e:
             print(f"\nError: {e}\n")

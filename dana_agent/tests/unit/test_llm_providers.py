@@ -765,6 +765,220 @@ class TestDeepSeekProvider:
                 await provider.chat(messages)
 
 
+class TestAnthropicMessageConversion:
+    """Unit tests for prepare_anthropic_messages() — pure function, no mocking needed."""
+
+    def _prepare(self, messages):
+        from dana.common.llm.providers.anthropic import prepare_anthropic_messages
+
+        return prepare_anthropic_messages(messages)
+
+    # --- Bug 1: Tool call field name mismatch ---
+
+    def test_tool_calls_runtime_format(self):
+        """Runtime format uses 'function' and 'tool_call_id' keys."""
+        msgs = [
+            LLMMessage(
+                role="assistant",
+                content="",
+                tool_calls=[
+                    {"function": "get_weather", "tool_call_id": "call_abc", "arguments": {"city": "Paris"}},
+                ],
+            ),
+        ]
+        system, out = self._prepare(msgs)
+        block = out[0]["content"][0]
+        assert block["type"] == "tool_use"
+        assert block["id"] == "call_abc"
+        assert block["name"] == "get_weather"
+        assert block["input"] == {"city": "Paris"}
+
+    def test_tool_calls_native_format(self):
+        """Native format uses 'id' and 'name' keys."""
+        msgs = [
+            LLMMessage(
+                role="assistant",
+                content="",
+                tool_calls=[
+                    {"id": "call_xyz", "name": "search", "arguments": {"q": "test"}},
+                ],
+            ),
+        ]
+        system, out = self._prepare(msgs)
+        block = out[0]["content"][0]
+        assert block["id"] == "call_xyz"
+        assert block["name"] == "search"
+
+    def test_tool_calls_mixed_formats(self):
+        """Both formats in one message resolve correctly."""
+        msgs = [
+            LLMMessage(
+                role="assistant",
+                content="thinking...",
+                tool_calls=[
+                    {"function": "func_a", "tool_call_id": "id_1", "arguments": {}},
+                    {"id": "id_2", "name": "func_b", "arguments": {}},
+                ],
+            ),
+        ]
+        system, out = self._prepare(msgs)
+        blocks = out[0]["content"]
+        assert blocks[0] == {"type": "text", "text": "thinking..."}
+        assert blocks[1]["id"] == "id_1"
+        assert blocks[1]["name"] == "func_a"
+        assert blocks[2]["id"] == "id_2"
+        assert blocks[2]["name"] == "func_b"
+
+    # --- Bug 2: Multiple system messages ---
+
+    def test_single_system_message(self):
+        """One system msg without cache_control → plain string."""
+        msgs = [
+            LLMMessage(role="system", content="You are helpful."),
+            LLMMessage(role="user", content="Hi"),
+        ]
+        system, out = self._prepare(msgs)
+        assert system == "You are helpful."
+        assert len(out) == 1
+
+    def test_single_system_message_with_cache_control(self):
+        """One system msg with cache_control → list with one block."""
+        cc = {"type": "ephemeral"}
+        msgs = [
+            LLMMessage(role="system", content="You are helpful.", cache_control=cc),
+            LLMMessage(role="user", content="Hi"),
+        ]
+        system, out = self._prepare(msgs)
+        assert isinstance(system, list)
+        assert len(system) == 1
+        assert system[0]["text"] == "You are helpful."
+        assert system[0]["cache_control"] == cc
+
+    def test_multiple_system_messages_accumulated(self):
+        """Two system msgs → list of 2 content blocks."""
+        msgs = [
+            LLMMessage(role="system", content="You are an agent."),
+            LLMMessage(role="system", content="Current time: 2025-01-01"),
+            LLMMessage(role="user", content="Hi"),
+        ]
+        system, out = self._prepare(msgs)
+        assert isinstance(system, list)
+        assert len(system) == 2
+        assert system[0]["text"] == "You are an agent."
+        assert system[1]["text"] == "Current time: 2025-01-01"
+
+    def test_multiple_system_messages_with_cache_control(self):
+        """cache_control preserved on the block that has it."""
+        cc = {"type": "ephemeral"}
+        msgs = [
+            LLMMessage(role="system", content="Agent prompt", cache_control=cc),
+            LLMMessage(role="system", content="Context info"),
+            LLMMessage(role="user", content="Hi"),
+        ]
+        system, out = self._prepare(msgs)
+        assert isinstance(system, list)
+        assert system[0]["cache_control"] == cc
+        assert "cache_control" not in system[1]
+
+    # --- Bug 3: Consecutive same-role merging ---
+
+    def test_consecutive_user_messages_merged(self):
+        """Two user msgs → one user msg with merged content blocks."""
+        msgs = [
+            LLMMessage(role="user", content="First part."),
+            LLMMessage(role="user", content="Second part."),
+        ]
+        system, out = self._prepare(msgs)
+        assert len(out) == 1
+        assert out[0]["role"] == "user"
+        # Content must be a list of blocks after merging
+        assert isinstance(out[0]["content"], list)
+        texts = [b["text"] for b in out[0]["content"]]
+        assert texts == ["First part.", "Second part."]
+
+    def test_consecutive_assistant_text_messages_merged(self):
+        """Two text-only assistant msgs → merged into one."""
+        msgs = [
+            LLMMessage(role="assistant", content="Part A"),
+            LLMMessage(role="assistant", content="Part B"),
+        ]
+        system, out = self._prepare(msgs)
+        assert len(out) == 1
+        assert out[0]["role"] == "assistant"
+
+    def test_assistant_text_then_tool_calls_merged(self):
+        """Assistant text + assistant tool_calls → one msg with text + tool_use blocks."""
+        msgs = [
+            LLMMessage(role="assistant", content="Let me check."),
+            LLMMessage(
+                role="assistant",
+                content="",
+                tool_calls=[
+                    {"id": "c1", "name": "search", "arguments": {"q": "test"}},
+                ],
+            ),
+        ]
+        system, out = self._prepare(msgs)
+        assert len(out) == 1
+        assert out[0]["role"] == "assistant"
+        blocks = out[0]["content"]
+        types = [b["type"] for b in blocks]
+        assert "text" in types
+        assert "tool_use" in types
+
+    def test_tool_result_followed_by_user_text_merged(self):
+        """Tool result (user) + regular user msg → merged, no consecutive same roles."""
+        msgs = [
+            LLMMessage(role="tool", content="42", tool_call_id="c1"),
+            LLMMessage(role="user", content="Thanks, now explain."),
+        ]
+        system, out = self._prepare(msgs)
+        # Both become user role; should be merged
+        assert len(out) == 1
+        assert out[0]["role"] == "user"
+
+    # --- No-regression tests ---
+
+    def test_parallel_tool_results_grouped(self):
+        """Two consecutive tool results → one user msg with 2 tool_result blocks."""
+        msgs = [
+            LLMMessage(role="tool", content="result1", tool_call_id="c1"),
+            LLMMessage(role="tool", content="result2", tool_call_id="c2"),
+        ]
+        system, out = self._prepare(msgs)
+        assert len(out) == 1
+        assert out[0]["role"] == "user"
+        tool_results = [b for b in out[0]["content"] if b["type"] == "tool_result"]
+        assert len(tool_results) == 2
+
+    def test_user_message_cache_control_preserved(self):
+        """cache_control on user msg → content blocks format preserved."""
+        cc = {"type": "ephemeral"}
+        msgs = [
+            LLMMessage(role="user", content="Hello", cache_control=cc),
+        ]
+        system, out = self._prepare(msgs)
+        assert isinstance(out[0]["content"], list)
+        assert out[0]["content"][0]["cache_control"] == cc
+
+    def test_no_system_in_output_messages(self):
+        """System msgs excluded from output messages list."""
+        msgs = [
+            LLMMessage(role="system", content="sys"),
+            LLMMessage(role="user", content="hi"),
+            LLMMessage(role="assistant", content="hello"),
+        ]
+        system, out = self._prepare(msgs)
+        roles = [m["role"] for m in out]
+        assert "system" not in roles
+
+    def test_empty_messages(self):
+        """Empty input → (None, [])."""
+        system, out = self._prepare([])
+        assert system is None
+        assert out == []
+
+
 class TestOpenRouterProvider:
     """Unit tests for OpenRouter provider"""
 

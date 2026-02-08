@@ -102,6 +102,46 @@ class TestUpdatePhase:
         assert spinner.text == "Reflecting..."
 
 
+class TestCharCounting:
+    """Test character counting and token estimation."""
+
+    def test_initial_char_count_zero(self) -> None:
+        spinner = SpinnerComponent()
+        assert spinner.estimated_tokens_text == "~0 tokens"
+
+    def test_increment_chars(self) -> None:
+        spinner = SpinnerComponent()
+        spinner.increment_chars(400)
+        assert spinner.estimated_tokens_text == "~100 tokens"
+
+    def test_increment_chars_multiple(self) -> None:
+        spinner = SpinnerComponent()
+        spinner.increment_chars(2000)
+        spinner.increment_chars(2000)
+        assert spinner.estimated_tokens_text == "~1.0k tokens"
+
+    def test_start_resets_char_count(self) -> None:
+        spinner = SpinnerComponent()
+        spinner.increment_chars(8000)
+        spinner.start()
+        assert spinner.estimated_tokens_text == "~0 tokens"
+
+    def test_k_suffix_formatting(self) -> None:
+        spinner = SpinnerComponent()
+        spinner.increment_chars(4800)  # 1200 tokens -> ~1.2k
+        assert spinner.estimated_tokens_text == "~1.2k tokens"
+
+    def test_m_suffix_formatting(self) -> None:
+        spinner = SpinnerComponent()
+        spinner.increment_chars(4_000_000)  # 1M tokens
+        assert spinner.estimated_tokens_text == "~1.0M tokens"
+
+    def test_small_count_no_suffix(self) -> None:
+        spinner = SpinnerComponent()
+        spinner.increment_chars(200)  # 50 tokens
+        assert spinner.estimated_tokens_text == "~50 tokens"
+
+
 class TestImport:
     """Test package imports."""
 

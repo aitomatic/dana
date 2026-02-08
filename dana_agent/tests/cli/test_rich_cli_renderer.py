@@ -328,7 +328,8 @@ class TestSpinnerIntegration:
 
         with patch.object(renderer.console, "print") as mock_print:
             renderer._handle_think(agent, {"done": True, "response": "Final answer"})
-            mock_print.assert_called_once()
+            # Two calls: blank line separator + Markdown response
+            assert mock_print.call_count == 2
 
     def test_handle_think_done_no_print_when_not_verbose(self) -> None:
         renderer = self._make_renderer()
@@ -349,6 +350,43 @@ class TestSpinnerIntegration:
         with patch.object(renderer.console, "print") as mock_print:
             renderer._handle_think(agent, {"done": True, "response": ""})
             mock_print.assert_not_called()
+
+    def test_handle_think_done_prints_completion_summary(self) -> None:
+        """When done=True with tool_count > 0, prints a completion summary."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Simulate a SEE → ACT → THINK(done) cycle
+        renderer._handle_see(agent, {"caller_message": "hello"})
+        renderer._handle_act(
+            agent,
+            {
+                "tool_results": [{"target": "bash", "result": "ok", "success": True}],
+            },
+        )
+        assert renderer._spinner.tool_count == 1
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(agent, {"done": True, "response": "Final answer"})
+            # Calls: summary line + blank separator + Markdown response = 3
+            assert mock_print.call_count == 3
+            # First call should be the completion summary
+            summary_text = str(mock_print.call_args_list[0][0][0])
+            assert "Done" in summary_text
+            assert "1 tools" in summary_text
+
+    def test_handle_think_done_no_summary_without_tools(self) -> None:
+        """When done=True with tool_count == 0, no completion summary."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+        renderer.verbose = True
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(agent, {"done": True, "response": "Quick answer"})
+            # Only: blank separator + Markdown response = 2 (no summary)
+            assert mock_print.call_count == 2
 
     def test_handle_act_updates_phase(self) -> None:
         renderer = self._make_renderer()
@@ -669,8 +707,8 @@ class TestToolCardIntegration:
         # Done should flush remaining
         with patch.object(renderer.console, "print") as mock_print:
             renderer._handle_think(agent, {"done": True, "response": "done"})
-            # One call for tool card, one for the response text
-            assert mock_print.call_count == 2
+            # One call for tool card, one blank line separator, one for Markdown response
+            assert mock_print.call_count == 3
 
         assert len(renderer._pending_tool_cards) == 0
 
@@ -737,6 +775,44 @@ class TestToolCardIntegration:
         ]
         renderer._handle_think(agent, {"done": False, "tool_calls": tool_calls})
         assert len(renderer._pending_tool_cards) == 2
+
+    def test_flush_collapses_when_more_than_three(self) -> None:
+        """When >3 tool cards are queued, collapse into summary + last 2."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        # Queue 5 tool cards
+        for i in range(5):
+            renderer._pending_tool_cards.append({"function": f"tool_{i}", "arguments": {}})
+
+        printed: list = []
+        with patch.object(renderer.console, "print", side_effect=lambda p: printed.append(p)):
+            renderer._flush_tool_cards()
+
+        # Should print: 1 summary line + 2 panels = 3
+        assert len(printed) == 3
+        # First is the collapsed summary text
+        assert "+3 more tool uses" in str(printed[0])
+        # Last 2 are panels for tool_3 and tool_4
+        assert "tool_3" in str(printed[1].title)
+        assert "tool_4" in str(printed[2].title)
+
+    def test_flush_no_collapse_at_threshold(self) -> None:
+        """When exactly 3 tool cards are queued, print all without collapsing."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        for i in range(3):
+            renderer._pending_tool_cards.append({"function": f"tool_{i}", "arguments": {}})
+
+        printed: list = []
+        with patch.object(renderer.console, "print", side_effect=lambda p: printed.append(p)):
+            renderer._flush_tool_cards()
+
+        # All 3 panels printed, no collapse
+        assert len(printed) == 3
+        for item in printed:
+            assert isinstance(item, Panel)
 
 
 class TestStreamDisplayIntegration:
@@ -859,9 +935,9 @@ class TestStreamDisplayIntegration:
         # Live.update should have been called with a Group containing both
         mock_live.update.assert_called_once()
         group = mock_live.update.call_args[0][0]
-        # Group should contain spinner text + stream text
+        # Group should contain spinner text + stream text + hint bar
         assert hasattr(group, "renderables")
-        assert len(group.renderables) == 2
+        assert len(group.renderables) == 3
 
     def test_refresh_display_shows_stream_only_when_spinner_stopped(self) -> None:
         """Stream text shows even if spinner is not running."""
@@ -894,8 +970,8 @@ class TestStreamDisplayIntegration:
         assert isinstance(arg, Text)
         assert str(arg) == ""
 
-    def test_stream_and_tool_calls_coexist(self) -> None:
-        """Streaming text and tool calls work together in THINK phase."""
+    def test_stream_suppressed_when_tool_calls_present(self) -> None:
+        """Intermediate reasoning text is suppressed when tool_calls are present."""
         renderer = self._make_renderer()
         self._patch_live(renderer)
         agent = _FakeAgent()
@@ -909,8 +985,187 @@ class TestStreamDisplayIntegration:
                 "tool_calls": [{"function": "bash", "arguments": {"command": "ls"}}],
             },
         )
-        assert renderer._stream_display.buffer == "I'll check that for you"
+        # Intermediate reasoning is NOT streamed when tool_calls are present
+        assert renderer._stream_display.buffer == ""
         assert len(renderer._pending_tool_cards) == 1
+
+    def test_stream_suppressed_after_tool_calls_seen(self) -> None:
+        """Once tool_calls are seen, subsequent response text is also suppressed."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # First THINK has tool_calls — sets _seen_tool_calls
+        renderer._handle_think(
+            agent,
+            {"done": False, "tool_calls": [{"function": "bash", "arguments": {}}]},
+        )
+        assert renderer._seen_tool_calls is True
+
+        # Second THINK has response but no tool_calls — still suppressed
+        renderer._handle_think(agent, {"done": False, "response": "Based on results..."})
+        assert renderer._stream_display.buffer == ""
+
+    def test_stream_resets_after_done(self) -> None:
+        """Streaming resumes for a new interaction after done=True resets flags."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Interaction with tool_calls
+        renderer._handle_think(
+            agent,
+            {"done": False, "tool_calls": [{"function": "bash", "arguments": {}}]},
+        )
+        assert renderer._seen_tool_calls is True
+
+        # Done resets
+        renderer._handle_think(agent, {"done": True, "response": "Final"})
+        assert renderer._seen_tool_calls is False
+
+        # New interaction — streaming works again
+        renderer._handle_think(agent, {"done": False, "response": "Hello"})
+        assert renderer._stream_display.buffer == "Hello"
+
+
+class TestCallerMessageDisplay:
+    """Test user message ❯ display in _handle_see."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_caller_message_shown_on_first_see(self) -> None:
+        """User message is displayed on the first SEE of an interaction."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "hello"})
+            # Should print the ❯ user message line
+            assert any("hello" in str(call) for call in mock_print.call_args_list)
+
+    def test_caller_message_not_repeated_on_subsequent_see(self) -> None:
+        """User message is NOT re-displayed on subsequent SEE phases in same interaction."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # First SEE shows the message
+        renderer._handle_see(agent, {"caller_message": "hello"})
+        assert renderer._caller_message_shown is True
+
+        # Second SEE (mid-loop) does NOT show it again
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "hello"})
+            # No console.print calls should contain the user message
+            for call in mock_print.call_args_list:
+                assert "hello" not in str(call.args[0]) if call.args else True
+
+    def test_caller_message_resets_after_done(self) -> None:
+        """User message flag resets when done=True, allowing next interaction to show."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "first"})
+        assert renderer._caller_message_shown is True
+
+        renderer._handle_think(agent, {"done": True, "response": "done"})
+        assert renderer._caller_message_shown is False
+
+        # New interaction shows message again
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "second"})
+            assert any("second" in str(call) for call in mock_print.call_args_list)
+
+
+class TestSubagentDoneBehavior:
+    """Test that subagent done=True does NOT reset flags or print response."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
+        return renderer
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def _setup_subagent(self, renderer: RichCLIRenderer) -> tuple[_FakeAgent, _FakeAgent]:
+        """Set up parent → child transition so child is the active subagent."""
+        parent = _FakeAgent(object_id="parent-agent")
+        child = _FakeAgent(object_id="child-agent")
+
+        # Parent SEE
+        renderer.notify(parent, {"trace_percepts": {"caller_message": "hello"}})
+        # Child THINK (triggers subagent detection)
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        assert renderer._agent_stack == ["parent-agent"]
+        return parent, child
+
+    def test_subagent_done_does_not_reset_caller_message_flag(self) -> None:
+        """Subagent done=True should NOT reset _caller_message_shown."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        parent, child = self._setup_subagent(renderer)
+
+        assert renderer._caller_message_shown is True
+
+        # Child done=True — flag should NOT reset
+        renderer.notify(child, {"trace_thoughts": {"done": True, "response": "subagent result"}})
+        assert renderer._caller_message_shown is True
+
+    def test_subagent_done_does_not_reset_seen_tool_calls_flag(self) -> None:
+        """Subagent done=True should NOT reset _seen_tool_calls."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        parent, child = self._setup_subagent(renderer)
+
+        # Parent had tool_calls (to spawn subagent)
+        renderer._seen_tool_calls = True
+
+        # Child done=True — flag should NOT reset
+        renderer.notify(child, {"trace_thoughts": {"done": True, "response": "done"}})
+        assert renderer._seen_tool_calls is True
+
+    def test_subagent_done_does_not_print_response(self) -> None:
+        """Subagent done=True should NOT print its response as Markdown."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        parent, child = self._setup_subagent(renderer)
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer.notify(child, {"trace_thoughts": {"done": True, "response": "big subagent analysis"}})
+            # No call should contain the subagent response
+            for call in mock_print.call_args_list:
+                if call.args:
+                    assert "big subagent analysis" not in str(call.args[0])
+
+    def test_top_level_done_still_prints_and_resets(self) -> None:
+        """Top-level agent done=True should still print response and reset flags."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+        renderer._seen_tool_calls = True
+        assert renderer._caller_message_shown is True
+
+        # Top-level done (stack is empty)
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(agent, {"done": True, "response": "Final answer"})
+            # Should print separator + Markdown response
+            assert mock_print.call_count == 2
+
+        assert renderer._caller_message_shown is False
+        assert renderer._seen_tool_calls is False
 
 
 class TestStatusLineIntegration:
@@ -1144,8 +1399,8 @@ class TestStatusLineInRefreshDisplay:
         mock_live.update.assert_called_once()
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
-        # Spinner + status line = 2 renderables
-        assert len(group.renderables) == 2
+        # Spinner + status line + hint bar = 3 renderables
+        assert len(group.renderables) == 3
 
     def test_refresh_includes_status_with_stream(self) -> None:
         """Status line, spinner, and stream text all render together."""
@@ -1162,8 +1417,8 @@ class TestStatusLineInRefreshDisplay:
         mock_live.update.assert_called_once()
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
-        # Spinner + stream + status line = 3
-        assert len(group.renderables) == 3
+        # Spinner + stream + status line + hint bar = 4
+        assert len(group.renderables) == 4
 
     def test_refresh_status_line_at_bottom(self) -> None:
         """Status line is the last renderable in the group (at bottom)."""
@@ -1177,9 +1432,9 @@ class TestStatusLineInRefreshDisplay:
         renderer._refresh_display()
 
         group = mock_live.update.call_args[0][0]
-        last_renderable = group.renderables[-1]
-        # Last renderable should contain status line text (dimmed)
-        rendered_text = str(last_renderable)
+        # Status line is second-to-last (hint bar is last when spinner is running)
+        status_renderable = group.renderables[-2]
+        rendered_text = str(status_renderable)
         assert "agent-1" in rendered_text
 
     def test_refresh_no_status_when_empty(self) -> None:
@@ -1194,8 +1449,8 @@ class TestStatusLineInRefreshDisplay:
         renderer._refresh_display()
 
         group = mock_live.update.call_args[0][0]
-        # Only spinner, no status line
-        assert len(group.renderables) == 1
+        # Spinner + hint bar (no status line since no content)
+        assert len(group.renderables) == 2
 
     def test_status_only_when_spinner_stopped(self) -> None:
         """Status line shows even when spinner is not running."""
@@ -1385,8 +1640,8 @@ class TestProgressTrackerInRefreshDisplay:
         mock_live.update.assert_called_once()
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
-        # Spinner + progress tracker = 2 renderables
-        assert len(group.renderables) == 2
+        # Spinner + progress tracker + hint bar = 3 renderables
+        assert len(group.renderables) == 3
 
     def test_refresh_no_progress_when_empty(self) -> None:
         """No progress tracker renderable when no todos exist."""
@@ -1399,8 +1654,8 @@ class TestProgressTrackerInRefreshDisplay:
         renderer._refresh_display()
 
         group = mock_live.update.call_args[0][0]
-        # Only spinner, no progress tracker
-        assert len(group.renderables) == 1
+        # Spinner + hint bar (no progress tracker)
+        assert len(group.renderables) == 2
 
     def test_refresh_progress_above_status_line(self) -> None:
         """Progress tracker appears above status line in display order."""
@@ -1422,17 +1677,17 @@ class TestProgressTrackerInRefreshDisplay:
 
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
-        # Spinner + progress + status = 3
-        assert len(group.renderables) == 3
+        # Spinner + progress + status + hint bar = 4
+        assert len(group.renderables) == 4
 
-        # Last renderable should be status line (dimmed text with agent info)
-        last = group.renderables[-1]
-        assert "agent-1" in str(last)
+        # Status line is second-to-last (hint bar is last when spinner is running)
+        status = group.renderables[-2]
+        assert "agent-1" in str(status)
 
-        # Second-to-last should be the progress table
+        # Third-to-last should be the progress table
         from rich.table import Table
 
-        progress = group.renderables[-2]
+        progress = group.renderables[-3]
         assert isinstance(progress, Table)
 
     def test_refresh_all_components_together(self) -> None:
@@ -1454,8 +1709,8 @@ class TestProgressTrackerInRefreshDisplay:
 
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
-        # Spinner + stream + progress + status = 4
-        assert len(group.renderables) == 4
+        # Spinner + stream + progress + status + hint bar = 5
+        assert len(group.renderables) == 5
 
     def test_progress_only_when_spinner_stopped(self) -> None:
         """Progress tracker shows even when spinner is not running."""
@@ -1844,7 +2099,7 @@ class TestResultPanelsInRefreshDisplay:
         mock_live.update.assert_called_once()
         group = mock_live.update.call_args[0][0]
         assert hasattr(group, "renderables")
-        assert len(group.renderables) == 1  # Just the result panel
+        assert len(group.renderables) == 2  # Result panel + hint bar
 
     def test_refresh_includes_historical_results(self) -> None:
         """Historical result panels appear in Live display."""
@@ -1882,7 +2137,7 @@ class TestResultPanelsInRefreshDisplay:
 
         group = mock_live.update.call_args[0][0]
         renderables = group.renderables
-        assert len(renderables) == 2
+        assert len(renderables) == 3  # hist + curr + hint bar
 
         # First should be historical (dim border)
         assert renderables[0].border_style == "dim"
@@ -1972,5 +2227,293 @@ class TestResultPanelsInRefreshDisplay:
         renderer._refresh_display()
 
         group = mock_live.update.call_args[0][0]
-        # spinner + stream + historical + current + progress + status = 6
-        assert len(group.renderables) == 6
+        # spinner + stream + historical + current + progress + status + hint_bar = 7
+        assert len(group.renderables) == 7
+
+
+class TestReasoningDisplay:
+    """Tests for reasoning text display between tool call rounds."""
+
+    def _make_renderer(self, **kwargs) -> RichCLIRenderer:
+        return RichCLIRenderer(console=Console(force_terminal=True), **kwargs)
+
+    def _patch_live(self, renderer: RichCLIRenderer) -> None:
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
+
+    def test_reasoning_displayed_when_present(self) -> None:
+        """Reasoning text is printed via console.print when present with tool_calls."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        # Prime with SEE so current_agent_id is set
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "I need to read the base class first.",
+                    "tool_calls": [{"function": "read_file", "arguments": {"path": "base.py"}}],
+                },
+            )
+            assert any("I need to read the base class first." in str(call) for call in mock_print.call_args_list)
+
+    def test_reasoning_not_displayed_when_show_reasoning_false(self) -> None:
+        """Reasoning is suppressed when show_reasoning=False."""
+        renderer = self._make_renderer(show_reasoning=False)
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "Some reasoning",
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            assert not any("Some reasoning" in str(call) for call in mock_print.call_args_list)
+
+    def test_reasoning_not_displayed_when_empty(self) -> None:
+        """Empty reasoning string is skipped."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "",
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            assert not any("reasoning" in str(call).lower() for call in mock_print.call_args_list)
+
+    def test_reasoning_not_displayed_when_none(self) -> None:
+        """None reasoning is skipped."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": None,
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            # Only call would be from SEE; no reasoning-related print
+            for call in mock_print.call_args_list:
+                assert "None" not in str(call)
+
+    def test_reasoning_not_displayed_when_missing(self) -> None:
+        """Missing reasoning key is skipped."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            # No reasoning printed
+            call_strs = [str(call) for call in mock_print.call_args_list]
+            # Calls should only relate to non-reasoning output
+            assert all("reasoning" not in s.lower() for s in call_strs)
+
+    def test_reasoning_not_suppressed_by_seen_tool_calls(self) -> None:
+        """Reasoning displays even if _seen_tool_calls was already True from prior round."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        # First tool call round sets _seen_tool_calls
+        renderer._handle_think(
+            agent,
+            {
+                "done": False,
+                "tool_calls": [{"function": "bash", "arguments": {}}],
+            },
+        )
+        assert renderer._seen_tool_calls is True
+
+        # Second round with reasoning should still display it
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "Now checking the test file.",
+                    "tool_calls": [{"function": "read_file", "arguments": {"path": "test.py"}}],
+                },
+            )
+            assert any("Now checking the test file." in str(call) for call in mock_print.call_args_list)
+
+    def test_reasoning_not_displayed_for_subagent(self) -> None:
+        """Reasoning is not displayed when inside a subagent context."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+
+        parent = _FakeAgent(object_id="parent-agent")
+        child = _FakeAgent(object_id="child-agent")
+
+        # Parent SEE
+        renderer.notify(parent, {"trace_percepts": {"caller_message": "hello"}})
+        # Child THINK triggers subagent detection
+        renderer.notify(child, {"trace_thoughts": {"done": False}})
+        assert renderer._is_in_subagent()
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                child,
+                {
+                    "done": False,
+                    "reasoning": "Subagent reasoning",
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            assert not any("Subagent reasoning" in str(call) for call in mock_print.call_args_list)
+
+    def test_reasoning_not_displayed_when_done(self) -> None:
+        """Reasoning is not displayed when done=True (final response handles display)."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": True,
+                    "reasoning": "Final reasoning",
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            assert not any("Final reasoning" in str(call) for call in mock_print.call_args_list)
+
+    def test_reasoning_displayed_with_dim_italic_style(self) -> None:
+        """Reasoning is printed as Rich Text with dim italic style."""
+        from rich.text import Text as RichText
+
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "Checking imports",
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            # Find the reasoning print call
+            reasoning_calls = [
+                call
+                for call in mock_print.call_args_list
+                if call.args and isinstance(call.args[0], RichText) and "Checking imports" in str(call.args[0])
+            ]
+            assert len(reasoning_calls) == 1
+            text_obj = reasoning_calls[0].args[0]
+            assert text_obj.style == "dim italic"
+
+    def test_reasoning_between_tool_call_rounds(self) -> None:
+        """Multi-round think-act-think pattern shows reasoning each round."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            # Round 1: reasoning + tool call
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "Round 1 reasoning",
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            # Round 2: reasoning + tool call
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "Round 2 reasoning",
+                    "tool_calls": [{"function": "read_file", "arguments": {}}],
+                },
+            )
+
+            call_strs = [str(call) for call in mock_print.call_args_list]
+            assert any("Round 1 reasoning" in s for s in call_strs)
+            assert any("Round 2 reasoning" in s for s in call_strs)
+
+    def test_reasoning_not_displayed_without_tool_calls(self) -> None:
+        """Reasoning without tool_calls (direct answer) is not displayed."""
+        renderer = self._make_renderer()
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "Just thinking out loud",
+                    "tool_calls": [],
+                },
+            )
+            assert not any("Just thinking out loud" in str(call) for call in mock_print.call_args_list)
+
+    def test_reasoning_in_no_color_mode(self) -> None:
+        """In no-color mode, reasoning is printed as plain text (no Rich Text object)."""
+        renderer = RichCLIRenderer(console=Console(color_system=None))
+        self._patch_live(renderer)
+        agent = _FakeAgent()
+
+        renderer._handle_see(agent, {"caller_message": "hello"})
+
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_think(
+                agent,
+                {
+                    "done": False,
+                    "reasoning": "Plain reasoning",
+                    "tool_calls": [{"function": "bash", "arguments": {}}],
+                },
+            )
+            reasoning_calls = [call for call in mock_print.call_args_list if call.args and "Plain reasoning" in str(call.args[0])]
+            assert len(reasoning_calls) == 1
+            # Should be a plain string, not a Rich Text object
+            assert isinstance(reasoning_calls[0].args[0], str)

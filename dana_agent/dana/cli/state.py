@@ -1,6 +1,7 @@
 """Render state management for the Rich CLI renderer."""
 
 from dataclasses import dataclass, field
+import time
 from typing import Any
 
 
@@ -33,3 +34,10 @@ class RenderState:
 
     # Todo/progress tracking
     todo_items: list[Any] = field(default_factory=list)
+
+    # Subagent tracking
+    active_subagent: Any | None = None
+
+    # Session metrics
+    session_start_time: float = field(default_factory=time.time)
+    session_tool_count: int = 0

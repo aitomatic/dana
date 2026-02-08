@@ -28,13 +28,16 @@ from typing import Any
 
 from rich.console import Console, Group, RenderableType
 from rich.live import Live
+from rich.markdown import Markdown
 from rich.text import Text
 
+from dana.cli.components.hint_bar import HintBarComponent
 from dana.cli.components.progress_tracker import ProgressTrackerComponent
 from dana.cli.components.result_panel import ResultPanelComponent
 from dana.cli.components.spinner import SpinnerComponent
 from dana.cli.components.status_line import StatusLineComponent
 from dana.cli.components.stream_display import StreamDisplayComponent
+from dana.cli.components.subagent_card import SubagentCardComponent
 from dana.cli.components.tool_card import ToolCardComponent
 from dana.cli.state import RenderState
 from dana.common.protocols import DictParams, Notifiable
@@ -76,9 +79,13 @@ class RichCLIRenderer(Notifiable):
         self._tool_card = ToolCardComponent()
         self._status_line = StatusLineComponent()
         self._progress_tracker = ProgressTrackerComponent()
+        self._hint_bar = HintBarComponent()
         self._pending_tool_cards: list[dict[str, Any]] = []
         self._live: Live | None = None
         self._agent_stack: list[str] = []  # Track parent agent IDs for subagent transitions
+        self._completed_subagents: list[SubagentCardComponent] = []  # Completed subagent cards for display
+        self._caller_message_shown = False  # Only show ❯ once per user interaction
+        self._seen_tool_calls = False  # Suppress streaming once tools are in play
         self._lock = threading.Lock()
 
         # Detect terminal capabilities
@@ -166,6 +173,10 @@ class RichCLIRenderer(Notifiable):
             self._live.stop()
             self._live = None
 
+    def _is_in_subagent(self) -> bool:
+        """Check if we're currently inside a subagent context."""
+        return self.state.active_subagent is not None
+
     def _flush_tool_cards(self) -> None:
         """Print any pending tool cards to the console and clear the queue.
 
@@ -175,8 +186,14 @@ class RichCLIRenderer(Notifiable):
 
         In no-color mode, prints plain text summaries instead of panels.
         In narrow terminals, truncates content to fit.
+
+        Skipped when inside a subagent (cards go to the subagent container).
         """
         if not self._pending_tool_cards:
+            return
+
+        # Don't flush individual cards when inside a subagent
+        if self._is_in_subagent():
             return
 
         # Stop Live temporarily so printed cards don't conflict
@@ -184,9 +201,9 @@ class RichCLIRenderer(Notifiable):
         if was_live:
             self._stop_live()
 
-        for tc in self._pending_tool_cards:
-            if not self._has_color:
-                # Plain text fallback: "-> tool_name: params"
+        pending = self._pending_tool_cards
+        if not self._has_color:
+            for tc in pending:
                 func = tc.get("function", "unknown")
                 args = tc.get("arguments", {})
                 summary = f"-> {func}"
@@ -196,9 +213,14 @@ class RichCLIRenderer(Notifiable):
                         params = self._truncate_for_width(params)
                     summary += f": {params}"
                 self.console.print(summary)
-            else:
-                panel = self._tool_card.render(tc)
-                self.console.print(panel)
+        elif len(pending) > 3:
+            collapsed_count = len(pending) - 2
+            self.console.print(Text(f"  +{collapsed_count} more tool uses", style="dim"))
+            for tc in pending[-2:]:
+                self.console.print(self._tool_card.render(tc))
+        else:
+            for tc in pending:
+                self.console.print(self._tool_card.render(tc))
 
         self._pending_tool_cards.clear()
 
@@ -206,12 +228,33 @@ class RichCLIRenderer(Notifiable):
         if was_live:
             self._ensure_live()
 
+    def _flush_completed_subagents(self) -> None:
+        """Print completed subagent cards to the console permanently."""
+        if not self._completed_subagents:
+            return
+
+        was_live = self._live is not None
+        if was_live:
+            self._stop_live()
+
+        for card in self._completed_subagents:
+            if self._has_color:
+                self.console.print(card.render())
+            else:
+                self.console.print(card.render_plain())
+
+        self._completed_subagents.clear()
+        self.console.print()  # Visual separator after subagent cards
+
+        if was_live:
+            self._ensure_live()
+
     def _refresh_display(self) -> None:
         """Update the Live display with current state.
 
-        Renders components in order: spinner, streaming text, result panels
-        (historical collapsed, then recent interactive), progress tracker,
-        and status line at the bottom.
+        Renders components in order: spinner, active subagent card, streaming text,
+        result panels (historical collapsed, then recent interactive), progress tracker,
+        hint bar, and status line at the bottom.
         """
         if self._live is None:
             return
@@ -219,7 +262,16 @@ class RichCLIRenderer(Notifiable):
         renderables: list[RenderableType] = []
 
         if self._spinner.running:
-            renderables.append(Text.from_markup(f"[bold cyan]⠋[/bold cyan] {self._spinner.text}"))
+            spinner_text = f"[bold cyan]✦[/bold cyan] {self._spinner.text}"
+            elapsed = self._spinner.elapsed_text
+            if elapsed and elapsed != "0s":
+                tokens = self._spinner.estimated_tokens_text
+                spinner_text += f" [dim]({elapsed} · ↓ {tokens})[/dim]"
+            renderables.append(Text.from_markup(spinner_text))
+
+        # Active subagent card (shown in live display while in progress)
+        if self.state.active_subagent is not None:
+            renderables.append(self.state.active_subagent.render())
 
         if self._stream_display.buffer:
             renderables.append(self._stream_display.render())
@@ -244,6 +296,13 @@ class RichCLIRenderer(Notifiable):
         if status_text:
             renderables.append(Text.from_markup(f"[dim]{status_text}[/dim]"))
 
+        # Hint bar
+        is_processing = self._spinner.running
+        has_results = len(self.state.current_turn_results) > 0
+        hint = self._hint_bar.render(has_results=has_results, is_processing=is_processing)
+        if hint is not None:
+            renderables.append(hint)
+
         if renderables:
             self._live.update(Group(*renderables))
         else:
@@ -262,7 +321,14 @@ class RichCLIRenderer(Notifiable):
         # Detect agent transitions
         if old_agent_id and new_agent_id != old_agent_id:
             if new_agent_id in self._agent_stack:
-                # Returning to a parent agent - pop stack back to it
+                # Returning to a parent agent - subagent completed
+                # Complete the active subagent card
+                if self.state.active_subagent is not None:
+                    self.state.active_subagent.complete()
+                    self._completed_subagents.append(self.state.active_subagent)
+                    self.state.active_subagent = None
+
+                # Pop stack back to the returning agent
                 while self._agent_stack and self._agent_stack[-1] != new_agent_id:
                     self._agent_stack.pop()
                 if self._agent_stack:
@@ -270,6 +336,15 @@ class RichCLIRenderer(Notifiable):
             else:
                 # New subagent invoked - push current agent onto stack
                 self._agent_stack.append(old_agent_id)
+
+                # Create a SubagentCardComponent for this subagent
+                agent_type = getattr(notifier, "agent_type", "Agent")
+                # Try to extract purpose from agent description or ID
+                purpose = new_agent_id
+                self.state.active_subagent = SubagentCardComponent(
+                    agent_type=str(agent_type),
+                    purpose=purpose,
+                )
 
         self.state.current_agent_id = new_agent_id
 
@@ -334,6 +409,9 @@ class RichCLIRenderer(Notifiable):
         """
         self.state.current_phase = "SEE"
 
+        # Flush completed subagents before transitioning results
+        self._flush_completed_subagents()
+
         # Transition current turn results to historical
         if self.state.current_turn_results:
             for panel in self.state.current_turn_results:
@@ -343,7 +421,23 @@ class RichCLIRenderer(Notifiable):
             self.state.selected_index = -1
             self.state.expanded_indices.clear()
 
-        # Clear stream display for new STAR loop (new user message)
+        # Display user message with highlighted prefix (only once per interaction)
+        caller_message = data.get("caller_message", "")
+        if caller_message:
+            self._spinner.increment_chars(len(str(caller_message)))
+        if caller_message and self.verbose and not self._caller_message_shown:
+            self._caller_message_shown = True
+            was_live = self._live is not None
+            if was_live:
+                self._stop_live()
+            user_line = Text()
+            user_line.append("❯ ", style="bold green")
+            user_line.append(str(caller_message), style="bold on grey23")
+            self.console.print(user_line)
+            if was_live:
+                self._ensure_live()
+
+        # Clear stream display for new STAR loop
         self._stream_display.clear()
 
         self._ensure_live()
@@ -363,8 +457,8 @@ class RichCLIRenderer(Notifiable):
         """Handle THINK phase (trace_thoughts) broadcasts.
 
         Updates spinner to THINK phase. Extracts tool_calls for intent display.
-        Renders tool cards for each tool call. Streams response text to
-        StreamDisplayComponent. Stops spinner when done=True.
+        Routes tool cards to subagent container when inside a subagent.
+        Streams response text to StreamDisplayComponent. Stops spinner when done=True.
         """
         self.state.current_phase = "THINK"
 
@@ -373,37 +467,82 @@ class RichCLIRenderer(Notifiable):
         response = data.get("response", "")
         todo_list = data.get("todo_list")
 
+        if response:
+            self._spinner.increment_chars(len(str(response)))
+
         # Update progress tracker if todo_list is present
         if todo_list is not None and isinstance(todo_list, list):
             self._progress_tracker.update_todos(todo_list)
             self.state.todo_items = list(todo_list)
 
+        # Display reasoning text between tool call rounds
+        reasoning = data.get("reasoning")
+        if reasoning and self.show_reasoning and not done and tool_calls and not self._is_in_subagent():
+            was_live = self._live is not None
+            if was_live:
+                self._stop_live()
+            if self._has_color:
+                self.console.print(Text(f"  {reasoning}", style="dim italic"))
+            else:
+                self.console.print(f"  {reasoning}")
+            if was_live:
+                self._ensure_live()
+
+        # Track whether tools have been used in this interaction
+        if tool_calls:
+            self._seen_tool_calls = True
+
         if done:
+            self._flush_completed_subagents()
             self._flush_tool_cards()
+
+            # Capture metrics before stopping spinner
+            tool_count = self._spinner.tool_count
+            elapsed = self._spinner.elapsed_text
+            tokens = self._spinner.estimated_tokens_text
+
             self._spinner.stop()
             self._stop_live()
 
-            # Print final response if available
-            if response and self.verbose:
+            # Print completion summary when tools were used
+            if tool_count > 0 and not self._agent_stack:
+                summary = Text(f"  ✓ Done ({tool_count} tools · {elapsed} · {tokens})", style="dim")
+                self.console.print(summary)
+
+            # Print final response if available (skip for subagents —
+            # the subagent card already summarizes their work)
+            if response and self.verbose and not self._agent_stack:
+                self.console.print()  # Visual separator
                 if self._has_color:
-                    self.console.print(Text(str(response)))
+                    self.console.print(Markdown(str(response)))
                 else:
                     self.console.print(str(response))
+
+            # Only reset interaction state when the top-level agent completes.
+            # Subagent done=True should NOT reset these flags.
+            if not self._agent_stack:
+                self._caller_message_shown = False
+                self._seen_tool_calls = False
             return
 
-        # Stream response text if available
-        if response:
+        # Only stream response text when NOT in a tool-use loop.
+        # Once any tool_calls have been seen in this interaction, all
+        # non-final response text is intermediate reasoning — suppress it.
+        if response and not tool_calls and not self._seen_tool_calls:
             self._stream_display.append_chunk(str(response))
 
         self._ensure_live()
         if not self._spinner.running:
             self._spinner.start()
 
-        # Render tool cards for each tool call
+        # Route tool cards: to subagent container or to pending queue
         if tool_calls and isinstance(tool_calls, list) and self.show_tool_calls:
             for tc in tool_calls:
                 if isinstance(tc, dict):
-                    self._pending_tool_cards.append(tc)
+                    if self._is_in_subagent():
+                        self.state.active_subagent.add_tool_call(tc)
+                    else:
+                        self._pending_tool_cards.append(tc)
 
         # Extract tool names from tool_calls for intent display
         if tool_calls and isinstance(tool_calls, list):
@@ -413,7 +552,11 @@ class RichCLIRenderer(Notifiable):
             self._spinner.update_phase("THINK")
 
         if not self._has_color:
-            self.console.print(f"[THINK] {self._spinner.text}")
+            if self._is_in_subagent():
+                # In no-color mode, show subagent summary instead of individual tool cards
+                self.console.print(self.state.active_subagent.render_plain())
+            else:
+                self.console.print(f"[THINK] {self._spinner.text}")
         else:
             self._refresh_display()
 
@@ -422,33 +565,42 @@ class RichCLIRenderer(Notifiable):
 
         Flushes pending tool cards then updates spinner to ACT phase.
         Creates ResultPanelComponent for each tool result.
-        Cards render before spinner during ACT phase.
+        When inside a subagent, routes results to the subagent container instead.
         """
         self.state.current_phase = "ACT"
 
         # Flush tool cards before spinner so they appear first
         self._flush_tool_cards()
 
-        # Create result panels from tool_results
-        # Runtime returns: {"type", "target", "result", "success"}
-        # Map to renderer fields: tool_name, output, exit_code
+        # Track tool count in spinner for metrics
         tool_results = data.get("tool_results", [])
         if tool_results and isinstance(tool_results, list):
             for result in tool_results:
                 if isinstance(result, dict):
-                    tool_name = result.get("target", result.get("function", result.get("tool", "unknown")))
+                    self._spinner.increment_tool_count()
+                    self.state.session_tool_count += 1
+
                     output = result.get("result", result.get("output", ""))
-                    success = result.get("success", True)
-                    exit_code = result.get("exit_code", 0 if success else 1)
-                    if not isinstance(exit_code, int):
-                        exit_code = 0
-                    panel = ResultPanelComponent(
-                        tool_name=str(tool_name),
-                        output=str(output),
-                        exit_code=exit_code,
-                        is_recent=True,
-                    )
-                    self.state.current_turn_results.append(panel)
+                    if output:
+                        self._spinner.increment_chars(len(str(output)))
+
+                    if self._is_in_subagent():
+                        # Route to subagent container
+                        self.state.active_subagent.add_tool_result(result)
+                    else:
+                        # Create result panels (existing behavior)
+                        tool_name = result.get("target", result.get("function", result.get("tool", "unknown")))
+                        success = result.get("success", True)
+                        exit_code = result.get("exit_code", 0 if success else 1)
+                        if not isinstance(exit_code, int):
+                            exit_code = 0
+                        panel = ResultPanelComponent(
+                            tool_name=str(tool_name),
+                            output=str(output),
+                            exit_code=exit_code,
+                            is_recent=True,
+                        )
+                        self.state.current_turn_results.append(panel)
 
         self._ensure_live()
         if not self._spinner.running:
@@ -463,7 +615,10 @@ class RichCLIRenderer(Notifiable):
         self._spinner.update_phase("ACT", {"tools": tool_names} if tool_names else None)
 
         if not self._has_color:
-            self.console.print(f"[ACT] {self._spinner.text}")
+            if self._is_in_subagent():
+                self.console.print(self.state.active_subagent.render_plain())
+            else:
+                self.console.print(f"[ACT] {self._spinner.text}")
         else:
             self._refresh_display()
 
