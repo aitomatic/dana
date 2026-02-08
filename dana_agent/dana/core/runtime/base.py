@@ -850,6 +850,10 @@ class AgentRuntime(ABC):
         import types
         from typing import Union, get_origin
 
+        # Strip empty or whitespace-only keys that LLMs sometimes generate
+        # (e.g., "": "" in tool call arguments), which cause TypeError on **kwargs expansion
+        arguments = {k: v for k, v in arguments.items() if k and k.strip()}
+
         try:
             signature = Misc.parse_method_signature(method)
         except Exception:
@@ -947,8 +951,8 @@ class AgentRuntime(ABC):
         if function_name in self._tool_name_registry:
             obj, method_name = self._tool_name_registry[function_name]
             method = getattr(obj, method_name)
-            arguments = self._validate_n_cast_method_arguments(method, arguments)
             try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
                 if asyncio.iscoroutinefunction(method):
                     result = Misc.safe_asyncio_run(method, **arguments)
                 else:
@@ -981,8 +985,8 @@ class AgentRuntime(ABC):
 
         if hasattr(obj_info["object"], method_name):
             method = getattr(obj_info["object"], method_name)
-            arguments = self._validate_n_cast_method_arguments(method, arguments)
             try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
                 if obj_info["type"] == "agent":
                     if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
                         session_id = self._agent._event_log._current_session_id
@@ -1015,8 +1019,8 @@ class AgentRuntime(ABC):
         if function_name in self._tool_name_registry:
             obj, method_name = self._tool_name_registry[function_name]
             method = getattr(obj, method_name)
-            arguments = self._validate_n_cast_method_arguments(method, arguments)
             try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
                 if asyncio.iscoroutinefunction(method):
                     result = await method(**arguments)
                 else:
@@ -1053,8 +1057,8 @@ class AgentRuntime(ABC):
 
         if hasattr(obj_info["object"], actual_method_name):
             method = getattr(obj_info["object"], actual_method_name)
-            arguments = self._validate_n_cast_method_arguments(method, arguments)
             try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
                 if obj_info["type"] == "agent":
                     if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
                         session_id = self._agent._event_log._current_session_id

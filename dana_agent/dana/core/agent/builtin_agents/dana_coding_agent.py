@@ -155,8 +155,8 @@ class DanaCodingAgent(STARAgent):
         explore_agent = ExploreAgent(
             agent_id="explore-test-123",
             agent_type="explore_agent",
-            llm_provider="openai",
-            model="gpt-5-nano",
+            llm_provider=llm_provider,
+            model=model,
             max_context_tokens=100000,
         )
         self.with_resources(
@@ -171,7 +171,10 @@ class DanaCodingAgent(STARAgent):
 
 
 if __name__ == "__main__":
-    agent = DanaCodingAgent(agent_id="dana-coding-agent", agent_type="dana_coding_agent", llm_provider="openai", model="gpt-5")
+    # agent = DanaCodingAgent(agent_id="dana-coding-agent", agent_type="dana_coding_agent", llm_provider="openai", model="gpt-5")
+    agent = DanaCodingAgent(
+        agent_id="dana-coding-agent", agent_type="dana_coding_agent", llm_provider="anthropic_like", model="kimi-k2-thinking-turbo"
+    )
     # print(agent.converse(initial_message=input("Enter your message: ")))
     # print(agent.converse(initial_message="Scan the code base and brief me on how STARAgent is being used and integrated with runtime"))
 
@@ -182,5 +185,7 @@ if __name__ == "__main__":
     """
 
     USER_PROMPT = "Use your test-fork-skill and explain to me what is it"
+
+    USER_PROMPT = "Scan the repo to understand how runtime codec is being used and integrated with StarAgent. Don't touch and read other runtime, just focus on codec runtime"
 
     print(asyncio.run(agent.aquery(message=USER_PROMPT)))

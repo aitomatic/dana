@@ -5,7 +5,7 @@ Factory function for creating provider instances.
 """
 
 from ...config import config_manager
-from ..types import ConfigurationError, LLMProvider
+from ..types import ConfigurationError, LLMProvider, ProviderError
 from .openai import OpenAIProvider
 
 
@@ -49,6 +49,10 @@ def create_provider(provider_name: str, model: str | None = None, **kwargs) -> L
         from .anthropic import AnthropicProvider
 
         return AnthropicProvider(model=model, **kwargs)
+    elif provider_name == "anthropic_like":
+        from .anthropic_like import AnthropicLikeProvider
+
+        return AnthropicLikeProvider(model=model, **kwargs)
     elif provider_name == "ollama":
         from .ollama import OllamaProvider
 

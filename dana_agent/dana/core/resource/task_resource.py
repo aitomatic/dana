@@ -3,6 +3,7 @@
 from typing import Any
 import uuid
 
+from dana.common.protocols import Notifiable
 from dana.common.protocols.war import TOOL_NAME, named_tool
 from dana.common.utils.misc import Misc
 from dana.core.resource.base_resource import BaseResource
@@ -27,6 +28,14 @@ class TaskResource(BaseResource):
         self._agents: dict[str, Any] = agents or {}
         self._sessions: dict[str, dict[str, Any]] = {}
         self._update_task_docstring()
+
+    def with_notifiable(self, *notifiables: Notifiable) -> "TaskResource":
+        """Propagate notifiables to stored agents so sub-agent activity is visible."""
+        for agent in self._agents.values():
+            if hasattr(agent, "with_notifiable"):
+                agent.with_notifiable(*notifiables)
+        super().with_notifiable(*notifiables)
+        return self
 
     def register_agent(self, name: str, agent: Any) -> None:
         """Register an agent for task dispatch.
