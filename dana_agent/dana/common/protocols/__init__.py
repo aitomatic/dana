@@ -9,7 +9,7 @@ from .prompts import (
     UserPromptComponents,
 )
 from .types import DictParams, Identifiable
-from .war import AgentProtocol, ResourceProtocol, STARAgentProtococol, WorkflowProtocol
+from .war import AgentProtocol, ResourceProtocol, STARAgentProtococol, WorkflowProtocol, named_tool, tool_use
 
 
 __all__ = [
@@ -28,4 +28,6 @@ __all__ = [
     "Notifiable",
     "Notifier",
     "Persistable",
+    "tool_use",
+    "named_tool",
 ]

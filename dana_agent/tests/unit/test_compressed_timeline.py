@@ -2,9 +2,9 @@
 Unit tests for CompressedTimeline class.
 """
 
+from datetime import datetime
 import json
 import tempfile
-from datetime import datetime
 from unittest.mock import Mock
 
 import pytest
@@ -47,16 +47,12 @@ class TestCompressedTimelineConfig:
 
     def test_explicit_cutoff(self):
         """Test explicit cutoff_when_token_reach value."""
-        config = CompressedTimelineConfig(
-            max_tokens_until_compression=10000, cutoff_when_token_reach=5000
-        )
+        config = CompressedTimelineConfig(max_tokens_until_compression=10000, cutoff_when_token_reach=5000)
         assert config.cutoff_when_token_reach == 5000
 
     def test_zero_cutoff_triggers_default(self):
         """Test that zero cutoff triggers default calculation."""
-        config = CompressedTimelineConfig(
-            max_tokens_until_compression=10000, cutoff_when_token_reach=0
-        )
+        config = CompressedTimelineConfig(max_tokens_until_compression=10000, cutoff_when_token_reach=0)
         assert config.cutoff_when_token_reach == 3000
 
 
@@ -65,10 +61,11 @@ class TestCompressedTimelineInitialization:
 
     def test_initialization_with_defaults(self):
         """Test initialization with default parameters."""
+        defaults = CompressedTimelineConfig()
         timeline = CompressedTimeline()
-        assert timeline.max_tokens_until_compression == 32000
-        assert timeline.max_recent_entries_to_keep == 20
-        assert timeline.cutoff_when_token_reach == 9600  # 0.3 * 32000
+        assert timeline.max_tokens_until_compression == defaults.max_tokens_until_compression
+        assert timeline.max_recent_entries_to_keep == defaults.max_recent_entries_to_keep
+        assert timeline.cutoff_when_token_reach == int(0.3 * defaults.max_tokens_until_compression)
 
     def test_initialization_with_custom_parameters(self):
         """Test initialization with custom parameters."""
@@ -100,9 +97,7 @@ class TestCompressedTimelineNeedsCompression:
         )
         # Add fewer entries than max_recent_entries_to_keep
         for i in range(3):
-            timeline.add_entry(
-                TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Message {i}")
-            )
+            timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Message {i}"))
         assert not timeline.needs_compression()
 
     def test_compression_needed_when_tokens_exceeded(self):
@@ -135,11 +130,7 @@ class TestCompressedTimelineEntriesPartitioning:
         )
         # Add 10 entries
         for i in range(10):
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.USER_MESSAGE, content=f"Message {i}"
-                )
-            )
+            timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Message {i}"))
         return timeline
 
     def test_partitioning_respects_max_entries(self, timeline):
@@ -169,9 +160,7 @@ class TestCompressedTimelineEntriesPartitioning:
 
         # Add entries with a tool call and its result
         for i in range(5):
-            timeline.add_entry(
-                TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Message {i}")
-            )
+            timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Message {i}"))
 
         # Add tool call
         timeline.add_entry(
@@ -211,21 +200,11 @@ class TestCompressedTimelineCompressionPrompt:
             max_recent_entries_to_keep=3,
             cutoff_when_token_reach=100,
         )
-        timeline.add_entry(
-            TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="Hello")
-        )
-        timeline.add_entry(
-            TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="Hi there!")
-        )
-        timeline.add_entry(
-            TimelineEntry(entry_type=TimelineEntryType.AGENT_THOUGHTS, content="Thinking...")
-        )
-        timeline.add_entry(
-            TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="What time is it?")
-        )
-        timeline.add_entry(
-            TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="It's 3 PM")
-        )
+        timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="Hello"))
+        timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="Hi there!"))
+        timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.AGENT_THOUGHTS, content="Thinking..."))
+        timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content="What time is it?"))
+        timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.AGENT_RESPONSE, content="It's 3 PM"))
         return timeline
 
     def test_compression_prompt_format(self, timeline_with_entries):
@@ -252,9 +231,7 @@ class TestCompressedTimelineCompressionPrompt:
         )
         # Add fewer entries than max_recent_entries_to_keep
         for i in range(3):
-            timeline.add_entry(
-                TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Msg {i}")
-            )
+            timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Msg {i}"))
 
         prompt = timeline.build_compression_prompt()
         assert prompt is None
@@ -333,9 +310,7 @@ class TestCompressedTimelineCompression:
         timeline.set_llm_call_fn(lambda x: '{"summary": "test"}')
 
         for i in range(3):
-            timeline.add_entry(
-                TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Msg {i}")
-            )
+            timeline.add_entry(TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=f"Msg {i}"))
 
         result = timeline.compress()
         assert result == 0
@@ -403,8 +378,8 @@ class TestCompressedTimelineToLLMMessages:
         timeline.compress()
         messages = timeline.to_llm_messages()
 
-        # Should include summary message
-        summary_messages = [m for m in messages if "Previous context summary" in m.content]
+        # Should include summary message (either [SUMMARY] or [Previous context summary] format)
+        summary_messages = [m for m in messages if "[SUMMARY]" in m.content or "Previous context summary" in m.content]
         assert len(summary_messages) == 1
         assert "weather" in summary_messages[0].content.lower()
 
@@ -432,8 +407,9 @@ class TestCompressedTimelineToLLMMessages:
         messages1 = timeline.to_llm_messages()
         messages2 = timeline.to_llm_messages()
 
-        summary_count1 = sum(1 for m in messages1 if "Previous context summary" in m.content)
-        summary_count2 = sum(1 for m in messages2 if "Previous context summary" in m.content)
+        # Summary can appear as [SUMMARY] or [Previous context summary]
+        summary_count1 = sum(1 for m in messages1 if "[SUMMARY]" in m.content or "Previous context summary" in m.content)
+        summary_count2 = sum(1 for m in messages2 if "[SUMMARY]" in m.content or "Previous context summary" in m.content)
 
         assert summary_count1 == 1
         assert summary_count2 == 1

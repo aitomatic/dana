@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from dana.common.llm.llm import LLM
@@ -17,9 +18,12 @@ if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
 
 
-class CodecRuntime(AgentRuntime):
+class CodecRuntimeBase(AgentRuntime):
     """
-    Runtime for encoding and decoding messages.
+    Abstract base class for codec-based runtimes.
+
+    Provides shared functionality for encoding and decoding messages.
+    Subclasses must implement validate_done_output() and parse_response().
     """
 
     def __init__(
@@ -43,35 +47,31 @@ class CodecRuntime(AgentRuntime):
         self._prompt_api = None
         self._last_native_tools_state: bool | None = None  # Track for cache invalidation
 
+    @abstractmethod
     def validate_done_output(self, done: bool | None, has_tool_calls: bool, has_response: bool) -> str:
         """Validate the output format and return the next action.
 
-        For native tools mode, the validation is less strict:
-        - Having both response and tool_calls is valid (LLM can explain while calling tools)
-        - done=False requires tool_calls
-        - done=True requires response (no pending tool calls)
+        Args:
+            done: Whether the LLM indicated it's done (True/False/None if invalid).
+            has_tool_calls: Whether tool calls are present.
+            has_response: Whether a response is present.
+
+        Returns:
+            One of "exit", "continue", or "retry".
         """
-        if done is None:
-            return "retry"
+        ...
 
-        if self._use_native_tools:
-            # Native tools mode: more flexible validation
-            if done and has_tool_calls:
-                return "retry"  # Can't be done with pending tool calls
-            if not done and not has_tool_calls:
-                return "retry"  # Not done but no tools - invalid
-            return "exit" if done else "continue"
+    @abstractmethod
+    def parse_response(self, response: LLMResponse) -> ParsedResponse:
+        """Parse an LLM response into a structured ParsedResponse.
 
-        # XML codec mode: stricter validation (original behavior)
-        if done and has_tool_calls:
-            return "retry"
-        if not done and has_response:
-            return "retry"
-        if not done and not has_tool_calls:
-            return "retry"
-        if done and not has_response:
-            return "retry"
-        return "exit" if done else "continue"
+        Args:
+            response: The raw LLM response.
+
+        Returns:
+            ParsedResponse with done, reasoning, response, tool_calls, etc.
+        """
+        ...
 
     def _get_prompt_api(self, agent: STARAgent) -> LocalPromptAPI:
         if self._prompt_api is None:
@@ -89,6 +89,9 @@ class CodecRuntime(AgentRuntime):
 
         # Build native tools first (affects system prompt choice)
         self._build_native_tools_if_supported(agent)
+
+        # Build tool name registry for @named_tool decorated methods
+        self._build_tool_name_registry(agent)
 
         # Inject ephemeral runtime context
         runtime_context = self._get_runtime_context()
@@ -113,9 +116,7 @@ class CodecRuntime(AgentRuntime):
             messages.extend(timeline_messages)
 
         if self._agent._reminder_manager:
-            reminders = self._agent._reminder_manager.evaluate_all(self._agent, timeline)
-            if reminders:
-                messages.append(LLMMessage(role="user", content=reminders))
+            self._agent._reminder_manager.evaluate_all(self._agent, messages)
 
         self._log_prompt_build(agent, system_prompt, timeline, messages)
 
@@ -151,6 +152,56 @@ class CodecRuntime(AgentRuntime):
         self._last_llm_response = response
         return response
 
+    def execute_tools(self, agent: STARAgent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        res = super().execute_tools(agent, tool_calls)
+        return res
+
+    async def execute_tools_async(self, agent: STARAgent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        res = await super().execute_tools_async(agent, tool_calls)
+        return res
+
+
+class CodecRuntime(CodecRuntimeBase):
+    """
+    Backward-compatible runtime that auto-selects behavior based on use_native_tools.
+
+    DEPRECATED: Use CodecRuntimeWithNativeToolUse or CodecRuntimeWithoutNativeToolUse directly
+    for explicit control over the runtime behavior.
+
+    This class maintains backward compatibility by implementing both native and non-native
+    tool use modes based on the use_native_tools parameter.
+    """
+
+    def validate_done_output(self, done: bool | None, has_tool_calls: bool, has_response: bool) -> str:
+        """Validate the output format and return the next action.
+
+        For native tools mode, the validation is less strict:
+        - Having both response and tool_calls is valid (LLM can explain while calling tools)
+        - done=False requires tool_calls
+        - done=True requires response (no pending tool calls)
+        """
+        if done is None:
+            return "retry"
+
+        if self._use_native_tools:
+            # Native tools mode: more flexible validation
+            if done and has_tool_calls:
+                return "retry"  # Can't be done with pending tool calls
+            if not done and not has_tool_calls:
+                return "retry"  # Not done but no tools - invalid
+            return "exit" if done else "continue"
+
+        # XML codec mode: stricter validation (original behavior)
+        if done and has_tool_calls:
+            return "retry"
+        if not done and has_response:
+            return "retry"
+        if not done and not has_tool_calls:
+            return "retry"
+        if done and not has_response:
+            return "retry"
+        return "exit" if done else "continue"
+
     @observable
     def parse_response(self, response: LLMResponse) -> ParsedResponse:
         content = str(response.content).strip() if response.content else ""
@@ -164,23 +215,42 @@ class CodecRuntime(AgentRuntime):
         if response.tool_calls:
             tool_calls.extend(self._to_tool_call_dicts(response.tool_calls))
 
-        # 2. Parse content for thinking/response using codec
-        #    (Works for both CSXMLCodec and NativeToolsCodec)
-        if content:
+        # 2. Check for provider's reasoning_content (e.g., DeepSeek, future Claude extended thinking)
+        #    This takes precedence over XML tag parsing since it's the native format
+        if response.reasoning_content:
+            reasoning = response.reasoning_content
+            # Still parse content for response_text and potential XML tool_calls
+            if content:
+                parsed_codec_response = self._codec.parse_response(content)
+                response_text = parsed_codec_response.response
+                # Extract tool_calls from XML if NOT using native tools
+                if not self._use_native_tools and parsed_codec_response.tool_calls:
+                    for tc in parsed_codec_response.tool_calls:
+                        if tc.tool_name:
+                            function_name = tc.tool_name
+                        else:
+                            identifier = tc.object_id or tc.class_name
+                            function_name = f"{identifier}:{tc.name}" if identifier else tc.name
+                        tool_calls.append({"function": function_name, "arguments": tc.parameters})
+        elif content:
+            # 3. Fall back to codec parsing (XML <thinking> tags)
             parsed_codec_response = self._codec.parse_response(content)
             reasoning = parsed_codec_response.thinking
             response_text = parsed_codec_response.response
 
-            # 3. Extract tool_calls from XML if NOT using native tools
+            # 4. Extract tool_calls from XML if NOT using native tools
             #    (XML codecs return tool_calls from parsed text)
             if not self._use_native_tools and parsed_codec_response.tool_calls:
                 for tc in parsed_codec_response.tool_calls:
-                    # Build function name: "object_id:method" or "class_name:method"
-                    identifier = tc.object_id or tc.class_name
-                    function_name = f"{identifier}:{tc.name}" if identifier else tc.name
+                    # Use tool_name if set (custom name), otherwise build identifier:method
+                    if tc.tool_name:
+                        function_name = tc.tool_name
+                    else:
+                        identifier = tc.object_id or tc.class_name
+                        function_name = f"{identifier}:{tc.name}" if identifier else tc.name
                     tool_calls.append({"function": function_name, "arguments": tc.parameters})
 
-        # 4. Determine done flag based on tool calls
+        # 5. Determine done flag based on tool calls
         #    - If there are tool calls, we're not done (need to execute them)
         #    - If no tool calls, we're done (can return response)
         done = len(tool_calls) == 0
@@ -192,11 +262,3 @@ class CodecRuntime(AgentRuntime):
             tool_calls=tool_calls,
             todo_list=[],
         )
-
-    def execute_tools(self, agent: STARAgent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        res = super().execute_tools(agent, tool_calls)
-        return res
-
-    async def execute_tools_async(self, agent: STARAgent, tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        res = await super().execute_tools_async(agent, tool_calls)
-        return res

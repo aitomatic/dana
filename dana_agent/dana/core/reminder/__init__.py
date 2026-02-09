@@ -1,10 +1,9 @@
 """
 Dana Reminder System - Soft guidance injection for LLM prompts.
 
-Simplified design:
-- Reminder protocol with single evaluate() method
-- ReminderManager with evaluate_all() returning formatted XML
-- Validity checked lazily at evaluation time, not registration
+Reminders mutate the messages list directly, giving each reminder full control
+over WHERE it injects content (append, prepend, insert into specific messages, etc.).
+Validity is checked lazily at evaluation time, not registration.
 
 Main components:
 - Reminder: Protocol for reminder implementations
@@ -20,19 +19,21 @@ Example usage:
     >>> class MyReminder:
     ...     name = "my_reminder"
     ...
-    ...     def evaluate(self, agent, timeline) -> str | None:
+    ...     def evaluate(self, agent, messages) -> None:
     ...         if some_condition:
-    ...             return "Remember to do the thing."
-    ...         return None
+    ...             messages.append(LLMMessage(
+    ...                 role="user",
+    ...                 content="<system-reminder>\\nRemember to do the thing.\\n</system-reminder>"
+    ...             ))
     >>>
     >>> manager = ReminderManager()
     >>> manager.add(MyReminder())
-    >>> reminders_xml = manager.evaluate_all(agent, timeline)
+    >>> manager.evaluate_all(agent, messages)  # reminders mutate messages in place
 """
 
 from .base import Reminder
 from .manager import ReminderManager
-from .rules.builtin import TodoNeverCalledReminder, TodoUpdateReminder
+from .rules.builtin import SkillReminder, TodoNeverCalledReminder, TodoUpdateReminder
 
 
 __all__ = [
@@ -41,6 +42,7 @@ __all__ = [
     # Manager
     "ReminderManager",
     # Built-in reminders
+    "SkillReminder",
     "TodoNeverCalledReminder",
     "TodoUpdateReminder",
 ]

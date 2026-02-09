@@ -26,14 +26,40 @@ class WARProtocol(Protocol):
         ...
 
 
-# Tool use decorator constant
+# Tool use decorator constants
 IS_TOOL_USE = "_is_tool_use"
+TOOL_NAME = "_tool_name"
 
 
 def tool_use(func):
     """@tool_use decorator to mark methods as tool-usable by agents."""
     func.__dict__[IS_TOOL_USE] = True
     return func
+
+
+def named_tool(name: str):
+    """Decorator to mark a method as a tool with a custom name.
+
+    Use this instead of @tool_use when you want to override the auto-generated
+    tool name (which is normally "object_id__method" for native tools or
+    "object_id:method" for XML codecs).
+
+    Args:
+        name: The custom tool name to use.
+
+    Example:
+        @named_tool(name="web_search")
+        def search(self, query: str):
+            ...
+        # Tool will be exposed as "web_search" instead of "resource_id__search"
+    """
+
+    def decorator(func):
+        func.__dict__[IS_TOOL_USE] = True
+        func.__dict__[TOOL_NAME] = name
+        return func
+
+    return decorator
 
 
 class WorkflowProtocol(WARProtocol):

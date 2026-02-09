@@ -1,0 +1,315 @@
+{
+  "project": "OpenDXA",
+  "branchName": "ralph/dana-cli-experience",
+  "description": "Claude Code-like CLI Experience for Dana Coding Agent - Rich terminal UI using the StarAgent notifier system with spinners, tool cards, streaming output, and collapsible results",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create RenderState dataclass for CLI state management",
+      "description": "As a developer, I need a dataclass to track the current render state including phase, agent info, tool results, and expand/collapse state.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/__init__.py",
+        "Create dana_agent/dana/cli/state.py with RenderState dataclass",
+        "RenderState has fields: current_phase (str), current_agent_id (str), current_model (str), current_turn (int), max_turns (int)",
+        "RenderState has fields: current_turn_results (list), historical_results (list), expanded_indices (set), selected_index (int)",
+        "RenderState has fields: todo_items (list)",
+        "Create tests/cli/__init__.py and tests/cli/test_state.py",
+        "Tests verify default values and field types",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Create RichCLIRenderer skeleton implementing Notifiable",
+      "description": "As a developer, I need the core RichCLIRenderer class that implements the Notifiable protocol and routes broadcast messages to handlers.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/rich_cli_renderer.py",
+        "RichCLIRenderer implements Notifiable protocol from dana/common/protocols/notifiable.py",
+        "Constructor accepts optional Console instance and config options: verbose, show_tool_calls, show_reasoning, max_output_lines",
+        "notify() method extracts broadcast keys: trace_percepts, trace_thoughts, trace_outputs, trace_learning, workflow_progress, skill_progress",
+        "notify() routes to stub handlers: _handle_see(), _handle_think(), _handle_act(), _handle_reflect(), _handle_workflow(), _handle_skill()",
+        "Create tests/cli/test_rich_cli_renderer.py with tests for message routing",
+        "Tests verify each broadcast type routes to correct handler",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Implement spinner component with phase-based text",
+      "description": "As a user, I want to see a spinner with a description of the current activity so I know the agent is working.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/components/__init__.py",
+        "Create dana_agent/dana/cli/components/spinner.py with SpinnerComponent class",
+        "SpinnerComponent wraps rich.spinner.Spinner with configurable style (default: dots)",
+        "SpinnerComponent.update_phase(phase, context) updates text based on phase: SEE='Processing...', THINK='Thinking...', ACT='Executing {tools}...'",
+        "SpinnerComponent.start() and stop() methods control animation",
+        "Multiple tool names shown comma-separated in ACT phase",
+        "Create tests/cli/test_spinner.py",
+        "Tests verify text updates for each STAR phase",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Integrate spinner into RichCLIRenderer handlers",
+      "description": "As a developer, I need the RichCLIRenderer to update the spinner based on STAR phase broadcasts.",
+      "acceptanceCriteria": [
+        "_handle_see() updates spinner to SEE phase with perception count from trace_percepts",
+        "_handle_think() updates spinner to THINK phase, extracts tool_calls for intent display",
+        "_handle_act() updates spinner to ACT phase with tool names from trace_outputs",
+        "Spinner starts on first broadcast, stops when done=True in trace_thoughts",
+        "RichCLIRenderer uses rich.live.Live context for flicker-free updates",
+        "Tests verify spinner phase transitions through full STAR loop",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Implement tool card component",
+      "description": "As a user, I want to see formatted cards showing which tools are being invoked with their parameters.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/components/tool_card.py with ToolCardComponent class",
+        "ToolCardComponent.render(tool_call) returns rich.panel.Panel",
+        "Panel header shows icon + tool name based on type: bash=wrench, file-io=folder, search=magnifier, task=robot",
+        "Panel body shows key parameters: bash shows command (truncated >100 chars), file-io shows path, search shows pattern+path, task shows agent_id+prompt[:50]",
+        "Create tests/cli/test_tool_card.py",
+        "Tests verify card rendering for bash, file-io, search, and task tool types",
+        "Tests verify parameter truncation works correctly",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Integrate tool cards into RichCLIRenderer",
+      "description": "As a developer, I need the RichCLIRenderer to display tool cards when tools are invoked.",
+      "acceptanceCriteria": [
+        "_handle_think() extracts tool_calls and renders ToolCardComponent for each",
+        "Tool cards appear in chronological order within a turn",
+        "Cards render before spinner during ACT phase",
+        "Tests verify tool cards render during THINK phase with correct content",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Implement streaming text display component",
+      "description": "As a user, I want to see the agent's response stream in real-time as chunks arrive.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/components/stream_display.py with StreamDisplayComponent class",
+        "StreamDisplayComponent.append_chunk(text) adds text to buffer and triggers re-render",
+        "StreamDisplayComponent.render() returns rich.text.Text with markdown preserved",
+        "Long responses (>50 lines) show last 20 lines with '[N lines above]' indicator",
+        "StreamDisplayComponent.clear() resets buffer for new response",
+        "Create tests/cli/test_stream_display.py",
+        "Tests verify chunk accumulation and line limiting",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Integrate streaming display into RichCLIRenderer",
+      "description": "As a developer, I need the RichCLIRenderer to stream LLM responses during THINK phase.",
+      "acceptanceCriteria": [
+        "_handle_think() extracts response text and streams to StreamDisplayComponent",
+        "Streaming text appears below spinner (both visible simultaneously)",
+        "StreamDisplayComponent clears when new STAR loop begins (new user message)",
+        "Tests verify streaming integrates with Live context without flicker",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Implement status line component",
+      "description": "As a user, I want to see a persistent status line showing the current agent and model.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/components/status_line.py with StatusLineComponent class",
+        "StatusLineComponent.update(agent_id, model, turn, max_turns) updates display",
+        "StatusLineComponent.render() returns formatted string: 'agent_id | model | turn N/M'",
+        "Turn info only shown if turn > 0",
+        "Create tests/cli/test_status_line.py",
+        "Tests verify status line format for various states",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Integrate status line into RichCLIRenderer",
+      "description": "As a developer, I need the RichCLIRenderer to display and update the status line.",
+      "acceptanceCriteria": [
+        "RichCLIRenderer maintains StatusLineComponent instance",
+        "Status line updates from RenderState on each broadcast",
+        "Status line displayed at bottom of terminal output",
+        "When subagent is invoked (detected via agent_id change), status updates to show subagent",
+        "When subagent completes, status returns to parent agent",
+        "Tests verify status line updates during agent transitions",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Implement progress tracker component for todo items",
+      "description": "As a user, I want to see a progress indicator for multi-step tasks.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/components/progress_tracker.py with ProgressTrackerComponent class",
+        "ProgressTrackerComponent.update_todos(todo_items) updates internal list",
+        "ProgressTrackerComponent.render() returns rich.progress.Progress or rich.table.Table showing: completed (checkmark), in_progress (spinner), pending (circle)",
+        "Progress bar shows '[N/M] Current task description'",
+        "Returns None if no todo items exist (no display)",
+        "Create tests/cli/test_progress_tracker.py",
+        "Tests verify progress calculation and status icons",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Integrate progress tracker into RichCLIRenderer",
+      "description": "As a developer, I need the RichCLIRenderer to display todo progress from broadcasts.",
+      "acceptanceCriteria": [
+        "RichCLIRenderer extracts todo_list from trace_thoughts broadcasts",
+        "ProgressTrackerComponent updates when todo_list changes",
+        "Progress display appears above status line when todos exist",
+        "Progress updates in real-time as tasks complete",
+        "Tests verify progress integration with broadcast flow",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Implement result panel component with collapse/expand",
+      "description": "As a user, I want tool results to be collapsible, with recent results interactive and historical results static.",
+      "acceptanceCriteria": [
+        "Create dana_agent/dana/cli/components/result_panel.py with ResultPanelComponent class",
+        "ResultPanelComponent stores tool_name, output, exit_code, line_count, is_recent flag",
+        "ResultPanelComponent.render(expanded) returns rich.panel.Panel - collapsed shows summary, expanded shows full output",
+        "Collapsed summary format: 'tool_name -> exit code N, M lines'",
+        "Default expand state: expanded if <10 lines, collapsed if >=10 lines",
+        "Visual distinction: recent panels have border, historical panels are dimmed/no border",
+        "Create tests/cli/test_result_panel.py",
+        "Tests verify collapsed vs expanded rendering and visual distinction",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Implement keyboard navigation for result panels",
+      "description": "As a user, I want to navigate and toggle recent results with keyboard.",
+      "acceptanceCriteria": [
+        "RichCLIRenderer tracks selected_index and expanded_indices in RenderState",
+        "Up/Down arrow keys change selected_index among current_turn_results",
+        "Enter or Space toggles expand/collapse for selected result",
+        "Selected result has visual highlight (different border color or marker)",
+        "Historical results are not selectable (keyboard skips them)",
+        "Create tests for keyboard state management",
+        "Tests verify selection and toggle logic",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Integrate result panels into RichCLIRenderer with recent/historical transition",
+      "description": "As a developer, I need the RichCLIRenderer to manage result panels and transition them from recent to historical.",
+      "acceptanceCriteria": [
+        "_handle_act() creates ResultPanelComponent for each tool result in trace_outputs",
+        "New results added to RenderState.current_turn_results with is_recent=True",
+        "When new user message detected (new STAR loop), current_turn_results move to historical_results with is_recent=False",
+        "Results render in chronological order: historical (collapsed) then recent (interactive)",
+        "Tests verify recent->historical transition on new user message",
+        "Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Add thread safety to RichCLIRenderer",
+      "description": "As a developer, I need the RichCLIRenderer to handle concurrent broadcasts safely.",
+      "acceptanceCriteria": [
+        "RichCLIRenderer uses threading.Lock around RenderState mutations",
+        "Broadcast messages queued if they arrive faster than render can process",
+        "No race conditions when multiple tools execute concurrently",
+        "Create tests/cli/test_thread_safety.py",
+        "Tests simulate rapid concurrent broadcasts and verify no data corruption",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Add graceful degradation for limited terminals",
+      "description": "As a developer, I need the RichCLIRenderer to work in terminals without full rich support.",
+      "acceptanceCriteria": [
+        "RichCLIRenderer detects terminal capabilities via rich.console.Console",
+        "If no color support, falls back to plain text output (--no-color mode)",
+        "If terminal too narrow (<80 cols), truncates tool card content gracefully",
+        "Handle terminal resize events without crashing",
+        "Tests verify degraded output in limited terminal simulation",
+        "Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Integration test with DanaCodingAgent",
+      "description": "As a developer, I need to verify RichCLIRenderer integrates seamlessly with DanaCodingAgent.",
+      "acceptanceCriteria": [
+        "RichCLIRenderer attaches via agent.with_notifiable(RichCLIRenderer())",
+        "Works alongside existing ThoughtLogger without interference",
+        "No changes required to DanaCodingAgent code",
+        "Add usage example in RichCLIRenderer docstring",
+        "Create tests/cli/test_integration.py with full conversation simulation",
+        "Integration test mocks LLM and verifies complete STAR loop renders correctly",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": ""
+    }
+  ]
+}

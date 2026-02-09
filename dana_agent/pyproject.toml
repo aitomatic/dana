@@ -61,6 +61,7 @@ dependencies = [
 [project.scripts]
 dana-agent = "dana.apps.dana.__main__:main"
 dana-agent-repl = "dana.apps.repl.__main__:main"
+dana-code = "dana.apps.code.__main__:main"
 dana-memory = "dana.lib.memory.cli:main"
 
 # Optional dependency groups

@@ -65,10 +65,16 @@ RULES:
         Simplified format without XML usage examples since tools are
         called through the native API.
         """
-        identifier = signature.object_id or signature.class_name
+        # Use custom tool_name if provided via @named_tool, else use object_id:method format
+        if signature.tool_name:
+            tool_identifier = signature.tool_name
+        else:
+            identifier = signature.object_id or signature.class_name
+            tool_identifier = f"{identifier}:{signature.name}"
+
         return "\n".join(
             [
-                f"### {identifier}:{signature.name}",
+                f"### {tool_identifier}",
                 f"Description: {signature.description}",
                 "Parameters:",
                 cls._parameters_to_str(signature.parameters),

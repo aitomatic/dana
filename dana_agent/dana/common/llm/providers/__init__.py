@@ -5,6 +5,7 @@ Concrete implementations of LLM providers for different services.
 """
 
 from .anthropic import AnthropicProvider
+from .anthropic_like import AnthropicLikeProvider
 from .azure import AzureProvider
 from .deepseek import DeepSeekProvider
 from .factory import create_provider
@@ -20,6 +21,7 @@ from .qwen import QwenProvider
 __all__ = [
     "OpenAIProvider",
     "AnthropicProvider",
+    "AnthropicLikeProvider",
     "OllamaProvider",
     "AzureProvider",
     "GroqProvider",

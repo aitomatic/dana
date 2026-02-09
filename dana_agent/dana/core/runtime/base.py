@@ -80,6 +80,8 @@ class AgentRuntime(ABC):
         self._native_tools = None
         self._use_native_tools = use_native_tools
         self._last_llm_response: LLMResponse | None = None
+        # Registry mapping custom tool names (from @named_tool) to (object, method_name)
+        self._tool_name_registry: dict[str, tuple[Any, str]] = {}
 
     # -------------------------------------------------------------------------
     # Properties
@@ -199,6 +201,9 @@ class AgentRuntime(ABC):
         # Build native tools first (affects system prompt choice)
         self._build_native_tools_if_supported(agent)
 
+        # Build tool name registry for @named_tool decorated methods
+        self._build_tool_name_registry(agent)
+
         # Inject ephemeral runtime context
         runtime_context = self._get_runtime_context()
         if timeline:
@@ -233,9 +238,7 @@ class AgentRuntime(ABC):
             messages.extend(timeline_messages)
 
             # Inject system reminders after timeline messages
-            reminders = self._evaluate_reminders(agent, timeline)
-            if reminders:
-                messages.append(LLMMessage(role="user", content=reminders))
+            self._evaluate_reminders(agent, messages)
 
         self._log_prompt_build(agent, system_prompt, timeline, messages)
 
@@ -296,24 +299,21 @@ class AgentRuntime(ABC):
 
         return "\n\n".join(context_parts) if context_parts else ""
 
-    def _evaluate_reminders(self, agent, timeline: Timeline) -> str:
+    def _evaluate_reminders(self, agent, messages: list[LLMMessage]) -> None:
         """
-        Evaluate reminder rules and return formatted reminders.
+        Evaluate reminder rules, letting each reminder mutate the messages list.
 
         This method checks if the agent has a ReminderManager and if so,
         evaluates all registered reminders against the current context.
 
         Args:
             agent: The agent instance (should have _reminder_manager attribute)
-            timeline: The current timeline
-
-        Returns:
-            Formatted reminder string (XML-tagged), or empty string if no reminders
+            messages: The messages list for reminders to mutate in place
         """
         if not hasattr(agent, "_reminder_manager") or agent._reminder_manager is None:
-            return ""
+            return
 
-        return agent._reminder_manager.evaluate_all(agent, timeline)
+        agent._reminder_manager.evaluate_all(agent, messages)
 
     @observable
     def call_llm(self, messages: list[LLMMessage]) -> str:
@@ -571,6 +571,35 @@ class AgentRuntime(ABC):
             workflows=getattr(agent, "_workflows", []),
         )
 
+    def _build_tool_name_registry(self, agent) -> None:
+        """Build mapping from custom tool names to (object, method_name).
+
+        This registry enables execution of tools decorated with @named_tool
+        by mapping their custom names back to the actual objects and methods.
+        """
+        self._tool_name_registry.clear()
+
+        # Register resources
+        for resource in getattr(agent, "_resources", []):
+            for method_name, method in Misc.extract_tool_use_methods(resource):
+                sig = Misc.parse_method_signature(method, object_id=getattr(resource, "object_id", None))
+                if sig.tool_name:
+                    self._tool_name_registry[sig.tool_name] = (resource, method_name)
+
+        # Register workflows
+        for workflow in getattr(agent, "_workflows", []):
+            if hasattr(workflow, "execute"):
+                sig = Misc.parse_method_signature(workflow.execute, object_id=getattr(workflow, "object_id", None))
+                if sig.tool_name:
+                    self._tool_name_registry[sig.tool_name] = (workflow, "execute")
+
+        # Register sub-agents (they expose query method)
+        for sub_agent in getattr(agent, "_agents", []):
+            if hasattr(sub_agent, "query"):
+                sig = Misc.parse_method_signature(sub_agent.query, object_id=getattr(sub_agent, "agent_type", None))
+                if sig.tool_name:
+                    self._tool_name_registry[sig.tool_name] = (sub_agent, "query")
+
     def _build_resource_context(self, agent) -> str:
         """Build additional context from resources that implement get_prompt_context().
 
@@ -821,6 +850,10 @@ class AgentRuntime(ABC):
         import types
         from typing import Union, get_origin
 
+        # Strip empty or whitespace-only keys that LLMs sometimes generate
+        # (e.g., "": "" in tool call arguments), which cause TypeError on **kwargs expansion
+        arguments = {k: v for k, v in arguments.items() if k and k.strip()}
+
         try:
             signature = Misc.parse_method_signature(method)
         except Exception:
@@ -914,6 +947,25 @@ class AgentRuntime(ABC):
         function_name = tool_call.get("function", "")
         arguments = tool_call.get("arguments", {})
 
+        # Check custom tool name registry first (for @named_tool decorated methods)
+        if function_name in self._tool_name_registry:
+            obj, method_name = self._tool_name_registry[function_name]
+            method = getattr(obj, method_name)
+            try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
+                if asyncio.iscoroutinefunction(method):
+                    result = Misc.safe_asyncio_run(method, **arguments)
+                else:
+                    result = method(**arguments)
+                return self._create_tool_success("resource", function_name, result)
+            except Exception as exc:
+                return self._create_tool_error(
+                    "execution_error",
+                    function_name,
+                    f"Error executing call {function_name}: {exc}\n{traceback.format_exc()}",
+                )
+
+        # Fall back to standard parsing for auto-generated names
         parsed = self._parse_function_name(function_name)
         if not parsed:
             return self._create_tool_error("format_error", function_name, "Expected ClassName:methodName or object_id__method format")
@@ -933,8 +985,8 @@ class AgentRuntime(ABC):
 
         if hasattr(obj_info["object"], method_name):
             method = getattr(obj_info["object"], method_name)
-            arguments = self._validate_n_cast_method_arguments(method, arguments)
             try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
                 if obj_info["type"] == "agent":
                     if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
                         session_id = self._agent._event_log._current_session_id
@@ -963,6 +1015,25 @@ class AgentRuntime(ABC):
         function_name = tool_call.get("function", "")
         arguments = tool_call.get("arguments", {})
 
+        # Check custom tool name registry first (for @named_tool decorated methods)
+        if function_name in self._tool_name_registry:
+            obj, method_name = self._tool_name_registry[function_name]
+            method = getattr(obj, method_name)
+            try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
+                if asyncio.iscoroutinefunction(method):
+                    result = await method(**arguments)
+                else:
+                    result = method(**arguments)
+                return self._create_tool_success("resource", function_name, result)
+            except Exception as exc:
+                return self._create_tool_error(
+                    "execution_error",
+                    function_name,
+                    f"Error executing call {function_name}: {exc}\n{traceback.format_exc()}",
+                )
+
+        # Fall back to standard parsing for auto-generated names
         parsed = self._parse_function_name(function_name)
         if not parsed:
             return self._create_tool_error("format_error", function_name, "Expected ClassName:methodName or object_id__method format")
@@ -986,8 +1057,8 @@ class AgentRuntime(ABC):
 
         if hasattr(obj_info["object"], actual_method_name):
             method = getattr(obj_info["object"], actual_method_name)
-            arguments = self._validate_n_cast_method_arguments(method, arguments)
             try:
+                arguments = self._validate_n_cast_method_arguments(method, arguments)
                 if obj_info["type"] == "agent":
                     if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
                         session_id = self._agent._event_log._current_session_id

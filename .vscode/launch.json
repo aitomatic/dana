@@ -66,6 +66,18 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}"
       }
+    },
+    {
+      "name" : "Debug Dana Code Migrated",
+      "type": "python",
+      "request": "launch",
+      "justMyCode": false,
+      "module": "dana.apps.code.__main__",
+      "args": ["--reload"],
+      "console": "integratedTerminal",
+      "env" : {
+        "DANAPATH" : "${workspaceFolder}"
+      }
     }
   ]
 }
