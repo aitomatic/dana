@@ -206,6 +206,35 @@ class TestPanelProperties:
         assert result.expand is False
 
 
+class TestRenderPlain:
+    """Test plain text rendering for no-color terminals."""
+
+    def test_render_plain_returns_string(self) -> None:
+        panel = ResultPanelComponent(tool_name="bash", output="line1\nline2\nline3", exit_code=0)
+        result = panel.render_plain()
+        assert isinstance(result, str)
+
+    def test_render_plain_contains_tool_name(self) -> None:
+        panel = ResultPanelComponent(tool_name="bash", output="line1\nline2\nline3", exit_code=1)
+        result = panel.render_plain()
+        assert "bash" in result
+
+    def test_render_plain_contains_exit_code(self) -> None:
+        panel = ResultPanelComponent(tool_name="bash", output="line1\nline2\nline3", exit_code=1)
+        result = panel.render_plain()
+        assert "exit code 1" in result
+
+    def test_render_plain_contains_line_count(self) -> None:
+        panel = ResultPanelComponent(tool_name="bash", output="line1\nline2\nline3", exit_code=0)
+        result = panel.render_plain()
+        assert "3 lines" in result
+
+    def test_render_plain_format(self) -> None:
+        panel = ResultPanelComponent(tool_name="grep", output="match1\nmatch2", exit_code=0)
+        result = panel.render_plain()
+        assert result == "  grep -> exit code 0, 2 lines"
+
+
 class TestImport:
     """Test package imports."""
 

@@ -1898,6 +1898,99 @@ class TestResultPanelIntegration:
             assert panel.is_recent is True
 
 
+class TestFlushHistoricalResults:
+    """Test _flush_historical_results prints panels and clears state."""
+
+    def _make_renderer(self) -> RichCLIRenderer:
+        renderer = RichCLIRenderer(console=Console(force_terminal=True))
+        return renderer
+
+    def test_flush_empty_is_noop(self) -> None:
+        renderer = self._make_renderer()
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._flush_historical_results()
+            mock_print.assert_not_called()
+
+    def test_flush_prints_panels(self) -> None:
+        renderer = self._make_renderer()
+        renderer.state.historical_results = [
+            ResultPanelComponent(tool_name="bash", output="out1", exit_code=0),
+            ResultPanelComponent(tool_name="grep", output="out2", exit_code=0),
+        ]
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._flush_historical_results()
+            assert mock_print.call_count == 2
+
+    def test_flush_clears_historical(self) -> None:
+        renderer = self._make_renderer()
+        renderer.state.historical_results = [
+            ResultPanelComponent(tool_name="bash", output="out", exit_code=0),
+        ]
+        with patch.object(renderer.console, "print"):
+            renderer._flush_historical_results()
+        assert len(renderer.state.historical_results) == 0
+
+    def test_flush_stops_and_restarts_live(self) -> None:
+        renderer = self._make_renderer()
+        renderer._live = MagicMock()
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer.state.historical_results = [
+            ResultPanelComponent(tool_name="bash", output="out", exit_code=0),
+        ]
+        with patch.object(renderer.console, "print"):
+            renderer._flush_historical_results()
+        renderer._stop_live.assert_called_once()
+        renderer._ensure_live.assert_called_once()
+
+    def test_flush_no_live_does_not_restart(self) -> None:
+        renderer = self._make_renderer()
+        renderer._live = None
+        renderer._stop_live = MagicMock()  # type: ignore[method-assign]
+        renderer._ensure_live = MagicMock()  # type: ignore[method-assign]
+        renderer.state.historical_results = [
+            ResultPanelComponent(tool_name="bash", output="out", exit_code=0),
+        ]
+        with patch.object(renderer.console, "print"):
+            renderer._flush_historical_results()
+        renderer._stop_live.assert_not_called()
+        renderer._ensure_live.assert_not_called()
+
+    def test_flush_renders_collapsed(self) -> None:
+        renderer = self._make_renderer()
+        panel = ResultPanelComponent(tool_name="bash", output="out", exit_code=0)
+        renderer.state.historical_results = [panel]
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._flush_historical_results()
+            printed = mock_print.call_args[0][0]
+            assert isinstance(printed, Panel)
+            # Collapsed panel body contains summary text
+            assert "bash -> exit code" in str(printed.renderable)
+
+    def test_flush_multiple_panels_in_order(self) -> None:
+        renderer = self._make_renderer()
+        renderer.state.historical_results = [
+            ResultPanelComponent(tool_name="bash", output="o1", exit_code=0),
+            ResultPanelComponent(tool_name="grep", output="o2", exit_code=1),
+            ResultPanelComponent(tool_name="read", output="o3", exit_code=0),
+        ]
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._flush_historical_results()
+            assert mock_print.call_count == 3
+
+    def test_flush_no_color_uses_render_plain(self) -> None:
+        renderer = RichCLIRenderer(console=Console(no_color=True, force_terminal=True))
+        renderer._has_color = False
+        renderer.state.historical_results = [
+            ResultPanelComponent(tool_name="bash", output="line1\nline2", exit_code=0),
+        ]
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._flush_historical_results()
+            printed = mock_print.call_args[0][0]
+            assert isinstance(printed, str)
+            assert "bash -> exit code 0, 2 lines" in printed
+
+
 class TestRecentToHistoricalTransition:
     """Test that current_turn_results transition to historical on new STAR loop."""
 
@@ -1911,7 +2004,7 @@ class TestRecentToHistoricalTransition:
         renderer._refresh_display = MagicMock()  # type: ignore[method-assign]
 
     def test_see_moves_current_to_historical(self) -> None:
-        """SEE phase moves current_turn_results to historical_results."""
+        """SEE phase flushes current_turn_results to console (not kept in state)."""
         renderer = self._make_renderer()
         self._patch_live(renderer)
         agent = _FakeAgent()
@@ -1925,13 +2018,17 @@ class TestRecentToHistoricalTransition:
         assert len(renderer.state.current_turn_results) == 2
         assert len(renderer.state.historical_results) == 0
 
-        # New STAR loop (SEE) transitions results
-        renderer._handle_see(agent, {"caller_message": "new question"})
+        # New STAR loop (SEE) transitions and flushes results
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "new question"})
         assert len(renderer.state.current_turn_results) == 0
-        assert len(renderer.state.historical_results) == 2
+        assert len(renderer.state.historical_results) == 0
+        # Panels were printed to console
+        panel_prints = [c for c in mock_print.call_args_list if isinstance(c[0][0], Panel)]
+        assert len(panel_prints) == 2
 
     def test_historical_panels_marked_not_recent(self) -> None:
-        """Transitioned panels have is_recent=False."""
+        """Transitioned panels are printed with dim border (is_recent=False)."""
         renderer = self._make_renderer()
         self._patch_live(renderer)
         agent = _FakeAgent()
@@ -1942,11 +2039,13 @@ class TestRecentToHistoricalTransition:
         # Verify initially recent
         assert renderer.state.current_turn_results[0].is_recent is True
 
-        # Transition
-        renderer._handle_see(agent, {"caller_message": "next"})
-
-        # Now historical - should be not recent
-        assert renderer.state.historical_results[0].is_recent is False
+        # Transition and flush
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "next"})
+        # Printed panel should have dim border (historical)
+        panel_prints = [c for c in mock_print.call_args_list if isinstance(c[0][0], Panel)]
+        assert len(panel_prints) == 1
+        assert panel_prints[0][0][0].border_style == "dim"
 
     def test_selection_resets_on_transition(self) -> None:
         """selected_index resets to -1 when results transition to historical."""
@@ -1987,8 +2086,8 @@ class TestRecentToHistoricalTransition:
         assert len(renderer.state.historical_results) == 0
         assert len(renderer.state.current_turn_results) == 0
 
-    def test_multiple_transitions_accumulate_history(self) -> None:
-        """Multiple STAR loops accumulate historical results."""
+    def test_multiple_transitions_flush_each_time(self) -> None:
+        """Multiple STAR loops flush historical results each time."""
         renderer = self._make_renderer()
         self._patch_live(renderer)
         agent = _FakeAgent()
@@ -2000,22 +2099,29 @@ class TestRecentToHistoricalTransition:
         )
         assert len(renderer.state.current_turn_results) == 1
 
-        # Second turn (transition first to historical)
-        renderer._handle_see(agent, {"caller_message": "q2"})
+        # Second turn (flush first result)
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "q2"})
+        panel_prints = [c for c in mock_print.call_args_list if isinstance(c[0][0], Panel)]
+        assert len(panel_prints) == 1
+        assert len(renderer.state.historical_results) == 0
+
         renderer._handle_act(
             agent,
             {"tool_calls": [], "tool_results": [{"function": "grep", "output": "turn2"}]},
         )
-        assert len(renderer.state.historical_results) == 1
         assert len(renderer.state.current_turn_results) == 1
 
-        # Third turn (transition both to historical)
-        renderer._handle_see(agent, {"caller_message": "q3"})
-        assert len(renderer.state.historical_results) == 2
+        # Third turn (flush second result)
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "q3"})
+        panel_prints = [c for c in mock_print.call_args_list if isinstance(c[0][0], Panel)]
+        assert len(panel_prints) == 1
+        assert len(renderer.state.historical_results) == 0
         assert len(renderer.state.current_turn_results) == 0
 
     def test_historical_order_preserved(self) -> None:
-        """Historical results maintain chronological order across transitions."""
+        """Historical results print in chronological order."""
         renderer = self._make_renderer()
         self._patch_live(renderer)
         agent = _FakeAgent()
@@ -2032,24 +2138,28 @@ class TestRecentToHistoricalTransition:
             },
         )
 
-        # Second turn - 1 result
-        renderer._handle_see(agent, {"caller_message": "q2"})
+        # Second turn - flush first 2, add 1 more
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "q2"})
+        panel_prints = [c for c in mock_print.call_args_list if isinstance(c[0][0], Panel)]
+        assert len(panel_prints) == 2
+        assert "bash" in str(panel_prints[0][0][0].title)
+        assert "grep" in str(panel_prints[1][0][0].title)
+
         renderer._handle_act(
             agent,
             {"tool_calls": [], "tool_results": [{"function": "read_file", "output": "third"}]},
         )
 
-        # Third turn - transition all
-        renderer._handle_see(agent, {"caller_message": "q3"})
-
-        # Historical should have all 3 in order
-        assert len(renderer.state.historical_results) == 3
-        assert renderer.state.historical_results[0].tool_name == "bash"
-        assert renderer.state.historical_results[1].tool_name == "grep"
-        assert renderer.state.historical_results[2].tool_name == "read_file"
+        # Third turn - flush the read_file result
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "q3"})
+        panel_prints = [c for c in mock_print.call_args_list if isinstance(c[0][0], Panel)]
+        assert len(panel_prints) == 1
+        assert "read_file" in str(panel_prints[0][0][0].title)
 
     def test_full_star_loop_with_results(self) -> None:
-        """Verify complete STAR loop creates and transitions result panels."""
+        """Verify complete STAR loop creates and flushes result panels."""
         renderer = self._make_renderer()
         self._patch_live(renderer)
         agent = _FakeAgent()
@@ -2073,11 +2183,14 @@ class TestRecentToHistoricalTransition:
         assert len(renderer.state.current_turn_results) == 1
         assert renderer.state.current_turn_results[0].is_recent is True
 
-        # Second STAR loop starts - transition
-        renderer._handle_see(agent, {"caller_message": "next question"})
+        # Second STAR loop starts - transition and flush
+        with patch.object(renderer.console, "print") as mock_print:
+            renderer._handle_see(agent, {"caller_message": "next question"})
         assert len(renderer.state.current_turn_results) == 0
-        assert len(renderer.state.historical_results) == 1
-        assert renderer.state.historical_results[0].is_recent is False
+        assert len(renderer.state.historical_results) == 0
+        # Panel was printed to console
+        panel_prints = [c for c in mock_print.call_args_list if isinstance(c[0][0], Panel)]
+        assert len(panel_prints) == 1
 
 
 class TestResultPanelsInRefreshDisplay:
@@ -2101,8 +2214,8 @@ class TestResultPanelsInRefreshDisplay:
         assert hasattr(group, "renderables")
         assert len(group.renderables) == 2  # Result panel + hint bar
 
-    def test_refresh_includes_historical_results(self) -> None:
-        """Historical result panels appear in Live display."""
+    def test_refresh_does_not_include_historical_results(self) -> None:
+        """Historical result panels are NOT in Live display (they are flushed to console)."""
         renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
@@ -2115,21 +2228,17 @@ class TestResultPanelsInRefreshDisplay:
 
         mock_live.update.assert_called_once()
         group = mock_live.update.call_args[0][0]
-        assert hasattr(group, "renderables")
-        assert len(group.renderables) == 1
+        # Historical panels are not rendered in Live; only empty Text fallback
+        assert not hasattr(group, "renderables")
 
-    def test_refresh_historical_before_recent(self) -> None:
-        """Historical results render before recent results in display."""
+    def test_refresh_only_current_results_in_live(self) -> None:
+        """Only current results appear in Live display (historical flushed separately)."""
         renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
         renderer._live = mock_live
 
-        # Add historical
-        hist = ResultPanelComponent(tool_name="old_bash", output="old", is_recent=False)
-        renderer.state.historical_results.append(hist)
-
-        # Add current
+        # Add current only (historical would be flushed before reaching refresh)
         curr = ResultPanelComponent(tool_name="new_bash", output="new", is_recent=True)
         renderer.state.current_turn_results.append(curr)
 
@@ -2137,31 +2246,8 @@ class TestResultPanelsInRefreshDisplay:
 
         group = mock_live.update.call_args[0][0]
         renderables = group.renderables
-        assert len(renderables) == 3  # hist + curr + hint bar
-
-        # First should be historical (dim border)
-        assert renderables[0].border_style == "dim"
-        # Second should be recent (cyan border)
-        assert renderables[1].border_style == "cyan"
-
-    def test_refresh_historical_always_collapsed(self) -> None:
-        """Historical results are always rendered collapsed."""
-        renderer = RichCLIRenderer(console=Console(force_terminal=True))
-
-        mock_live = MagicMock()
-        renderer._live = mock_live
-
-        # Short output that would normally be expanded by default
-        hist = ResultPanelComponent(tool_name="bash", output="short", is_recent=False)
-        renderer.state.historical_results.append(hist)
-
-        renderer._refresh_display()
-
-        group = mock_live.update.call_args[0][0]
-        panel = group.renderables[0]
-        # Collapsed summary should contain the tool_name summary text
-        body_text = str(panel.renderable)
-        assert "bash -> exit code" in body_text
+        assert len(renderables) == 2  # curr + hint bar
+        assert renderables[0].border_style == "cyan"
 
     def test_refresh_recent_uses_selection_state(self) -> None:
         """Recent results use selected_index for highlight."""
@@ -2207,7 +2293,7 @@ class TestResultPanelsInRefreshDisplay:
         assert "line 19" in body_text
 
     def test_refresh_all_components_with_results(self) -> None:
-        """All components render together: spinner + stream + results + progress + status."""
+        """All components render together: spinner + stream + current + progress + status + hint."""
         renderer = RichCLIRenderer(console=Console(force_terminal=True))
 
         mock_live = MagicMock()
@@ -2216,8 +2302,6 @@ class TestResultPanelsInRefreshDisplay:
         renderer._spinner.start()
         renderer._stream_display.append_chunk("Streaming...")
 
-        hist = ResultPanelComponent(tool_name="old", output="old", is_recent=False)
-        renderer.state.historical_results.append(hist)
         curr = ResultPanelComponent(tool_name="new", output="new", is_recent=True)
         renderer.state.current_turn_results.append(curr)
 
@@ -2227,8 +2311,8 @@ class TestResultPanelsInRefreshDisplay:
         renderer._refresh_display()
 
         group = mock_live.update.call_args[0][0]
-        # spinner + stream + historical + current + progress + status + hint_bar = 7
-        assert len(group.renderables) == 7
+        # spinner + stream + current + progress + status + hint_bar = 6
+        assert len(group.renderables) == 6
 
 
 class TestReasoningDisplay:

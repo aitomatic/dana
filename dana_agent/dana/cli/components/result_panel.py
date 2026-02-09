@@ -67,6 +67,10 @@ class ResultPanelComponent:
             expand=False,
         )
 
+    def render_plain(self) -> str:
+        """Render as plain text for no-color terminals."""
+        return f"  {self.tool_name} -> exit code {self.exit_code}, {self._line_count} lines"
+
     def _collapsed_summary(self) -> Text:
         """Generate collapsed summary text.
 

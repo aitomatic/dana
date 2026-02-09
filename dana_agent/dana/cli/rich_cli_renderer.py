@@ -228,6 +228,26 @@ class RichCLIRenderer(Notifiable):
         if was_live:
             self._ensure_live()
 
+    def _flush_historical_results(self) -> None:
+        """Print historical result panels to the console permanently."""
+        if not self.state.historical_results:
+            return
+
+        was_live = self._live is not None
+        if was_live:
+            self._stop_live()
+
+        for panel in self.state.historical_results:
+            if self._has_color:
+                self.console.print(panel.render(expanded=False))
+            else:
+                self.console.print(panel.render_plain())
+
+        self.state.historical_results.clear()
+
+        if was_live:
+            self._ensure_live()
+
     def _flush_completed_subagents(self) -> None:
         """Print completed subagent cards to the console permanently."""
         if not self._completed_subagents:
@@ -275,10 +295,6 @@ class RichCLIRenderer(Notifiable):
 
         if self._stream_display.buffer:
             renderables.append(self._stream_display.render())
-
-        # Historical results (always collapsed, dimmed)
-        for panel in self.state.historical_results:
-            renderables.append(panel.render(expanded=False))
 
         # Current turn results (interactive with keyboard navigation)
         for i, panel in enumerate(self.state.current_turn_results):
@@ -420,6 +436,7 @@ class RichCLIRenderer(Notifiable):
             self.state.current_turn_results = []
             self.state.selected_index = -1
             self.state.expanded_indices.clear()
+            self._flush_historical_results()
 
         # Display user message with highlighted prefix (only once per interaction)
         caller_message = data.get("caller_message", "")

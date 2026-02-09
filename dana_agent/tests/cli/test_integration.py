@@ -307,9 +307,8 @@ class TestFullConversationSimulation:
         agent._star_loop_count = 2
         agent.broadcast({"trace_percepts": {"caller_message": "Now show me the diff"}})
 
-        # Turn 1 results should have transitioned to historical
-        assert len(renderer.state.historical_results) == 1
-        assert renderer.state.historical_results[0].is_recent is False
+        # Turn 1 results should have been flushed to console
+        assert len(renderer.state.historical_results) == 0
         assert len(renderer.state.current_turn_results) == 0
 
         agent.broadcast(
@@ -330,7 +329,7 @@ class TestFullConversationSimulation:
         agent.broadcast({"trace_thoughts": {"done": True, "response": "Here's the diff."}})
 
         assert len(renderer.state.current_turn_results) == 1
-        assert len(renderer.state.historical_results) == 1
+        assert len(renderer.state.historical_results) == 0
 
     def test_star_loop_with_todos(self) -> None:
         """Simulate a STAR loop with todo list progress tracking."""
