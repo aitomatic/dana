@@ -49,14 +49,16 @@ class ConfigManager:
             config_path: Path to config file (defaults to adana/config.json)
         """
         if config_path is None:
-            # Look for config in adana package directory
+            # Look for config.json - primary location is inside the dana package
+            # This ensures it works when installed as a wheel
+            package_dir = Path(__file__).parent.parent  # dana/common -> dana
             current_dir = Path.cwd()
 
-            # Try multiple possible locations
+            # Try multiple possible locations (in order of preference)
             possible_paths = [
-                current_dir / "adana" / "config.json",  # From project root
-                current_dir / "config.json",  # If already in adana dir
-                Path(__file__).parent.parent.parent / "config.json",  # Relative to this file
+                package_dir / "config.json",  # Inside dana package (for installed wheels)
+                current_dir / "dana_agent" / "config.json",  # Legacy: project root during dev
+                current_dir / "config.json",  # If already in dana_agent dir
             ]
 
             for path in possible_paths:
@@ -64,10 +66,10 @@ class ConfigManager:
                     config_path = path
                     break
             else:
-                # Fallback to first option
+                # Fallback to package location (will show warning if not found)
                 config_path = possible_paths[0]
 
-        self.config_path = Path(config_path) if config_path is not None else Path("adana/config.json")
+        self.config_path = Path(config_path) if config_path is not None else Path("dana/config.json")
         self._config = self._load_config()
 
     def _load_config(self) -> dict[str, Any]:
