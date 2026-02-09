@@ -4,6 +4,7 @@ import os
 import pytest
 
 from dana.common.llm.types import LLMResponse
+from dana.core.agent.base_star_agent import BaseSTARAgent
 from dana.core.agent.star_agent import STARAgent
 from dana.core.resource.base_resource import BaseResource
 
@@ -15,10 +16,7 @@ def has_llm_api_key():
     return any(os.getenv(k) for k in keys)
 
 
-skip_without_api_key = pytest.mark.skipif(
-    not has_llm_api_key(),
-    reason="No LLM API keys available - skipping STAR agent tests in CI"
-)
+skip_without_api_key = pytest.mark.skipif(not has_llm_api_key(), reason="No LLM API keys available - skipping STAR agent tests in CI")
 
 
 class MockLLM:
@@ -62,11 +60,7 @@ def make_response(content: str) -> LLMResponse:
 
 def make_json_response(done: bool, response: str | None = None, tool_calls: list | None = None) -> LLMResponse:
     """Create a JSON-formatted LLM response."""
-    data = {
-        "done": done,
-        "response": response,
-        "tool_calls": tool_calls or []
-    }
+    data = {"done": done, "response": response, "tool_calls": tool_calls or []}
     return make_response(json.dumps(data))
 
 
@@ -91,9 +85,7 @@ def make_agent(mock_llm: MockLLM, resources=None) -> STARAgent:
 
 @skip_without_api_key
 def test_exit_when_done_true_with_response():
-    mock_llm = MockLLM([
-        make_json_response(done=True, response="Done")
-    ])
+    mock_llm = MockLLM([make_json_response(done=True, response="Done")])
     agent = make_agent(mock_llm)
 
     result = agent.query(message="finish")
@@ -105,13 +97,12 @@ def test_exit_when_done_true_with_response():
 
 @skip_without_api_key
 def test_continue_when_done_false_with_function_call():
-    mock_llm = MockLLM([
-        make_json_response(
-            done=False,
-            tool_calls=[{"name": "mock-resource:query", "parameters": {"message": "hello"}}]
-        ),
-        make_json_response(done=True, response="Finished"),
-    ])
+    mock_llm = MockLLM(
+        [
+            make_json_response(done=False, tool_calls=[{"name": "mock-resource:query", "parameters": {"message": "hello"}}]),
+            make_json_response(done=True, response="Finished"),
+        ]
+    )
     resource = MockResource()
     agent = make_agent(mock_llm, resources=[resource])
 
@@ -127,10 +118,12 @@ def test_continue_when_done_false_with_function_call():
 
 @skip_without_api_key
 def test_retry_when_done_false_no_function_call():
-    mock_llm = MockLLM([
-        make_json_response(done=False, tool_calls=[]),
-        make_json_response(done=True, response="Ok"),
-    ])
+    mock_llm = MockLLM(
+        [
+            make_json_response(done=False, tool_calls=[]),
+            make_json_response(done=True, response="Ok"),
+        ]
+    )
     agent = make_agent(mock_llm)
 
     result = agent.query(message="retry")
@@ -141,10 +134,12 @@ def test_retry_when_done_false_no_function_call():
 
 @skip_without_api_key
 def test_retry_when_done_true_no_response():
-    mock_llm = MockLLM([
-        make_json_response(done=True, response=None),
-        make_json_response(done=True, response="Now complete"),
-    ])
+    mock_llm = MockLLM(
+        [
+            make_json_response(done=True, response=None),
+            make_json_response(done=True, response="Now complete"),
+        ]
+    )
     agent = make_agent(mock_llm)
 
     result = agent.query(message="retry")
@@ -155,10 +150,12 @@ def test_retry_when_done_true_no_response():
 
 @skip_without_api_key
 def test_retry_on_parse_failure():
-    mock_llm = MockLLM([
-        make_response("Invalid format without JSON"),
-        make_json_response(done=True, response="Recovered"),
-    ])
+    mock_llm = MockLLM(
+        [
+            make_response("Invalid format without JSON"),
+            make_json_response(done=True, response="Recovered"),
+        ]
+    )
     agent = make_agent(mock_llm)
 
     result = agent.query(message="retry")
@@ -169,11 +166,13 @@ def test_retry_on_parse_failure():
 
 @skip_without_api_key
 def test_max_retries_per_iteration():
-    mock_llm = MockLLM([
-        make_response("Invalid format"),
-        make_response("Invalid format"),
-        make_response("Invalid format"),
-    ])
+    mock_llm = MockLLM(
+        [
+            make_response("Invalid format"),
+            make_response("Invalid format"),
+            make_response("Invalid format"),
+        ]
+    )
     agent = make_agent(mock_llm)
 
     result = agent.query(message="retry")
@@ -184,26 +183,24 @@ def test_max_retries_per_iteration():
 
 @skip_without_api_key
 def test_max_iterations():
-    mock_llm = MockLLM([
-        make_json_response(
-            done=False,
-            tool_calls=[{"name": "mock-resource:query", "parameters": {"message": "step"}}]
-        )
-        for _ in range(12)
-    ])
+    max_iter = BaseSTARAgent.MAX_ITERATIONS
+    mock_llm = MockLLM(
+        [
+            make_json_response(done=False, tool_calls=[{"name": "mock-resource:query", "parameters": {"message": "step"}}])
+            for _ in range(max_iter + 2)
+        ]
+    )
     resource = MockResource()
     agent = make_agent(mock_llm, resources=[resource])
 
     agent.query(message="loop")
 
-    assert mock_llm.call_count == 10
+    assert mock_llm.call_count == max_iter
 
 
 @skip_without_api_key
 def test_simple_task_single_turn():
-    mock_llm = MockLLM([
-        make_json_response(done=True, response="4")
-    ])
+    mock_llm = MockLLM([make_json_response(done=True, response="4")])
     agent = make_agent(mock_llm)
 
     result = agent.query(message="2+2")
