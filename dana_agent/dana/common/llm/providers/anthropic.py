@@ -143,7 +143,7 @@ class AnthropicProvider(LLMProvider):
         Args:
             api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
             model: Model to use
-            base_url: Custom base URL (not used with official client)
+            base_url: Custom base URL (defaults to ANTHROPIC_BASE_URL env var or config)
         """
         self.model = model
 
@@ -158,8 +158,20 @@ class AnthropicProvider(LLMProvider):
             api_key_env = config.get("api_key_env") if config else "ANTHROPIC_API_KEY"
             raise ValueError(f"Anthropic API key not found. Set {api_key_env} environment variable.")
 
+        # Get base URL from parameter or config (which checks ANTHROPIC_BASE_URL env var)
+        if base_url:
+            self.base_url = base_url
+        else:
+            self.base_url = config_manager.get_provider_base_url("anthropic")
+
         # Use official Anthropic client with prompt caching beta header
-        self.client = anthropic.AsyncAnthropic(api_key=self.api_key, default_headers={"anthropic-beta": "prompt-caching-2024-07-31"})
+        client_kwargs = {
+            "api_key": self.api_key,
+            "default_headers": {"anthropic-beta": "prompt-caching-2024-07-31"},
+        }
+        if self.base_url:
+            client_kwargs["base_url"] = self.base_url
+        self.client = anthropic.AsyncAnthropic(**client_kwargs)
 
     async def chat(self, messages: list[LLMMessage], tools: list[dict] | None = None, **kwargs) -> LLMResponse:
         """Send messages to Anthropic and get a response.

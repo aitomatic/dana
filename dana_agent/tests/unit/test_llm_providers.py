@@ -274,6 +274,50 @@ class TestAnthropicProvider:
         assert provider.api_key == "test-key"
         assert provider.model == "claude-3-sonnet"
 
+    def test_init_with_base_url_parameter(self):
+        """Test AnthropicProvider initialization with explicit base_url parameter"""
+        with patch("dana.common.llm.providers.anthropic.anthropic") as mock_anthropic:
+            from dana.common.llm.providers.anthropic import AnthropicProvider
+
+            provider = AnthropicProvider(api_key="test-key", model="claude-3-sonnet", base_url="https://custom.api.com")
+            assert provider.base_url == "https://custom.api.com"
+            # Verify AsyncAnthropic was called with the base_url
+            mock_anthropic.AsyncAnthropic.assert_called_once()
+            call_kwargs = mock_anthropic.AsyncAnthropic.call_args[1]
+            assert call_kwargs["base_url"] == "https://custom.api.com"
+
+    def test_init_with_base_url_env_var(self):
+        """Test AnthropicProvider initialization with ANTHROPIC_BASE_URL env var"""
+        with patch("dana.common.llm.providers.anthropic.anthropic") as mock_anthropic:
+            with patch("dana.common.config.os.getenv") as mock_getenv:
+                # Mock getenv to return our custom URL for ANTHROPIC_BASE_URL
+                def getenv_side_effect(key, default=None):
+                    if key == "ANTHROPIC_BASE_URL":
+                        return "https://env-custom.api.com"
+                    if key == "ANTHROPIC_API_KEY":
+                        return None
+                    return default
+
+                mock_getenv.side_effect = getenv_side_effect
+
+                from dana.common.llm.providers.anthropic import AnthropicProvider
+
+                provider = AnthropicProvider(api_key="test-key", model="claude-3-sonnet")
+                assert provider.base_url == "https://env-custom.api.com"
+                # Verify AsyncAnthropic was called with the base_url from env
+                call_kwargs = mock_anthropic.AsyncAnthropic.call_args[1]
+                assert call_kwargs["base_url"] == "https://env-custom.api.com"
+
+    def test_init_without_base_url(self):
+        """Test AnthropicProvider initialization without base_url uses default"""
+        with patch("dana.common.llm.providers.anthropic.anthropic") as mock_anthropic:
+            from dana.common.llm.providers.anthropic import AnthropicProvider
+
+            provider = AnthropicProvider(api_key="test-key", model="claude-3-sonnet")
+            # base_url should be the default from config (https://api.anthropic.com)
+            # or None if env var not set - either way, client should work
+            mock_anthropic.AsyncAnthropic.assert_called_once()
+
     @pytest.mark.asyncio
     async def test_chat_success(self, provider):
         """Test successful chat completion"""
