@@ -164,9 +164,10 @@ class ExtractResource(BaseResource):
             }
         """
         from bs4 import BeautifulSoup
+        from .content_extractor import HTML_PARSER
 
         try:
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, HTML_PARSER)
             code_blocks = []
 
             # Find code blocks (pre > code or standalone pre)
@@ -267,7 +268,7 @@ class ExtractResource(BaseResource):
             tables = tables_result.get("tables", []) if tables_result.get("success") else []
 
             # Extract lists
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, HTML_PARSER)
             lists = []
 
             for i, ul in enumerate(soup.find_all(["ul", "ol"])):

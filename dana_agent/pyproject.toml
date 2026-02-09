@@ -28,7 +28,8 @@ maintainers = [
     { name = "Sang Dinh", email = "sang@aitomatic.com" },
 ]
 
-# Core runtime dependencies for LLM app development
+# Core runtime dependencies - minimal set for LLM agent functionality
+# Install with: pip install dana
 dependencies = [
     # Core LLM Integration
     "openai>=1.55.3",
@@ -37,24 +38,14 @@ dependencies = [
     "httpx>=0.27.0",
     # Configuration management
     "python-dotenv>=1.0.0",
+    "pydantic-settings>=2.11.0",
     # Basic utilities
     "structlog>=24.0.0",
     "tqdm>=4.65.0",
-    # Data processing (if needed at runtime)
-    "matplotlib>=3.10.6",
-    "pandas>=2.2.0,<2.3.0", # Aligned with llama-index-embeddings-ibm requirements
-    "langfuse>=3.5.1",
-    # Web research dependencies
+    # Web research dependencies (lightweight)
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.0",
-    "lxml>=5.0.0",
-    "readability-lxml>=0.8.1",
     "html2text>=2024.2.26",
-    "llama-stack>=0.3.0",
-    "ollama>=0.6.0",
-    "pydantic-settings>=2.11.0",
-    "rank-bm25>=0.2.2",
-    "rdflib>=7.5.0",
 ]
 
 # Command-line entry points
@@ -66,10 +57,45 @@ dana-memory = "dana.lib.memory.cli:main"
 
 # Optional dependency groups
 [project.optional-dependencies]
-# Semantic memory (optional - requires compatible platform)
+
+# Web scraping with full HTML/XML parsing - Install with: pip install dana[web]
+web = [
+    "lxml>=5.0.0",
+    "readability-lxml>=0.8.1",
+]
+
+# Local LLM providers (Ollama, LlamaStack) - Install with: pip install dana[local]
+local = [
+    "llama-stack>=0.3.0",
+    "ollama>=0.6.0",
+]
+
+# Data processing and visualization - Install with: pip install dana[data]
+data = [
+    "pandas>=2.2.0,<2.3.0",
+    "matplotlib>=3.10.6",
+]
+
+# Semantic memory with vector search - Install with: pip install dana[memory]
 memory = [
     "lancedb>=0.20.0",
     "sentence-transformers>=3.0.0",
+]
+
+# Knowledge graph support - Install with: pip install dana[knowledge]
+knowledge = [
+    "rdflib>=7.5.0",
+    "rank-bm25>=0.2.2",
+]
+
+# Observability and tracing - Install with: pip install dana[observability]
+observability = [
+    "langfuse>=3.5.1",
+]
+
+# Full installation with all optional features - Install with: pip install dana[full]
+full = [
+    "dana[web,local,data,memory,knowledge,observability]",
 ]
 
 dev = [
