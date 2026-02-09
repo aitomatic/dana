@@ -103,6 +103,51 @@ class TestLLMResponse:
         assert "content='Hello'" in repr_str
         assert "model='gpt-4'" in repr_str
 
+    def test_llm_response_with_reasoning_fields(self):
+        """Test LLMResponse with reasoning fields for thinking models"""
+        response = LLMResponse(
+            content="The answer is 42",
+            model="gpt-5-thinking-mini",
+            reasoning_content="Let me think about this problem step by step...",
+            reasoning_tokens=150,
+        )
+
+        assert response.content == "The answer is 42"
+        assert response.model == "gpt-5-thinking-mini"
+        assert response.reasoning_content == "Let me think about this problem step by step..."
+        assert response.reasoning_tokens == 150
+
+    def test_llm_response_reasoning_fields_optional(self):
+        """Test that reasoning fields default to None for non-thinking models"""
+        response = LLMResponse(content="Hello", model="gpt-4")
+
+        assert response.reasoning_content is None
+        assert response.reasoning_tokens is None
+
+    def test_llm_response_reasoning_tokens_only(self):
+        """Test LLMResponse with only reasoning_tokens (OpenAI thinking models)"""
+        # OpenAI thinking models expose token count but not the actual reasoning content
+        response = LLMResponse(
+            content="The answer is 42",
+            model="gpt-5-thinking",
+            reasoning_tokens=500,
+        )
+
+        assert response.reasoning_content is None  # OpenAI doesn't expose reasoning content
+        assert response.reasoning_tokens == 500
+
+    def test_llm_response_reasoning_content_only(self):
+        """Test LLMResponse with only reasoning_content (e.g., DeepSeek)"""
+        # Some providers expose reasoning content but not token counts
+        response = LLMResponse(
+            content="The answer is 42",
+            model="deepseek-reasoner",
+            reasoning_content="Step 1: Consider the question...",
+        )
+
+        assert response.reasoning_content == "Step 1: Consider the question..."
+        assert response.reasoning_tokens is None
+
 
 class TestLLMProvider:
     """Unit tests for LLMProvider abstract base class"""

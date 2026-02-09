@@ -55,6 +55,12 @@ class DanaSkill:
         return self._content
 
     @property
+    def body(self) -> str:
+        """Skill content without YAML frontmatter."""
+        _, body = _parse_frontmatter(self.content)
+        return body
+
+    @property
     def scripts_dir(self) -> Path | None:
         """Path to scripts/ folder if it exists."""
         scripts = self.path.parent / "scripts"

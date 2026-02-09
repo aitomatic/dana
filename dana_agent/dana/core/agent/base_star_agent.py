@@ -29,6 +29,8 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
     See docs/architecture/star-pattern-schema.md for the historical XML prompt schema.
     """
 
+    MAX_ITERATIONS = 20
+
     # ============================================================================
     # CORE STAR PATTERN CONTRACT (Abstract Methods)
     # ============================================================================
@@ -162,8 +164,7 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
         def _do_query(trace_inputs: DictParams) -> DictParams:
             trace_outputs: DictParams = {}
 
-            MAX_ITERATIONS = 10
-            for _ in range(MAX_ITERATIONS):
+            for _ in range(self.MAX_ITERATIONS):
                 try:
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     trace_thoughts = self._think(trace_percepts.get("trace_percepts", {}))
@@ -218,9 +219,10 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
         async def _do_aquery(trace_inputs: DictParams) -> DictParams:
             trace_outputs: DictParams = {}
 
-            MAX_ITERATIONS = 10
-            for _ in range(MAX_ITERATIONS):
+            for _ in range(self.MAX_ITERATIONS):
                 try:
+                    if self._object_id == "dana-coding-agent":
+                        print("Hello")
                     # _see is sync (no async ops needed)
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     # _think_async uses native async LLM call

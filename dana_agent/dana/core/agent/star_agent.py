@@ -16,7 +16,7 @@ import warnings
 import structlog
 
 from dana.common.config import config_manager
-from dana.common.llm.llm import LLM
+from dana.common.llm import LLM
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
@@ -269,16 +269,18 @@ class STARAgent(BaseSTARAgent):
 
         Args:
             reminder: Any object matching Reminder protocol.
-                Must have: name attribute and evaluate(agent, timeline) method.
+                Must have: name attribute and evaluate(agent, messages) method.
 
         Example:
             >>> class MyReminder:
             ...     name = "domain_context"
             ...
-            ...     def evaluate(self, agent, timeline) -> str | None:
+            ...     def evaluate(self, agent, messages) -> None:
             ...         if getattr(agent, "_star_loop_count", 0) == 1:
-            ...             return "Remember: This is a financial analysis task."
-            ...         return None
+            ...             messages.append(LLMMessage(
+            ...                 role="user",
+            ...                 content="<system-reminder>\\nFinancial analysis context.\\n</system-reminder>"
+            ...             ))
             >>>
             >>> agent.register_reminder(MyReminder())
         """
@@ -866,6 +868,7 @@ class STARAgent(BaseSTARAgent):
 
         # Add tool results to timeline
         if isinstance(tool_results, list):
+            deferred_injections = []  # Collect inject_as_user content to add after all tool results
             for tool_result in tool_results:
                 if isinstance(tool_result, dict):
                     # Determine entry type based on tool type
@@ -879,14 +882,39 @@ class STARAgent(BaseSTARAgent):
                     else:  # unknown
                         entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
 
+                    # Ensure content is a string (tool results may be dicts)
+                    result_content = tool_result.get("result", "Unknown tool result")
+
+                    # Extract inject_as_user before serializing (deferred to avoid
+                    # breaking OpenAI's tool_calls → tool results message ordering)
+                    if isinstance(result_content, dict):
+                        inject_content = result_content.pop("inject_as_user", None)
+                        if inject_content:
+                            deferred_injections.append(inject_content)
+
+                    if not isinstance(result_content, str):
+                        import json
+
+                        result_content = json.dumps(result_content)
+
                     # Include tool_call_id for OpenAI native tool support
                     self._timeline.add_entry(
                         TimelineEntry(
                             entry_type=entry_type,
-                            content=tool_result.get("result", "Unknown tool result"),
+                            content=result_content,
                             tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
+
+            # Inject deferred user messages AFTER all tool results are in timeline
+            # (inserting between tool results breaks OpenAI's native tool calling API)
+            for content in deferred_injections:
+                self._timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.USER_MESSAGE,
+                        content=content,
+                    )
+                )
 
             # Add a system reminder to continue if task is not complete
             # Find original user request
@@ -1201,6 +1229,7 @@ class STARAgent(BaseSTARAgent):
 
         # Add tool results to timeline
         if isinstance(tool_results, list):
+            deferred_injections = []  # Collect inject_as_user content to add after all tool results
             for tool_result in tool_results:
                 if isinstance(tool_result, dict):
                     # Determine entry type based on tool type
@@ -1214,14 +1243,39 @@ class STARAgent(BaseSTARAgent):
                     else:  # unknown
                         entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
 
+                    # Ensure content is a string (tool results may be dicts)
+                    result_content = tool_result.get("result", "Unknown tool result")
+
+                    # Extract inject_as_user before serializing (deferred to avoid
+                    # breaking OpenAI's tool_calls → tool results message ordering)
+                    if isinstance(result_content, dict):
+                        inject_content = result_content.pop("inject_as_user", None)
+                        if inject_content:
+                            deferred_injections.append(inject_content)
+
+                    if not isinstance(result_content, str):
+                        import json
+
+                        result_content = json.dumps(result_content)
+
                     # Include tool_call_id for OpenAI native tool support
                     self._timeline.add_entry(
                         TimelineEntry(
                             entry_type=entry_type,
-                            content=tool_result.get("result", "Unknown tool result"),
+                            content=result_content,
                             tool_call_id=tool_result.get("tool_call_id"),
                         )
                     )
+
+            # Inject deferred user messages AFTER all tool results are in timeline
+            # (inserting between tool results breaks OpenAI's native tool calling API)
+            for content in deferred_injections:
+                self._timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.USER_MESSAGE,
+                        content=content,
+                    )
+                )
 
         # Output parameter checking
         assert isinstance(tool_results, list)

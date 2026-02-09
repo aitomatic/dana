@@ -8,7 +8,7 @@ import inspect
 import re
 from typing import Any, get_type_hints
 
-from dana.common.protocols.war import IS_TOOL_USE
+from dana.common.protocols.war import IS_TOOL_USE, TOOL_NAME
 from dana.common.schemas.tool_call import MethodSignature, ParameterInfo, ParsedArgKwargsResults
 
 
@@ -300,8 +300,16 @@ class Misc:
 
             parameters.append(param_info)
 
+        # Extract custom tool name from @named_tool decorator if present
+        custom_tool_name = method.__dict__.get(TOOL_NAME) if hasattr(method, "__dict__") else None
+
         return MethodSignature(
-            class_name=class_name, object_id=object_id, name=method.__name__, description=method_description, parameters=parameters
+            class_name=class_name,
+            object_id=object_id,
+            name=method.__name__,
+            tool_name=custom_tool_name,
+            description=method_description,
+            parameters=parameters,
         )
 
     @staticmethod

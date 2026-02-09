@@ -5,7 +5,7 @@ Provides edit() tool mirroring Claude Code's exact string replacement signature.
 
 from pathlib import Path
 
-from dana.common.protocols.war import tool_use
+from dana.common.protocols.war import named_tool
 from dana.core.resource.base_resource import BaseResource
 
 
@@ -252,7 +252,7 @@ class FileEditResource(BaseResource):
 
         return "\n".join(result_lines)
 
-    @tool_use
+    @named_tool(name="Edit")
     async def edit(self, file_path: str, old_string: str, new_string: str, replace_all: bool = False, fuzzy_match: bool = True) -> str:
         """Perform string replacement in a file with optional fuzzy whitespace matching.
 
@@ -371,3 +371,34 @@ class FileEditResource(BaseResource):
             return f"Error: Permission denied: {resolved_path}"
         except Exception as e:
             return f"Error editing file: {e}"
+
+    @named_tool(name="Write")
+    async def write(self, file_path: str, content: str) -> str:
+        """Create a new file with content. Does not overwrite existing files.
+
+        Args:
+            file_path: Absolute path to the file to write
+            content: Content to write to the file
+
+        Returns:
+            Success message with file path, or error if file already exists.
+        """
+        resolved_path = self._resolve_path(file_path)
+
+        # Check if file already exists
+        if resolved_path.exists():
+            return f"Error: File already exists: {resolved_path}. Cannot overwrite existing files. Use Edit tool to make modifications."
+
+        try:
+            # Create parent directories if they don't exist
+            resolved_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write content
+            resolved_path.write_text(content, encoding="utf-8")
+
+            return f"Successfully wrote {len(content)} characters to {resolved_path}"
+
+        except PermissionError:
+            return f"Error: Permission denied: {resolved_path}"
+        except Exception as e:
+            return f"Error writing file: {e}"

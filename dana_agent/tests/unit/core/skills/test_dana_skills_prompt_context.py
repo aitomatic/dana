@@ -256,3 +256,136 @@ Content.
         # Should include skill context in prompt
         assert "prompt-skill" in prompt
         assert "Skill for prompt testing" in prompt
+
+
+class TestSubstituteArguments:
+    """Tests for $ARGUMENTS inline substitution (Claude Code compatible)."""
+
+    def _make_resource(self, tmp_path: Path, content: str) -> tuple[DanaSkillResource, str]:
+        """Helper: create a single-skill resource and return (resource, skill_name)."""
+        skill_dir = tmp_path / "arg-skill"
+        skill_dir.mkdir(exist_ok=True)
+        (skill_dir / "SKILL.md").write_text(content)
+        loader = SkillLoader(skill_dirs=[tmp_path])
+        resource = DanaSkillResource(skill_loader=loader, auto_register=False)
+        return resource, "arg-skill"
+
+    def test_substitute_arguments_replaces_inline(self, tmp_path: Path):
+        """$ARGUMENTS in skill content is replaced with the args string."""
+        resource, name = self._make_resource(
+            tmp_path,
+            "---\nname: arg-skill\ndescription: test\n---\nAnalyze module: $ARGUMENTS",
+        )
+        result = resource._execute_main(
+            resource._skill_loader.get_skill(name),
+            args="src/auth",
+        )
+        assert result["message"] == "Launching skill: arg-skill"
+        assert "Analyze module: src/auth" in result["inject_as_user"]
+        assert "$ARGUMENTS" not in result["inject_as_user"]
+        assert "instructions" not in result
+        # Should be bare content — no frontmatter, no XML wrapper
+        assert "---" not in result["inject_as_user"]
+        assert "<skill" not in result["inject_as_user"]
+
+    def test_substitute_arguments_empty_when_no_args(self, tmp_path: Path):
+        """$ARGUMENTS becomes empty string when args is empty."""
+        resource, name = self._make_resource(
+            tmp_path,
+            "---\nname: arg-skill\ndescription: test\n---\nTarget: $ARGUMENTS done",
+        )
+        result = resource._execute_main(
+            resource._skill_loader.get_skill(name),
+            args="",
+        )
+        assert "Target:  done" in result["inject_as_user"]
+        assert "$ARGUMENTS" not in result["inject_as_user"]
+
+    def test_substitute_arguments_no_placeholder_untouched(self, tmp_path: Path):
+        """Content without $ARGUMENTS is not modified."""
+        resource, name = self._make_resource(
+            tmp_path,
+            "---\nname: arg-skill\ndescription: test\n---\nPlain instructions here.",
+        )
+        result = resource._execute_main(
+            resource._skill_loader.get_skill(name),
+            args="should-not-appear-inline",
+        )
+        assert "Plain instructions here." in result["inject_as_user"]
+
+    def test_substitute_arguments_with_special_chars(self, tmp_path: Path):
+        """Args with special characters are substituted verbatim."""
+        resource, name = self._make_resource(
+            tmp_path,
+            "---\nname: arg-skill\ndescription: test\n---\nRun: $ARGUMENTS",
+        )
+        result = resource._execute_main(
+            resource._skill_loader.get_skill(name),
+            args="-m 'Fix bug' --no-verify",
+        )
+        assert "Run: -m 'Fix bug' --no-verify" in result["inject_as_user"]
+        assert "$ARGUMENTS" not in result["inject_as_user"]
+
+
+class TestBaseDirectoryPrefix:
+    """Tests for base directory prefix in skill output."""
+
+    def test_execute_main_includes_base_directory(self, tmp_path: Path):
+        """Main mode output includes 'Base directory for this skill:' prefix."""
+        skill_dir = tmp_path / "dir-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("---\nname: dir-skill\ndescription: test\n---\nDo something.")
+        loader = SkillLoader(skill_dirs=[tmp_path])
+        resource = DanaSkillResource(skill_loader=loader, auto_register=False)
+        skill = loader.get_skill("dir-skill")
+
+        result = resource._execute_main(skill, args="")
+
+        assert f"Base directory for this skill: {skill_dir}" in result["inject_as_user"]
+
+    def test_fork_task_message_includes_base_directory(self, tmp_path: Path):
+        """Fork task message includes 'Base directory for this skill:' prefix."""
+        skill_dir = tmp_path / "dir-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("---\nname: dir-skill\ndescription: test\n---\nDo something.")
+        loader = SkillLoader(skill_dirs=[tmp_path])
+        resource = DanaSkillResource(skill_loader=loader, auto_register=False)
+        skill = loader.get_skill("dir-skill")
+
+        msg = resource._build_fork_task_message(skill, args="")
+
+        assert f"Base directory for this skill: {skill_dir}" in msg
+
+
+class TestForkTaskMessageContent:
+    """Tests for skill content inclusion in fork task message."""
+
+    def test_fork_task_message_includes_skill_body(self, tmp_path: Path):
+        """Fork task message includes skill body without frontmatter or XML wrapper."""
+        skill_dir = tmp_path / "fork-content-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("---\nname: fork-content-skill\ndescription: test\n---\nThese are the instructions.")
+        loader = SkillLoader(skill_dirs=[tmp_path])
+        resource = DanaSkillResource(skill_loader=loader, auto_register=False)
+        skill = loader.get_skill("fork-content-skill")
+
+        msg = resource._build_fork_task_message(skill, args="")
+
+        assert "These are the instructions." in msg
+        # Should be bare content — no frontmatter, no XML wrapper
+        assert "<skill" not in msg
+        assert "---\nname:" not in msg
+
+    def test_fork_task_message_substitutes_arguments(self, tmp_path: Path):
+        """Fork task message applies $ARGUMENTS substitution."""
+        skill_dir = tmp_path / "fork-args-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("---\nname: fork-args-skill\ndescription: test\n---\nTarget: $ARGUMENTS")
+        loader = SkillLoader(skill_dirs=[tmp_path])
+        resource = DanaSkillResource(skill_loader=loader, auto_register=False)
+        skill = loader.get_skill("fork-args-skill")
+
+        msg = resource._build_fork_task_message(skill, args="mymodule")
+
+        assert "Target: mymodule" in msg
+        assert "$ARGUMENTS" not in msg

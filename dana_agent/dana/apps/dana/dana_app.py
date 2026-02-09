@@ -112,29 +112,20 @@ class DanaApp:
         return None
 
     def _show_welcome(self):
-        """Display welcome banner."""
-        print("""
-╔═══════════════════════════════════════════════════════════╗
-║  Dana - Your AI Coordinator                               ║
-║  Domain-Aware Neurosymbolic Agent                         ║
-╚═══════════════════════════════════════════════════════════╝
+        """Display compact welcome header."""
+        try:
+            from rich.console import Console as RichConsole
+            from rich.text import Text
 
-Hi! I'm Dana, your conversational AI coordinator. I can help you:
-  • Create and manage specialized agents
-  • Execute workflows and access resources
-  • Coordinate multi-agent operations
-  • Answer questions and accomplish tasks
-
-Commands:
-  /help      - Show available commands
-  /agents    - List all agents
-  /resources - List all resources
-  /workflows - List all workflows
-  /thoughts  - Toggle thought process display
-  /exit      - Exit Dana
-
-Just tell me what you need, and I'll help you get it done!
-""")
+            console = RichConsole()
+            console.print()
+            title = Text("  Dana Agent", style="bold")
+            console.print(title)
+            console.print(Text("  /help for commands, /exit to quit", style="dim"))
+            console.print()
+        except ImportError:
+            print("\n  Dana Agent")
+            print("  /help for commands, /exit to quit\n")
 
     def _initialize_dana(self):
         """Initialize Dana agent with access to all resources."""
@@ -161,9 +152,9 @@ Just tell me what you need, and I'll help you get it done!
             try:
                 # Get input with prompt_toolkit (has history) or fallback to input()
                 if PROMPT_TOOLKIT_AVAILABLE and self.session:
-                    user_input = self.session.prompt("You: ")
+                    user_input = self.session.prompt("❯ ")
                 else:
-                    user_input = input("You: ")
+                    user_input = input("❯ ")
 
                 if not user_input.strip():
                     continue
@@ -298,10 +289,17 @@ You can also just talk to me naturally! Tell me what you need.
             traces = self.dana_agent.query(message=message)
             response = traces.get("response", "I'm not sure how to respond to that. Could you rephrase?")
 
-            # Display response
-            print("\n🤖 Dana: ", end="", flush=True)
-            print(response)
-            print()
+            # Display response with markdown rendering
+            try:
+                from rich.console import Console as RichConsole
+                from rich.markdown import Markdown
+
+                console = RichConsole()
+                console.print()
+                console.print(Markdown(str(response)))
+                console.print()
+            except ImportError:
+                print(f"\n{response}\n")
 
         except Exception as e:
             print(f"\n❌ I encountered an error: {e}")

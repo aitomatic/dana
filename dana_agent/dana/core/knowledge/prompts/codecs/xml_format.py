@@ -50,16 +50,21 @@ FORMAT RULES:
         """
         Format a method signature into a Cursor XML format.
         """
-        # Use object_id if available, fallback to class_name
-        identifier = signature.object_id or signature.class_name
+        # Use custom tool_name if provided via @named_tool, else use object_id:method format
+        if signature.tool_name:
+            tool_identifier = signature.tool_name
+        else:
+            identifier = signature.object_id or signature.class_name
+            tool_identifier = f"{identifier}:{signature.name}"
+
         return "\n".join(
             [
-                f"### {identifier}:{signature.name}",
+                f"### {tool_identifier}",
                 f"Description: {signature.description}",
                 "Parameters:",
                 cls._parameters_to_str(signature.parameters),
                 "Usage:",
-                cls._usage_example(signature, identifier),
+                cls._usage_example(signature, tool_identifier),
             ]
         )
 
@@ -72,12 +77,16 @@ FORMAT RULES:
         return text
 
     @classmethod
-    def _usage_example(cls, signature: MethodSignature, identifier: str | None = None) -> str:
-        # Use provided identifier or fallback to class_name
-        if identifier is None:
-            identifier = signature.object_id or signature.class_name
+    def _usage_example(cls, signature: MethodSignature, tool_identifier: str | None = None) -> str:
+        # Use provided tool_identifier (may be custom name or identifier:method format)
+        if tool_identifier is None:
+            if signature.tool_name:
+                tool_identifier = signature.tool_name
+            else:
+                identifier = signature.object_id or signature.class_name
+                tool_identifier = f"{identifier}:{signature.name}"
         text = ""
-        text += f'<invoke name="{identifier}:{signature.name}">\n'
+        text += f'<invoke name="{tool_identifier}">\n'
         for parameter in signature.parameters:
             text += f'<parameter name="{parameter.name}">{parameter.example if parameter.example else parameter.description}</parameter>\n'
         text += "</invoke>"
@@ -91,20 +100,31 @@ FORMAT RULES:
 
         Args:
             xml_string: XML string in format: <function_call><invoke name="Class:method">...</invoke></function_call>
+                        or <function_call><invoke name="custom_tool_name">...</invoke></function_call>
 
         Returns:
             ToolCall object with class_name, name, and parameters
         """
-        # Extract identifier and method_name from <invoke name="identifier:methodName">
-        # identifier can be object_id or class_name
-        invoke_match = re.search(r'<invoke\s+name=["\']([^"\']+):([^"\']+)["\']', xml_string)
-        if not invoke_match:
-            raise ValueError('Could not find <invoke name="identifier:methodName"> in XML string')
+        # Track custom tool name for ToolCall.tool_name field
+        custom_tool_name = None
 
-        identifier = invoke_match.group(1)
-        method_name = invoke_match.group(2)
-        # Store in both object_id and class_name for compatibility
-        class_name = identifier
+        # Try standard format first: <invoke name="identifier:methodName">
+        invoke_match = re.search(r'<invoke\s+name=["\']([^"\']+):([^"\']+)["\']', xml_string)
+        if invoke_match:
+            identifier = invoke_match.group(1)
+            method_name = invoke_match.group(2)
+            # Store in both object_id and class_name for compatibility
+            class_name = identifier
+        else:
+            # Try custom tool name format: <invoke name="custom_name"> (no colon)
+            custom_match = re.search(r'<invoke\s+name=["\']([^"\']+)["\']', xml_string)
+            if not custom_match:
+                raise ValueError('Could not find <invoke name="..."> in XML string')
+            # Custom tool name - store the full name and let execution handle lookup
+            custom_tool_name = custom_match.group(1)
+            identifier = None  # No identifier for custom tool names
+            method_name = custom_tool_name  # Keep for backward compat
+            class_name = None  # No class for custom tool names
 
         # Extract inner content between <invoke> tags
         invoke_content_match = re.search(r'<invoke\s+name=["\'][^"\']+["\']>(.*?)</invoke>', xml_string, re.DOTALL)
@@ -112,7 +132,7 @@ FORMAT RULES:
             # Try without closing tag (fallback)
             invoke_content_match = re.search(r'<invoke\s+name=["\'][^"\']+["\']>(.*)', xml_string, re.DOTALL)
             if not invoke_content_match:
-                return ToolCall(class_name=class_name, object_id=identifier, name=method_name, parameters={})
+                return ToolCall(class_name=class_name, object_id=identifier, name=method_name, tool_name=custom_tool_name, parameters={})
             invoke_content = invoke_content_match.group(1)
         else:
             invoke_content = invoke_content_match.group(1)
@@ -120,7 +140,7 @@ FORMAT RULES:
         # Parse parameters using regex approach (primary)
         parameters = cls._parse_parameters_from_xml(xml_string, invoke_content)
 
-        return ToolCall(class_name=class_name, object_id=identifier, name=method_name, parameters=parameters)
+        return ToolCall(class_name=class_name, object_id=identifier, name=method_name, tool_name=custom_tool_name, parameters=parameters)
 
     @classmethod
     def _parse_parameters_from_xml(cls, xml_string: str, content: str) -> dict[str, Any]:
@@ -281,7 +301,7 @@ FORMAT RULES:
         for match in function_call_matches:
             function_call_content = match.group(1)  # Get the inner content of <function_call>
             # Find all <invoke>...</invoke> blocks inside this function_call
-            invoke_pattern = r"<invoke\s+name=[\"'][^\"']+:[^\"']+[\"'][^>]*>.*?</invoke>"
+            invoke_pattern = r"<invoke\s+name=[\"'][^\"']+[\"'][^>]*>.*?</invoke>"
             invoke_matches = re.finditer(invoke_pattern, function_call_content, re.DOTALL)
 
             for invoke_match in invoke_matches:
@@ -380,19 +400,23 @@ FORMAT RULES:
         return text
 
     @classmethod
-    def _usage_example(cls, signature: MethodSignature, identifier: str | None = None) -> str:
-        # Use provided identifier or fallback to class_name
-        if identifier is None:
-            identifier = signature.object_id or signature.class_name
+    def _usage_example(cls, signature: MethodSignature, tool_identifier: str | None = None) -> str:
+        # Use provided tool_identifier (may be custom name or identifier:method format)
+        if tool_identifier is None:
+            if signature.tool_name:
+                tool_identifier = signature.tool_name
+            else:
+                identifier = signature.object_id or signature.class_name
+                tool_identifier = f"{identifier}:{signature.name}"
         text = ""
-        text += f"<{identifier}:{signature.name}>\n"
+        text += f"<{tool_identifier}>\n"
         for parameter in signature.parameters:
             content = parameter.example if parameter.example else parameter.description
             if len(content) > 200:
                 text += f"<{parameter.name}>\n{content}\n</{parameter.name}>\n"
             else:
                 text += f"<{parameter.name}>{content}</{parameter.name}>\n"
-        text += f"</{identifier}:{signature.name}>\n"
+        text += f"</{tool_identifier}>\n"
         return text
 
     @classmethod
@@ -400,16 +424,21 @@ FORMAT RULES:
         """
         Format a method signature into a Kraken XML format.
         """
-        # Use object_id if available, fallback to class_name
-        identifier = signature.object_id or signature.class_name
+        # Use custom tool_name if provided via @named_tool, else use object_id:method format
+        if signature.tool_name:
+            tool_identifier = signature.tool_name
+        else:
+            identifier = signature.object_id or signature.class_name
+            tool_identifier = f"{identifier}:{signature.name}"
+
         return "\n".join(
             [
-                f"### {identifier}:{signature.name}",
+                f"### {tool_identifier}",
                 f"Description: {signature.description}",
                 "Parameters:",
                 cls._parameters_to_str(signature.parameters),
                 "Usage:",
-                cls._usage_example(signature, identifier),
+                cls._usage_example(signature, tool_identifier),
             ]
         )
 
@@ -421,24 +450,37 @@ FORMAT RULES:
 
         Args:
             xml_string: XML string in format: <ClassName:methodName><param>value</param></ClassName:methodName>
+                        or <custom_tool_name><param>value</param></custom_tool_name>
 
         Returns:
             ToolCall object with class_name, name, and parameters
         """
-        # Extract outer tag <identifier:methodName> to get identifier and method_name
-        # identifier can be object_id or class_name
-        outer_tag_match = re.search(r"<([^:>]+):([^>]+)>", xml_string)
-        if not outer_tag_match:
-            raise ValueError("Could not find <identifier:methodName> tag in XML string")
+        # Track custom tool name for ToolCall.tool_name field
+        custom_tool_name = None
 
-        identifier = outer_tag_match.group(1)
-        method_name = outer_tag_match.group(2)
-        # Store in both object_id and class_name for compatibility
-        class_name = identifier
+        # Try standard format first: <identifier:methodName>
+        outer_tag_match = re.search(r"<([^:/>]+):([^>]+)>", xml_string)
+        if outer_tag_match:
+            identifier = outer_tag_match.group(1)
+            method_name = outer_tag_match.group(2)
+            # Store in both object_id and class_name for compatibility
+            class_name = identifier
+            tool_tag = f"{class_name}:{method_name}"
+        else:
+            # Try custom tool name format: <custom_name> (no colon)
+            custom_match = re.search(r"<([^/>][^>]*)>", xml_string)
+            if not custom_match:
+                raise ValueError("Could not find <identifier:methodName> or <custom_name> tag in XML string")
+            # Custom tool name - store the full name
+            custom_tool_name = custom_match.group(1)
+            identifier = None  # No identifier for custom tool names
+            method_name = custom_tool_name  # Keep for backward compat
+            class_name = None  # No class for custom tool names
+            tool_tag = custom_tool_name
 
         # Extract inner content between opening and closing tags
-        outer_tag_pattern = re.escape(f"<{class_name}:{method_name}>")
-        closing_tag_pattern = re.escape(f"</{class_name}:{method_name}>")
+        outer_tag_pattern = re.escape(f"<{tool_tag}>")
+        closing_tag_pattern = re.escape(f"</{tool_tag}>")
 
         # Try to find content between tags
         content_match = re.search(f"{outer_tag_pattern}(.*?){closing_tag_pattern}", xml_string, re.DOTALL)
@@ -446,7 +488,7 @@ FORMAT RULES:
             # Try without closing tag (fallback)
             content_match = re.search(f"{outer_tag_pattern}(.*)", xml_string, re.DOTALL)
             if not content_match:
-                return ToolCall(class_name=class_name, object_id=identifier, name=method_name, parameters={})
+                return ToolCall(class_name=class_name, object_id=identifier, name=method_name, tool_name=custom_tool_name, parameters={})
             content = content_match.group(1)
         else:
             content = content_match.group(1)
@@ -454,7 +496,7 @@ FORMAT RULES:
         # Parse parameters using regex approach (primary)
         parameters = cls._parse_parameters_from_xml(content)
 
-        return ToolCall(class_name=class_name, object_id=identifier, name=method_name, parameters=parameters)
+        return ToolCall(class_name=class_name, object_id=identifier, name=method_name, tool_name=custom_tool_name, parameters=parameters)
 
     @classmethod
     def _parse_parameters_from_xml(cls, content: str) -> dict[str, Any]:

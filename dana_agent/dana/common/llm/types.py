@@ -80,6 +80,8 @@ class LLMResponse:
     usage: dict[str, int] | None = None
     finish_reason: str | None = None
     tool_calls: list | None = None  # For function calling support
+    reasoning_content: str | None = None  # From providers that expose thinking (DeepSeek, future Claude extended)
+    reasoning_tokens: int | None = None  # Token count from OpenAI thinking models
 
 
 class LLMProvider(ABC):
