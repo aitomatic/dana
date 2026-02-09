@@ -15,7 +15,18 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 import html2text
-from readability import Document
+
+try:
+    from readability import Document as ReadabilityDocument
+except ImportError:
+    ReadabilityDocument = None  # type: ignore[misc, assignment]
+
+# Check if lxml is available for faster HTML parsing
+try:
+    import lxml  # noqa: F401
+    HTML_PARSER = "lxml"
+except ImportError:
+    HTML_PARSER = "html.parser"
 
 from dana.common.llm import LLM
 from dana.common.protocols import DictParams
@@ -78,14 +89,22 @@ class ContentExtractor(BaseResource):
             }
         """
         try:
-            # Use readability to extract main content
-            doc = Document(html)
-
-            title = doc.title()
-            content_html = doc.summary()
+            # Use readability to extract main content (if available)
+            if ReadabilityDocument is None:
+                # Fallback: use BeautifulSoup directly without readability
+                soup = BeautifulSoup(html, HTML_PARSER)
+                title = soup.title.string if soup.title else ""
+                # Remove script/style elements
+                for element in soup(["script", "style", "nav", "footer", "header"]):
+                    element.decompose()
+                content_html = str(soup.body) if soup.body else str(soup)
+            else:
+                doc = ReadabilityDocument(html)
+                title = doc.title()
+                content_html = doc.summary()
 
             # Parse cleaned HTML
-            soup = BeautifulSoup(content_html, "lxml")
+            soup = BeautifulSoup(content_html, HTML_PARSER)
             content_text = soup.get_text(separator=" ", strip=True)
 
             # Truncate if too long
@@ -152,7 +171,7 @@ class ContentExtractor(BaseResource):
             }
         """
         try:
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, HTML_PARSER)
             base_domain = urlparse(base_url).netloc
 
             links = []
@@ -219,7 +238,7 @@ class ContentExtractor(BaseResource):
             }
         """
         try:
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, HTML_PARSER)
 
             # Basic metadata
             title = soup.find("title")
@@ -323,7 +342,7 @@ class ContentExtractor(BaseResource):
             markdown = converter.handle(html)
 
             # Extract images and links
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, HTML_PARSER)
 
             images = []
             if include_images:
@@ -367,7 +386,7 @@ class ContentExtractor(BaseResource):
             }
         """
         try:
-            soup = BeautifulSoup(html, "lxml")
+            soup = BeautifulSoup(html, HTML_PARSER)
             tables = []
 
             for i, table in enumerate(soup.find_all("table")):

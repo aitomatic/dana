@@ -10,8 +10,12 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from langfuse import Langfuse
 from structlog import get_logger
+
+try:
+    from langfuse import Langfuse
+except ImportError:
+    Langfuse = None  # type: ignore[misc, assignment]
 
 from dana.common.base_war import BaseWAR
 from dana.common.protocols.war import AgentProtocol, ResourceProtocol, WorkflowProtocol
@@ -29,7 +33,7 @@ if TYPE_CHECKING:
 logger = get_logger()
 
 
-def _get_langfuse_client(storage_config: LangfuseStorageConfig) -> Langfuse:
+def _get_langfuse_client(storage_config: LangfuseStorageConfig) -> "Langfuse":
     """
     Get Langfuse client from storage config.
 
@@ -40,8 +44,16 @@ def _get_langfuse_client(storage_config: LangfuseStorageConfig) -> Langfuse:
         Initialized Langfuse client instance
 
     Raises:
+        ImportError: If langfuse package is not installed
         ValueError: If credentials are not provided in config or env vars
     """
+    if Langfuse is None:
+        raise ImportError(
+            "langfuse package is not installed. "
+            "Install it with: pip install dana[observability] "
+            "or: pip install langfuse>=3.5.1"
+        )
+
     public_key = storage_config.public_key
     secret_key = storage_config.secret_key
     host = storage_config.host or "https://cloud.langfuse.com"
