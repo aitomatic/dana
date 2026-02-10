@@ -385,9 +385,9 @@ class SearchResource(BaseResource):
                 if context_after:
                     cmd.extend(["-A", str(context_after)])
 
-        # File type filter (rg has built-in type support)
+        # File type filter (rg has built-in type support, fall back to glob for unknown types)
         if file_type:
-            cmd.extend(["--type", file_type])
+            cmd.extend(["--type-add", f"{file_type}:*.{file_type}", "--type", file_type])
 
         # Glob filter
         if glob:
