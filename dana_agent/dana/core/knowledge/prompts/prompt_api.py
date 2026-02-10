@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from datetime import date
-import inspect
 import os
 from pathlib import Path
 import platform
@@ -263,9 +262,7 @@ class LocalPromptAPI(PromptAPIProtocol):
 
     @property
     def relative_path(self) -> str:
-        filepath = inspect.getfile(self._agent.__class__)
-        filename = Path(filepath).stem
-        return f"{self._codec.__qualname__}/{self._agent.__class__.__qualname__}__{filename}/prompts"
+        return f"{self._codec.__qualname__}/{self._agent.object_id}/prompts"
 
     @property
     def public_description(self) -> str:
@@ -607,8 +604,12 @@ Today's date: {today}"""
         Output:
             /private/tmp/claude-501/-Users-lam-Desktop-repos-opendxa/c7bb4811-6425-4c20-8b06-b2e7abdf9bc7/scratchpad
         """
+        from dana.config.storage_config import FileStorageConfig
+
+        workspace_folder = Path(FileStorageConfig().workspace_folder)
+
         relative_prompt_path = Path(self.relative_path)
         _session_id = getattr(self._agent, "_session_id", str(uuid4()))
-        tmp_path = relative_prompt_path.parent / "tmp" / _session_id / "scratchpad"
+        tmp_path = workspace_folder / relative_prompt_path.parent / "tmp" / _session_id / "scratchpad"
         tmp_path.mkdir(parents=True, exist_ok=True)
         return str(tmp_path.absolute())
