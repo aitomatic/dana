@@ -552,14 +552,23 @@ class SearchResource(BaseResource):
 
     @named_tool(name="Glob")
     async def glob(self, pattern: str, path: str | None = None) -> str:
-        """Find files matching a glob pattern.
+        """Fast file pattern matching tool that works with any codebase size.
+
+        Supports glob patterns like "**/*.js" or "src/**/*.ts".
+        Returns matching file paths sorted by modification time.
+        Use this tool when you need to find files by name patterns.
+
+        IMPORTANT: The pattern is matched relative to the path directory.
+        Do NOT repeat the directory name in the pattern when path is set.
+        Example: to find all .owl files under "ontology/", use
+        pattern="**/*.owl" with path="ontology" — NOT pattern="ontology/**/*.owl".
 
         Args:
-            pattern: Glob pattern (e.g., "**/*.json", "*.md")
-            path: Directory to search (default: output directory)
+            pattern: The glob pattern to match files against (e.g., "**/*.json", "src/**/*.ts")
+            path: The directory to search in. If not specified, the base directory will be used.
 
         Returns:
-            Matching file paths sorted by modification time.
+            Matching file paths sorted by modification time (newest first).
         """
         resolved_path = self._resolve_path(path)
 
@@ -571,6 +580,9 @@ class SearchResource(BaseResource):
 
         try:
             matches = list(resolved_path.glob(pattern))
+
+            # Filter to files only (this is a file discovery tool)
+            matches = [m for m in matches if m.is_file()]
 
             if not matches:
                 return f"No files found matching pattern: {pattern}"
