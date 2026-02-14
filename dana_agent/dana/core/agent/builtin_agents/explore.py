@@ -100,6 +100,7 @@ class ExploreAgent(STARAgent):
         enable_skills: bool = False,
         enable_assistant: bool = False,
         identity_override: str | None = IDENTITY,
+        cwd: str | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -115,14 +116,15 @@ class ExploreAgent(STARAgent):
             **kwargs,
         )
 
+        self._cwd = cwd
         _prompt_api = self._runtime._get_prompt_api(self)
         _prompt_api._template_system_prompt = IDENTITY
         self.with_resources(
-            BashResource(resource_id="bash"),
-            FileIOResource(resource_id="file-io"),
+            BashResource(resource_id="bash", working_directory=cwd),
+            FileIOResource(resource_id="file-io", base_path=cwd),
             ToDoResource(resource_id="todo"),
-            FileEditResource(resource_id="file-edit"),
-            SearchResource(resource_id="search"),
+            FileEditResource(resource_id="file-edit", base_path=cwd),
+            SearchResource(resource_id="search", base_path=cwd),
             # TaskResource(resource_id="task"),
             DanaSkillResource(resource_id="skills", agent=self),
         )

@@ -452,9 +452,22 @@ class CompressedTimeline(Timeline):
                                 tc_args = {"raw": tc_args}
 
                     tool_calls.append(NativeToolCall(id=tc_id, name=tc_name, arguments=tc_args))
+        elif (
+            entry.entry_type
+            in (
+                TimelineEntryType.UNKNOWN_TOOL_CALL,
+                TimelineEntryType.FAILED_TOOL_CALL,
+            )
+            and entry.tool_call_id
+        ):
+            # Tool execution errors with a tool_call_id must be role="tool"
+            # so the LLM API can match them to their corresponding tool_calls.
+            # Without this, the API rejects with "tool_call_ids did not have response messages".
+            role = "tool"
+            tool_call_id = entry.tool_call_id
         else:
             # Default: AGENT_RESPONSE, AGENT_THOUGHTS, AGENT_LEARNING, SUB_AGENT_RESPONSE,
-            # TODO_LIST, UNKNOWN_TOOL_CALL, FAILED_TOOL_CALL
+            # TODO_LIST, UNKNOWN_TOOL_CALL (without tool_call_id), FAILED_TOOL_CALL (without tool_call_id)
             role = "assistant"
 
         return NativeMessage(

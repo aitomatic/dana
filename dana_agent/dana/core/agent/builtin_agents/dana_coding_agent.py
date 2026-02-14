@@ -131,6 +131,7 @@ class DanaCodingAgent(STARAgent):
         enable_skills: bool = False,
         enable_assistant: bool = False,
         identity_override: str | None = IDENTITY,
+        cwd: str | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -152,19 +153,21 @@ class DanaCodingAgent(STARAgent):
             raise ValueError(
                 f"{self.__class__.__name__} only works with `dana_agent/dana/core/runtime/codec` runtimes. You are using {self._runtime.__class__.__name__}."
             )
+        self._cwd = cwd
         explore_agent = ExploreAgent(
             agent_id="explore-test-123",
             agent_type="explore_agent",
             llm_provider=llm_provider,
             model=model,
             max_context_tokens=100000,
+            cwd=cwd,
         )
         self.with_resources(
-            BashResource(resource_id="bash"),
-            FileIOResource(resource_id="file-io"),
+            BashResource(resource_id="bash", working_directory=cwd),
+            FileIOResource(resource_id="file-io", base_path=cwd),
             ToDoResource(resource_id="todo"),
-            FileEditResource(resource_id="file-edit"),
-            SearchResource(resource_id="search"),
+            FileEditResource(resource_id="file-edit", base_path=cwd),
+            SearchResource(resource_id="search", base_path=cwd),
             TaskResource(resource_id="task", agents={"explore": explore_agent}),
             DanaSkillResource(resource_id="skills", agent=self),
         )
