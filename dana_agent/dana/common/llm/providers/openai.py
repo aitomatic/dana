@@ -101,8 +101,12 @@ class OpenAIProvider(LLMProvider):
 
     @property
     def supports_vision(self) -> bool:
-        """GPT-4o/4V models support vision/image input."""
-        return True
+        """OpenAI supports vision but content block format differs from Anthropic.
+
+        Disabled until format-aware injection is implemented.
+        Falls back to VisionParser text extraction.
+        """
+        return False
 
     def __init__(self, api_key: str | None = None, model: str = "gpt-3.5-turbo", base_url: str | None = None):
         """
