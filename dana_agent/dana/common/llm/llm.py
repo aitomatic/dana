@@ -155,6 +155,10 @@ class LLM:
 
         self.model = getattr(self.provider, "model", "unknown")
 
+    @property
+    def supports_vision(self) -> bool:
+        return getattr(self.provider, "supports_vision", False)
+
     async def chat(self, messages: list[LLMMessage], **kwargs) -> str:
         """
         Send messages and get a response.

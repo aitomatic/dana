@@ -26,6 +26,11 @@ class AzureProvider(LLMProvider):
         """
         return True
 
+    @property
+    def supports_vision(self) -> bool:
+        """Azure OpenAI supports vision/image input."""
+        return True
+
     def __init__(
         self, api_key: str | None = None, model: str = "gpt-35-turbo", base_url: str | None = None, api_version: str | None = None
     ):

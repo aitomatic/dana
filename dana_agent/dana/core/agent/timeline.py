@@ -85,7 +85,7 @@ class TimelineEntry:
     """
 
     entry_type: TimelineEntryType
-    content: str
+    content: str | list[dict]
     timestamp: datetime = field(default_factory=lambda: datetime.now())
     metadata: dict = field(default_factory=dict)
     is_latest_user_message: bool = False
@@ -627,8 +627,10 @@ class Timeline:
                 and merged_messages[-1].role == "assistant"
                 and not msg.tool_calls
                 and not merged_messages[-1].tool_calls
+                and isinstance(msg.content, str)
+                and isinstance(merged_messages[-1].content, str)
             ):
-                # Merge into previous assistant message
+                # Merge into previous assistant message (only when both are plain strings)
                 merged_messages[-1] = LLMMessage(role="assistant", content=f"{merged_messages[-1].content}\n{msg.content}".strip())
             else:
                 merged_messages.append(msg)
@@ -669,7 +671,7 @@ class Timeline:
         else:
             return default_role
 
-    def _format_entry_content(self, entry: TimelineEntry) -> str:
+    def _format_entry_content(self, entry: TimelineEntry) -> str | list[dict]:
         """
         Format timeline entry content for LLM consumption.
 
@@ -677,9 +679,13 @@ class Timeline:
             entry: TimelineEntry to format
 
         Returns:
-            Formatted content string
+            Formatted content string, or list[dict] for multimodal content blocks
         """
         content = entry.content
+
+        # Pass multimodal content blocks through unchanged
+        if isinstance(content, list):
+            return content
 
         # Truncate large resource/workflow results to prevent context overflow
         # Large results (like 50KB weather JSON) overwhelm the LLM
@@ -708,7 +714,14 @@ class Timeline:
         total = 0
         for msg in messages:
             # Rough estimation: 1.3 tokens per word
-            total += len(msg.content.split()) * 1.3
+            content = msg.content
+            if isinstance(content, list):
+                # Multimodal content blocks: estimate text parts only
+                for block in content:
+                    if isinstance(block, dict) and "text" in block:
+                        total += len(block["text"].split()) * 1.3
+            else:
+                total += len(content.split()) * 1.3
         return int(total)
 
     def _build_context_with_token_limit(self, messages: list[LLMMessage], max_tokens: int) -> list[LLMMessage]:
@@ -973,7 +986,13 @@ class Timeline:
         for entry in entries:
             # Rough estimation: 1.3 tokens per word
             try:
-                total += len(str(entry.content).split()) * 1.3
+                content = entry.content
+                if isinstance(content, list):
+                    for block in content:
+                        if isinstance(block, dict) and "text" in block:
+                            total += len(block["text"].split()) * 1.3
+                else:
+                    total += len(str(content).split()) * 1.3
             except Exception as e:
                 logger.error(f"Error estimating token count for entry: {e}")
                 continue
@@ -1099,7 +1118,12 @@ class Timeline:
         }
         entries_text_parts = []
         for entry in entries_to_compress:
-            content = entry.content[:500] + "..." if len(entry.content) > 500 else entry.content
+            content = entry.content
+            if isinstance(content, list):
+                # Multimodal content: summarize as text description
+                text_parts = [b.get("text", "") for b in content if isinstance(b, dict) and "text" in b]
+                content = " ".join(text_parts) if text_parts else "[multimodal content]"
+            content = content[:500] + "..." if len(content) > 500 else content
             role = role_map.get(entry.entry_type.value, entry.entry_type.value)
             entries_text_parts.append(f"{role}: {content}")
 

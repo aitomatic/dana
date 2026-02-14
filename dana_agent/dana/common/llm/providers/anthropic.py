@@ -136,6 +136,11 @@ class AnthropicProvider(LLMProvider):
         """Anthropic supports native tool calling."""
         return True
 
+    @property
+    def supports_vision(self) -> bool:
+        """Claude models support vision/image input."""
+        return True
+
     def __init__(self, api_key: str | None = None, model: str = "claude-3-sonnet-20240229", base_url: str | None = None):
         """
         Initialize Anthropic provider.

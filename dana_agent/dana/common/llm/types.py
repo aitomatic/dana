@@ -30,7 +30,7 @@ class ConfigurationError(LLMError):
 class LLMMessage:
     """A single message in a conversation."""
 
-    content: str
+    content: str | list[dict]
     role: str  # "system", "user", "assistant", "tool"
     cache_control: dict | None = None  # For Anthropic prompt caching
     tool_calls: list | None = None  # For assistant messages with native tool calls
@@ -50,7 +50,7 @@ class SystemLLMMessage(LLMMessage):
 class UserLLMMessage(LLMMessage):
     """A user message in a conversation."""
 
-    content: str
+    content: str | list[dict]
     role: str = "user"  # Hard-coded role
 
 
@@ -92,6 +92,14 @@ class LLMProvider(ABC):
         """Whether this provider supports native function/tool calling.
 
         Override in providers that support OpenAI-compatible tool calling.
+        """
+        return False
+
+    @property
+    def supports_vision(self) -> bool:
+        """Whether this provider supports vision/image input.
+
+        Override in providers that support image content blocks.
         """
         return False
 

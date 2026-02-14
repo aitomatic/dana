@@ -867,7 +867,15 @@ class CompressedTimeline(Timeline):
             Estimated token count
         """
         # Rough estimation: 4 characters per token
-        return int(len(str(entry.content)) / 4)
+        content = entry.content
+        if isinstance(content, list):
+            # Multimodal content: estimate text parts only
+            total = 0
+            for block in content:
+                if isinstance(block, dict) and "text" in block:
+                    total += len(block["text"])
+            return int(total / 4)
+        return int(len(str(content)) / 4)
 
     def build_compression_prompt(self) -> str | None:
         """
@@ -938,6 +946,10 @@ Respond with ONLY a JSON object containing the summary:
         for entry in entries:
             # Truncate very long entries
             content = entry.content
+            if isinstance(content, list):
+                # Multimodal content: extract text parts for compression
+                text_parts = [b.get("text", "") for b in content if isinstance(b, dict) and "text" in b]
+                content = " ".join(text_parts) if text_parts else "[multimodal content]"
             if len(content) > 1000:
                 content = content[:1000] + "... [truncated]"
 
@@ -1303,7 +1315,9 @@ Respond with ONLY a JSON object containing the summary:
         if compressed_context:
             # Check if we already have a summary message (to avoid duplication)
             has_summary = any(
-                msg.content.startswith("[Previous context summary]") or msg.content.startswith("[SUMMARY]") for msg in messages
+                isinstance(msg.content, str)
+                and (msg.content.startswith("[Previous context summary]") or msg.content.startswith("[SUMMARY]"))
+                for msg in messages
             )
 
             if not has_summary:

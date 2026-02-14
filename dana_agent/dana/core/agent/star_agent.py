@@ -891,6 +891,9 @@ class STARAgent(BaseSTARAgent):
                         inject_content = result_content.pop("inject_as_user", None)
                         if inject_content:
                             deferred_injections.append(inject_content)
+                        # Use "message" key as the text tool result if present
+                        if "message" in result_content:
+                            result_content = result_content["message"]
 
                     if not isinstance(result_content, str):
                         import json
@@ -917,10 +920,10 @@ class STARAgent(BaseSTARAgent):
                 )
 
             # Add a system reminder to continue if task is not complete
-            # Find original user request
+            # Find original user request (skip multimodal content blocks)
             original_request = ""
             for entry in self._timeline.timeline:
-                if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+                if entry.entry_type == TimelineEntryType.USER_MESSAGE and isinstance(entry.content, str):
                     original_request = entry.content
                     break
 
@@ -1252,6 +1255,9 @@ class STARAgent(BaseSTARAgent):
                         inject_content = result_content.pop("inject_as_user", None)
                         if inject_content:
                             deferred_injections.append(inject_content)
+                        # Use "message" key as the text tool result if present
+                        if "message" in result_content:
+                            result_content = result_content["message"]
 
                     if not isinstance(result_content, str):
                         import json
