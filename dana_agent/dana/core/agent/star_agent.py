@@ -919,40 +919,45 @@ class STARAgent(BaseSTARAgent):
                     )
                 )
 
-            # Add a system reminder to continue if task is not complete
-            # Find original user request (skip multimodal content blocks)
-            original_request = ""
-            for entry in self._timeline.timeline:
-                if entry.entry_type == TimelineEntryType.USER_MESSAGE and isinstance(entry.content, str):
-                    original_request = entry.content
-                    break
+            # Add a system reminder to continue if task is not complete.
+            # This multi-step XML format reminder only applies to XML-based codec
+            # runtimes — native tool calling runtimes use structured tool_calls.
+            from dana.core.runtime.codec.codec import CodecRuntimeBase
 
-            # Count completed tool calls to estimate progress
-            tool_call_count = sum(1 for entry in self._timeline.timeline if entry.entry_type == TimelineEntryType.TOOL_CALL)
+            if isinstance(self._runtime, CodecRuntimeBase) and not self._runtime._use_native_tools:
+                # Find original user request (skip multimodal content blocks)
+                original_request = ""
+                for entry in self._timeline.timeline:
+                    if entry.entry_type == TimelineEntryType.USER_MESSAGE and isinstance(entry.content, str):
+                        original_request = entry.content
+                        break
 
-            # Estimate expected steps based on sequential action patterns
-            # "search then fetch" = 2 steps, "search, then process, then save" = 3 steps
-            request_lower = original_request.lower()
-            # Count occurrences of step separators (avoiding overlap)
-            import re
+                # Count completed tool calls to estimate progress
+                tool_call_count = sum(1 for entry in self._timeline.timeline if entry.entry_type == TimelineEntryType.TOOL_CALL)
 
-            step_separators = re.findall(r"\bthen\b|\bafter that\b|\bnext\b|\bfinally\b", request_lower)
-            expected_steps = 1 + len(step_separators)
-            # Cap expected_steps at a reasonable maximum
-            expected_steps = min(expected_steps, 5)
+                # Estimate expected steps based on sequential action patterns
+                # "search then fetch" = 2 steps, "search, then process, then save" = 3 steps
+                request_lower = original_request.lower()
+                # Count occurrences of step separators (avoiding overlap)
+                import re
 
-            # Only add reminder if we haven't completed all expected steps
-            if tool_call_count < expected_steps:
-                remaining = expected_steps - tool_call_count
-                self._timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
-                        content=f"[MULTI-STEP TASK - {remaining} STEP(S) REMAINING] "
-                        f"Completed {tool_call_count}/{expected_steps} steps. "
-                        "I MUST call the next tool using this EXACT XML format: "
-                        '<function_call><invoke name="resource-id:method"><parameter name="param">value</parameter></invoke></function_call>',
+                step_separators = re.findall(r"\bthen\b|\bafter that\b|\bnext\b|\bfinally\b", request_lower)
+                expected_steps = 1 + len(step_separators)
+                # Cap expected_steps at a reasonable maximum
+                expected_steps = min(expected_steps, 5)
+
+                # Only add reminder if we haven't completed all expected steps
+                if tool_call_count < expected_steps:
+                    remaining = expected_steps - tool_call_count
+                    self._timeline.add_entry(
+                        TimelineEntry(
+                            entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                            content=f"[MULTI-STEP TASK - {remaining} STEP(S) REMAINING] "
+                            f"Completed {tool_call_count}/{expected_steps} steps. "
+                            "I MUST call the next tool using this EXACT XML format: "
+                            '<function_call><invoke name="resource-id:method"><parameter name="param">value</parameter></invoke></function_call>',
+                        )
                     )
-                )
 
         # Output parameter checking
         assert isinstance(tool_results, list)
