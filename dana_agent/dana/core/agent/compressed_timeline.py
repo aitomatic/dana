@@ -384,20 +384,26 @@ class CompressedTimeline(Timeline):
         tool_call_id: str | None = None
 
         # Map entry type to role
-        if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+        # Compare by .value (string) instead of enum identity to handle the case where
+        # the same TimelineEntryType enum is loaded under two module paths
+        # (e.g., dana.core.agent.timeline vs dana_agent.dana.core.agent.timeline)
+        # due to namespace package merging with editable installs.
+        entry_type_value = entry.entry_type.value if hasattr(entry.entry_type, "value") else str(entry.entry_type)
+
+        if entry_type_value == TimelineEntryType.USER_MESSAGE.value:
             role = "user"
-        elif entry.entry_type in (
-            TimelineEntryType.TIMELINE_SUMMARY,
-            TimelineEntryType.CONTEXT,
+        elif entry_type_value in (
+            TimelineEntryType.TIMELINE_SUMMARY.value,
+            TimelineEntryType.CONTEXT.value,
         ):
             role = "system"
-        elif entry.entry_type in (
-            TimelineEntryType.RESOURCE_RESULT,
-            TimelineEntryType.WORKFLOW_RESULT,
+        elif entry_type_value in (
+            TimelineEntryType.RESOURCE_RESULT.value,
+            TimelineEntryType.WORKFLOW_RESULT.value,
         ):
             role = "tool"
             tool_call_id = entry.tool_call_id
-        elif entry.entry_type == TimelineEntryType.TOOL_CALL:
+        elif entry_type_value == TimelineEntryType.TOOL_CALL.value:
             role = "assistant"
             # Convert entry.tool_calls to NativeToolCall list
             if entry.tool_calls:
@@ -453,10 +459,10 @@ class CompressedTimeline(Timeline):
 
                     tool_calls.append(NativeToolCall(id=tc_id, name=tc_name, arguments=tc_args))
         elif (
-            entry.entry_type
+            entry_type_value
             in (
-                TimelineEntryType.UNKNOWN_TOOL_CALL,
-                TimelineEntryType.FAILED_TOOL_CALL,
+                TimelineEntryType.UNKNOWN_TOOL_CALL.value,
+                TimelineEntryType.FAILED_TOOL_CALL.value,
             )
             and entry.tool_call_id
         ):
