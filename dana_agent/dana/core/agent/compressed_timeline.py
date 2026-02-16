@@ -1471,6 +1471,8 @@ Respond with ONLY a JSON object containing the summary:
 
         This override ensures that when loading from repository, we leverage
         compressed context metadata to avoid loading unnecessary old entries.
+        It also rebuilds _native_messages so that to_llm_messages() works
+        correctly after loading a saved session.
 
         Args:
             checkpoint: Starting index for reading entries
@@ -1488,9 +1490,61 @@ Respond with ONLY a JSON object containing the summary:
                 cutoff_idx = len(all_entries) - i - 1
                 break
 
+        # Get the entries we'll actually use
+        result_entries = all_entries[cutoff_idx:]
+
+        # Also try to load saved native_messages from the JSON file
+        native_messages_loaded = self._try_load_native_messages_from_repository()
+
+        if not native_messages_loaded:
+            # No saved native_messages found — rebuild from entries
+            self._native_messages = [self._timeline_entry_to_native_message(entry) for entry in result_entries]
+
         # Yield entries from the cutoff point
-        for entry in all_entries[cutoff_idx:]:
+        for entry in result_entries:
             yield entry
+
+    def _try_load_native_messages_from_repository(self) -> bool:
+        """
+        Try to load saved native_messages from the repository JSON file.
+
+        Returns:
+            True if native_messages were loaded, False otherwise.
+        """
+        if self._repository is None or self._agent is None:
+            return False
+
+        session_id = getattr(self._agent, "_session_id", None)
+        if session_id is None:
+            return False
+
+        if not hasattr(self._repository, "_events_path"):
+            return False
+
+        import json
+        from pathlib import Path
+
+        events_path = self._repository._events_path
+        session_folder = Path(events_path) / session_id
+        timeline_file = session_folder / "timeline.json"
+
+        if not timeline_file.exists():
+            return False
+
+        try:
+            with open(timeline_file) as f:
+                timeline_data = json.load(f)
+
+            native_data = timeline_data.get("native_messages")
+            if not native_data:
+                return False
+
+            self._native_messages = [NativeMessage.from_dict(msg) for msg in native_data]
+            logger.info(f"Loaded {len(self._native_messages)} native messages from repository")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to load native messages from repository: {e}")
+            return False
 
     def save(self, session_id: str) -> None:
         """
