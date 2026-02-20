@@ -520,8 +520,10 @@ class Timeline:
 
         # Format context for display
         context_parts = []
-        if "timestamp" in context:
-            context_parts.append(f"Current time: {context['timestamp']}")
+        # if "timestamp" in context:
+        #     context_parts.append(f"Current time: {context['timestamp']}")
+        if "date" in context:
+            context_parts.append(f"Current date: {context['date']}")
         if "timezone" in context:
             context_parts.append(f"Timezone: {context['timezone']}")
         if "location" in context:
