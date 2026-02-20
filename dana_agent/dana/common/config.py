@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+
 try:
     import structlog
 except ModuleNotFoundError:
@@ -48,6 +49,11 @@ class ConfigManager:
         Args:
             config_path: Path to config file (defaults to adana/config.json)
         """
+        if config_path is None:
+            env_path = os.getenv("DANA_CONFIG_PATH")
+            if env_path:
+                config_path = env_path
+
         if config_path is None:
             # Look for config.json - primary location is inside the dana package
             # This ensures it works when installed as a wheel

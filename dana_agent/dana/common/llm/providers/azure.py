@@ -115,14 +115,21 @@ class AzureProvider(LLMProvider):
                     # Check if this assistant message has native tool_calls
                     if msg.tool_calls:
                         # Format tool_calls for Azure OpenAI API
+                        # Support multiple formats:
+                        # 1. Runtime format: {"tool_call_id": "...", "function": "name", "arguments": {...}}
+                        # 2. NativeToolCall format: {"id": "...", "name": "...", "arguments": {...}}
                         formatted_tool_calls = []
                         for tc in msg.tool_calls:
+                            # Get tool call ID (try both key names)
+                            tc_id = tc.get("tool_call_id") or tc.get("id", "")
+                            # Get function name (try both key names)
+                            tc_name = tc.get("function") or tc.get("name", "")
                             formatted_tool_calls.append(
                                 {
-                                    "id": tc.get("tool_call_id", ""),
+                                    "id": tc_id,
                                     "type": "function",
                                     "function": {
-                                        "name": tc.get("function", ""),
+                                        "name": tc_name,
                                         "arguments": str(tc.get("arguments", {})),
                                     },
                                 }
