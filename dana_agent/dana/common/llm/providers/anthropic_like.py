@@ -19,6 +19,11 @@ logger = structlog.get_logger()
 class AnthropicLikeProvider(AnthropicProvider):
     """Provider for Anthropic-compatible APIs hosted at custom endpoints."""
 
+    @property
+    def supports_vision(self) -> bool:
+        """Unknown models behind compatible API; can't assume vision support."""
+        return False
+
     def __init__(self, api_key: str | None = None, model: str = "claude-sonnet-4-20250514", base_url: str | None = None):
         """
         Initialize Anthropic-Like provider.

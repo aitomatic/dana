@@ -26,6 +26,15 @@ class AzureProvider(LLMProvider):
         """
         return True
 
+    @property
+    def supports_vision(self) -> bool:
+        """Azure OpenAI supports vision but content block format differs from Anthropic.
+
+        Disabled until format-aware injection is implemented.
+        Falls back to VisionParser text extraction.
+        """
+        return False
+
     def __init__(
         self, api_key: str | None = None, model: str = "gpt-35-turbo", base_url: str | None = None, api_version: str | None = None
     ):

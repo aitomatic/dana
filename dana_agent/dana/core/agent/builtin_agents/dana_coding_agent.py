@@ -154,6 +154,7 @@ class DanaCodingAgent(STARAgent):
                 f"{self.__class__.__name__} only works with `dana_agent/dana/core/runtime/codec` runtimes. You are using {self._runtime.__class__.__name__}."
             )
         self._cwd = cwd
+        _supports_vision = getattr(self.llm_client.provider, "supports_vision", False)
         explore_agent = ExploreAgent(
             agent_id="explore-test-123",
             agent_type="explore_agent",
@@ -164,7 +165,7 @@ class DanaCodingAgent(STARAgent):
         )
         self.with_resources(
             BashResource(resource_id="bash", working_directory=cwd),
-            FileIOResource(resource_id="file-io", base_path=cwd),
+            FileIOResource(resource_id="file-io", base_path=cwd, supports_vision=_supports_vision),
             ToDoResource(resource_id="todo"),
             FileEditResource(resource_id="file-edit", base_path=cwd),
             SearchResource(resource_id="search", base_path=cwd),

@@ -108,3 +108,5 @@ skill_output/
 .local_backup
 
 **/__pycache__
+
+data

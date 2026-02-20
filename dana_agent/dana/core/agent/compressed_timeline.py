@@ -384,20 +384,26 @@ class CompressedTimeline(Timeline):
         tool_call_id: str | None = None
 
         # Map entry type to role
-        if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+        # Compare by .value (string) instead of enum identity to handle the case where
+        # the same TimelineEntryType enum is loaded under two module paths
+        # (e.g., dana.core.agent.timeline vs dana_agent.dana.core.agent.timeline)
+        # due to namespace package merging with editable installs.
+        entry_type_value = entry.entry_type.value if hasattr(entry.entry_type, "value") else str(entry.entry_type)
+
+        if entry_type_value == TimelineEntryType.USER_MESSAGE.value:
             role = "user"
-        elif entry.entry_type in (
-            TimelineEntryType.TIMELINE_SUMMARY,
-            TimelineEntryType.CONTEXT,
+        elif entry_type_value in (
+            TimelineEntryType.TIMELINE_SUMMARY.value,
+            TimelineEntryType.CONTEXT.value,
         ):
             role = "system"
-        elif entry.entry_type in (
-            TimelineEntryType.RESOURCE_RESULT,
-            TimelineEntryType.WORKFLOW_RESULT,
+        elif entry_type_value in (
+            TimelineEntryType.RESOURCE_RESULT.value,
+            TimelineEntryType.WORKFLOW_RESULT.value,
         ):
             role = "tool"
             tool_call_id = entry.tool_call_id
-        elif entry.entry_type == TimelineEntryType.TOOL_CALL:
+        elif entry_type_value == TimelineEntryType.TOOL_CALL.value:
             role = "assistant"
             # Convert entry.tool_calls to NativeToolCall list
             if entry.tool_calls:
@@ -453,10 +459,10 @@ class CompressedTimeline(Timeline):
 
                     tool_calls.append(NativeToolCall(id=tc_id, name=tc_name, arguments=tc_args))
         elif (
-            entry.entry_type
+            entry_type_value
             in (
-                TimelineEntryType.UNKNOWN_TOOL_CALL,
-                TimelineEntryType.FAILED_TOOL_CALL,
+                TimelineEntryType.UNKNOWN_TOOL_CALL.value,
+                TimelineEntryType.FAILED_TOOL_CALL.value,
             )
             and entry.tool_call_id
         ):
@@ -867,7 +873,15 @@ class CompressedTimeline(Timeline):
             Estimated token count
         """
         # Rough estimation: 4 characters per token
-        return int(len(str(entry.content)) / 4)
+        content = entry.content
+        if isinstance(content, list):
+            # Multimodal content: estimate text parts only
+            total = 0
+            for block in content:
+                if isinstance(block, dict) and "text" in block:
+                    total += len(block["text"])
+            return int(total / 4)
+        return int(len(str(content)) / 4)
 
     def build_compression_prompt(self) -> str | None:
         """
@@ -938,6 +952,10 @@ Respond with ONLY a JSON object containing the summary:
         for entry in entries:
             # Truncate very long entries
             content = entry.content
+            if isinstance(content, list):
+                # Multimodal content: extract text parts for compression
+                text_parts = [b.get("text", "") for b in content if isinstance(b, dict) and "text" in b]
+                content = " ".join(text_parts) if text_parts else "[multimodal content]"
             if len(content) > 1000:
                 content = content[:1000] + "... [truncated]"
 
@@ -1303,7 +1321,9 @@ Respond with ONLY a JSON object containing the summary:
         if compressed_context:
             # Check if we already have a summary message (to avoid duplication)
             has_summary = any(
-                msg.content.startswith("[Previous context summary]") or msg.content.startswith("[SUMMARY]") for msg in messages
+                isinstance(msg.content, str)
+                and (msg.content.startswith("[Previous context summary]") or msg.content.startswith("[SUMMARY]"))
+                for msg in messages
             )
 
             if not has_summary:
@@ -1451,6 +1471,8 @@ Respond with ONLY a JSON object containing the summary:
 
         This override ensures that when loading from repository, we leverage
         compressed context metadata to avoid loading unnecessary old entries.
+        It also rebuilds _native_messages so that to_llm_messages() works
+        correctly after loading a saved session.
 
         Args:
             checkpoint: Starting index for reading entries
@@ -1468,9 +1490,61 @@ Respond with ONLY a JSON object containing the summary:
                 cutoff_idx = len(all_entries) - i - 1
                 break
 
+        # Get the entries we'll actually use
+        result_entries = all_entries[cutoff_idx:]
+
+        # Also try to load saved native_messages from the JSON file
+        native_messages_loaded = self._try_load_native_messages_from_repository()
+
+        if not native_messages_loaded:
+            # No saved native_messages found — rebuild from entries
+            self._native_messages = [self._timeline_entry_to_native_message(entry) for entry in result_entries]
+
         # Yield entries from the cutoff point
-        for entry in all_entries[cutoff_idx:]:
+        for entry in result_entries:
             yield entry
+
+    def _try_load_native_messages_from_repository(self) -> bool:
+        """
+        Try to load saved native_messages from the repository JSON file.
+
+        Returns:
+            True if native_messages were loaded, False otherwise.
+        """
+        if self._repository is None or self._agent is None:
+            return False
+
+        session_id = getattr(self._agent, "_session_id", None)
+        if session_id is None:
+            return False
+
+        if not hasattr(self._repository, "_events_path"):
+            return False
+
+        import json
+        from pathlib import Path
+
+        events_path = self._repository._events_path
+        session_folder = Path(events_path) / session_id
+        timeline_file = session_folder / "timeline.json"
+
+        if not timeline_file.exists():
+            return False
+
+        try:
+            with open(timeline_file) as f:
+                timeline_data = json.load(f)
+
+            native_data = timeline_data.get("native_messages")
+            if not native_data:
+                return False
+
+            self._native_messages = [NativeMessage.from_dict(msg) for msg in native_data]
+            logger.info(f"Loaded {len(self._native_messages)} native messages from repository")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to load native messages from repository: {e}")
+            return False
 
     def save(self, session_id: str) -> None:
         """

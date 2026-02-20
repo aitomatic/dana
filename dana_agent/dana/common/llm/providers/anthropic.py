@@ -136,6 +136,11 @@ class AnthropicProvider(LLMProvider):
         """Anthropic supports native tool calling."""
         return True
 
+    @property
+    def supports_vision(self) -> bool:
+        """Claude models support vision/image input."""
+        return True
+
     def __init__(self, api_key: str | None = None, model: str = "claude-3-sonnet-20240229", base_url: str | None = None):
         """
         Initialize Anthropic provider.
@@ -195,7 +200,7 @@ class AnthropicProvider(LLMProvider):
             request_kwargs = {
                 "model": self.model,
                 "messages": anthropic_messages,
-                "max_tokens": kwargs.get("max_tokens") or 4096,
+                "max_tokens": kwargs.get("max_tokens") or 32000,
             }
 
             # Add temperature if provided
