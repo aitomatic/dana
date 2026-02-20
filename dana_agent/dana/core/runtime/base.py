@@ -539,8 +539,11 @@ class AgentRuntime(ABC):
     def _format_runtime_context(self, context: dict[str, Any]) -> str:
         """Format runtime context as a single line for system prompt."""
         parts = []
-        if "timestamp" in context:
-            parts.append(f"Current time: {context['timestamp']}")
+        # NOTE : Skip timestamp for prompt caching, use date instead
+        # if "timestamp" in context:
+        #     parts.append(f"Current date: {context['timestamp']}")
+        if "date" in context:
+            parts.append(f"Current date: {context['date']}")
         if "timezone" in context:
             parts.append(f"Timezone: {context['timezone']}")
         if "location" in context:
