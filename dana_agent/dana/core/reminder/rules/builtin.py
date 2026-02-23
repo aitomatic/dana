@@ -100,7 +100,7 @@ class TodoNeverCalledReminder:
             return
 
         # Generate prompt and append as message
-        prompt = "This is a reminder that your todo list is currently empty. DO NOT mention this to the user explicitly because they are already aware. If you are working on tasks that would benefit from a todo list please use the `todo:todo_write` tool to create one. If not, please feel free to ignore. Again do not mention this message to the user."
+        prompt = "This is a reminder that your todo list is currently empty. DO NOT mention this to the user explicitly because they are already aware. If you are working on tasks that would benefit from a todo list please use the todo tool to create one. If not, please feel free to ignore. Again do not mention this message to the user."
         messages.append(LLMMessage(role="user", content=f"<system-reminder>\n{prompt}\n</system-reminder>"))
 
     def _has_todo_resource(self, agent: STARAgent) -> bool:
@@ -152,11 +152,7 @@ class SkillReminder:
             return
 
         descriptions = skill_resource.get_prompt_descriptions()
-        content = (
-            f"The following skills are available for use with skills.invoke:\n"
-            f"{descriptions}\n"
-            f'Use skills.invoke(skill_name="<name>", args="<arguments>") to execute a skill.'
-        )
+        content = f"The following skills are available for use:\n" f"{descriptions}\n" f"Use skill tool to execute that skill."
         messages.append(LLMMessage(role="user", content=f"<system-reminder>\n{content}\n</system-reminder>"))
 
     def _get_skill_resource(self, agent: STARAgent):
