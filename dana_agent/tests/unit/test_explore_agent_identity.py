@@ -60,7 +60,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_has_no_unrendered_placeholders(self, mock_prompt_api):
         """Test that rendered identity has no {{variable}} placeholders."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
             # Mock git commands to return realistic values
             def git_side_effect(cmd, default=""):
                 if "status" in cmd:
@@ -84,7 +84,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_contains_environment_info(self, mock_prompt_api):
         """Test that rendered identity contains environment info."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
             mock_git.return_value = ""
 
             identity = mock_prompt_api.identity
@@ -97,7 +97,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_contains_git_status(self, mock_prompt_api):
         """Test that rendered identity contains git status."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
 
             def git_side_effect(cmd, default=""):
                 if "status" in cmd:
@@ -114,7 +114,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_contains_git_current_branch(self, mock_prompt_api):
         """Test that rendered identity contains current branch."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
 
             def git_side_effect(cmd, default=""):
                 if "rev-parse" in cmd:
@@ -131,7 +131,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_contains_git_main_branch(self, mock_prompt_api):
         """Test that rendered identity contains main branch."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
 
             def git_side_effect(cmd, default=""):
                 if "symbolic-ref" in cmd:
@@ -148,7 +148,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_contains_recent_commits(self, mock_prompt_api):
         """Test that rendered identity contains recent commits."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
 
             def git_side_effect(cmd, default=""):
                 if "log" in cmd:
@@ -165,7 +165,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_contains_model_name(self, mock_prompt_api):
         """Test that rendered identity contains model name."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
             mock_git.return_value = ""
 
             identity = mock_prompt_api.identity
@@ -176,7 +176,7 @@ class TestExploreAgentIdentityRendering:
 
     def test_identity_with_git_not_available(self, mock_prompt_api):
         """Test that identity renders correctly when git is not available."""
-        with patch.object(mock_prompt_api, "_run_git_command") as mock_git:
+        with patch.object(mock_prompt_api._env, "_run_git_command") as mock_git:
             # Simulate git not being available
             mock_git.return_value = ""
 
