@@ -10,7 +10,7 @@ from dana.common.observable import observable
 from dana.core.knowledge.prompts.codecs import AbstractCodec, CSXMLCodec
 
 from ..base import ParsedResponse
-from .codec import CodecRuntimeBase
+from .codec_base import CodecRuntimeBase
 
 
 class CodecRuntimeWithoutNativeToolUse(CodecRuntimeBase):

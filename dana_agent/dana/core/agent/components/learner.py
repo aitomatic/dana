@@ -164,24 +164,28 @@ class Learner:
 
             # Store episode memory if we have meaningful content
             if caller_message and response:
-                ltmemory.store({
-                    "type": "episode",
-                    "content": f"User asked: {caller_message[:200]}... Agent responded with {len(tool_results)} tool calls.",
-                    "context": "session interaction",
-                    "timestamp": timestamp.isoformat(),
-                })
+                ltmemory.store(
+                    {
+                        "type": "episode",
+                        "content": f"User asked: {caller_message[:200]}... Agent responded with {len(tool_results)} tool calls.",
+                        "context": "session interaction",
+                        "timestamp": timestamp.isoformat(),
+                    }
+                )
                 memories_stored += 1
 
             # Store any patterns from tool usage
             if tool_results and len(tool_results) > 0:
                 tool_types = [r.get("type", "unknown") for r in tool_results if isinstance(r, dict)]
                 if tool_types:
-                    ltmemory.store({
-                        "type": "pattern",
-                        "content": f"Successfully used tools: {', '.join(set(tool_types))}",
-                        "context": "tool usage pattern",
-                        "timestamp": timestamp.isoformat(),
-                    })
+                    ltmemory.store(
+                        {
+                            "type": "pattern",
+                            "content": f"Successfully used tools: {', '.join(set(tool_types))}",
+                            "context": "tool usage pattern",
+                            "timestamp": timestamp.isoformat(),
+                        }
+                    )
                     memories_stored += 1
 
         trace_learning = {
@@ -808,24 +812,28 @@ Provide your analysis in the markdown format specified above."""
                     episode_content += f" Used tools: {', '.join(tool_names[:5])}"
                 episode_content += f" Response: {response[:200]}"
 
-                ltmemory.store({
-                    "type": "episode",
-                    "content": episode_content,
-                    "context": "session interaction",
-                    "timestamp": timestamp.isoformat(),
-                })
+                ltmemory.store(
+                    {
+                        "type": "episode",
+                        "content": episode_content,
+                        "context": "session interaction",
+                        "timestamp": timestamp.isoformat(),
+                    }
+                )
                 memories_stored += 1
 
             # Store any patterns from tool usage
             if tool_results and len(tool_results) > 0:
                 tool_types = [r.get("type", "unknown") for r in tool_results if isinstance(r, dict)]
                 if tool_types:
-                    ltmemory.store({
-                        "type": "pattern",
-                        "content": f"Successfully used tools: {', '.join(set(tool_types))}",
-                        "context": "tool usage pattern",
-                        "timestamp": timestamp.isoformat(),
-                    })
+                    ltmemory.store(
+                        {
+                            "type": "pattern",
+                            "content": f"Successfully used tools: {', '.join(set(tool_types))}",
+                            "context": "tool usage pattern",
+                            "timestamp": timestamp.isoformat(),
+                        }
+                    )
                     memories_stored += 1
 
         trace_learning = {

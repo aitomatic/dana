@@ -1,6 +1,6 @@
 import pytest
 
-from dana.common.llm.types import LLMMessage
+from dana.common.llm.types import LLMMessage, LLMResponse
 from dana.core.agent.star_agent import STARAgent
 from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
 from dana.core.resource.base_resource import BaseResource
@@ -66,9 +66,9 @@ def test_default_runtime_build_prompt():
 
 def test_default_runtime_parse_response_done_true():
     runtime = DefaultRuntime()
-    raw = '{"done": true, "response": "Done", "tool_calls": []}'
+    response = LLMResponse(content='{"done": true, "response": "Done", "tool_calls": []}', model="test")
 
-    parsed = runtime.parse_response(raw)
+    parsed = runtime.parse_response(response)
 
     assert parsed.done is True
     assert parsed.response == "Done"
@@ -77,9 +77,12 @@ def test_default_runtime_parse_response_done_true():
 
 def test_default_runtime_parse_response_done_false():
     runtime = DefaultRuntime()
-    raw = '{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {}}]}'
+    response = LLMResponse(
+        content='{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {}}]}',
+        model="test",
+    )
 
-    parsed = runtime.parse_response(raw)
+    parsed = runtime.parse_response(response)
 
     assert parsed.done is False
     assert parsed.response is None
@@ -88,9 +91,12 @@ def test_default_runtime_parse_response_done_false():
 
 def test_default_runtime_parse_response_with_tool_calls():
     runtime = DefaultRuntime()
-    raw = '{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {"message": "hi"}}]}'
+    response = LLMResponse(
+        content='{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {"message": "hi"}}]}',
+        model="test",
+    )
 
-    parsed = runtime.parse_response(raw)
+    parsed = runtime.parse_response(response)
 
     assert parsed.done is False
     assert parsed.tool_calls == [{"function": "Tool:run", "arguments": {"message": "hi"}}]
@@ -160,6 +166,10 @@ def test_think_uses_runtime_methods():
             self.calls = []
             self._count = 0
 
+        def validate_done_output(self, done, has_tool_calls, has_response):
+            self.calls.append("validate_done_output")
+            return done, has_tool_calls, has_response
+
         def build_prompt(self, agent, timeline, learned_context=None):
             self.calls.append("build_prompt")
             return [LLMMessage(role="system", content="system"), LLMMessage(role="user", content="hello")]
@@ -168,12 +178,15 @@ def test_think_uses_runtime_methods():
             self.calls.append("call_llm")
             self._count += 1
             if self._count == 1:
-                return '{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {}}]}'
-            return '{"done": true, "response": "ok", "tool_calls": []}'
+                return LLMResponse(
+                    content='{"done": false, "response": null, "tool_calls": [{"name": "Tool:run", "parameters": {}}]}', model="test"
+                )
+            return LLMResponse(content='{"done": true, "response": "ok", "tool_calls": []}', model="test")
 
-        def parse_response(self, raw):
+        def parse_response(self, response):
             self.calls.append("parse_response")
-            if '"done": false' in raw:
+            content = response.content if isinstance(response, LLMResponse) else str(response)
+            if '"done": false' in content:
                 return ParsedResponse(done=False, reasoning=None, response=None, tool_calls=[{"function": "Tool:run", "arguments": {}}])
             return ParsedResponse(done=True, reasoning=None, response="ok", tool_calls=[])
 
@@ -199,7 +212,7 @@ def test_think_uses_runtime_methods():
 
     agent.query(message="hello")
 
-    assert runtime.calls[:4] == ["build_prompt", "call_llm", "parse_response", "execute_tools"]
+    assert runtime.calls[:5] == ["build_prompt", "call_llm", "parse_response", "validate_done_output", "execute_tools"]
     assert "execute_tools" in runtime.calls
 
 

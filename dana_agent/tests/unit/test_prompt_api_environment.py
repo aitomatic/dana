@@ -19,7 +19,7 @@ sys.modules["dana.core.knowledge.prompts.workflow_prompt_engineer"] = MagicMock(
 
 from dana.core.agent.base_agent import BaseAgent
 from dana.core.knowledge.prompts.codecs import CSXMLCodec
-from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
+from dana.core.prompt.prompt_api import LocalPromptAPI
 
 
 class MockAgent(BaseAgent):

@@ -110,3 +110,7 @@ skill_output/
 **/__pycache__
 
 data
+
+docs/.claude_docs
+docs/.openclaw_docs
+docs/.claw_comparison

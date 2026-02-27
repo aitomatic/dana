@@ -1,7 +1,5 @@
 """Tests for ephemeral runtime context in Timeline."""
 
-import pytest
-
 from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
 from dana.core.runtime.base import AgentRuntime
 from dana.core.runtime.default import DefaultRuntime
@@ -14,17 +12,19 @@ class TestTimelineContext:
         """Context entry is added to timeline."""
         timeline = Timeline()
 
-        timeline.set_context({
-            "timestamp": "2024-01-15 10:30:00",
-            "timezone": "PST",
-            "user": "testuser",
-        })
+        timeline.set_context(
+            {
+                "timestamp": "2024-01-15 10:30:00",
+                "timezone": "PST",
+                "user": "testuser",
+            }
+        )
 
         assert len(timeline.timeline) == 1
         entry = timeline.timeline[0]
         assert entry.entry_type == TimelineEntryType.CONTEXT
         assert entry.ephemeral is True
-        assert "2024-01-15 10:30:00" in entry.content
+        # timestamp is excluded from content for prompt caching
         assert "PST" in entry.content
         assert "testuser" in entry.content
 
@@ -38,22 +38,26 @@ class TestTimelineContext:
         # Should still have only one CONTEXT entry
         context_entries = [e for e in timeline.timeline if e.entry_type == TimelineEntryType.CONTEXT]
         assert len(context_entries) == 1
-        assert "second" in context_entries[0].content
+        # timestamp excluded from content; verify latest user is present
         assert "user2" in context_entries[0].content
 
     def test_set_context_does_not_remove_other_entries(self):
         """set_context only removes CONTEXT entries, not others."""
         timeline = Timeline()
 
-        timeline.add_entry(TimelineEntry(
-            entry_type=TimelineEntryType.USER_MESSAGE,
-            content="Hello",
-        ))
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content="Hello",
+            )
+        )
         timeline.set_context({"timestamp": "now", "user": "test"})
-        timeline.add_entry(TimelineEntry(
-            entry_type=TimelineEntryType.AGENT_RESPONSE,
-            content="Hi there",
-        ))
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.AGENT_RESPONSE,
+                content="Hi there",
+            )
+        )
 
         assert len(timeline.timeline) == 3
         assert timeline.timeline[0].entry_type == TimelineEntryType.CONTEXT
@@ -64,14 +68,18 @@ class TestTimelineContext:
         """Context entry is always at the beginning of the timeline."""
         timeline = Timeline()
 
-        timeline.add_entry(TimelineEntry(
-            entry_type=TimelineEntryType.USER_MESSAGE,
-            content="First message",
-        ))
-        timeline.add_entry(TimelineEntry(
-            entry_type=TimelineEntryType.USER_MESSAGE,
-            content="Second message",
-        ))
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content="First message",
+            )
+        )
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content="Second message",
+            )
+        )
         timeline.set_context({"timestamp": "now"})
 
         assert timeline.timeline[0].entry_type == TimelineEntryType.CONTEXT
@@ -103,15 +111,19 @@ class TestEphemeralEntries:
         timeline._repository = MockRepository()
 
         # Add regular and ephemeral entries
-        timeline.add_entry(TimelineEntry(
-            entry_type=TimelineEntryType.USER_MESSAGE,
-            content="Regular message",
-        ))
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content="Regular message",
+            )
+        )
         timeline.set_context({"timestamp": "now"})
-        timeline.add_entry(TimelineEntry(
-            entry_type=TimelineEntryType.AGENT_RESPONSE,
-            content="Response",
-        ))
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.AGENT_RESPONSE,
+                content="Response",
+            )
+        )
 
         timeline.save("test-session")
 
@@ -127,24 +139,25 @@ class TestDefaultRuntimeContext:
     """Tests for DefaultRuntime context injection."""
 
     def test_get_runtime_context_returns_expected_keys(self):
-        """_get_runtime_context returns timestamp, timezone, and user."""
+        """_get_runtime_context returns date, timezone, and user."""
         runtime = DefaultRuntime()
 
         context = runtime._get_runtime_context()
 
-        assert "timestamp" in context
+        assert "date" in context
         assert "timezone" in context
         assert "user" in context
 
-    def test_get_runtime_context_timestamp_format(self):
-        """Timestamp is in expected format."""
+    def test_get_runtime_context_date_format(self):
+        """Date is in expected format (date-only for prompt caching)."""
         runtime = DefaultRuntime()
 
         context = runtime._get_runtime_context()
 
-        # Should be YYYY-MM-DD HH:MM:SS format
+        # Should be YYYY-MM-DD format (date-only for prompt caching)
         import re
-        assert re.match(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", context["timestamp"])
+
+        assert re.match(r"\d{4}-\d{2}-\d{2}$", context["date"])
 
     def test_build_prompt_injects_context(self):
         """build_prompt injects runtime context into timeline."""
@@ -162,11 +175,13 @@ class TestDefaultRuntimeContext:
         )
         runtime = DefaultRuntime(llm=MockLLM())  # Pass mock LLM to avoid API key requirement
         timeline = Timeline(agent=agent)
-        timeline.add_entry(TimelineEntry(
-            entry_type=TimelineEntryType.USER_MESSAGE,
-            content="Hello",
-            is_latest_user_message=True,
-        ))
+        timeline.add_entry(
+            TimelineEntry(
+                entry_type=TimelineEntryType.USER_MESSAGE,
+                content="Hello",
+                is_latest_user_message=True,
+            )
+        )
 
         runtime.build_prompt(agent, timeline)
 
@@ -177,6 +192,7 @@ class TestDefaultRuntimeContext:
 
     def test_ip_location_is_cached(self):
         """IP geolocation result is cached at class level."""
+
         class MockLLM:
             pass
 
@@ -209,12 +225,14 @@ class TestDefaultRuntimeContext:
     def test_context_formats_location(self):
         """Timeline formats location in context display."""
         timeline = Timeline()
-        timeline.set_context({
-            "timestamp": "2024-01-15 10:00:00",
-            "timezone": "PST",
-            "location": "San Francisco, California, US",
-            "user": "testuser",
-        })
+        timeline.set_context(
+            {
+                "timestamp": "2024-01-15 10:00:00",
+                "timezone": "PST",
+                "location": "San Francisco, California, US",
+                "user": "testuser",
+            }
+        )
 
         content = timeline.timeline[0].content
         assert "Location: San Francisco, California, US" in content
