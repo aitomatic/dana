@@ -212,6 +212,7 @@ class LocalPromptAPI(PromptAPIProtocol):
         force_generate: bool = False,
         check_conflicts: bool = False,
         repository_factory: RepositoryFactory | None = None,
+        provider: str | None = None,
         **kwargs,
     ):
         self._agent = agent
@@ -222,6 +223,7 @@ class LocalPromptAPI(PromptAPIProtocol):
         self._force_generate = force_generate
         self._check_conflicts = check_conflicts
         self._template_system_prompt = template_system_prompt
+        self._provider = provider
         # Use provided factory or default
         self._repository_factory = repository_factory or DEFAULT_REPOSITORY_FACTORY
         # NOTE: This agent repository (changed from store) - created via factory
@@ -229,6 +231,7 @@ class LocalPromptAPI(PromptAPIProtocol):
             RepositoryType.PROMPT,
             agent=self._agent,
             component=None,  # For system prompt template
+            provider=self._provider,
         )
         # NOTE : Registry management will be added later
         self._agent_prompt_engineers = {}
@@ -241,8 +244,8 @@ class LocalPromptAPI(PromptAPIProtocol):
     def _instantiate_prompt_engineer(
         self, prompt_engineer_cls: type[BasePromptEngineer], component, relative_path: str, **kwargs
     ) -> BasePromptEngineer:
-        # Create repository via factory
-        repository = self._repository_factory.create(RepositoryType.PROMPT, agent=self._agent, component=component)
+        # Create repository via factory with provider context
+        repository = self._repository_factory.create(RepositoryType.PROMPT, agent=self._agent, component=component, provider=self._provider)
         return prompt_engineer_cls(
             component=component,
             repository=repository,

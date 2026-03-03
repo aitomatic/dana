@@ -12,15 +12,17 @@ from dana.core.agent.base_agent import BaseAgent
 
 if TYPE_CHECKING:
     from dana.common.schemas import Event
-    from dana.core.agent.timeline import TimelineEntry
+    from dana.core.timeline.timeline import TimelineEntry
 
 
 class PromptRepositoryProtocol(Protocol):
-    def __init__(self, storage_config: StorageConfig, agent: BaseAgent, component: BaseWAR | None = None): ...
+    def __init__(self, storage_config: StorageConfig, agent: BaseAgent, component: BaseWAR | None = None, provider: str | None = None): ...
 
     @classmethod
-    def instantiate(cls, storage_config: StorageConfig, agent: BaseAgent, component: BaseWAR | None = None) -> PromptRepositoryProtocol:
-        return cls(storage_config, agent, component)
+    def instantiate(
+        cls, storage_config: StorageConfig, agent: BaseAgent, component: BaseWAR | None = None, provider: str | None = None
+    ) -> PromptRepositoryProtocol:
+        return cls(storage_config, agent, component, provider=provider)
 
     def has_any_versions(self) -> bool: ...
 

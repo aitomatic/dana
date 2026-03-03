@@ -115,7 +115,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "system_prompt_template"
             assert path == expected_path
             assert path.exists()
         finally:
@@ -132,7 +132,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / component.object_id
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "resources" / component.object_id
             assert path == expected_path
             assert path.exists()
         finally:
@@ -149,7 +149,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "workflows" / component.object_id
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "workflows" / component.object_id
             assert path == expected_path
             assert path.exists()
         finally:
@@ -166,7 +166,7 @@ class TestLocalPromptRepositoryPathResolution:
 
             path = repository._get_relative_prompt_path()
 
-            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "agents" / nested_agent.object_id
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "agents" / nested_agent.object_id
             assert path == expected_path
             assert path.exists()
         finally:
@@ -621,5 +621,115 @@ class TestLocalPromptRepositoryCompatibilityMethods:
             # Verify it works the same as set_active_version
             repository.set_active_version("v1")
             assert version_file.read_text().strip() == "v1"
+        finally:
+            shutil.rmtree(temp_dir)
+
+
+class TestLocalPromptRepositoryProviderDimension:
+    """Test LocalPromptRepository provider-specific prompt storage."""
+
+    def test_provider_adds_subdirectory_to_path(self):
+        """Test that passing provider adds a provider subdirectory to prompt path."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent()
+            repository = LocalPromptRepository(config, agent, component=None, provider="anthropic")
+
+            path = repository._prompt_path
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "system_prompt_template" / "anthropic"
+            assert path == expected_path
+            assert path.exists()
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_no_provider_keeps_flat_path(self):
+        """Test that omitting provider keeps the original flat path."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent()
+            repository = LocalPromptRepository(config, agent, component=None, provider=None)
+
+            path = repository._prompt_path
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "system_prompt_template"
+            assert path == expected_path
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_provider_with_resource_component(self):
+        """Test provider subdirectory works with resource components."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent()
+            component = MockResource()
+            repository = LocalPromptRepository(config, agent, component, provider="openai")
+
+            path = repository._prompt_path
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "resources" / component.object_id / "openai"
+            assert path == expected_path
+            assert path.exists()
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_different_providers_have_independent_versions(self):
+        """Test that different providers store versions independently."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent()
+
+            repo_anthropic = LocalPromptRepository(config, agent, provider="anthropic")
+            repo_openai = LocalPromptRepository(config, agent, provider="openai")
+
+            # Create snapshots in each provider
+            snap_a = repo_anthropic.create_snapshot("Anthropic prompt", provenance={"source": "test"}, metrics={})
+            repo_anthropic.set_active(snap_a.version)
+
+            snap_o = repo_openai.create_snapshot("OpenAI prompt", provenance={"source": "test"}, metrics={})
+            repo_openai.set_active(snap_o.version)
+
+            # Verify independent content
+            active_a = repo_anthropic.get_active()
+            active_o = repo_openai.get_active()
+
+            assert active_a.content == "Anthropic prompt"
+            assert active_o.content == "OpenAI prompt"
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_backward_compat_reads_from_flat_path(self):
+        """Test that provider-specific repo falls back to flat path for existing prompts."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent()
+
+            # Create prompt in flat path (no provider)
+            flat_repo = LocalPromptRepository(config, agent, provider=None)
+            flat_snap = flat_repo.create_snapshot("Legacy prompt", provenance={"source": "legacy"}, metrics={"score": 0.9})
+            flat_repo.set_active(flat_snap.version)
+
+            # Now create provider-specific repo — should find legacy prompt
+            provider_repo = LocalPromptRepository(config, agent, provider="anthropic")
+            versions = provider_repo.list_versions()
+            assert versions == ["v1"]
+
+            snapshot = provider_repo.load_snapshot("v1")
+            assert snapshot.content == "Legacy prompt"
+            assert snapshot.provenance == {"source": "legacy"}
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_legacy_prompt_path_returns_none_when_no_provider(self):
+        """Test _get_legacy_prompt_path returns None when provider is not set."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            config = FileStorageConfig(workspace_folder=temp_dir)
+            agent = MockAgent()
+            repository = LocalPromptRepository(config, agent, provider=None)
+
+            assert repository._get_legacy_prompt_path() is None
         finally:
             shutil.rmtree(temp_dir)

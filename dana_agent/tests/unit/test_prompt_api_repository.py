@@ -146,7 +146,7 @@ class TestLocalPromptAPIFactoryUsage:
             api = LocalPromptAPI(agent=agent, codec=CSXMLCodec, repository_factory=mock_factory)
 
             # Verify factory.create was called with correct parameters (without storage_config)
-            mock_factory.create.assert_called_once_with(RepositoryType.PROMPT, agent=agent, component=None)
+            mock_factory.create.assert_called_once_with(RepositoryType.PROMPT, agent=agent, component=None, provider=None)
 
             # Verify _store is the repository from factory
             assert api._store == mock_repository

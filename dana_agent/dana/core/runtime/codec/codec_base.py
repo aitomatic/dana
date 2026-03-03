@@ -90,7 +90,7 @@ class CodecRuntimeBase(AgentRuntime):
 
     def _get_prompt_api(self, agent: STARAgent) -> LocalPromptAPI:
         if self._prompt_api is None:
-            self._prompt_api = LocalPromptAPI(agent=agent, codec=self._codec)
+            self._prompt_api = LocalPromptAPI(agent=agent, codec=self._codec, provider=self._provider)
         return self._prompt_api
 
     def _build_system_prompt(self, agent: STARAgent) -> str:
