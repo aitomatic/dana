@@ -1,6 +1,6 @@
 """Tests for ephemeral runtime context in Timeline."""
 
-from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 from dana.core.runtime.base import AgentRuntime
 from dana.core.runtime.default import DefaultRuntime
 

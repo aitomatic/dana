@@ -117,7 +117,7 @@ class ExploreAgent(STARAgent):
         )
 
         self._cwd = cwd
-        _supports_vision = getattr(self.llm_client.provider, "supports_vision", False)
+        _supports_vision = self.llm_client.supports_vision
         _prompt_api = self._runtime._get_prompt_api(self)
         _prompt_api._template_system_prompt = IDENTITY
         self.with_resources(

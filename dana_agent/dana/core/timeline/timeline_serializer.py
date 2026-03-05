@@ -12,15 +12,15 @@ from typing import TYPE_CHECKING, Any
 
 from structlog import get_logger
 
-from dana.core.agent.native_message import (
+from dana.core.timeline.native_message import (
     COMPRESSED_CONTEXT_KEY,
     NativeMessage,
 )
-from dana.core.agent.timeline import TimelineEntry
+from dana.core.timeline.timeline import TimelineEntry
 
 
 if TYPE_CHECKING:
-    from dana.core.agent.compressed_timeline import CompressedTimeline
+    from dana.core.timeline.compressed_timeline import CompressedTimeline
 
 logger = get_logger()
 
@@ -318,7 +318,7 @@ class TimelineSerializerMixin:
         Returns:
             TimelineEntry representation
         """
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         # Determine entry type from role and content
         entry_type: TimelineEntryType

@@ -13,17 +13,17 @@ from typing import TYPE_CHECKING
 
 from structlog import get_logger
 
-from dana.core.agent.native_message import (
+from dana.core.timeline.native_message import (
     COMPRESSED_CONTEXT_KEY,
     COMPRESSED_ENTRIES_COUNT_KEY,
     COMPRESSION_TIMESTAMP_KEY,
     NativeMessage,
 )
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
 
 if TYPE_CHECKING:
-    from dana.core.agent.compressed_timeline import CompressedTimeline
+    from dana.core.timeline.compressed_timeline import CompressedTimeline
 
 logger = get_logger()
 

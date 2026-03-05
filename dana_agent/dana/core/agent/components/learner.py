@@ -26,7 +26,7 @@ logger = get_logger()
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
-    from dana.core.agent.timeline import Timeline
+    from dana.core.timeline.timeline import Timeline
     from dana.repositories.repository_factory import RepositoryFactory
 
 
@@ -394,7 +394,7 @@ class DefaultLearner(LearnerProtocol):
         Returns:
             List of timeline entries with type, content, timestamp
         """
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         timeline_context = []
 

@@ -152,10 +152,13 @@ class TestLLMResponse:
 class TestLLMProvider:
     """Unit tests for LLMProvider abstract base class"""
 
-    def test_llm_provider_is_abstract(self):
-        """Test that LLMProvider cannot be instantiated directly"""
-        with pytest.raises(TypeError):
-            LLMProvider()  # type: ignore[abstract]
+    def test_llm_provider_chat_raises_not_implemented(self):
+        """Test that LLMProvider.chat() raises NotImplementedError (concrete base, not ABC)"""
+        import asyncio
+
+        provider = LLMProvider()
+        with pytest.raises(NotImplementedError):
+            asyncio.run(provider.chat([]))
 
     def test_llm_provider_has_chat_method(self):
         """Test that LLMProvider has the required chat method"""
@@ -196,14 +199,16 @@ class TestLLMProvider:
         provider = TestProvider()
         assert isinstance(provider, LLMProvider)
 
-    def test_llm_provider_missing_chat_method(self):
-        """Test that missing chat method raises TypeError"""
+    def test_llm_provider_missing_chat_override_raises_not_implemented(self):
+        """Test that provider without chat override raises NotImplementedError"""
+        import asyncio
 
         class IncompleteProvider(LLMProvider):
             pass
 
-        with pytest.raises(TypeError):
-            IncompleteProvider()  # type: ignore[abstract]
+        provider = IncompleteProvider()
+        with pytest.raises(NotImplementedError):
+            asyncio.run(provider.chat([]))
 
     @pytest.mark.asyncio
     async def test_concrete_provider_usage(self):

@@ -10,7 +10,7 @@ import pytest
 
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
-from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 from dana.repositories import LocalTimelineRepository
 
 

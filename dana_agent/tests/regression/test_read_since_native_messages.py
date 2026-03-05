@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 
-from dana.core.agent.compressed_timeline import CompressedTimeline
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.compressed_timeline import CompressedTimeline
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
 
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "timeline_that_with_assisstant_message_being_skip.json"

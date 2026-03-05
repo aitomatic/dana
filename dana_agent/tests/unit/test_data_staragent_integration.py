@@ -5,7 +5,7 @@ are automatically queried when building context via PromptBuilder (retrieved con
 """
 
 from dana.common.llm.types import LLMMessage
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 from dana.core.prompt.prompt_builder import PromptBuilder
 
 

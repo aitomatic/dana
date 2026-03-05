@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from dana.common.llm.types import LLMMessage, LLMResponse
+from dana.common.llm.types import LLMMessage, LLMResponse, LLMStreamChunk
 from dana.core.llm.llm_caller import LLMCaller
 from dana.core.runtime.protocols import StreamEvent, StreamEventType
 
@@ -55,11 +55,11 @@ class TestCallLlmStream:
 
     @pytest.mark.asyncio
     async def test_yields_chunks_from_llm_stream(self):
-        """Should yield each text chunk from the underlying LLM stream."""
+        """Should yield each LLMStreamChunk from the underlying LLM stream."""
 
         async def _fake_stream(messages, **kwargs):
-            for chunk in ["Hello", ", ", "world", "!"]:
-                yield chunk
+            for text in ["Hello", ", ", "world", "!"]:
+                yield LLMStreamChunk(type="text_delta", content=text)
 
         mock_llm = MagicMock()
         mock_llm.stream = _fake_stream
@@ -69,7 +69,8 @@ class TestCallLlmStream:
         async for chunk in caller.call_llm_stream([LLMMessage(role="user", content="hi")]):
             chunks.append(chunk)
 
-        assert chunks == ["Hello", ", ", "world", "!"]
+        assert [c.content for c in chunks] == ["Hello", ", ", "world", "!"]
+        assert all(c.type == "text_delta" for c in chunks)
 
     @pytest.mark.asyncio
     async def test_passes_agent_info_to_llm_stream(self):
@@ -78,7 +79,7 @@ class TestCallLlmStream:
 
         async def _fake_stream(messages, **kwargs):
             received_kwargs.update(kwargs)
-            yield "ok"
+            yield LLMStreamChunk(type="text_delta", content="ok")
 
         mock_llm = MagicMock()
         mock_llm.stream = _fake_stream
@@ -180,7 +181,12 @@ class TestAqueryStreamBasic:
                 iteration=1,
             )
             if call_count["n"] == 1:
-                # First call: signal tool calls
+                # First call: signal tool calls (TOOL_CALL_START now emitted by _think_stream)
+                yield StreamEvent(
+                    event_type=StreamEventType.TOOL_CALL_START,
+                    data=tool_calls,
+                    iteration=1,
+                )
                 result_holder["trace_thoughts"] = {
                     "trace_thoughts": {
                         "response": "",
@@ -257,10 +263,10 @@ class TestThinkStream:
         """TEXT_DELTA events should contain each chunk; result_holder gets the parsed trace."""
         agent = _make_agent()
 
-        # Mock the runtime's LLM caller stream
+        # Mock the runtime's LLM caller stream (yields LLMStreamChunk)
         async def _fake_call_llm_stream(messages):
-            for chunk in ["<done>true</done>", "<response>Hi!</response>"]:
-                yield chunk
+            for text in ["<done>true</done>", "<response>Hi!</response>"]:
+                yield LLMStreamChunk(type="text_delta", content=text)
 
         # Mock runtime to provide call_llm_stream and parse_response
         mock_runtime = MagicMock()
@@ -296,9 +302,13 @@ class TestThinkStream:
             async for event in agent._think_stream(trace_percepts, result_holder):
                 delta_events.append(event)
 
-        # Should have yielded TEXT_DELTA for each chunk
-        assert all(e.event_type == StreamEventType.TEXT_DELTA for e in delta_events)
-        assert [e.data for e in delta_events] == ["<done>true</done>", "<response>Hi!</response>"]
+        # Text chunks emitted as THINKING during streaming (no tool calls yet)
+        # After stream ends with no tool calls, a single TEXT_DELTA with full text is emitted
+        thinking_events = [e for e in delta_events if e.event_type == StreamEventType.THINKING]
+        text_events = [e for e in delta_events if e.event_type == StreamEventType.TEXT_DELTA]
+        assert [e.data for e in thinking_events] == ["<done>true</done>", "<response>Hi!</response>"]
+        assert len(text_events) == 1
+        assert text_events[0].data == "<done>true</done><response>Hi!</response>"
 
         # result_holder should be populated
         assert "trace_thoughts" in result_holder

@@ -34,7 +34,7 @@ from dana.core.prompt.prompt_builder_helpers import (
 
 
 if TYPE_CHECKING:
-    from dana.core.agent.timeline import Timeline
+    from dana.core.timeline.timeline import Timeline
 
 
 class PromptBuilder:
@@ -232,7 +232,7 @@ class PromptBuilder:
     # ------------------------------------------------------------------
 
     def _get_latest_user_task(self, timeline: Timeline) -> str:
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         for entry in reversed(timeline.timeline):
             if entry.entry_type == TimelineEntryType.USER_MESSAGE:

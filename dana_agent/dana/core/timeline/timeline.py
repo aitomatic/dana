@@ -894,6 +894,24 @@ class Timeline:
             counts[entry.entry_type] = counts.get(entry.entry_type, 0) + 1
         return counts
 
+    def count_iterations(self) -> int:
+        """
+        Count STAR loop iterations completed in this timeline.
+
+        An iteration is counted for each AGENT_RESPONSE or TOOL_CALL entry
+        in the persistent (non-ephemeral) timeline entries.
+
+        Returns:
+            Number of STAR loop iterations completed.
+        """
+        iteration = 0
+        for entry in self.timeline:
+            if entry.ephemeral:
+                continue
+            if entry.entry_type in (TimelineEntryType.AGENT_RESPONSE, TimelineEntryType.TOOL_CALL):
+                iteration += 1
+        return iteration
+
     def save(self, session_id: str) -> None:
         """
         Save timeline for a session.

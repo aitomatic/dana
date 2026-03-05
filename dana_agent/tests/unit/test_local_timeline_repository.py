@@ -21,7 +21,7 @@ sys.modules["dana.core.knowledge.prompts.workflow_prompt_engineer"] = MagicMock(
 # Now import normally
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 from dana.repositories import LocalTimelineRepository
 
 
@@ -128,21 +128,21 @@ class TestLocalTimelineRepositoryInitialization:
             shutil.rmtree(temp_dir)
 
     def test_initialization_calculates_events_path(self):
-        """Test initialization calculates correct events path."""
+        """Test initialization calculates correct sessions path (agent-centric)."""
         temp_dir = tempfile.mkdtemp()
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalTimelineRepository(config, agent)
 
-            # Path should be: {codec_prefix}/{agent.object_id}/events
-            # Check path structure (doesn't need to exist yet)
+            # Path should be: {agent.object_id}/sessions (no codec prefix)
             path_str = str(repository._events_path)
-            assert "TestCodec" in path_str
             assert agent.object_id in path_str
-            assert "events" in path_str
-            # Platform-independent check - path name should be "events"
-            assert repository._events_path.name == "events"
+            assert "sessions" in path_str
+            # Codec prefix must NOT be in the new path
+            assert "TestCodec" not in path_str
+            # Platform-independent check - path name should be "sessions"
+            assert repository._events_path.name == "sessions"
         finally:
             shutil.rmtree(temp_dir)
 

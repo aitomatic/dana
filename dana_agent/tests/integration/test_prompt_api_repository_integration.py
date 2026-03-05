@@ -82,7 +82,7 @@ class TestPromptAPIRepositoryIntegration:
 
             # Verify repository path is correct
             repo_path = engineer._repository._get_relative_prompt_path()
-            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / component.object_id
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "resources" / component.object_id
             assert repo_path == expected_path
         finally:
             shutil.rmtree(temp_dir)
@@ -106,7 +106,7 @@ class TestPromptAPIRepositoryIntegration:
 
             # Verify repository path for system prompt
             repo_path = api._store._get_relative_prompt_path()
-            expected_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
+            expected_path = Path(temp_dir) / agent.object_id / "prompts" / "system_prompt_template"
             assert repo_path == expected_path
 
             # Test persist and load
@@ -210,8 +210,8 @@ class TestPromptAPIRepositoryIntegration:
             engineer.persist()
 
             # Verify file structure
-            system_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "system_prompt_template"
-            resource_path = Path(temp_dir) / "TestCodec" / agent.object_id / "prompts" / "resources" / component.object_id
+            system_path = Path(temp_dir) / agent.object_id / "prompts" / "system_prompt_template"
+            resource_path = Path(temp_dir) / agent.object_id / "prompts" / "resources" / component.object_id
 
             assert system_path.exists()
             assert resource_path.exists()

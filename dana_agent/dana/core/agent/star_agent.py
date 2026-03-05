@@ -6,7 +6,7 @@ It provides a cleaner, more maintainable architecture for the STAR (See-Think-Ac
 and conversational agent functionality using composable components.
 """
 
-from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from datetime import datetime
 import inspect
 from typing import Any
@@ -25,12 +25,12 @@ from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, Rep
 from ..knowledge.prompts.codecs import AbstractCodec
 from ..prompt.prompt_api import PromptAPIProtocol
 from ..runtime import AgentRuntime
-from ..runtime.protocols import StreamEvent, StreamEventType
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, LearnerProtocol, State
 from .components.observer import ObserverProtocol
-from .compressed_timeline import CompressedTimeline
-from .timeline import Timeline, TimelineEntry, TimelineEntryType
+from .star_agent_streaming import STARAgentStreamingMixin
+from dana.core.timeline.compressed_timeline import CompressedTimeline
+from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
 logger = structlog.get_logger()
@@ -41,7 +41,7 @@ _CODEC_SENTINEL = object()
 # from dana.apps.dana.thought_logger import ThoughtLogger  # Moved to avoid circular import
 
 
-class STARAgent(BaseSTARAgent):
+class STARAgent(STARAgentStreamingMixin, BaseSTARAgent):
     """STARAgent implementation using composition-based architecture."""
 
     # Configuration constants
@@ -263,15 +263,12 @@ class STARAgent(BaseSTARAgent):
             session_id: Optional session identifier to adopt.  If None, the
                         agent's current session id is kept.
         """
-        from .star_loop_state import STARLoopState
-
         self._timeline = timeline
 
         if session_id is not None:
             self._session_id = session_id
 
-        state = STARLoopState.from_timeline(timeline)
-        self._star_loop_count = state.iteration
+        self._star_loop_count = timeline.count_iterations()
 
     def register_reminder(self, reminder) -> None:
         """
@@ -1123,212 +1120,6 @@ class STARAgent(BaseSTARAgent):
         result = {"trace_outputs": trace_thoughts}
         self.broadcast(result)
         return result
-
-    # ============================================================================
-    # STREAMING STAR METHODS
-    # ============================================================================
-
-    async def _think_stream(
-        self,
-        trace_percepts: DictParams,
-        result_holder: dict,
-    ) -> AsyncIterator[StreamEvent]:
-        """Streaming think phase. Yields TEXT_DELTA events while the LLM responds.
-
-        After all chunks are collected, parses the buffered text exactly like
-        _think_async does, then stores the resulting trace in result_holder so
-        the caller can continue the STAR loop.
-
-        Args:
-            trace_percepts: Percepts from the SEE phase (timeline must be present).
-            result_holder:  Mutable dict; populated with {"trace_thoughts": ...}
-                            after streaming completes.
-
-        Yields:
-            StreamEvent: TEXT_DELTA events for each LLM chunk.
-        """
-        from dana.common.llm.types import LLMResponse
-
-        trace_percepts = trace_percepts or {}
-        if self._do_exit_star_loop(trace_percepts) or not trace_percepts:
-            result_holder["trace_thoughts"] = {"trace_thoughts": self._mark_star_loop_exit(trace_percepts)}
-            return
-
-        iteration = self._star_loop_count
-        timeline = trace_percepts.get("timeline", self._timeline)
-        trace_percepts.pop("timeline", None)
-
-        await self._maybe_compress_timeline_async(timeline)
-        llm_messages = self._runtime.build_prompt(self, timeline)
-
-        # Stream and buffer chunks
-        chunks: list[str] = []
-        if hasattr(self._runtime, "_llm_caller"):
-            stream_src = self._runtime._llm_caller.call_llm_stream(llm_messages)
-        else:
-            # Fallback: use the agent's llm_client directly
-            stream_src = self.llm_client.stream(
-                llm_messages,
-                agent_id=self.object_id,
-                agent_type=self.agent_type,
-            )
-
-        async for chunk in stream_src:
-            chunks.append(chunk)
-            yield StreamEvent(
-                event_type=StreamEventType.TEXT_DELTA,
-                data=chunk,
-                iteration=iteration,
-            )
-
-        buffered_text = "".join(chunks)
-
-        # Build a synthetic LLMResponse from buffered text so existing parse_response works
-        synthetic_response = LLMResponse(
-            content=buffered_text,
-            model="streamed",
-            finish_reason="stop",
-        )
-
-        parsed = self._runtime.parse_response(synthetic_response)
-        response, reasoning, tool_calls, done, todo_list = (
-            parsed.response,
-            parsed.reasoning,
-            parsed.tool_calls,
-            parsed.done,
-            parsed.todo_list,
-        )
-
-        has_tool_calls = bool(tool_calls)
-        has_response = bool(response and response.strip())
-        output_state = self._runtime.validate_done_output(done, has_tool_calls, has_response)
-
-        # No retry loop for streaming (YAGNI — keep simple)
-        if output_state == "retry":
-            output_state = "exit"
-
-        trace_result = self._record_think_results(
-            timeline,
-            trace_percepts,
-            response,
-            reasoning,
-            tool_calls,
-            done,
-            todo_list,
-            output_state,
-        )
-        result_holder["trace_thoughts"] = trace_result
-
-    async def aquery_stream(self, **kwargs) -> AsyncIterator[StreamEvent]:
-        """Streaming version of aquery with session management.
-
-        Yields StreamEvent objects: TEXT_DELTA during LLM generation,
-        TOOL_CALL_START and TOOL_RESULT during tool execution, then DONE.
-
-        Args:
-            **kwargs: Same kwargs as aquery() (message, caller_message, etc.)
-
-        Yields:
-            StreamEvent: Stream events throughout the STAR loop.
-        """
-        # Session management (mirrors aquery())
-        new_session_id = kwargs.get("session_id")
-        if new_session_id is not None:
-            self.set_session_id(new_session_id)
-        session_id = self._session_id
-
-        self._star_loop_count = 0
-
-        if hasattr(self, "_event_log") and self._event_log is not None:
-            self._event_log._current_session_id = session_id
-
-        try:
-            async for event in self._run_aquery_stream(kwargs):
-                yield event
-        finally:
-            if hasattr(self, "_event_log") and self._event_log is not None:
-                self._event_log.save(session_id)
-            if hasattr(self, "_timeline") and self._timeline is not None:
-                self._timeline.save(session_id)
-
-    async def _run_aquery_stream(self, kwargs: DictParams) -> AsyncIterator[StreamEvent]:
-        """Inner streaming STAR loop (no session management).
-
-        Yields StreamEvent objects from the STAR loop iterations.
-        """
-        import asyncio
-
-        trace_inputs: DictParams = {"trace_inputs": kwargs}
-        trace_outputs: DictParams = {}
-
-        for _ in range(self.MAX_ITERATIONS):
-            try:
-                # SEE phase (sync — no streaming needed)
-                trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
-
-                # THINK phase — stream text deltas
-                result_holder: dict = {}
-                async for event in self._think_stream(
-                    trace_percepts.get("trace_percepts", {}),
-                    result_holder,
-                ):
-                    yield event
-
-                # result_holder now contains {"trace_thoughts": ...}
-                trace_thoughts_wrapper = result_holder.get("trace_thoughts", {"trace_thoughts": {}})
-                trace_thoughts_inner = trace_thoughts_wrapper.get("trace_thoughts", {})
-
-                # Yield TOOL_CALL_START events before executing
-                tool_calls = trace_thoughts_inner.get("tool_calls", [])
-                iteration = self._star_loop_count
-                if tool_calls:
-                    yield StreamEvent(
-                        event_type=StreamEventType.TOOL_CALL_START,
-                        data=tool_calls,
-                        iteration=iteration,
-                    )
-
-                # ACT phase (async — uses existing _act_async)
-                trace_outputs = await self._act_async(trace_thoughts_inner)
-                tool_results = trace_outputs.get("trace_outputs", {}).get("tool_results", [])
-
-                # Yield TOOL_RESULT events after execution
-                if tool_results:
-                    yield StreamEvent(
-                        event_type=StreamEventType.TOOL_RESULT,
-                        data=tool_results,
-                        iteration=iteration,
-                    )
-
-                # Trigger acquisitive learning asynchronously
-                if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
-                    acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
-                    acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
-
-                    async def _async_reflect(acq_input):
-                        try:
-                            self._reflect(acq_input)
-                        except Exception as reflect_err:
-                            logger.error("Async reflection failed", error=str(reflect_err))
-
-                    asyncio.create_task(_async_reflect(acquisitive_input))
-
-                if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
-                    break
-
-                # Prepare next iteration inputs from tool results
-                trace_inputs = {"trace_inputs": trace_outputs.get("trace_outputs", {})}
-
-            except Exception as exc:
-                logger.error("Error in aquery_stream", error=str(exc))
-                yield StreamEvent(
-                    event_type=StreamEventType.ERROR,
-                    data=str(exc),
-                    iteration=self._star_loop_count,
-                )
-                return
-
-        yield StreamEvent(event_type=StreamEventType.DONE, data=None, iteration=self._star_loop_count)
 
     # ============================================================================
     # DISCOVERY INTERFACE (Override from BaseSTARAgent)

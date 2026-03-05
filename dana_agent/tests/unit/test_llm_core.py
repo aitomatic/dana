@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from dana.common.llm.llm import LLM
-from dana.common.llm.types import LLMMessage, LLMProvider, LLMResponse, ProviderError
+from dana.common.llm.types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, ProviderError
 
 
 class MockProvider(LLMProvider):
@@ -22,11 +22,9 @@ class MockProvider(LLMProvider):
             content=self.response_content, model=self.model, usage={"prompt_tokens": 10, "completion_tokens": 5}, finish_reason="stop"
         )
 
-    async def stream(self, messages, **kwargs):
-        """Mock streaming response"""
-        yield LLMResponse(
-            content=self.response_content, model=self.model, usage={"prompt_tokens": 10, "completion_tokens": 5}, finish_reason="stop"
-        )
+    async def stream(self, messages, tools=None, **kwargs):
+        """Mock streaming response — yields LLMStreamChunk."""
+        yield LLMStreamChunk(type="text_delta", content=self.response_content)
 
 
 class TestLLMCore:
@@ -95,14 +93,14 @@ class TestLLMCore:
 
     @pytest.mark.asyncio
     async def test_stream(self, llm):
-        """Test stream method"""
-        responses = []
-        async for response in llm.stream([LLMMessage(role="user", content="Hello")]):
-            responses.append(response)
+        """Test stream method yields LLMStreamChunk objects."""
+        chunks = []
+        async for chunk in llm.stream([LLMMessage(role="user", content="Hello")]):
+            chunks.append(chunk)
 
-        # The stream method returns a single response, not multiple chunks
-        assert len(responses) == 1
-        assert responses[0] == "Test response"
+        assert len(chunks) == 1
+        assert chunks[0].type == "text_delta"
+        assert chunks[0].content == "Test response"
 
     def test_switch_provider(self, llm):
         """Test switch_provider method"""

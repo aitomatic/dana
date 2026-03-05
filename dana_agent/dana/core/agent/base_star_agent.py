@@ -12,7 +12,7 @@ import logging
 import threading
 
 from dana.common.observable import observable
-from dana.common.protocols import DictParams, STARAgentProtococol
+from dana.common.protocols import DictParams, STARAgentProtocol
 from dana.common.protocols.types import LearningPhase
 from dana.core.agent.base_agent import BaseAgent
 from dana.core.runtime.protocols import StreamEvent, StreamEventType
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 EXIT_STAR_LOOP_FLAG = "EXIT_STAR_LOOP_FLAG"
 
 
-class BaseSTARAgent(BaseAgent, STARAgentProtococol):
+class BaseSTARAgent(BaseAgent, STARAgentProtocol):
     """
     Minimal base class defining the STAR (See-Think-Act-Reflect) pattern contract.
 

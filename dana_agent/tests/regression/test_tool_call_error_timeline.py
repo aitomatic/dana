@@ -20,8 +20,8 @@ from pathlib import Path
 import pytest
 
 from dana.core.agent.builtin_agents.dana_coding_agent import DanaCodingAgent
-from dana.core.agent.compressed_timeline import CompressedTimeline
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.compressed_timeline import CompressedTimeline
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
 
 TIMELINE_PATH = Path(__file__).resolve().parent / "fixtures" / "timeline-with-errors.json"

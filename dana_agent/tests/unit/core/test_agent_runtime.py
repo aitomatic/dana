@@ -2,7 +2,7 @@ import pytest
 
 from dana.common.llm.types import LLMMessage, LLMResponse
 from dana.core.agent.star_agent import STARAgent
-from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 from dana.core.resource.base_resource import BaseResource
 from dana.core.runtime import AgentRuntime, ParsedResponse, RuntimeRegistry
 from dana.core.runtime.default import DefaultRuntime

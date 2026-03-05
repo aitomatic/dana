@@ -9,14 +9,14 @@ from .prompts import (
     UserPromptComponents,
 )
 from .types import DictParams, Identifiable
-from .war import AgentProtocol, ResourceProtocol, STARAgentProtococol, WorkflowProtocol, named_tool, tool_use
+from .war import AgentProtocol, ResourceProtocol, STARAgentProtocol, WorkflowProtocol, named_tool, tool_use
 
 
 __all__ = [
     "WorkflowProtocol",
     "AgentProtocol",
     "ResourceProtocol",
-    "STARAgentProtococol",
+    "STARAgentProtocol",
     "Identifiable",
     "DictParams",
     "PromptsProtocol",

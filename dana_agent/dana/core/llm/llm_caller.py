@@ -20,6 +20,7 @@ from dana.common.llm.types import (
     LLMError,
     LLMMessage,
     LLMResponse,
+    LLMStreamChunk,
     ProviderError,
 )
 from dana.common.observable import observable
@@ -128,21 +129,23 @@ class LLMCaller:
             return await self._call_with_failover_async(messages)
         return await self._invoke_llm_async(self._resolve_llm(), messages)
 
-    async def call_llm_stream(self, messages: list[LLMMessage]) -> AsyncIterator[str]:
-        """Stream LLM response, yielding text chunks as strings.
+    async def call_llm_stream(self, messages: list[LLMMessage]) -> AsyncIterator[LLMStreamChunk]:
+        """Stream LLM response, yielding typed LLMStreamChunk objects.
 
-        Note: Tool calls are NOT streamed — they arrive in the non-streaming
-        response. Streaming is for text generation only. No failover support
-        (YAGNI — keep it simple for streaming path).
-
-        Yields:
-            str: Text delta chunks as they arrive from the LLM.
+        Yields text_delta, tool_use, and thinking chunks as they arrive.
+        No failover support (YAGNI — keep it simple for streaming path).
         """
         llm = self._resolve_llm()
         agent = self._agent_getter()
         agent_id = agent.object_id if agent else None
         agent_type = agent.agent_type if agent else None
-        async for chunk in llm.stream(messages, agent_id=agent_id, agent_type=agent_type):
+        tools = self._native_tools_getter() or None
+        async for chunk in llm.stream(
+            messages,
+            tools=tools,
+            agent_id=agent_id,
+            agent_type=agent_type,
+        ):
             yield chunk
 
     # ------------------------------------------------------------------

@@ -27,7 +27,7 @@ from dana.core.tool.tool_executor import ToolExecutor
 
 
 if TYPE_CHECKING:
-    from dana.core.agent.timeline import Timeline
+    from dana.core.timeline.timeline import Timeline
 
 logger = structlog.get_logger()
 
@@ -43,6 +43,53 @@ class AgentRuntime(ABC):
     - get_runtime_context_fields() - Which context fields to include
     - format_tool_for_prompt(signature) - How to format tool descriptions
     """
+
+    SYSTEM_PROMPT_TEMPLATE_JSON = """{{identity}}
+
+You are a helpful assistant. Complete the user's request using the available tools.
+
+{{resource_context}}
+
+<available_tools>
+{{available_tools_prompt}}
+</available_tools>
+
+<output_format>
+## Output Format
+
+Always respond with valid JSON in this exact format:
+
+{
+  "done": true/false,
+  "reasoning": "brief explanation of your thinking",
+  "response": "your final answer (required when done=true, null otherwise)",
+  "tool_calls": [{"name": "ResourceName:method", "parameters": {...}}]
+}
+
+Rules:
+- done=true: provide response, no tool_calls
+- done=false: provide tool_calls, response=null
+</output_format>"""
+
+    SYSTEM_PROMPT_TEMPLATE_NATIVE_TOOLS = """{{identity}}
+
+You are a helpful assistant. Complete the user's request using the available tools.
+
+{{resource_context}}
+
+<output_format>
+## Output Format
+
+Use the function calling feature to invoke tools. When you have enough information to answer:
+
+{
+  "done": true,
+  "reasoning": "brief explanation",
+  "response": "your final answer"
+}
+
+When you need to call tools, use the function calling API directly — do NOT include tool_calls in JSON.
+</output_format>"""
 
     def __init__(
         self,

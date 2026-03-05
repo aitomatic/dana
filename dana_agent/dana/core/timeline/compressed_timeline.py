@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING, Any
 from structlog import get_logger
 
 from dana.common.llm.types import LLMMessage
-from dana.core.agent.compression_engine import CompressionMixin
-from dana.core.agent.native_message import (
+from dana.core.timeline.compression_engine import CompressionMixin
+from dana.core.timeline.native_message import (
     COMPRESSED_CONTEXT_KEY,
     COMPRESSED_ENTRIES_COUNT_KEY,
     COMPRESSION_TIMESTAMP_KEY,
@@ -31,14 +31,17 @@ from dana.core.agent.native_message import (
     NativeMessageRole,
     NativeToolCall,
 )
-from dana.core.agent.provider_messages import ProviderMessagesMixin
-from dana.core.agent.timeline import (
+from dana.core.timeline.token_limiting_helpers import (
+    apply_token_limit_to_messages,
+    estimate_messages_tokens,
+)
+from dana.core.timeline.timeline import (
     Timeline,
     TimelineConfig,
     TimelineEntry,
     TimelineEntryType,
 )
-from dana.core.agent.timeline_serializer import TimelineSerializerMixin
+from dana.core.timeline.timeline_serializer import TimelineSerializerMixin
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
 
@@ -60,7 +63,6 @@ __all__ = [
     "COMPRESSED_ENTRIES_COUNT_KEY",
     "CompressionMixin",
     "TimelineSerializerMixin",
-    "ProviderMessagesMixin",
 ]
 
 
@@ -84,7 +86,7 @@ class CompressedTimelineConfig(TimelineConfig):
             self.cutoff_when_token_reach = int(0.3 * self.max_tokens_until_compression)
 
 
-class CompressedTimeline(CompressionMixin, TimelineSerializerMixin, ProviderMessagesMixin, Timeline):
+class CompressedTimeline(CompressionMixin, TimelineSerializerMixin, Timeline):
     """
     Timeline with intelligent compression and context management.
 
@@ -362,6 +364,89 @@ class CompressedTimeline(CompressionMixin, TimelineSerializerMixin, ProviderMess
         return self._native_messages
 
     # ------------------------------------------------------------------
+    # LLM message conversion
+    # ------------------------------------------------------------------
+
+    def to_llm_messages(
+        self,
+        max_tokens: int | None = None,
+        default_role: str = "user",  # noqa: ARG002 - kept for TimelineProtocol compatibility
+        separate_latest_user: bool = False,
+    ) -> list[LLMMessage]:
+        """
+        Convert native messages to LLM messages for provider consumption.
+
+        Returns individual messages from the native storage, preserving the
+        original message structure. If compression has occurred, a summary
+        system message is prepended. Token limiting is applied via sliding
+        window on native messages, keeping tool_call/tool_result pairs together.
+
+        Args:
+            max_tokens: Maximum tokens to include (overrides max_context_tokens)
+            default_role: Default role for entries without specific mapping. Unused
+                in this implementation since NativeMessage has explicit roles, but
+                kept for TimelineProtocol compatibility.
+            separate_latest_user: If True, separates latest user message
+
+        Returns:
+            List of LLMMessage objects in chronological order
+        """
+        token_limit = max_tokens or self.max_context_tokens
+
+        # Convert native messages to LLMMessage
+        messages = [msg.to_llm_message() for msg in self._native_messages]
+
+        # If we have compressed context, prepend it as a system message
+        compressed_context = self.get_compressed_context()
+        if compressed_context:
+            # Check if we already have a summary message (to avoid duplication)
+            has_summary = any(
+                isinstance(msg.content, str)
+                and (msg.content.startswith("[Previous context summary]") or msg.content.startswith("[SUMMARY]"))
+                for msg in messages
+            )
+
+            if not has_summary:
+                summary_message = LLMMessage(
+                    role="system",
+                    content=f"[Previous context summary] {compressed_context}",
+                )
+                # Insert at the beginning (or after other system messages)
+                insert_idx = 0
+                for i, msg in enumerate(messages):
+                    if msg.role == "system":
+                        insert_idx = i + 1
+                    else:
+                        break
+                messages.insert(insert_idx, summary_message)
+
+        # Handle separate_latest_user: separate the latest user message
+        if separate_latest_user and messages:
+            latest_user_idx = None
+            for i in range(len(messages) - 1, -1, -1):
+                if messages[i].role == "user":
+                    latest_user_idx = i
+                    break
+
+            if latest_user_idx is not None:
+                latest_user_msg = messages[latest_user_idx]
+                context_messages = messages[:latest_user_idx] + messages[latest_user_idx + 1 :]
+
+                # Apply token limit to context
+                if estimate_messages_tokens(context_messages) > token_limit:
+                    context_messages = apply_token_limit_to_messages(context_messages, token_limit)
+
+                # Append latest user message at the end
+                context_messages.append(latest_user_msg)
+                return context_messages
+
+        # Apply token limit if needed
+        if estimate_messages_tokens(messages) > token_limit:
+            messages = apply_token_limit_to_messages(messages, token_limit)
+
+        return messages
+
+    # ------------------------------------------------------------------
     # Context management
     # ------------------------------------------------------------------
 
@@ -470,7 +555,7 @@ class CompressedTimeline(CompressionMixin, TimelineSerializerMixin, ProviderMess
         return default_call_async_fn
 
     # ------------------------------------------------------------------
-    # Token estimation (used by both CompressionMixin and ProviderMessagesMixin)
+    # Token estimation (used by CompressionMixin)
     # ------------------------------------------------------------------
 
     def _estimate_native_message_tokens(self, message: NativeMessage) -> int:

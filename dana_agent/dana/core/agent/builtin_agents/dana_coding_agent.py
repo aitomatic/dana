@@ -154,7 +154,7 @@ class DanaCodingAgent(STARAgent):
                 f"{self.__class__.__name__} only works with `dana_agent/dana/core/runtime/codec` runtimes. You are using {self._runtime.__class__.__name__}."
             )
         self._cwd = cwd
-        _supports_vision = getattr(self.llm_client.provider, "supports_vision", False)
+        _supports_vision = self.llm_client.supports_vision
         explore_agent = ExploreAgent(
             agent_id="explore-test-123",
             agent_type="explore_agent",

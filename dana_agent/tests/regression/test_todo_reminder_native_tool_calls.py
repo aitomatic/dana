@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 from dana.core.reminder.rules.builtin import (
     TodoNeverCalledReminder,
     TodoUpdateReminder,
@@ -154,7 +154,7 @@ class TestTodoNeverCalledReminderNativeToolCalls:
 
     def _build_timeline_with_native_todo_write(self):
         """Build a minimal timeline that has a native todo_write call."""
-        from dana.core.agent.timeline import Timeline
+        from dana.core.timeline.timeline import Timeline
 
         timeline = Timeline(max_context_tokens=4000)
         timeline.add_entry(
@@ -193,7 +193,7 @@ class TestTodoNeverCalledReminderNativeToolCalls:
 
     def test_detects_legacy_todo_write(self):
         """_todo_write_ever_called still works for legacy XML format."""
-        from dana.core.agent.timeline import Timeline
+        from dana.core.timeline.timeline import Timeline
 
         reminder = TodoNeverCalledReminder()
         timeline = Timeline(max_context_tokens=4000)
@@ -211,7 +211,7 @@ class TestTodoUpdateReminderNativeToolCalls:
 
     def _build_timeline_with_native_todo_write(self):
         """Build a timeline with a native todo_write call at a known index."""
-        from dana.core.agent.timeline import Timeline
+        from dana.core.timeline.timeline import Timeline
 
         timeline = Timeline(max_context_tokens=4000)
         # Index 0
@@ -254,7 +254,7 @@ class TestTodoUpdateReminderNativeToolCalls:
 
     def test_finds_legacy_todo_write_index(self):
         """_find_last_todo_write_index still works for legacy XML format."""
-        from dana.core.agent.timeline import Timeline
+        from dana.core.timeline.timeline import Timeline
 
         reminder = TodoUpdateReminder()
         timeline = Timeline(max_context_tokens=4000)
@@ -277,7 +277,7 @@ class TestTodoUpdateReminderNativeToolCalls:
 
     def test_returns_negative_one_when_no_todo_write(self):
         """Should return -1 when no todo_write exists in timeline."""
-        from dana.core.agent.timeline import Timeline
+        from dana.core.timeline.timeline import Timeline
 
         reminder = TodoUpdateReminder()
         timeline = Timeline(max_context_tokens=4000)
