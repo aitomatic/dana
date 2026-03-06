@@ -409,7 +409,9 @@ class SearchResource(BaseResource):
             )
             stdout, stderr = await process.communicate()
         except FileNotFoundError:
-            return "Error: ripgrep (rg) is not installed. Install it or use mode=GREPMode.PYTHON_NATIVE"
+            if self._mode == GREPMode.RIPGREP:
+                return "Error: ripgrep (rg) is not installed. Install it or use mode=GREPMode.PYTHON_NATIVE"
+            raise
 
         # ripgrep returns exit code 1 for no matches (not an error)
         output = stdout.decode("utf-8", errors="replace")
@@ -527,7 +529,9 @@ class SearchResource(BaseResource):
             )
             stdout, stderr = await process.communicate()
         except FileNotFoundError:
-            return "Error: grep is not installed. Use mode=GREPMode.PYTHON_NATIVE"
+            if self._mode == GREPMode.GREP:
+                return "Error: grep is not installed. Use mode=GREPMode.PYTHON_NATIVE"
+            raise
 
         # grep returns exit code 1 for no matches (not an error)
         output = stdout.decode("utf-8", errors="replace")
