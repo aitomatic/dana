@@ -16,12 +16,27 @@ Timeline source: tests/regression/fixtures/timeline-with-errors.json
 import asyncio
 import json
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from dana.core.agent.builtin_agents.dana_coding_agent import DanaCodingAgent
 from dana.core.timeline.compressed_timeline import CompressedTimeline
 from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
+
+
+def _create_test_agent(**kwargs):
+    """Create a DanaCodingAgent with mocked LLM provider (no API key needed)."""
+    defaults = {
+        "agent_id": "test-agent",
+        "agent_type": "dana_coding_agent",
+        "llm_provider": "anthropic_like",
+        "model": "kimi-k2-thinking-turbo",
+        "cwd": "/tmp",
+    }
+    defaults.update(kwargs)
+    with patch("dana.common.llm.llm.create_provider", return_value=MagicMock()):
+        return DanaCodingAgent(**defaults)
 
 
 TIMELINE_PATH = Path(__file__).resolve().parent / "fixtures" / "timeline-with-errors.json"
@@ -94,13 +109,7 @@ class TestToolCallErrorTimeline:
         tool_calls = _extract_tool_calls_from_entry(bad_entries[0])
 
         # Create the agent with a dummy cwd (we don't need real files for this test)
-        agent = DanaCodingAgent(
-            agent_id="test-error-timeline",
-            agent_type="dana_coding_agent",
-            llm_provider="anthropic_like",
-            model="kimi-k2-thinking-turbo",
-            cwd="/tmp",
-        )
+        agent = _create_test_agent(agent_id="test-error-timeline")
 
         # First, simulate what _think_async does: add the tool_call entry to the timeline
         agent._timeline.add_entry(
@@ -168,13 +177,7 @@ class TestToolCallErrorTimeline:
         assert timeline_entry.entry_type == TimelineEntryType.UNKNOWN_TOOL_CALL
 
         # Create a CompressedTimeline and test the conversion
-        agent = DanaCodingAgent(
-            agent_id="test-native-msg",
-            agent_type="dana_coding_agent",
-            llm_provider="anthropic_like",
-            model="kimi-k2-thinking-turbo",
-            cwd="/tmp",
-        )
+        agent = _create_test_agent(agent_id="test-native-msg")
         compressed_timeline: CompressedTimeline = agent._timeline
 
         # Convert the error entry to a native message
@@ -204,13 +207,7 @@ class TestToolCallErrorTimeline:
 
         tool_calls = _extract_tool_calls_from_entry(bad_entries[0])
 
-        agent = DanaCodingAgent(
-            agent_id="test-error-feedback",
-            agent_type="dana_coding_agent",
-            llm_provider="anthropic_like",
-            model="kimi-k2-thinking-turbo",
-            cwd="/tmp",
-        )
+        agent = _create_test_agent(agent_id="test-error-feedback")
 
         # Simulate _think_async adding the tool_call entry
         agent._timeline.add_entry(
@@ -261,13 +258,7 @@ class TestToolCallErrorTimeline:
         """
         data = _load_timeline_data()
 
-        agent = DanaCodingAgent(
-            agent_id="test-roundtrip",
-            agent_type="dana_coding_agent",
-            llm_provider="anthropic_like",
-            model="kimi-k2-thinking-turbo",
-            cwd="/tmp",
-        )
+        agent = _create_test_agent(agent_id="test-roundtrip")
 
         # Load entries only (without pre-saved native_messages) to force reconversion
         # through _timeline_entry_to_native_message, which is where the bug was.
