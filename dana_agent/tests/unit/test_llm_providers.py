@@ -313,7 +313,7 @@ class TestAnthropicProvider:
         with patch("dana.common.llm.providers.anthropic.anthropic") as mock_anthropic:
             from dana.common.llm.providers.anthropic import AnthropicProvider
 
-            provider = AnthropicProvider(api_key="test-key", model="claude-3-sonnet")
+            AnthropicProvider(api_key="test-key", model="claude-3-sonnet")
             # base_url should be the default from config (https://api.anthropic.com)
             # or None if env var not set - either way, client should work
             mock_anthropic.AsyncAnthropic.assert_called_once()
@@ -394,6 +394,8 @@ class TestAzureProvider:
         mock_response.usage.prompt_tokens = 10
         mock_response.usage.completion_tokens = 5
         mock_response.usage.total_tokens = 15
+        mock_response.usage.prompt_tokens_details = None
+        mock_response.usage.completion_tokens_details = None
 
         # Create an async mock for the create method
         async def mock_create(*args, **kwargs):
