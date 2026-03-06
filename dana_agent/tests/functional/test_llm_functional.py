@@ -143,7 +143,7 @@ class TestLLMFunctional:
 
             # The stream method returns a single response, not multiple chunks
             assert len(responses) == 1
-            assert responses[0] == "This is a streaming response."
+            assert responses[0].content == "This is a streaming response."
 
     @pytest.mark.asyncio
     async def test_error_recovery_workflow(self):

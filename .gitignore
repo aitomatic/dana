@@ -108,3 +108,18 @@ skill_output/
 .local_backup
 
 **/__pycache__
+
+data
+
+docs/.claude_docs
+docs/.openclaw_docs
+docs/.claw_comparison
+# Local artifacts (not for repo)
+log/
+instances/
+plans/
+.opencode/
+scripts/
+dana_agent/plans/
+
+

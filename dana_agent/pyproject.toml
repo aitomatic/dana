@@ -33,7 +33,8 @@ maintainers = [
 dependencies = [
     # Core LLM Integration
     "openai>=1.55.3",
-    "anthropic",
+    "anthropic==0.30.1",
+    "google-genai>=1.0.0",
     # HTTP client for API calls
     "httpx>=0.27.0",
     # Configuration management
@@ -46,6 +47,7 @@ dependencies = [
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.0",
     "html2text>=2024.2.26",
+    "rich>=14.2.0",
 ]
 
 # Command-line entry points
@@ -54,6 +56,7 @@ dana-agent = "dana.apps.dana.__main__:main"
 dana-agent-repl = "dana.apps.repl.__main__:main"
 dana-code = "dana.apps.code.__main__:main"
 dana-memory = "dana.lib.memory.cli:main"
+dana-init = "dana.apps.init.__main__:main"
 
 # Optional dependency groups
 [project.optional-dependencies]

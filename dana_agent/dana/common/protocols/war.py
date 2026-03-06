@@ -111,7 +111,7 @@ class AgentProtocol(WARProtocol):
         ...
 
 
-class STARAgentProtococol(AgentProtocol):
+class STARAgentProtocol(AgentProtocol):
     """Protocol for See-Think-Act-Reflect agents."""
 
     def _see(self, trace_inputs: DictParams) -> DictParams:

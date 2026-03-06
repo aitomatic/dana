@@ -21,13 +21,14 @@ except ModuleNotFoundError:
 
 from ..config import config_manager
 from .providers.factory import create_provider
-from .types import LLMMessage, LLMProvider, LLMResponse, ProviderError
+from .types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, ProviderError
 
 
 logger = structlog.get_logger()
 
 import asyncio
 import atexit
+import os
 import time
 
 from dana.common.observable import observable
@@ -154,6 +155,34 @@ class LLM:
                 self.provider_name = "openai"
 
         self.model = getattr(self.provider, "model", "unknown")
+        self.provider.supports_vision = self._resolve_vision_support()
+
+    def _resolve_vision_support(self) -> bool:
+        """Resolve vision support: env var > config vision_models > False."""
+        env_key = f"{self.provider_name.upper()}_SUPPORTS_VISION"
+        env_val = os.getenv(env_key)
+        if env_val is not None:
+            return env_val.lower() in ("1", "true", "yes")
+
+        config = config_manager.get_provider_config(self.provider_name)
+        if config:
+            vision_models = config.get("vision_models", [])
+            if vision_models:
+                # Match against both model keys (aliases) and values (full IDs)
+                models_map = config.get("models", {})
+                vision_ids = set()
+                for vm in vision_models:
+                    if vm in models_map:
+                        vision_ids.add(models_map[vm])
+                    else:
+                        vision_ids.add(vm)
+                return self.model in vision_ids
+
+        return False
+
+    @property
+    def supports_vision(self) -> bool:
+        return getattr(self.provider, "supports_vision", False)
 
     async def chat(self, messages: list[LLMMessage], **kwargs) -> str:
         """
@@ -294,40 +323,33 @@ class LLM:
 
         return await self.chat(messages, **kwargs)
 
-    async def stream(self, messages: list[LLMMessage], **kwargs):
-        """
-        Stream a response from the LLM.
+    async def stream(self, messages: list[LLMMessage], tools: list | None = None, **kwargs):
+        """Stream LLMStreamChunk from the LLM provider.
 
         Args:
-            messages: List of LLMMessage objects representing the full conversation context
-            **kwargs: Additional parameters for the LLM call
+            messages: Conversation context.
+            tools: Optional tool definitions for native tool calling.
+            **kwargs: Additional parameters for the LLM call.
 
         Yields:
-            Chunks of the response as they arrive
-
-        Raises:
-            ValueError: If messages list is empty
-            ProviderError: If the provider operation fails
+            LLMStreamChunk with type, content, and optional tool_call.
         """
         if not messages:
             raise ValueError("Messages list cannot be empty")
 
         try:
-            # Create agent label for logging if agent info is available
             agent_label = ""
             if "agent_id" in kwargs and "agent_type" in kwargs:
                 short_id = kwargs["agent_id"][:8] + "..." if len(kwargs["agent_id"]) > 8 else kwargs["agent_id"]
                 agent_label = f" [{kwargs['agent_type']}({short_id})]"
 
-            # Filter out agent parameters before passing to provider
             provider_kwargs = {k: v for k, v in kwargs.items() if k not in ["agent_id", "agent_type"]}
 
             logger.info("Starting stream", provider=self.provider_name, message_count=len(messages), agent=agent_label)
-            async for chunk in self.provider.stream(messages, **provider_kwargs):
-                yield chunk.content
+            async for chunk in self.provider.stream(messages, tools=tools, **provider_kwargs):
+                yield chunk  # LLMStreamChunk passthrough
             logger.info("Stream completed", provider=self.provider_name, agent=agent_label)
         except Exception as e:
-            # Create agent label for error logging if agent info is available
             agent_label = ""
             if "agent_id" in kwargs and "agent_type" in kwargs:
                 short_id = kwargs["agent_id"][:8] + "..." if len(kwargs["agent_id"]) > 8 else kwargs["agent_id"]
@@ -347,6 +369,7 @@ class LLM:
         self.provider = create_provider(provider, model=model)
         self.provider_name = provider
         self.model = getattr(self.provider, "model", "unknown")
+        self.provider.supports_vision = self._resolve_vision_support()
         logger.info("Switched LLM provider", provider=provider, model=self.model)
 
     @staticmethod

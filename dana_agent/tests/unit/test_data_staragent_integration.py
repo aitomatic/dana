@@ -1,26 +1,27 @@
 """Tests for Data/RLMResource STARAgent integration.
 
 These tests verify that RLMResources attached to STARAgent via with_resources()
-are automatically queried when building context in LocalPromptAPI (codec system).
+are automatically queried when building context via PromptBuilder (retrieved context path).
 """
 
-import pytest
-
 from dana.common.llm.types import LLMMessage
-from dana.core.knowledge.prompts import LocalPromptAPI
-from dana.core.knowledge.prompts.codecs import CSXMLCodec
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
+from dana.core.prompt.prompt_builder import PromptBuilder
 
 
 class DummyTimeline:
-    """Minimal timeline for prompt engineer tests."""
+    """Minimal timeline for prompt builder tests."""
 
-    def __init__(self, messages: list[LLMMessage], max_context_tokens: int = 10000):
-        self._messages = messages
+    def __init__(self, task: str, max_context_tokens: int = 10000):
         self.max_context_tokens = max_context_tokens
-        self.timeline = messages
+        # timeline holds TimelineEntry objects (used by _get_latest_user_task)
+        self.timeline = [TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=task)]
 
-    def to_llm_messages(self, separate_latest_user: bool = True) -> list[LLMMessage]:
-        return self._messages
+    def set_context(self, context: dict) -> None:
+        pass
+
+    def to_llm_messages(self) -> list[LLMMessage]:
+        return [LLMMessage(role="user", content=entry.content) for entry in self.timeline]
 
 
 class DummyResource:
@@ -37,7 +38,7 @@ class DummyResource:
 
 
 class DummyAgent:
-    """Minimal agent for LocalPromptAPI tests."""
+    """Minimal agent for PromptBuilder tests."""
 
     def __init__(self, resources: list[DummyResource]):
         self._resources = resources
@@ -45,44 +46,56 @@ class DummyAgent:
         self._workflows = []
         self._ltmemory = None
         self._learner = None
+        self._reminder_manager = None
         self.object_id = "dummy-agent"
         self.agent_type = "dummy"
-        self._codec = CSXMLCodec
 
 
-def _build_prompt_messages(monkeypatch: pytest.MonkeyPatch, resource: DummyResource, task: str) -> list[LLMMessage]:
+def _build_prompt_messages(resource: DummyResource, task: str) -> list[LLMMessage]:
+    """Build messages via PromptBuilder with retrieved context enabled (non-codec path)."""
     agent = DummyAgent([resource])
-    prompt_api = LocalPromptAPI(agent, codec=CSXMLCodec)
-    monkeypatch.setattr(LocalPromptAPI, "system_prompt", property(lambda self: "SYSTEM"))
-    timeline = DummyTimeline([LLMMessage(role="user", content=task)])
-    return prompt_api.build_llm_request(timeline)
+    builder = PromptBuilder(
+        identity_fn=lambda a: "IDENTITY",
+        template_fn=lambda native: "{{identity}}",
+        format_tool_fn=lambda sig: "",
+        system_prompt_fn=lambda: "SYSTEM",
+        skip_retrieved_context=False,  # Enable context retrieval
+    )
+    timeline = DummyTimeline(task)
+    return builder.build_prompt(
+        agent,
+        timeline,
+        learned_context=None,
+        native_tools=None,
+        runtime_context={},
+    )
 
 
 class TestLocalPromptAPIRLMResources:
-    """Tests for LocalPromptAPI RLM resource integration."""
+    """Tests for RLM resource integration via PromptBuilder retrieved context."""
 
-    def test_local_prompt_api_adds_rlm_resources(self, monkeypatch: pytest.MonkeyPatch):
-        """LocalPromptAPI should add RLMResources to ContextBuilder."""
+    def test_local_prompt_api_adds_rlm_resources(self):
+        """PromptBuilder should add RLMResources to ContextBuilder and include tagged output."""
         resource = DummyResource(resource_id="docs", response="Docs content")
 
-        messages = _build_prompt_messages(monkeypatch, resource, task="Find auth")
+        messages = _build_prompt_messages(resource, task="Find auth")
 
-        context_message = next(msg for msg in messages if msg.role == "assistant" and "<CONTEXT>" in msg.content)
+        context_message = next(msg for msg in messages if msg.role == "user" and "<CONTEXT>" in msg.content)
         assert "<DOCS>" in context_message.content
 
-    def test_rlm_resource_queried_with_task(self, monkeypatch: pytest.MonkeyPatch):
+    def test_rlm_resource_queried_with_task(self):
         """RLMResource should be queried with the current task."""
         resource = DummyResource(resource_id="code", response="Code content")
 
-        _build_prompt_messages(monkeypatch, resource, task="Find auth handlers")
+        _build_prompt_messages(resource, task="Find auth handlers")
 
         assert resource.last_query == "Find auth handlers"
 
-    def test_rlm_resource_result_in_context(self, monkeypatch: pytest.MonkeyPatch):
+    def test_rlm_resource_result_in_context(self):
         """RLMResource query result should appear in built context."""
         resource = DummyResource(resource_id="notes", response="Notes content")
 
-        messages = _build_prompt_messages(monkeypatch, resource, task="Summarize notes")
+        messages = _build_prompt_messages(resource, task="Summarize notes")
 
-        context_message = next(msg for msg in messages if msg.role == "assistant" and "<CONTEXT>" in msg.content)
+        context_message = next(msg for msg in messages if msg.role == "user" and "<CONTEXT>" in msg.content)
         assert "Notes content" in context_message.content

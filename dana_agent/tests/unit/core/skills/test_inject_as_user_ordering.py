@@ -19,7 +19,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from dana.core.agent.star_agent import STARAgent
-from dana.core.agent.timeline import TimelineEntryType
+from dana.core.timeline.timeline import TimelineEntryType
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def agent():
     with patch("dana.core.agent.star_agent.LLM"):
         a = STARAgent(agent_type="test-inject", auto_register=False)
     # Seed a USER_MESSAGE so the multi-step reminder logic doesn't choke
-    from dana.core.agent.timeline import TimelineEntry
+    from dana.core.timeline.timeline import TimelineEntry
 
     a._timeline.add_entry(
         TimelineEntry(

@@ -8,9 +8,10 @@ from dana.common.llm.llm import LLM
 from dana.common.llm.types import LLMResponse
 from dana.common.observable import observable
 from dana.core.knowledge.prompts.codecs import AbstractCodec, NativeToolsCodec
+from dana.core.llm.response_parser import _to_tool_call_dicts
 
 from ..base import ParsedResponse
-from .codec import CodecRuntimeBase
+from .codec_base import CodecRuntimeBase
 
 
 class CodecRuntimeWithNativeToolUse(CodecRuntimeBase):
@@ -94,7 +95,7 @@ class CodecRuntimeWithNativeToolUse(CodecRuntimeBase):
         # 1. Check for native tool calls from API response
         #    (Both OpenAI and Anthropic providers return tool_calls in compatible format)
         if response.tool_calls:
-            tool_calls.extend(self._to_tool_call_dicts(response.tool_calls))
+            tool_calls.extend(_to_tool_call_dicts(response.tool_calls))
 
         # 2. Check for provider's reasoning_content (e.g., DeepSeek, future Claude extended thinking)
         #    This takes precedence over XML tag parsing since it's the native format

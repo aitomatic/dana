@@ -1,11 +1,16 @@
 """
 LLM Types and Base Classes
 
-Core types and abstract base classes for LLM functionality.
+Core types, Protocol definition, and base class for LLM providers.
 """
 
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from dana.common.schemas.tool_call import MethodSignature
 
 
 class LLMError(Exception):
@@ -30,7 +35,7 @@ class ConfigurationError(LLMError):
 class LLMMessage:
     """A single message in a conversation."""
 
-    content: str
+    content: str | list[dict]
     role: str  # "system", "user", "assistant", "tool"
     cache_control: dict | None = None  # For Anthropic prompt caching
     tool_calls: list | None = None  # For assistant messages with native tool calls
@@ -50,7 +55,7 @@ class SystemLLMMessage(LLMMessage):
 class UserLLMMessage(LLMMessage):
     """A user message in a conversation."""
 
-    content: str
+    content: str | list[dict]
     role: str = "user"  # Hard-coded role
 
 
@@ -84,18 +89,125 @@ class LLMResponse:
     reasoning_tokens: int | None = None  # Token count from OpenAI thinking models
 
 
-class LLMProvider(ABC):
-    """Abstract base class for LLM providers."""
+@dataclass
+class LLMStreamChunk:
+    """A single chunk from a streaming LLM response."""
+
+    type: str  # "text_delta", "tool_use", "thinking"
+    content: str = ""
+    tool_call: dict | None = None  # {"id": str, "name": str, "input": dict}
+
+
+@runtime_checkable
+class LLMProviderProtocol(Protocol):
+    """Structural typing protocol for LLM providers.
+
+    Third-party providers can satisfy this protocol without inheriting from LLMProvider.
+    Use isinstance(x, LLMProviderProtocol) for runtime checks.
+    """
+
+    @property
+    def supports_native_tools(self) -> bool: ...
+
+    def prepare_messages(self, messages: list[LLMMessage]) -> tuple[Any, list[dict]]:
+        """Convert LLMMessage[] to provider wire format.
+
+        Returns: (system_param, messages_list) — system_param is provider-specific.
+        """
+        ...
+
+    def prepare_tools(self, tools: list[MethodSignature]) -> list[dict]:
+        """Convert MethodSignature[] to provider-specific tool schema."""
+        ...
+
+    async def chat(self, messages: list[LLMMessage], tools: list | None = None, **kwargs) -> LLMResponse: ...
+
+    async def stream(self, messages: list[LLMMessage], tools: list | None = None, **kwargs): ...
+
+
+class LLMProvider:
+    """Base class for LLM providers. Satisfies LLMProviderProtocol.
+
+    Provides default implementations for prepare_messages() and prepare_tools().
+    Subclasses override chat() and optionally the prepare methods.
+    """
 
     @property
     def supports_native_tools(self) -> bool:
-        """Whether this provider supports native function/tool calling.
-
-        Override in providers that support OpenAI-compatible tool calling.
-        """
+        """Whether this provider supports native function/tool calling."""
         return False
 
-    @abstractmethod
-    async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
+    def prepare_messages(self, messages: list[LLMMessage]) -> tuple[Any, list[dict]]:
+        """Default: extract system message, convert rest to basic dicts."""
+        system = None
+        converted = []
+        for msg in messages:
+            # Guard against None content — APIs reject null content
+            safe_content = msg.content if msg.content is not None else ""
+            if msg.role == "system":
+                system = safe_content
+            elif msg.role == "tool":
+                converted.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": msg.tool_call_id,
+                        "content": safe_content,
+                    }
+                )
+            elif msg.role == "assistant" and msg.tool_calls:
+                formatted_tool_calls = []
+                for tc in msg.tool_calls:
+                    tc_id = tc.get("tool_call_id") or tc.get("id", "")
+                    tc_name = tc.get("function") or tc.get("name", "")
+                    formatted_tool_calls.append(
+                        {
+                            "id": tc_id,
+                            "type": "function",
+                            "function": {
+                                "name": tc_name,
+                                "arguments": str(tc.get("arguments", {})),
+                            },
+                        }
+                    )
+                converted.append(
+                    {
+                        "role": "assistant",
+                        "content": safe_content,
+                        "tool_calls": formatted_tool_calls,
+                    }
+                )
+            else:
+                converted.append({"role": msg.role, "content": safe_content})
+        return system, converted
+
+    def prepare_tools(self, tools: list[MethodSignature]) -> list[dict]:
+        """Default: convert MethodSignature[] to OpenAI-compatible tool schema format."""
+        result = []
+        for sig in tools:
+            params: dict[str, Any] = {"type": "object", "properties": {}, "required": []}
+            for p in sig.parameters:
+                prop: dict[str, Any] = {"type": p.type if hasattr(p, "type") else "string"}
+                if p.description:
+                    prop["description"] = p.description
+                params["properties"][p.name] = prop
+                if not p.has_default:
+                    params["required"].append(p.name)
+            result.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": sig.name,
+                        "description": sig.description,
+                        "parameters": params,
+                    },
+                }
+            )
+        return result
+
+    async def chat(self, messages: list[LLMMessage], tools: list | None = None, **kwargs) -> LLMResponse:
         """Send messages to the LLM and get a response."""
-        pass
+        raise NotImplementedError
+
+    async def stream(self, messages: list[LLMMessage], tools: list | None = None, **kwargs):
+        """Stream LLMStreamChunk from the LLM."""
+        raise NotImplementedError

@@ -2,7 +2,7 @@
 
 from dana.core.agent.star_agent import STARAgent
 from dana.core.knowledge.prompts.codecs import CSXMLCodec, KLXMLCodec
-from dana.core.knowledge.prompts.prompt_api import TEMPLATE_SYSTEM_PROMPT
+from dana.core.prompt.prompt_api import TEMPLATE_SYSTEM_PROMPT
 
 
 class TestAutonomyInTemplate:

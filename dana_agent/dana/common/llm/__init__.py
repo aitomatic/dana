@@ -1,7 +1,7 @@
 """Adana LLM Library - Public API."""
 
 from .llm import LLM
-from .types import LLMMessage, LLMResponse, ProviderError
+from .types import LLMMessage, LLMResponse, LLMStreamChunk, ProviderError
 
 
 # Debug logging functions
@@ -24,6 +24,7 @@ try:
         "LLM",
         "LLMMessage",
         "LLMResponse",
+        "LLMStreamChunk",
         "ProviderError",
         "enable_llm_debug_logging",
         "disable_llm_debug_logging",
@@ -48,6 +49,7 @@ except ImportError:
         "LLM",
         "LLMMessage",
         "LLMResponse",
+        "LLMStreamChunk",
         "ProviderError",
         "enable_llm_debug_logging",
         "disable_llm_debug_logging",

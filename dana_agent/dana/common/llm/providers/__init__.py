@@ -7,28 +7,18 @@ Concrete implementations of LLM providers for different services.
 from .anthropic import AnthropicProvider
 from .anthropic_like import AnthropicLikeProvider
 from .azure import AzureProvider
-from .deepseek import DeepSeekProvider
 from .factory import create_provider
-from .groq import GroqProvider
-from .huggingface import HuggingFaceProvider
-from .moonshot import MoonshotProvider
-from .ollama import OllamaProvider
+from .gemini import GeminiProvider
 from .openai import OpenAIProvider
-from .openrouter import OpenRouterProvider
-from .qwen import QwenProvider
+from .openai_compatible_base import OpenAICompatibleProvider
 
 
 __all__ = [
-    "OpenAIProvider",
     "AnthropicProvider",
     "AnthropicLikeProvider",
-    "OllamaProvider",
     "AzureProvider",
-    "GroqProvider",
-    "MoonshotProvider",
-    "HuggingFaceProvider",
-    "QwenProvider",
-    "DeepSeekProvider",
-    "OpenRouterProvider",
+    "GeminiProvider",
+    "OpenAIProvider",
+    "OpenAICompatibleProvider",
     "create_provider",
 ]

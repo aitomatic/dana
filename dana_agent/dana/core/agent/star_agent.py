@@ -23,13 +23,14 @@ from dana.common.protocols.types import LearningPhase
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
 from ..knowledge.prompts.codecs import AbstractCodec
-from ..knowledge.prompts.prompt_api import PromptAPIProtocol
+from ..prompt.prompt_api import PromptAPIProtocol
 from ..runtime import AgentRuntime
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, LearnerProtocol, State
 from .components.observer import ObserverProtocol
-from .compressed_timeline import CompressedTimeline
-from .timeline import Timeline, TimelineEntry, TimelineEntryType
+from .star_agent_streaming import STARAgentStreamingMixin
+from dana.core.timeline.compressed_timeline import CompressedTimeline
+from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
 logger = structlog.get_logger()
@@ -40,7 +41,7 @@ _CODEC_SENTINEL = object()
 # from dana.apps.dana.thought_logger import ThoughtLogger  # Moved to avoid circular import
 
 
-class STARAgent(BaseSTARAgent):
+class STARAgent(STARAgentStreamingMixin, BaseSTARAgent):
     """STARAgent implementation using composition-based architecture."""
 
     # Configuration constants
@@ -69,6 +70,7 @@ class STARAgent(BaseSTARAgent):
         enable_code_execution: bool = False,
         enable_assistant: bool = True,
         identity_override: str | None = None,
+        compress_timeline: bool = True,
         **kwargs,
     ):
         """
@@ -94,12 +96,13 @@ class STARAgent(BaseSTARAgent):
                 response parsing, and tool execution. Defaults to DefaultRuntime.
             codec: Deprecated. Use runtime instead.
                 - Default: maps to DefaultRuntime.
-                - If explicitly set to None: uses LegacyRuntime.
             ltmemory_path: Optional path for long-term memory storage (enables cross-session learning)
             enable_skills: Whether to enable Claude Code skills resource discovery
             skills_output_dir: Directory to use for skill output files
             identity_override: Optional identity string that overrides the class docstring.
                 Used by fork subagents to inject skill content as their identity.
+            compress_timeline: Whether to enable timeline compression (default True).
+                Set to False to use plain Timeline without LLM-based compression.
             **kwargs: Additional arguments passed to components
         """
         # Initialize base class first (handles registration)
@@ -129,19 +132,7 @@ class STARAgent(BaseSTARAgent):
         self._identity_override = identity_override
 
         if runtime is None:
-            if codec is None:
-                # codec=None explicitly triggers LegacyRuntime (deprecated)
-                if codec_provided:
-                    warnings.warn(
-                        "codec=None is deprecated and will be removed in a future version. "
-                        "LegacyRuntime is no longer maintained. Use DefaultRuntime instead.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
-                from dana.core.runtime.legacy import LegacyRuntime
-
-                runtime = LegacyRuntime()
-            elif codec is _CODEC_SENTINEL:
+            if codec is None or codec is _CODEC_SENTINEL:
                 # Use the runtime registry to choose the appropriate runtime
                 from dana.core.runtime import RuntimeRegistry
 
@@ -194,15 +185,14 @@ class STARAgent(BaseSTARAgent):
 
         # Determine storage_config for timeline and event_log
 
-        # Initialize timeline at agent level with agent, codec, and storage_config
-        if codec_provided:
-            self._timeline = CompressedTimeline(agent=self, repository_factory=self._repository_factory)
-        else:
-            self._timeline = Timeline(
-                max_context_tokens=max_context_tokens,
-                agent=self,
-                repository_factory=self._repository_factory,
-            )
+        # Initialize timeline: use CompressedTimeline by default unless explicitly injected
+        # compress_timeline=False disables LLM-based compression (behaves like plain Timeline)
+        self._timeline = CompressedTimeline(
+            max_tokens_until_compression=max_context_tokens,
+            agent=self,
+            repository_factory=self._repository_factory,
+            compression_enabled=compress_timeline,
+        )
 
         # Initialize EventLog API (only if observer AND codec provided)
         # Events ONLY come from Observer - no observer = no EventLog
@@ -259,6 +249,26 @@ class STARAgent(BaseSTARAgent):
     def set_session_id(self, session_id: str) -> None:
         """Set the session id for the agent."""
         self._session_id = session_id
+
+    def resume_from_timeline(self, timeline: Timeline, session_id: str | None = None) -> None:
+        """
+        Resume the STAR loop from a previously saved Timeline.
+
+        Loads the given timeline as the agent's current timeline and derives
+        ``_star_loop_count`` from its entries so the next query continues from
+        where the previous session left off.
+
+        Args:
+            timeline:   A Timeline instance loaded from disk (or any source).
+            session_id: Optional session identifier to adopt.  If None, the
+                        agent's current session id is kept.
+        """
+        self._timeline = timeline
+
+        if session_id is not None:
+            self._session_id = session_id
+
+        self._star_loop_count = timeline.count_iterations()
 
     def register_reminder(self, reminder) -> None:
         """
@@ -674,65 +684,26 @@ class STARAgent(BaseSTARAgent):
 
         return f'<function_call><invoke name="{func}">{params_xml}</invoke></function_call>'
 
-    @observable
-    def _think(self, trace_percepts: DictParams) -> DictParams:
+    # ============================================================================
+    # SHARED HELPERS (used by both sync and async STAR methods)
+    # ============================================================================
+
+    def _record_think_results(
+        self,
+        timeline: Timeline,
+        trace_percepts: DictParams,
+        response: str | None,
+        reasoning: str | None,
+        tool_calls: list,
+        done: bool | None,
+        todo_list: list | None,
+        output_state: str,
+    ) -> DictParams:
+        """Record think results to timeline and build output trace.
+
+        Shared by _think() and _think_async() to eliminate duplication.
+        Handles: retry fallback, timeline entry recording, output assembly.
         """
-        THINK: Think about the percepts and produce thoughts. This is where we make an LLM call.
-
-        Args:
-            trace_percepts (DictParams): the percepts produced by this SEE phase.
-              - timeline (Timeline): Timeline of the agent.
-
-        Returns:
-            - trace_thoughts (DictParams): the thoughts produced by this THINK phase.
-              - response (str): Response from the LLM
-              - tool_calls (list[DictParams]): Tool calls from the LLM
-        """
-
-        # Input parameter checking
-        trace_percepts = trace_percepts or {}
-        if self._do_exit_star_loop(trace_percepts) or not trace_percepts:
-            return {"trace_thoughts": self._mark_star_loop_exit(trace_percepts)}
-
-        timeline: Timeline = trace_percepts.get("timeline", self._timeline)
-        trace_percepts.pop("timeline", None)
-
-        # Check if timeline needs compression before building messages
-        self._maybe_compress_timeline(timeline)
-
-        # Build LLM messages using runtime
-        llm_messages = self._runtime.build_prompt(self, timeline)
-
-        response, reasoning, tool_calls, done, todo_list = None, None, [], None, None
-        output_state = "retry"
-        for attempt in range(self.MAX_THINK_RETRIES):
-            raw = self._runtime.call_llm(llm_messages)
-            parsed = self._runtime.parse_response(raw)
-            response, reasoning, tool_calls, done, todo_list = (
-                parsed.response,
-                parsed.reasoning,
-                parsed.tool_calls,
-                parsed.done,
-                parsed.todo_list,
-            )
-
-            has_tool_calls = bool(tool_calls)
-            has_response = bool(response and response.strip())
-            output_state = self._runtime.validate_done_output(done, has_tool_calls, has_response)
-
-            if output_state != "retry":
-                break
-
-            if attempt < self.MAX_THINK_RETRIES - 1:
-                llm_messages.append(self._runtime.build_output_format_correction())
-                logger.warning(
-                    "Invalid output format, retrying",
-                    attempt=attempt + 1,
-                    done=done,
-                    has_tool_calls=has_tool_calls,
-                    has_response=has_response,
-                )
-
         if output_state == "retry":
             response = "No response generated"
             tool_calls = []
@@ -776,7 +747,6 @@ class STARAgent(BaseSTARAgent):
                     pending=len(pending),
                     completed=len(completed),
                 )
-                # Format todo_list for timeline
                 todo_lines = []
                 for item in todo_list:
                     status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(
@@ -796,13 +766,11 @@ class STARAgent(BaseSTARAgent):
             has_native_tool_calls = any(tc.get("tool_call_id") for tc in tool_calls)
 
             if has_native_tool_calls:
-                # For native OpenAI tools, store all tool_calls in a single entry
-                # The tool_calls will be converted to proper OpenAI format when building messages
                 timeline.add_entry(
                     TimelineEntry(
                         entry_type=TimelineEntryType.TOOL_CALL,
-                        content="",  # Content is empty for native tool calls
-                        tool_calls=tool_calls,  # Store native tool_calls array
+                        content="",
+                        tool_calls=tool_calls,
                     )
                 )
             else:
@@ -815,7 +783,7 @@ class STARAgent(BaseSTARAgent):
                         )
                     )
 
-        # Output parameter checking
+        # Build output trace
         response = response or ""
         assert isinstance(response, str)
         assert isinstance(tool_calls, list)
@@ -830,128 +798,173 @@ class STARAgent(BaseSTARAgent):
         if output_state == "exit":
             trace_percepts = self._mark_star_loop_exit(trace_percepts)
 
-        return super()._think(trace_percepts)
+        result = {"trace_thoughts": trace_percepts}
+        self.broadcast(result)
+        return result
+
+    def _record_tool_results(self, tool_results: list) -> None:
+        """Record tool execution results to timeline.
+
+        Shared by _act() and _act_async() to eliminate duplication.
+        Handles: entry type detection, content extraction, deferred user injections.
+        """
+        deferred_injections = []
+        for tool_result in tool_results:
+            if isinstance(tool_result, dict):
+                # Determine entry type based on tool type
+                tool_type = tool_result.get("type")
+                if tool_type == "agent":
+                    entry_type = TimelineEntryType.SUB_AGENT_RESPONSE
+                elif tool_type == "resource":
+                    entry_type = TimelineEntryType.RESOURCE_RESULT
+                elif tool_type == "workflow":
+                    entry_type = TimelineEntryType.WORKFLOW_RESULT
+                else:
+                    entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
+
+                result_content = tool_result.get("result", "Unknown tool result")
+
+                # Extract inject_as_user before serializing (deferred to avoid
+                # breaking OpenAI's tool_calls → tool results message ordering)
+                if isinstance(result_content, dict):
+                    inject_content = result_content.pop("inject_as_user", None)
+                    if inject_content:
+                        deferred_injections.append(inject_content)
+                    if "message" in result_content:
+                        result_content = result_content["message"]
+
+                if not isinstance(result_content, str):
+                    import json
+
+                    result_content = json.dumps(result_content)
+
+                self._timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=entry_type,
+                        content=result_content,
+                        tool_call_id=tool_result.get("tool_call_id"),
+                    )
+                )
+
+        # Inject deferred user messages AFTER all tool results are in timeline
+        for content in deferred_injections:
+            self._timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.USER_MESSAGE,
+                    content=content,
+                )
+            )
+
+    def _maybe_add_multistep_reminder(self) -> None:
+        """Add multi-step XML format reminder for codec-based runtimes.
+
+        Only applies to XML-based codec runtimes (not native tool calling).
+        Estimates remaining steps from user request and adds a continuation prompt.
+        """
+        from dana.core.runtime.codec.codec_base import CodecRuntimeBase
+
+        if not isinstance(self._runtime, CodecRuntimeBase) or self._runtime._use_native_tools:
+            return
+
+        # Find original user request (skip multimodal content blocks)
+        original_request = ""
+        for entry in self._timeline.timeline:
+            if entry.entry_type == TimelineEntryType.USER_MESSAGE and isinstance(entry.content, str):
+                original_request = entry.content
+                break
+
+        tool_call_count = sum(1 for entry in self._timeline.timeline if entry.entry_type == TimelineEntryType.TOOL_CALL)
+
+        # Estimate expected steps from sequential action patterns
+        import re
+
+        request_lower = original_request.lower()
+        step_separators = re.findall(r"\bthen\b|\bafter that\b|\bnext\b|\bfinally\b", request_lower)
+        expected_steps = min(1 + len(step_separators), 5)
+
+        if tool_call_count < expected_steps:
+            remaining = expected_steps - tool_call_count
+            self._timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                    content=f"[MULTI-STEP TASK - {remaining} STEP(S) REMAINING] "
+                    f"Completed {tool_call_count}/{expected_steps} steps. "
+                    "I MUST call the next tool using this EXACT XML format: "
+                    '<function_call><invoke name="resource-id:method"><parameter name="param">value</parameter></invoke></function_call>',
+                )
+            )
+
+    @observable
+    def _think(self, trace_percepts: DictParams) -> DictParams:
+        """THINK: Think about the percepts and produce thoughts via sync LLM call."""
+        trace_percepts = trace_percepts or {}
+        if self._do_exit_star_loop(trace_percepts) or not trace_percepts:
+            return {"trace_thoughts": self._mark_star_loop_exit(trace_percepts)}
+
+        timeline: Timeline = trace_percepts.get("timeline", self._timeline)
+        trace_percepts.pop("timeline", None)
+
+        self._maybe_compress_timeline(timeline)
+        llm_messages = self._runtime.build_prompt(self, timeline)
+
+        response, reasoning, tool_calls, done, todo_list = None, None, [], None, None
+        output_state = "retry"
+        for attempt in range(self.MAX_THINK_RETRIES):
+            raw = self._runtime.call_llm(llm_messages)
+            parsed = self._runtime.parse_response(raw)
+            response, reasoning, tool_calls, done, todo_list = (
+                parsed.response,
+                parsed.reasoning,
+                parsed.tool_calls,
+                parsed.done,
+                parsed.todo_list,
+            )
+
+            has_tool_calls = bool(tool_calls)
+            has_response = bool(response and response.strip())
+            output_state = self._runtime.validate_done_output(done, has_tool_calls, has_response)
+
+            if output_state != "retry":
+                break
+
+            if attempt < self.MAX_THINK_RETRIES - 1:
+                llm_messages.append(self._runtime.build_output_format_correction())
+                logger.warning(
+                    "Invalid output format, retrying",
+                    attempt=attempt + 1,
+                    done=done,
+                    has_tool_calls=has_tool_calls,
+                    has_response=has_response,
+                )
+
+        return self._record_think_results(
+            timeline,
+            trace_percepts,
+            response,
+            reasoning,
+            tool_calls,
+            done,
+            todo_list,
+            output_state,
+        )
 
     @observable
     def _act(self, trace_thoughts: DictParams) -> DictParams:
-        """
-        ACT: Execute tool calls and return results.
-        TODO: this is a good place to send interactive feedback to the user before making tool calls
-
-        Args:
-            trace_thoughts (DictParams): the thoughts produced by this THINK phase.
-              - response (str): Response from the LLM from the THINK phase.
-              - tool_calls (list[DictParams]): Tool calls from the THINK phase.
-              - caller_message (str): Caller message (may be user or another agent)
-              - caller_type (str): Type of caller (agent or human)
-              - caller_id (str): ID of the caller (agent.object_id or user) for conversation tracking.
-
-        Returns:
-            - trace_outputs (DictParams): the outputs produced by this ACT phase.
-              - response (str): Response from the LLM from the THINK phase.
-              - tool_calls (list[DictParams]): Tool calls from the THINK phase.
-              - tool_results: list[DictParams]: Tool results from the ACT phase if there are tool calls
-              - caller_message (str): Caller message (may be user or another agent)
-              - caller_type (str): Type of caller (agent or human)
-              - caller_id (str): ID of the caller (agent.object_id or user) for conversation tracking.
-        """
-
-        # Input parameter checking
+        """ACT: Execute tool calls and return results (sync)."""
         trace_thoughts = trace_thoughts or {}
         if not trace_thoughts or self._do_exit_star_loop(trace_thoughts):
             return {"trace_outputs": self._mark_star_loop_exit(trace_thoughts)}
 
         tool_calls: list[DictParams] = trace_thoughts.get("tool_calls")
-
-        # Execute tool calls using runtime
         tool_results = self._runtime.execute_tools(self, tool_calls)
 
-        # Add tool results to timeline
         if isinstance(tool_results, list):
-            deferred_injections = []  # Collect inject_as_user content to add after all tool results
-            for tool_result in tool_results:
-                if isinstance(tool_result, dict):
-                    # Determine entry type based on tool type
-                    tool_type = tool_result.get("type")
-                    if tool_type == "agent":
-                        entry_type = TimelineEntryType.SUB_AGENT_RESPONSE
-                    elif tool_type == "resource":
-                        entry_type = TimelineEntryType.RESOURCE_RESULT
-                    elif tool_type == "workflow":
-                        entry_type = TimelineEntryType.WORKFLOW_RESULT
-                    else:  # unknown
-                        entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
+            self._record_tool_results(tool_results)
 
-                    # Ensure content is a string (tool results may be dicts)
-                    result_content = tool_result.get("result", "Unknown tool result")
+            # Multi-step XML reminder for codec-based runtimes only
+            # (async path uses native tool calling, so this is sync-only)
+            self._maybe_add_multistep_reminder()
 
-                    # Extract inject_as_user before serializing (deferred to avoid
-                    # breaking OpenAI's tool_calls → tool results message ordering)
-                    if isinstance(result_content, dict):
-                        inject_content = result_content.pop("inject_as_user", None)
-                        if inject_content:
-                            deferred_injections.append(inject_content)
-
-                    if not isinstance(result_content, str):
-                        import json
-
-                        result_content = json.dumps(result_content)
-
-                    # Include tool_call_id for OpenAI native tool support
-                    self._timeline.add_entry(
-                        TimelineEntry(
-                            entry_type=entry_type,
-                            content=result_content,
-                            tool_call_id=tool_result.get("tool_call_id"),
-                        )
-                    )
-
-            # Inject deferred user messages AFTER all tool results are in timeline
-            # (inserting between tool results breaks OpenAI's native tool calling API)
-            for content in deferred_injections:
-                self._timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.USER_MESSAGE,
-                        content=content,
-                    )
-                )
-
-            # Add a system reminder to continue if task is not complete
-            # Find original user request
-            original_request = ""
-            for entry in self._timeline.timeline:
-                if entry.entry_type == TimelineEntryType.USER_MESSAGE:
-                    original_request = entry.content
-                    break
-
-            # Count completed tool calls to estimate progress
-            tool_call_count = sum(1 for entry in self._timeline.timeline if entry.entry_type == TimelineEntryType.TOOL_CALL)
-
-            # Estimate expected steps based on sequential action patterns
-            # "search then fetch" = 2 steps, "search, then process, then save" = 3 steps
-            request_lower = original_request.lower()
-            # Count occurrences of step separators (avoiding overlap)
-            import re
-
-            step_separators = re.findall(r"\bthen\b|\bafter that\b|\bnext\b|\bfinally\b", request_lower)
-            expected_steps = 1 + len(step_separators)
-            # Cap expected_steps at a reasonable maximum
-            expected_steps = min(expected_steps, 5)
-
-            # Only add reminder if we haven't completed all expected steps
-            if tool_call_count < expected_steps:
-                remaining = expected_steps - tool_call_count
-                self._timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
-                        content=f"[MULTI-STEP TASK - {remaining} STEP(S) REMAINING] "
-                        f"Completed {tool_call_count}/{expected_steps} steps. "
-                        "I MUST call the next tool using this EXACT XML format: "
-                        '<function_call><invoke name="resource-id:method"><parameter name="param">value</parameter></invoke></function_call>',
-                    )
-                )
-
-        # Output parameter checking
         assert isinstance(tool_results, list)
         trace_thoughts |= {"tool_results": tool_results}
 
@@ -1025,20 +1038,7 @@ class STARAgent(BaseSTARAgent):
 
     @observable
     async def _think_async(self, trace_percepts: DictParams) -> DictParams:
-        """
-        THINK (async): Async version of _think with native async LLM calls.
-
-        Args:
-            trace_percepts (DictParams): the percepts produced by this SEE phase.
-              - timeline (Timeline): Timeline of the agent.
-
-        Returns:
-            - trace_thoughts (DictParams): the thoughts produced by this THINK phase.
-              - response (str): Response from the LLM
-              - tool_calls (list[DictParams]): Tool calls from the LLM
-        """
-
-        # Input parameter checking
+        """THINK (async): Async version of _think with native async LLM calls."""
         trace_percepts = trace_percepts or {}
         if self._do_exit_star_loop(trace_percepts) or not trace_percepts:
             return {"trace_thoughts": self._mark_star_loop_exit(trace_percepts)}
@@ -1046,10 +1046,7 @@ class STARAgent(BaseSTARAgent):
         timeline: Timeline = trace_percepts.get("timeline", self._timeline)
         trace_percepts.pop("timeline", None)
 
-        # Check if timeline needs compression before building messages
         await self._maybe_compress_timeline_async(timeline)
-
-        # Build LLM messages using runtime
         llm_messages = self._runtime.build_prompt(self, timeline)
 
         response, reasoning, tool_calls, done, todo_list = None, None, [], None, None
@@ -1087,139 +1084,26 @@ class STARAgent(BaseSTARAgent):
                     has_response=has_response,
                 )
 
-        if output_state == "retry":
-            response = "No response generated"
-            tool_calls = []
-            done = True
-            output_state = "exit"
-
-        if not tool_calls or len(tool_calls) == 0:
-            response = response if (response and len(response) > 0) else "No response generated"
-            timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.AGENT_RESPONSE,
-                    content=response,
-                )
-            )
-        else:
-            if reasoning and len(reasoning) > 0:
-                timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
-                        content=reasoning,
-                    )
-                )
-
-            if response and len(response) > 0:
-                timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
-                        content=response,
-                    )
-                )
-
-            # Add todo_list BEFORE tool calls so it doesn't break the tool_call → tool_result sequence
-            # (OpenAI requires tool results immediately after tool calls)
-            if todo_list:
-                in_progress = [t for t in todo_list if t.status == "in_progress"]
-                pending = [t for t in todo_list if t.status == "pending"]
-                completed = [t for t in todo_list if t.status == "completed"]
-                logger.info(
-                    "Todo list updated",
-                    in_progress=len(in_progress),
-                    pending=len(pending),
-                    completed=len(completed),
-                )
-                # Format todo_list for timeline
-                todo_lines = []
-                for item in todo_list:
-                    status_marker = {"in_progress": "[IN PROGRESS]", "pending": "[PENDING]", "completed": "[COMPLETED]"}.get(
-                        item.status, "[?]"
-                    )
-                    todo_lines.append(f"{status_marker} {item.content}")
-                # Remove any existing TODO_LIST entries to avoid accumulation
-                timeline.timeline = [e for e in timeline.timeline if e.entry_type != TimelineEntryType.TODO_LIST]
-                timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.TODO_LIST,
-                        content="\n".join(todo_lines),
-                    )
-                )
-
-            # Check if these are native tool calls (have tool_call_id)
-            has_native_tool_calls = any(tc.get("tool_call_id") for tc in tool_calls)
-
-            if has_native_tool_calls:
-                # For native OpenAI tools, store all tool_calls in a single entry
-                # The tool_calls will be converted to proper OpenAI format when building messages
-                timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.TOOL_CALL,
-                        content="",  # Content is empty for native tool calls
-                        tool_calls=tool_calls,  # Store native tool_calls array
-                    )
-                )
-            else:
-                # Legacy XML format - store each tool call separately
-                for tool_call in tool_calls:
-                    timeline.add_entry(
-                        TimelineEntry(
-                            entry_type=TimelineEntryType.TOOL_CALL,
-                            content=self._format_tool_call_as_xml(tool_call),
-                        )
-                    )
-
-        # Output parameter checking
-        response = response or ""
-        assert isinstance(response, str)
-        assert isinstance(tool_calls, list)
-        trace_percepts |= {
-            "response": response,
-            "reasoning": reasoning,
-            "tool_calls": tool_calls,
-            "done": done,
-            "todo_list": todo_list,
-        }
-
-        if output_state == "exit":
-            trace_percepts = self._mark_star_loop_exit(trace_percepts)
-
-        # Call parent's base implementation (sync is fine, just data manipulation)
-        result = {"trace_thoughts": trace_percepts}
-        self.broadcast(result)
-        return result
+        return self._record_think_results(
+            timeline,
+            trace_percepts,
+            response,
+            reasoning,
+            tool_calls,
+            done,
+            todo_list,
+            output_state,
+        )
 
     @observable
     async def _act_async(self, trace_thoughts: DictParams) -> DictParams:
-        """
-        ACT (async): Async version of _act with native async tool execution.
-
-        Args:
-            trace_thoughts (DictParams): the thoughts produced by this THINK phase.
-              - response (str): Response from the LLM from the THINK phase.
-              - tool_calls (list[DictParams]): Tool calls from the THINK phase.
-              - caller_message (str): Caller message (may be user or another agent)
-              - caller_type (str): Type of caller (agent or human)
-              - caller_id (str): ID of the caller (agent.object_id or user) for conversation tracking.
-
-        Returns:
-            - trace_outputs (DictParams): the outputs produced by this ACT phase.
-              - response (str): Response from the LLM from the THINK phase.
-              - tool_calls (list[DictParams]): Tool calls from the THINK phase.
-              - tool_results: list[DictParams]: Tool results from the ACT phase if there are tool calls
-              - caller_message (str): Caller message (may be user or another agent)
-              - caller_type (str): Type of caller (agent or human)
-              - caller_id (str): ID of the caller (agent.object_id or user) for conversation tracking.
-        """
-
-        # Input parameter checking
+        """ACT (async): Async version of _act with native async tool execution."""
         trace_thoughts = trace_thoughts or {}
         if not trace_thoughts or self._do_exit_star_loop(trace_thoughts):
             return {"trace_outputs": self._mark_star_loop_exit(trace_thoughts)}
 
         tool_calls: list[DictParams] = trace_thoughts.get("tool_calls")
 
-        # Execute tool calls using runtime
         if hasattr(self._runtime, "execute_tools_async"):
             tool_results = await self._runtime.execute_tools_async(self, tool_calls)
         else:
@@ -1227,61 +1111,12 @@ class STARAgent(BaseSTARAgent):
 
             tool_results = await asyncio.to_thread(self._runtime.execute_tools, self, tool_calls)
 
-        # Add tool results to timeline
         if isinstance(tool_results, list):
-            deferred_injections = []  # Collect inject_as_user content to add after all tool results
-            for tool_result in tool_results:
-                if isinstance(tool_result, dict):
-                    # Determine entry type based on tool type
-                    tool_type = tool_result.get("type")
-                    if tool_type == "agent":
-                        entry_type = TimelineEntryType.SUB_AGENT_RESPONSE
-                    elif tool_type == "resource":
-                        entry_type = TimelineEntryType.RESOURCE_RESULT
-                    elif tool_type == "workflow":
-                        entry_type = TimelineEntryType.WORKFLOW_RESULT
-                    else:  # unknown
-                        entry_type = TimelineEntryType.UNKNOWN_TOOL_CALL
+            self._record_tool_results(tool_results)
 
-                    # Ensure content is a string (tool results may be dicts)
-                    result_content = tool_result.get("result", "Unknown tool result")
-
-                    # Extract inject_as_user before serializing (deferred to avoid
-                    # breaking OpenAI's tool_calls → tool results message ordering)
-                    if isinstance(result_content, dict):
-                        inject_content = result_content.pop("inject_as_user", None)
-                        if inject_content:
-                            deferred_injections.append(inject_content)
-
-                    if not isinstance(result_content, str):
-                        import json
-
-                        result_content = json.dumps(result_content)
-
-                    # Include tool_call_id for OpenAI native tool support
-                    self._timeline.add_entry(
-                        TimelineEntry(
-                            entry_type=entry_type,
-                            content=result_content,
-                            tool_call_id=tool_result.get("tool_call_id"),
-                        )
-                    )
-
-            # Inject deferred user messages AFTER all tool results are in timeline
-            # (inserting between tool results breaks OpenAI's native tool calling API)
-            for content in deferred_injections:
-                self._timeline.add_entry(
-                    TimelineEntry(
-                        entry_type=TimelineEntryType.USER_MESSAGE,
-                        content=content,
-                    )
-                )
-
-        # Output parameter checking
         assert isinstance(tool_results, list)
         trace_thoughts |= {"tool_results": tool_results}
 
-        # Call parent's base implementation (sync is fine, just data manipulation)
         result = {"trace_outputs": trace_thoughts}
         self.broadcast(result)
         return result

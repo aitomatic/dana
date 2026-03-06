@@ -21,7 +21,29 @@ from dana.common.llm.types import LLMMessage
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
-    from dana.core.agent.timeline import Timeline
+    from dana.core.timeline.timeline import Timeline, TimelineEntry
+
+
+def _entry_has_tool_call(entry: TimelineEntry, tool_name: str) -> bool:
+    """Check if a TOOL_CALL entry contains a call to the named tool.
+
+    Handles both formats:
+    - Legacy XML: tool name appears in ``entry.content``
+    - Native tool calls: tool name appears in ``entry.tool_calls[].function`` or ``.name``
+    """
+    # Legacy XML format — tool call is serialised as XML text in content
+    if isinstance(entry.content, str) and tool_name in entry.content.lower():
+        return True
+    # Native tool call format — content is empty, data lives in tool_calls list
+    if entry.tool_calls:
+        for tc in entry.tool_calls:
+            if isinstance(tc, dict):
+                func = tc.get("function", "") or tc.get("name", "")
+            else:
+                func = getattr(tc, "function", "") or getattr(tc, "name", "")
+            if tool_name in func.lower():
+                return True
+    return False
 
 
 class TodoNeverCalledReminder:
@@ -90,11 +112,11 @@ class TodoNeverCalledReminder:
 
     def _todo_write_ever_called(self, timeline: Timeline) -> bool:
         """Check if todo_write was ever called in the timeline."""
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         for entry in timeline.timeline:
             if entry.entry_type == TimelineEntryType.TOOL_CALL:
-                if "todo_write" in entry.content.lower():
+                if _entry_has_tool_call(entry, "todo_write"):
                     return True
         return False
 
@@ -224,12 +246,12 @@ class TodoUpdateReminder:
 
     def _find_last_todo_write_index(self, timeline: Timeline) -> int:
         """Find the index of the last todo_write call in the timeline."""
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         for i in range(len(timeline.timeline) - 1, -1, -1):
             entry = timeline.timeline[i]
             if entry.entry_type == TimelineEntryType.TOOL_CALL:
-                if "todo_write" in entry.content.lower():
+                if _entry_has_tool_call(entry, "todo_write"):
                     return i
         return -1
 

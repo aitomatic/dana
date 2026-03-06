@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from dana.core.agent.star_agent import STARAgent
+
 try:
     from dana.core.resource.todo import ToDoResource
 except ImportError:
@@ -26,6 +27,7 @@ pytestmark = pytest.mark.skipif(ToDoResource is None, reason="ToDoResource has b
 @dataclass
 class StressTestResult:
     """Result of a stress test scenario."""
+
     scenario_name: str
     success: bool
     duration_ms: float
@@ -63,10 +65,13 @@ class StressTestHarness:
 
             # Count tool calls from timeline
             if hasattr(agent, "_timeline") and agent._timeline:
-                from dana.core.agent.timeline import TimelineEntryType
+                from dana.core.timeline.timeline import TimelineEntryType
+
                 tool_entries = [
-                    e for e in agent._timeline.timeline
-                    if e.entry_type in [
+                    e
+                    for e in agent._timeline.timeline
+                    if e.entry_type
+                    in [
                         TimelineEntryType.TOOL_CALL,
                         TimelineEntryType.RESOURCE_RESULT,
                         TimelineEntryType.WORKFLOW_RESULT,
@@ -109,6 +114,7 @@ class StressTestHarness:
 # =============================================================================
 # SINGLE AGENT SCENARIOS
 # =============================================================================
+
 
 @pytest.mark.live
 class TestSingleAgentScenarios:
@@ -306,6 +312,7 @@ class TestMultiTurnScenarios:
 # MULTI-AGENT SCENARIOS
 # =============================================================================
 
+
 @pytest.mark.live
 class TestMultiAgentScenarios:
     """Multi-agent coordination stress tests."""
@@ -380,6 +387,7 @@ class TestMultiAgentScenarios:
 # =============================================================================
 # STRESS / EDGE CASE SCENARIOS
 # =============================================================================
+
 
 @pytest.mark.live
 class TestStressEdgeCases:
@@ -477,6 +485,7 @@ class TestStressEdgeCases:
 # =============================================================================
 # WEB RESEARCH SCENARIOS (Real-world)
 # =============================================================================
+
 
 @pytest.mark.live
 class TestWebResearchScenarios:
@@ -749,6 +758,7 @@ class TestWebResearchEfficiency:
 # REAL-WORLD TOPIC RESEARCH (End-to-End)
 # =============================================================================
 
+
 @pytest.mark.live
 class TestRealWorldTopicResearch:
     """End-to-end tests: Ask about a topic, get a quality answer using web resources."""
@@ -962,6 +972,7 @@ class TestRealWorldTopicResearch:
 # RUN ALL SCENARIOS
 # =============================================================================
 
+
 @pytest.mark.live
 def test_full_stress_suite():
     """Run a comprehensive stress test suite."""
@@ -1005,6 +1016,7 @@ def test_full_stress_suite():
 # REAL-WORLD QUALITY & EFFICIENCY TESTS (Using Codec System)
 # =============================================================================
 
+
 @pytest.mark.live
 class TestRealWorldQualityEfficiency:
     """
@@ -1034,7 +1046,7 @@ class TestRealWorldQualityEfficiency:
 
     def _run_quality_test(self, agent, name: str, message: str, validator, max_time: float = 30.0):
         """Run a test and return quality metrics."""
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         start = time.time()
         result = agent.query(message=message)
@@ -1045,8 +1057,7 @@ class TestRealWorldQualityEfficiency:
         # Count tool calls
         tool_calls = 0
         if hasattr(agent, "_timeline") and agent._timeline:
-            tool_calls = len([e for e in agent._timeline.timeline
-                           if e.entry_type == TimelineEntryType.TOOL_CALL])
+            tool_calls = len([e for e in agent._timeline.timeline if e.entry_type == TimelineEntryType.TOOL_CALL])
 
         # Validate quality
         quality_pass = validator(response) if validator else True
@@ -1187,7 +1198,7 @@ def test_comprehensive_quality_efficiency_suite():
     """
     from tests.harness.harness_agent import HarnessAgent
     from dana.lib.resources.web_research import FetchResource
-    from dana.core.agent.timeline import TimelineEntryType
+    from dana.core.timeline.timeline import TimelineEntryType
 
     print("\n" + "=" * 70)
     print("COMPREHENSIVE QUALITY & EFFICIENCY TEST SUITE")
@@ -1195,18 +1206,32 @@ def test_comprehensive_quality_efficiency_suite():
     print("=" * 70)
 
     tests = [
-        ("UUID Fetch", "Fetch https://httpbin.org/uuid and tell me the UUID.",
-         lambda r: "-" in r and len(r) > 30, 15.0),
-        ("JSON API", "Fetch https://jsonplaceholder.typicode.com/posts/1 and tell me the title.",
-         lambda r: "sunt" in r.lower() or "title" in r.lower(), 15.0),
-        ("GitHub Stars", "Fetch https://api.github.com/repos/python/cpython and tell me the star count.",
-         lambda r: any(c.isdigit() for c in r), 15.0),
-        ("User Agent", "Fetch https://httpbin.org/user-agent and tell me what user agent was used.",
-         lambda r: "python" in r.lower() or "httpx" in r.lower() or "user" in r.lower(), 15.0),
-        ("IP Address", "Fetch https://httpbin.org/ip and tell me the IP address.",
-         lambda r: "." in r and any(c.isdigit() for c in r), 15.0),
-        ("No Tool Math", "What is 25 * 4?",
-         lambda r: "100" in r, 5.0),
+        ("UUID Fetch", "Fetch https://httpbin.org/uuid and tell me the UUID.", lambda r: "-" in r and len(r) > 30, 15.0),
+        (
+            "JSON API",
+            "Fetch https://jsonplaceholder.typicode.com/posts/1 and tell me the title.",
+            lambda r: "sunt" in r.lower() or "title" in r.lower(),
+            15.0,
+        ),
+        (
+            "GitHub Stars",
+            "Fetch https://api.github.com/repos/python/cpython and tell me the star count.",
+            lambda r: any(c.isdigit() for c in r),
+            15.0,
+        ),
+        (
+            "User Agent",
+            "Fetch https://httpbin.org/user-agent and tell me what user agent was used.",
+            lambda r: "python" in r.lower() or "httpx" in r.lower() or "user" in r.lower(),
+            15.0,
+        ),
+        (
+            "IP Address",
+            "Fetch https://httpbin.org/ip and tell me the IP address.",
+            lambda r: "." in r and any(c.isdigit() for c in r),
+            15.0,
+        ),
+        ("No Tool Math", "What is 25 * 4?", lambda r: "100" in r, 5.0),
     ]
 
     results = []
@@ -1230,26 +1255,29 @@ def test_comprehensive_quality_efficiency_suite():
             elapsed = time.time() - start
             response = result.get("response", "")
 
-            tool_calls = len([e for e in agent._timeline.timeline
-                            if e.entry_type == TimelineEntryType.TOOL_CALL])
+            tool_calls = len([e for e in agent._timeline.timeline if e.entry_type == TimelineEntryType.TOOL_CALL])
 
             quality_pass = validator(response)
 
-            results.append({
-                "name": name,
-                "elapsed": elapsed,
-                "tool_calls": tool_calls,
-                "quality": "PASS" if quality_pass else "FAIL",
-                "response": response[:100],
-            })
+            results.append(
+                {
+                    "name": name,
+                    "elapsed": elapsed,
+                    "tool_calls": tool_calls,
+                    "quality": "PASS" if quality_pass else "FAIL",
+                    "response": response[:100],
+                }
+            )
         except Exception as e:
-            results.append({
-                "name": name,
-                "elapsed": time.time() - start,
-                "tool_calls": 0,
-                "quality": "ERROR",
-                "response": str(e)[:100],
-            })
+            results.append(
+                {
+                    "name": name,
+                    "elapsed": time.time() - start,
+                    "tool_calls": 0,
+                    "quality": "ERROR",
+                    "response": str(e)[:100],
+                }
+            )
 
     # Print summary
     print("\n" + "=" * 70)
@@ -1259,7 +1287,7 @@ def test_comprehensive_quality_efficiency_suite():
     print("-" * 70)
 
     for r in results:
-        preview = r['response'][:30].replace('\n', ' ')
+        preview = r["response"][:30].replace("\n", " ")
         print(f"{r['name']:<20} {r['elapsed']:.1f}s      {r['tool_calls']:<8} {r['quality']:<10} {preview}...")
 
     print("\n" + "=" * 70)
@@ -1278,6 +1306,7 @@ def test_comprehensive_quality_efficiency_suite():
 # SUBAGENT TESTS
 # =============================================================================
 
+
 @pytest.mark.live
 class TestSubAgentDelegation:
     """
@@ -1293,7 +1322,7 @@ class TestSubAgentDelegation:
         """Test: Main agent delegates URL fetching to a specialist subagent."""
         from tests.harness.harness_agent import HarnessAgent
         from dana.lib.resources.web_research import FetchResource
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         # Create specialist subagent with FetchResource
         fetch_specialist = HarnessAgent(
@@ -1327,8 +1356,7 @@ class TestSubAgentDelegation:
         print(f"Response: {response[:200]}...")
 
         # Check for subagent interaction
-        subagent_calls = len([e for e in main_agent._timeline.timeline
-                            if e.entry_type == TimelineEntryType.SUB_AGENT_RESPONSE])
+        subagent_calls = len([e for e in main_agent._timeline.timeline if e.entry_type == TimelineEntryType.SUB_AGENT_RESPONSE])
         print(f"Subagent calls: {subagent_calls}")
 
         # Validate - should have IP address with dots and numbers
@@ -1341,7 +1369,7 @@ class TestSubAgentDelegation:
     def test_delegate_to_math_specialist(self):
         """Test: Main agent delegates math to a specialist subagent."""
         from tests.harness.harness_agent import HarnessAgent
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         # Create math specialist (no resources needed, just LLM)
         math_specialist = HarnessAgent(
@@ -1364,9 +1392,7 @@ class TestSubAgentDelegation:
 
         print("\n=== MATH SPECIALIST DELEGATION TEST ===")
         start = time.time()
-        result = main_agent.query(
-            message="Ask the math_specialist: What is 17 * 23 + 45?"
-        )
+        result = main_agent.query(message="Ask the math_specialist: What is 17 * 23 + 45?")
         elapsed = time.time() - start
 
         response = result.get("response", "")
@@ -1384,7 +1410,7 @@ class TestSubAgentDelegation:
         """Test: Main agent orchestrates multiple subagents."""
         from tests.harness.harness_agent import HarnessAgent
         from dana.lib.resources.web_research import FetchResource
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         # Create two specialists
         fetch_agent = HarnessAgent(
@@ -1416,9 +1442,7 @@ class TestSubAgentDelegation:
 
         print("\n=== MULTI-AGENT COLLABORATION TEST ===")
         start = time.time()
-        result = coordinator.query(
-            message="First, ask the fetcher to get https://httpbin.org/uuid. Then summarize what you found."
-        )
+        result = coordinator.query(message="First, ask the fetcher to get https://httpbin.org/uuid. Then summarize what you found.")
         elapsed = time.time() - start
 
         response = result.get("response", "")
@@ -1436,6 +1460,7 @@ class TestSubAgentDelegation:
 # PLANNING / TODO TESTS (Live LLM)
 # =============================================================================
 
+
 @pytest.mark.live
 class TestPlanningBehavior:
     """
@@ -1451,7 +1476,7 @@ class TestPlanningBehavior:
         """Test: LLM should create a todo list when given a multi-step task."""
         from tests.harness.harness_agent import HarnessAgent
         from dana.lib.resources.web_research import FetchResource
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         agent = HarnessAgent(
             agent_type="planner",
@@ -1508,7 +1533,7 @@ Create a todo list to track these, then work through them one at a time and repo
         """Test: LLM should update todo status as tasks complete."""
         from tests.harness.harness_agent import HarnessAgent
         from dana.lib.resources.web_research import FetchResource
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         agent = HarnessAgent(
             agent_type="tracker",
@@ -1560,7 +1585,7 @@ Report the results when done."""
     def test_planning_with_explicit_todo_instruction(self):
         """Test: When explicitly told to use todos, LLM should comply."""
         from tests.harness.harness_agent import HarnessAgent
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         agent = HarnessAgent(
             agent_type="explicit_planner",
@@ -1610,7 +1635,7 @@ Then work through each todo, updating status as you go. Show me the final answer
         """Test: Tasks should be executed in order, not skipped."""
         from tests.harness.harness_agent import HarnessAgent
         from dana.lib.resources.web_research import FetchResource
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         agent = HarnessAgent(
             agent_type="sequential",
@@ -1667,6 +1692,7 @@ You must complete Step 1 before Step 2, and Step 2 before Step 3."""
 # TIMELINE COMPRESSION TEST
 # =============================================================================
 
+
 @pytest.mark.live
 class TestTimelineCompression:
     """
@@ -1682,7 +1708,7 @@ class TestTimelineCompression:
         """Test: Timeline should compress when it gets too long."""
         from tests.harness.harness_agent import HarnessAgent
         from dana.lib.resources.web_research import FetchResource
-        from dana.core.agent.timeline import TimelineConfig, TimelineEntryType
+        from dana.core.timeline.timeline import TimelineConfig, TimelineEntryType
 
         # Create agent with low compression threshold for testing
         agent = HarnessAgent(
@@ -1707,43 +1733,28 @@ class TestTimelineCompression:
         print("\n=== COMPRESSION TEST ===")
 
         # First query - should not compress yet
-        result1 = agent.query(
-            message="Fetch https://httpbin.org/ip and tell me the IP."
-        )
+        result1 = agent.query(message="Fetch https://httpbin.org/ip and tell me the IP.")
         entries_after_1 = len(agent._timeline.timeline)
         print(f"After query 1: {entries_after_1} entries")
 
         # Check for summary entry
-        has_summary = any(
-            e.entry_type == TimelineEntryType.TIMELINE_SUMMARY
-            for e in agent._timeline.timeline
-        )
+        has_summary = any(e.entry_type == TimelineEntryType.TIMELINE_SUMMARY for e in agent._timeline.timeline)
         print(f"Has summary after query 1: {has_summary}")
 
         # Second query - may trigger compression
-        result2 = agent.query(
-            message="Now fetch https://httpbin.org/uuid and tell me the UUID."
-        )
+        result2 = agent.query(message="Now fetch https://httpbin.org/uuid and tell me the UUID.")
         entries_after_2 = len(agent._timeline.timeline)
         print(f"After query 2: {entries_after_2} entries")
 
-        has_summary_2 = any(
-            e.entry_type == TimelineEntryType.TIMELINE_SUMMARY
-            for e in agent._timeline.timeline
-        )
+        has_summary_2 = any(e.entry_type == TimelineEntryType.TIMELINE_SUMMARY for e in agent._timeline.timeline)
         print(f"Has summary after query 2: {has_summary_2}")
 
         # Third query
-        result3 = agent.query(
-            message="What were all the results you fetched?"
-        )
+        result3 = agent.query(message="What were all the results you fetched?")
         entries_after_3 = len(agent._timeline.timeline)
         print(f"After query 3: {entries_after_3} entries")
 
-        has_summary_3 = any(
-            e.entry_type == TimelineEntryType.TIMELINE_SUMMARY
-            for e in agent._timeline.timeline
-        )
+        has_summary_3 = any(e.entry_type == TimelineEntryType.TIMELINE_SUMMARY for e in agent._timeline.timeline)
         print(f"Has summary after query 3: {has_summary_3}")
 
         response = result3.get("response", "")

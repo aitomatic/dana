@@ -112,18 +112,18 @@ class TestLocalLearningRepositoryInitialization:
             shutil.rmtree(temp_dir)
 
     def test_initialization_calculates_base_storage_path(self):
-        """Test initialization calculates correct base storage path."""
+        """Test initialization calculates correct base storage path (agent-centric)."""
         temp_dir = tempfile.mkdtemp()
         try:
             config = FileStorageConfig(workspace_folder=temp_dir)
             agent = MockAgent(storage_config=config)
             repository = LocalLearningRepository(config, agent)
 
-            # Path should be: {workspace_folder}/{codec_prefix}/{agent.object_id}
-            # Check path structure (doesn't need to exist yet)
+            # Path should be: {workspace_folder}/{agent.object_id} (no codec prefix)
             path_str = str(repository._base_storage_path)
-            assert "TestCodec" in path_str
             assert agent.object_id in path_str
+            # Codec prefix must NOT be in the new path
+            assert "TestCodec" not in path_str
         finally:
             shutil.rmtree(temp_dir)
 

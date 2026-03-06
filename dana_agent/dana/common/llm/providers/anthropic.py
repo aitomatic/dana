@@ -8,7 +8,7 @@ import anthropic
 import structlog
 
 from ...config import config_manager
-from ..types import LLMMessage, LLMProvider, LLMResponse
+from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk
 
 
 logger = structlog.get_logger()
@@ -136,6 +136,51 @@ class AnthropicProvider(LLMProvider):
         """Anthropic supports native tool calling."""
         return True
 
+    def prepare_messages(self, messages: list[LLMMessage]) -> tuple[str | list[dict] | None, list[dict]]:
+        """Convert LLMMessage[] to Anthropic API wire format.
+
+        Returns: (system, messages) where system is None, a plain string, or
+        a list of content blocks; messages is the list of user/assistant dicts.
+        """
+        return prepare_anthropic_messages(messages)
+
+    def prepare_tools(self, tools) -> list[dict]:
+        """Convert tool definitions to Anthropic tool schema format.
+
+        Accepts either list[MethodSignature] or list[dict] (OpenAI format) for
+        backward compatibility during transition.
+        """
+        anthropic_tools = []
+        for tool in tools:
+            # Handle MethodSignature objects (new path)
+            if hasattr(tool, "parameters") and hasattr(tool, "name") and not isinstance(tool, dict):
+                params = {"type": "object", "properties": {}, "required": []}
+                for p in tool.parameters:
+                    prop = {"type": p.type if hasattr(p, "type") else "string"}
+                    if p.description:
+                        prop["description"] = p.description
+                    params["properties"][p.name] = prop
+                    if not p.has_default:
+                        params["required"].append(p.name)
+                anthropic_tools.append(
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "input_schema": params,
+                    }
+                )
+            else:
+                # Handle OpenAI-format dict (backward compat)
+                func = tool.get("function", {})
+                anthropic_tools.append(
+                    {
+                        "name": func.get("name", ""),
+                        "description": func.get("description", ""),
+                        "input_schema": func.get("parameters", {"type": "object", "properties": {}}),
+                    }
+                )
+        return anthropic_tools
+
     def __init__(self, api_key: str | None = None, model: str = "claude-3-sonnet-20240229", base_url: str | None = None):
         """
         Initialize Anthropic provider.
@@ -182,7 +227,7 @@ class AnthropicProvider(LLMProvider):
             **kwargs: Additional parameters passed to the API
         """
         try:
-            system, anthropic_messages = prepare_anthropic_messages(messages)
+            system, anthropic_messages = self.prepare_messages(messages)
             json_mode = kwargs.get("json_mode", False)
 
             # Add prefill to force JSON output when json_mode is enabled
@@ -195,7 +240,7 @@ class AnthropicProvider(LLMProvider):
             request_kwargs = {
                 "model": self.model,
                 "messages": anthropic_messages,
-                "max_tokens": kwargs.get("max_tokens") or 4096,
+                "max_tokens": kwargs.get("max_tokens") or 32000,
             }
 
             # Add temperature if provided
@@ -210,18 +255,7 @@ class AnthropicProvider(LLMProvider):
 
             # Add tools if provided (native tool calling)
             if tools:
-                # Convert OpenAI-style tool schemas to Anthropic format
-                anthropic_tools = []
-                for tool in tools:
-                    func = tool.get("function", {})
-                    anthropic_tools.append(
-                        {
-                            "name": func.get("name", ""),
-                            "description": func.get("description", ""),
-                            "input_schema": func.get("parameters", {"type": "object", "properties": {}}),
-                        }
-                    )
-                request_kwargs["tools"] = anthropic_tools
+                request_kwargs["tools"] = self.prepare_tools(tools)
                 # Enable parallel tool use (similar to OpenAI's tool_choice="auto")
                 # This explicitly allows Claude to call multiple tools in a single response
                 request_kwargs["tool_choice"] = {"type": "auto", "disable_parallel_tool_use": False}
@@ -294,4 +328,44 @@ class AnthropicProvider(LLMProvider):
 
         except Exception as e:
             logger.error("Anthropic API error", error=str(e))
+            raise
+
+    async def stream(self, messages: list[LLMMessage], tools: list | None = None, **kwargs):
+        """Stream LLMStreamChunk from Anthropic using raw event iteration.
+
+        Iterates MessageStreamEvent (not text_stream) to capture tool_use and
+        thinking blocks alongside text deltas.
+        """
+        try:
+            system, anthropic_messages = self.prepare_messages(messages)
+
+            request_kwargs = {
+                "model": self.model,
+                "messages": anthropic_messages,
+                "max_tokens": kwargs.get("max_tokens") or 32000,
+            }
+            if system is not None:
+                request_kwargs["system"] = system
+            if tools:
+                request_kwargs["tools"] = self.prepare_tools(tools)
+
+            async with self.client.messages.stream(**request_kwargs) as stream_resp:
+                async for event in stream_resp:
+                    # Text delta events
+                    if event.type == "content_block_delta" and getattr(event.delta, "type", None) == "text_delta":
+                        yield LLMStreamChunk(type="text_delta", content=event.delta.text)
+
+                    # Completed tool_use block — full tool call assembled
+                    elif event.type == "content_block_stop":
+                        block = getattr(event, "content_block", None)
+                        if block is not None and getattr(block, "type", None) == "tool_use":
+                            yield LLMStreamChunk(
+                                type="tool_use",
+                                tool_call={"id": block.id, "name": block.name, "input": block.input},
+                            )
+
+                    # Future: thinking blocks (when Anthropic enables extended thinking in streaming)
+
+        except Exception as e:
+            logger.error("Anthropic stream error", error=str(e))
             raise
