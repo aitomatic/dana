@@ -127,7 +127,7 @@ class TestLLMIntegration:
 
         # The stream method returns a single response, not multiple chunks
         assert len(responses) == 1
-        assert responses[0] == "Hello from streaming!"
+        assert responses[0].content == "Hello from streaming!"
 
     @pytest.mark.asyncio
     async def test_llm_system_prompt_integration(self, mock_provider):

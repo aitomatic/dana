@@ -2,7 +2,7 @@
 Langfuse-based prompt repository implementation.
 
 Stores and retrieves prompts via Langfuse API, following the PromptRepositoryProtocol
-interface and reusing LocalRepositoryMixin for codec/path utilities.
+interface and reusing LocalRepositoryMixin for path utilities.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from structlog import get_logger
+
 
 try:
     from langfuse import Langfuse
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
 logger = get_logger()
 
 
-def _get_langfuse_client(storage_config: LangfuseStorageConfig) -> "Langfuse":
+def _get_langfuse_client(storage_config: LangfuseStorageConfig) -> Langfuse:
     """
     Get Langfuse client from storage config.
 
@@ -49,9 +50,7 @@ def _get_langfuse_client(storage_config: LangfuseStorageConfig) -> "Langfuse":
     """
     if Langfuse is None:
         raise ImportError(
-            "langfuse package is not installed. "
-            "Install it with: pip install dana[observability] "
-            "or: pip install langfuse>=3.5.1"
+            "langfuse package is not installed. " "Install it with: pip install dana[observability] " "or: pip install langfuse>=3.5.1"
         )
 
     public_key = storage_config.public_key
@@ -82,7 +81,9 @@ class LangfusePromptRepository(PromptRepositoryProtocol, LocalRepositoryMixin):
     ACTIVE_VERSION_KEY = "dana_active_version"
 
     @classmethod
-    def instantiate(cls, storage_config: StorageConfig, agent: BaseAgent, component: BaseWAR | None = None) -> LangfusePromptRepository:
+    def instantiate(
+        cls, storage_config: StorageConfig, agent: BaseAgent, component: BaseWAR | None = None, provider: str | None = None
+    ) -> LangfusePromptRepository:
         """
         Instantiate LangfusePromptRepository (required by PromptRepositoryProtocol).
 
@@ -90,6 +91,7 @@ class LangfusePromptRepository(PromptRepositoryProtocol, LocalRepositoryMixin):
             storage_config: StorageConfig (should be LangfuseStorageConfig)
             agent: Agent instance
             component: Optional component (agent/resource/workflow) for component prompts
+            provider: Optional provider name (not used by Langfuse, kept for protocol compat)
 
         Returns:
             LangfusePromptRepository instance
@@ -125,13 +127,12 @@ class LangfusePromptRepository(PromptRepositoryProtocol, LocalRepositoryMixin):
         Format: {codec}/{agent_class}__{filename}/{component_type}/{component_name}
         or: {codec}/{agent_class}__{filename}/system_prompt_template
 
-        Note: _get_relative_storage_path() already includes the codec prefix,
-        so we don't need to add it again.
+        Note: _get_relative_storage_path() returns agent_id as the base path.
 
         Returns:
             Prompt name string for Langfuse
         """
-        # Reuse mixin method - it already includes codec prefix in the path
+        # Reuse mixin method - returns agent_id as the base path
         base_path = self._get_relative_storage_path(self._agent)
 
         if self._component is None:

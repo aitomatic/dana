@@ -21,7 +21,7 @@ from dana.common.llm.types import LLMMessage
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
-    from dana.core.agent.timeline import Timeline, TimelineEntry
+    from dana.core.timeline.timeline import Timeline, TimelineEntry
 
 
 def _entry_has_tool_call(entry: TimelineEntry, tool_name: str) -> bool:
@@ -112,7 +112,7 @@ class TodoNeverCalledReminder:
 
     def _todo_write_ever_called(self, timeline: Timeline) -> bool:
         """Check if todo_write was ever called in the timeline."""
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         for entry in timeline.timeline:
             if entry.entry_type == TimelineEntryType.TOOL_CALL:
@@ -246,7 +246,7 @@ class TodoUpdateReminder:
 
     def _find_last_todo_write_index(self, timeline: Timeline) -> int:
         """Find the index of the last todo_write call in the timeline."""
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         for i in range(len(timeline.timeline) - 1, -1, -1):
             entry = timeline.timeline[i]

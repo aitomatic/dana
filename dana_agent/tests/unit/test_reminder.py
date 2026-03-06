@@ -255,8 +255,8 @@ class TestTodoNeverCalledReminder:
 
     def test_triggers_after_threshold_no_todo_calls(self):
         """Test that reminder appends message after threshold with no todo_write calls."""
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         reminder = TodoNeverCalledReminder(turns_threshold=2)
 
@@ -281,8 +281,8 @@ class TestTodoNeverCalledReminder:
 
     def test_skips_if_todo_write_called(self):
         """Test that reminder does not mutate messages if todo_write was called."""
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         reminder = TodoNeverCalledReminder(turns_threshold=2)
 
@@ -321,8 +321,8 @@ class TestTodoUpdateReminder:
 
     def test_skips_if_never_called(self):
         """Test that reminder does not mutate messages if todo_write was never called."""
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         reminder = TodoUpdateReminder(turns_threshold=3)
 
@@ -343,8 +343,8 @@ class TestTodoUpdateReminder:
 
     def test_triggers_after_turns_since_last_call(self):
         """Test that reminder appends message after N turns since last todo_write call."""
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         reminder = TodoUpdateReminder(turns_threshold=2, tokens_threshold=10000)
 
@@ -372,8 +372,8 @@ class TestTodoUpdateReminder:
 
     def test_triggers_after_tokens_since_last_call(self):
         """Test that reminder appends message after K tokens since last todo_write call."""
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         reminder = TodoUpdateReminder(turns_threshold=100, tokens_threshold=100)  # High turns, low tokens
 
@@ -395,8 +395,8 @@ class TestTodoUpdateReminder:
 
     def test_skips_if_recently_called(self):
         """Test that reminder does not mutate messages if todo_write was recently called."""
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         reminder = TodoUpdateReminder(turns_threshold=5, tokens_threshold=5000)
 
@@ -467,8 +467,8 @@ class TestLazyValidityBehavior:
 
     def test_reminders_fire_when_resource_present(self):
         """Test that reminders fire when resource is present."""
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
         from dana.core.resource.todo_resource import ToDoResource
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         manager = ReminderManager(load_builtins=True)
 

@@ -10,13 +10,13 @@ from typing import Any
 from pydantic import BaseModel
 
 from dana.common.protocols.war import tool_use
-from dana.core.agent.components.tool_schema import (
+from dana.core.resource import BaseResource
+from dana.core.tool.tool_schema import (
     _get_pydantic_schema,
     _inline_refs,
     _python_type_to_json_schema,
     generate_resource_schemas,
 )
-from dana.core.resource import BaseResource
 
 
 # =============================================================================

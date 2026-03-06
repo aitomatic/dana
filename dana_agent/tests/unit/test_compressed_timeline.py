@@ -11,14 +11,14 @@ import pytest
 
 from dana.config.storage_config import FileStorageConfig
 from dana.core.agent import BaseAgent
-from dana.core.agent.compressed_timeline import (
+from dana.core.timeline.compressed_timeline import (
     COMPRESSED_CONTEXT_KEY,
     COMPRESSED_ENTRIES_COUNT_KEY,
     COMPRESSION_TIMESTAMP_KEY,
     CompressedTimeline,
     CompressedTimelineConfig,
 )
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
 
 class MockAgentForCompressedTimeline(BaseAgent):

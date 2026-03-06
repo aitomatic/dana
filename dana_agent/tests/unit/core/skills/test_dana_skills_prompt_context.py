@@ -199,9 +199,9 @@ Content.
         )
         agent.with_resources(skills_resource)
 
-        # Build resource context using runtime
+        # Build resource context using runtime's prompt builder
         runtime = DefaultRuntime()
-        context = runtime._build_resource_context(agent)
+        context = runtime._prompt_builder._build_resource_context(agent)
 
         # Should include skill context
         assert '"available_skills"' in context
@@ -218,7 +218,7 @@ Content.
         )
 
         runtime = DefaultRuntime()
-        context = runtime._build_resource_context(agent)
+        context = runtime._prompt_builder._build_resource_context(agent)
 
         assert context == ""
 
@@ -249,9 +249,9 @@ Content.
         )
         agent.with_resources(skills_resource)
 
-        # Build system prompt
+        # Build system prompt via prompt builder (native_tools=None for default template)
         runtime = DefaultRuntime()
-        prompt = runtime._build_system_prompt(agent)
+        prompt = runtime._prompt_builder._build_system_prompt(agent, native_tools=None)
 
         # Should include skill context in prompt
         assert "prompt-skill" in prompt

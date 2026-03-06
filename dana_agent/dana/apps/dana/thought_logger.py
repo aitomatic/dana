@@ -6,7 +6,7 @@ agent internal thought processes, including reasoning, tool calls, and reflectio
 """
 
 from dana.common.protocols import DictParams, Notifiable
-from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
 
 # ANSI escape codes for colors
@@ -207,16 +207,16 @@ class ThoughtLogger(Notifiable):
 
     def _format_tool_call(self, tc: DictParams) -> str:
         """Format a tool call for display, including key arguments.
-        
+
         Args:
             tc: Tool call dictionary with 'function' and 'arguments'
-            
+
         Returns:
             Formatted string like 'web_search__fetch_url(example.com)'
         """
         function = tc.get("function", "unknown")
         arguments = tc.get("arguments", {})
-        
+
         # Extract the most relevant argument to display
         arg_display = ""
         if arguments:
@@ -242,7 +242,7 @@ class ThoughtLogger(Notifiable):
                     arg_display = f"({msg})"
             elif "method" in arguments:
                 arg_display = f"({arguments['method']})"
-        
+
         return f"{function}{arg_display}"
 
     def _display_phase(self, agent_id: str, phase_label: str, content: str) -> None:

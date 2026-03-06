@@ -42,17 +42,22 @@ class TestCreateProvider:
                 assert provider == mock_provider
 
     def test_create_ollama_provider(self):
-        """Test creating Ollama provider"""
+        """Test creating Ollama provider via OpenAI-compatible fallback"""
         with patch("dana.common.llm.providers.factory.config_manager") as mock_config:
-            mock_config.get_provider_config.return_value = {"api_key_env": "OLLAMA_API_KEY", "default_model": "llama2"}
+            mock_config.get_provider_config.return_value = {
+                "api_key_env": "OLLAMA_API_KEY",
+                "default_model": "llama2",
+                "base_url": "http://localhost:11434/v1",
+            }
+            mock_config.get_provider_api_key.return_value = "ollama-key"
 
-            with patch("dana.common.llm.providers.ollama.OllamaProvider") as mock_ollama:
+            with patch("dana.common.llm.providers.factory.OpenAIProvider") as mock_openai:
                 mock_provider = Mock()
-                mock_ollama.return_value = mock_provider
+                mock_openai.return_value = mock_provider
 
                 provider = create_provider("ollama", model="llama2:7b")
 
-                mock_ollama.assert_called_once_with(model="llama2:7b")
+                mock_openai.assert_called_once_with(api_key="ollama-key", model="llama2:7b", base_url="http://localhost:11434/v1")
                 assert provider == mock_provider
 
     def test_create_azure_provider(self):
@@ -70,90 +75,123 @@ class TestCreateProvider:
                 assert provider == mock_provider
 
     def test_create_groq_provider(self):
-        """Test creating Groq provider"""
+        """Test creating Groq provider via OpenAI-compatible fallback"""
         with patch("dana.common.llm.providers.factory.config_manager") as mock_config:
-            mock_config.get_provider_config.return_value = {"api_key_env": "GROQ_API_KEY", "default_model": "llama3-8b-8192"}
+            mock_config.get_provider_config.return_value = {
+                "api_key_env": "GROQ_API_KEY",
+                "default_model": "llama3-8b-8192",
+                "base_url": "https://api.groq.com/openai/v1",
+            }
+            mock_config.get_provider_api_key.return_value = "groq-key"
 
-            with patch("dana.common.llm.providers.groq.GroqProvider") as mock_groq:
+            with patch("dana.common.llm.providers.factory.OpenAIProvider") as mock_openai:
                 mock_provider = Mock()
-                mock_groq.return_value = mock_provider
+                mock_openai.return_value = mock_provider
 
                 provider = create_provider("groq", model="llama3-70b-8192")
 
-                mock_groq.assert_called_once_with(model="llama3-70b-8192")
+                mock_openai.assert_called_once_with(api_key="groq-key", model="llama3-70b-8192", base_url="https://api.groq.com/openai/v1")
                 assert provider == mock_provider
 
     def test_create_moonshot_provider(self):
-        """Test creating Moonshot provider"""
+        """Test creating Moonshot provider via OpenAI-compatible fallback"""
         with patch("dana.common.llm.providers.factory.config_manager") as mock_config:
-            mock_config.get_provider_config.return_value = {"api_key_env": "MOONSHOT_API_KEY", "default_model": "moonshot-v1-8k"}
+            mock_config.get_provider_config.return_value = {
+                "api_key_env": "MOONSHOT_API_KEY",
+                "default_model": "moonshot-v1-8k",
+                "base_url": "https://api.moonshot.cn/v1",
+            }
+            mock_config.get_provider_api_key.return_value = "moonshot-key"
 
-            with patch("dana.common.llm.providers.moonshot.MoonshotProvider") as mock_moonshot:
+            with patch("dana.common.llm.providers.factory.OpenAIProvider") as mock_openai:
                 mock_provider = Mock()
-                mock_moonshot.return_value = mock_provider
+                mock_openai.return_value = mock_provider
 
                 provider = create_provider("moonshot", model="moonshot-v1-32k")
 
-                mock_moonshot.assert_called_once_with(model="moonshot-v1-32k")
+                mock_openai.assert_called_once_with(api_key="moonshot-key", model="moonshot-v1-32k", base_url="https://api.moonshot.cn/v1")
                 assert provider == mock_provider
 
     def test_create_huggingface_provider(self):
-        """Test creating HuggingFace provider"""
+        """Test creating HuggingFace provider via OpenAI-compatible fallback"""
         with patch("dana.common.llm.providers.factory.config_manager") as mock_config:
             mock_config.get_provider_config.return_value = {
                 "api_key_env": "HUGGINGFACE_API_KEY",
                 "default_model": "microsoft/DialoGPT-medium",
+                "base_url": "https://api-inference.huggingface.co/v1",
             }
+            mock_config.get_provider_api_key.return_value = "hf-key"
 
-            with patch("dana.common.llm.providers.huggingface.HuggingFaceProvider") as mock_hf:
+            with patch("dana.common.llm.providers.factory.OpenAIProvider") as mock_openai:
                 mock_provider = Mock()
-                mock_hf.return_value = mock_provider
+                mock_openai.return_value = mock_provider
 
                 provider = create_provider("huggingface", model="microsoft/DialoGPT-large")
 
-                mock_hf.assert_called_once_with(model="microsoft/DialoGPT-large")
+                mock_openai.assert_called_once_with(
+                    api_key="hf-key", model="microsoft/DialoGPT-large", base_url="https://api-inference.huggingface.co/v1"
+                )
                 assert provider == mock_provider
 
     def test_create_qwen_provider(self):
-        """Test creating Qwen provider"""
+        """Test creating Qwen provider via OpenAI-compatible fallback"""
         with patch("dana.common.llm.providers.factory.config_manager") as mock_config:
-            mock_config.get_provider_config.return_value = {"api_key_env": "QWEN_API_KEY", "default_model": "qwen-turbo"}
+            mock_config.get_provider_config.return_value = {
+                "api_key_env": "QWEN_API_KEY",
+                "default_model": "qwen-turbo",
+                "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            }
+            mock_config.get_provider_api_key.return_value = "qwen-key"
 
-            with patch("dana.common.llm.providers.qwen.QwenProvider") as mock_qwen:
+            with patch("dana.common.llm.providers.factory.OpenAIProvider") as mock_openai:
                 mock_provider = Mock()
-                mock_qwen.return_value = mock_provider
+                mock_openai.return_value = mock_provider
 
                 provider = create_provider("qwen", model="qwen-plus")
 
-                mock_qwen.assert_called_once_with(model="qwen-plus")
+                mock_openai.assert_called_once_with(
+                    api_key="qwen-key", model="qwen-plus", base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+                )
                 assert provider == mock_provider
 
     def test_create_deepseek_provider(self):
-        """Test creating DeepSeek provider"""
+        """Test creating DeepSeek provider via OpenAI-compatible fallback"""
         with patch("dana.common.llm.providers.factory.config_manager") as mock_config:
-            mock_config.get_provider_config.return_value = {"api_key_env": "DEEPSEEK_API_KEY", "default_model": "deepseek-chat"}
+            mock_config.get_provider_config.return_value = {
+                "api_key_env": "DEEPSEEK_API_KEY",
+                "default_model": "deepseek-chat",
+                "base_url": "https://api.deepseek.com/v1",
+            }
+            mock_config.get_provider_api_key.return_value = "deepseek-key"
 
-            with patch("dana.common.llm.providers.deepseek.DeepSeekProvider") as mock_deepseek:
+            with patch("dana.common.llm.providers.factory.OpenAIProvider") as mock_openai:
                 mock_provider = Mock()
-                mock_deepseek.return_value = mock_provider
+                mock_openai.return_value = mock_provider
 
                 provider = create_provider("deepseek", model="deepseek-coder")
 
-                mock_deepseek.assert_called_once_with(model="deepseek-coder")
+                mock_openai.assert_called_once_with(api_key="deepseek-key", model="deepseek-coder", base_url="https://api.deepseek.com/v1")
                 assert provider == mock_provider
 
     def test_create_openrouter_provider(self):
-        """Test creating OpenRouter provider"""
+        """Test creating OpenRouter provider via OpenAI-compatible fallback"""
         with patch("dana.common.llm.providers.factory.config_manager") as mock_config:
-            mock_config.get_provider_config.return_value = {"api_key_env": "OPENROUTER_API_KEY", "default_model": "openai/gpt-3.5-turbo"}
+            mock_config.get_provider_config.return_value = {
+                "api_key_env": "OPENROUTER_API_KEY",
+                "default_model": "openai/gpt-3.5-turbo",
+                "base_url": "https://openrouter.ai/api/v1",
+            }
+            mock_config.get_provider_api_key.return_value = "openrouter-key"
 
-            with patch("dana.common.llm.providers.openrouter.OpenRouterProvider") as mock_openrouter:
+            with patch("dana.common.llm.providers.factory.OpenAIProvider") as mock_openai:
                 mock_provider = Mock()
-                mock_openrouter.return_value = mock_provider
+                mock_openai.return_value = mock_provider
 
                 provider = create_provider("openrouter", model="anthropic/claude-3-sonnet")
 
-                mock_openrouter.assert_called_once_with(model="anthropic/claude-3-sonnet")
+                mock_openai.assert_called_once_with(
+                    api_key="openrouter-key", model="anthropic/claude-3-sonnet", base_url="https://openrouter.ai/api/v1"
+                )
                 assert provider == mock_provider
 
     def test_create_provider_with_env_model(self):

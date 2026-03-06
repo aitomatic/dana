@@ -19,7 +19,7 @@ from .repository_protocol import EventRepositoryProtocol, LearningRepositoryProt
 
 
 if TYPE_CHECKING:
-    from dana.core.agent.timeline import TimelineEntry
+    from dana.core.timeline.timeline import TimelineEntry
 
 logger = get_logger()
 
@@ -81,24 +81,29 @@ class LocalRepositoryMixin:
         return codec.__qualname__
 
     def _get_relative_storage_path(self, agent: BaseAgent) -> str:
+        # Agent ID is the primary lookup key — codec is an implementation detail
+        return str(agent.object_id)
+
+    def _get_legacy_relative_storage_path(self, agent: BaseAgent) -> str:
+        """Return old codec-prefixed path for backward-compat fallback reads."""
         _codec_str = self._get_codec_prefix(agent)
         return f"{_codec_str}/{agent.object_id}"
 
 
 class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
-    def __init__(self, storage_config: FileStorageConfig, agent: BaseAgent, component: BaseWAR | None = None):
+    def __init__(self, storage_config: FileStorageConfig, agent: BaseAgent, component: BaseWAR | None = None, provider: str | None = None):
         self.storage_config = storage_config
         self._agent = agent
         self._component = component
+        self._provider = provider
         self._workspace_folder = Path(self.storage_config.workspace_folder)
         # Compute and cache the prompt path
         self._prompt_path = self._get_relative_prompt_path()
 
     def _get_relative_prompt_path(self) -> Path:
-        _codec_str = self._get_codec_prefix(self._agent)
         if self._component is None:
             # NOTE : For agent, we only store system prompt template
-            target_path = Path(self._workspace_folder / self._get_relative_storage_path(self._agent) / "prompts" / "system_prompt_template")
+            base_path = Path(self._workspace_folder / self._get_relative_storage_path(self._agent) / "prompts" / "system_prompt_template")
         else:
             # NOTE : For resource and workflow, we store prompts in the respective subfolders
             if isinstance(self._component, AgentProtocol):
@@ -111,15 +116,41 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
                 raise ValueError(
                     f"Invalid component type: {type(self._component)}. Only accepts instance of subclasses of {ResourceProtocol.__name__}, {AgentProtocol.__name__}, {WorkflowProtocol.__name__}"
                 )
-            target_path = Path(
+            base_path = Path(
                 self._workspace_folder
                 / self._get_relative_storage_path(self._agent)
                 / "prompts"
                 / subfolder
                 / str(self._component.object_id)
             )
+
+        # Add provider subdirectory if specified
+        if self._provider:
+            target_path = base_path / self._provider
+        else:
+            target_path = base_path
+
         target_path.mkdir(parents=True, exist_ok=True)
         return target_path
+
+    def _get_legacy_prompt_path(self) -> Path | None:
+        """Return the old flat path (no provider subdirectory) for backward-compat fallback reads."""
+        if not self._provider:
+            return None
+        # Reconstruct the base path without provider
+        if self._component is None:
+            return Path(self._workspace_folder / self._get_relative_storage_path(self._agent) / "prompts" / "system_prompt_template")
+        if isinstance(self._component, AgentProtocol):
+            subfolder = "agents"
+        elif isinstance(self._component, ResourceProtocol):
+            subfolder = "resources"
+        elif isinstance(self._component, WorkflowProtocol):
+            subfolder = "workflows"
+        else:
+            return None
+        return Path(
+            self._workspace_folder / self._get_relative_storage_path(self._agent) / "prompts" / subfolder / str(self._component.object_id)
+        )
 
     def has_any_versions(self) -> bool:
         return len(self.list_versions()) > 0
@@ -143,6 +174,14 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
 
         versions_folder = self._prompt_path / "versions"
         if not versions_folder.exists():
+            # Backward-compat: try legacy flat path
+            legacy_path = self._get_legacy_prompt_path()
+            if legacy_path:
+                legacy_versions = legacy_path / "versions"
+                if legacy_versions.exists():
+                    logger.info(f"Loading versions from legacy path: {legacy_versions}")
+                    items = [_path.stem for _path in legacy_versions.iterdir()]
+                    return sorted([item for item in items if _filter(item)], key=lambda x: int(x.split("v")[1]))
             return []
         items = [_path.stem for _path in versions_folder.iterdir()]
         return sorted([item for item in items if _filter(item)], key=lambda x: int(x.split("v")[1]))
@@ -153,6 +192,17 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
         versions_folder.mkdir(parents=True, exist_ok=True)
         content_file = versions_folder / f"{version}.prompt"
 
+        # Backward-compat: try legacy flat path if provider-specific file doesn't exist
+        use_legacy = False
+        if not content_file.exists():
+            legacy_path = self._get_legacy_prompt_path()
+            if legacy_path:
+                legacy_file = legacy_path / "versions" / f"{version}.prompt"
+                if legacy_file.exists():
+                    logger.info(f"Loading snapshot from legacy path: {legacy_file}")
+                    content_file = legacy_file
+                    use_legacy = True
+
         if not content_file.exists():
             if error_if_not_found:
                 raise ValueError(f"Version {version} not found")
@@ -162,13 +212,15 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
         updated_at = os.path.getmtime(content_file)
         content = content_file.read_text()
 
+        # Load provenance/metrics from legacy path if snapshot is from legacy
+        load_path = self._get_legacy_prompt_path() if use_legacy else None
         return PromptVersionSnapshot(
             version=version,
             content=content,
             created_at=datetime.fromtimestamp(created_at),
             updated_at=datetime.fromtimestamp(updated_at),
-            provenance=self._load_provenances().get(version, {}),
-            metrics=self._load_metrics().get(version, {}),
+            provenance=self._load_provenances(base_path=load_path).get(version, {}),
+            metrics=self._load_metrics(base_path=load_path).get(version, {}),
         )
 
     def set_active_version(self, version: str) -> None:
@@ -212,14 +264,16 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
             metrics=metrics,
         )
 
-    def _load_provenances(self) -> dict:
-        provenance_file = self._prompt_path / "provenance.json"
+    def _load_provenances(self, base_path: Path | None = None) -> dict:
+        path = base_path or self._prompt_path
+        provenance_file = path / "provenance.json"
         if provenance_file.exists():
             return json.loads(provenance_file.read_text())
         return {}
 
-    def _load_metrics(self) -> dict:
-        metrics_file = self._prompt_path / "metrics.json"
+    def _load_metrics(self, base_path: Path | None = None) -> dict:
+        path = base_path or self._prompt_path
+        metrics_file = path / "metrics.json"
         if metrics_file.exists():
             return json.loads(metrics_file.read_text())
         return {}
@@ -228,6 +282,13 @@ class LocalPromptRepository(LocalRepositoryMixin, PromptRepositoryProtocol):
         version_file = self._prompt_path / "version.txt"
         if version_file.exists():
             return version_file.read_text().strip()
+        # Backward-compat: try legacy flat path
+        legacy_path = self._get_legacy_prompt_path()
+        if legacy_path:
+            legacy_version_file = legacy_path / "version.txt"
+            if legacy_version_file.exists():
+                logger.info(f"Loading version from legacy path: {legacy_version_file}")
+                return legacy_version_file.read_text().strip()
         return self._get_latest_version()
 
     def _get_latest_version(self) -> str:
@@ -258,9 +319,12 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
         self._events_path = self._get_events_path()
 
     def _get_events_path(self) -> Path:
-        """Calculate the events folder path based on agent and codec."""
-        relative_path = f"{self._get_relative_storage_path(self._agent)}/events"
-        return self._workspace_folder / relative_path
+        """Calculate the sessions folder path based on agent."""
+        return self._workspace_folder / self._get_relative_storage_path(self._agent) / "sessions"
+
+    def _get_legacy_events_path(self) -> Path:
+        """Return old codec-prefixed events path for backward-compat fallback reads."""
+        return self._workspace_folder / self._get_legacy_relative_storage_path(self._agent) / "events"
 
     def save(self, session_id: str, entries: list[TimelineEntry]) -> None:
         """
@@ -297,13 +361,20 @@ class LocalTimelineRepository(LocalRepositoryMixin, TimelineRepositoryProtocol):
         Yields:
             TimelineEntry objects from the session
         """
-        from dana.core.agent.timeline import TimelineEntry
+        from dana.core.timeline.timeline import TimelineEntry
 
         session_folder = self._events_path / session_id
         timeline_file = session_folder / "timeline.json"
 
+        # Backward-compat: fall back to legacy codec-prefixed path if new path doesn't exist
         if not timeline_file.exists():
-            return
+            legacy_folder = self._get_legacy_events_path() / session_id
+            legacy_file = legacy_folder / "timeline.json"
+            if legacy_file.exists():
+                logger.info(f"Loading timeline from legacy path: {legacy_file}")
+                timeline_file = legacy_file
+            else:
+                return
 
         try:
             with open(timeline_file) as f:
@@ -341,9 +412,12 @@ class LocalEventRepository(LocalRepositoryMixin, EventRepositoryProtocol):
         self._events_path = self._get_events_path()
 
     def _get_events_path(self) -> Path:
-        """Calculate the events folder path based on agent and codec."""
-        relative_path = f"{self._get_relative_storage_path(self._agent)}/events"
-        return self._workspace_folder / relative_path
+        """Calculate the sessions folder path based on agent."""
+        return self._workspace_folder / self._get_relative_storage_path(self._agent) / "sessions"
+
+    def _get_legacy_events_path(self) -> Path:
+        """Return old codec-prefixed events path for backward-compat fallback reads."""
+        return self._workspace_folder / self._get_legacy_relative_storage_path(self._agent) / "events"
 
     def save(self, session_id: str, events: list[Event]) -> None:
         """
@@ -378,8 +452,15 @@ class LocalEventRepository(LocalRepositoryMixin, EventRepositoryProtocol):
         session_folder = self._events_path / session_id
         events_file = session_folder / "events.jsonl"
 
+        # Backward-compat: fall back to legacy codec-prefixed path if new path doesn't exist
         if not events_file.exists():
-            return
+            legacy_folder = self._get_legacy_events_path() / session_id
+            legacy_file = legacy_folder / "events.jsonl"
+            if legacy_file.exists():
+                logger.info(f"Loading events from legacy path: {legacy_file}")
+                events_file = legacy_file
+            else:
+                return
 
         try:
             with open(events_file) as f:

@@ -357,7 +357,7 @@ class TestContentBlockPassthrough:
 
     def test_format_entry_content_passes_through_list(self):
         """_format_entry_content returns list[dict] content unchanged."""
-        from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+        from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 
         timeline = Timeline(max_context_tokens=32000)
         multimodal_content = [
@@ -374,7 +374,7 @@ class TestContentBlockPassthrough:
 
     def test_to_llm_messages_preserves_list_content(self):
         """to_llm_messages preserves list[dict] content in LLMMessage."""
-        from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+        from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 
         timeline = Timeline(max_context_tokens=32000)
         multimodal_content = [
@@ -396,7 +396,7 @@ class TestContentBlockPassthrough:
     def test_estimate_tokens_handles_list_content(self):
         """_estimate_tokens doesn't crash on list[dict] content."""
         from dana.common.llm.types import LLMMessage
-        from dana.core.agent.timeline import Timeline
+        from dana.core.timeline.timeline import Timeline
 
         timeline = Timeline(max_context_tokens=32000)
         msg = LLMMessage(
@@ -424,7 +424,7 @@ class TestInjectAsUserMultimodal:
         from unittest.mock import patch
 
         from dana.core.agent.star_agent import STARAgent
-        from dana.core.agent.timeline import TimelineEntry, TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntry, TimelineEntryType
 
         with patch("dana.core.agent.star_agent.LLM"):
             a = STARAgent(agent_type="test-multimodal", auto_register=False)
@@ -441,7 +441,7 @@ class TestInjectAsUserMultimodal:
         """Tool returning dict with inject_as_user list[dict] → USER_MESSAGE with preserved content."""
         from unittest.mock import Mock
 
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         multimodal_blocks = [
             {"type": "text", "text": "Visual contents of test.png:"},
@@ -485,7 +485,7 @@ class TestInjectAsUserMultimodal:
         """After popping inject_as_user, 'message' key becomes the tool result text."""
         from unittest.mock import Mock
 
-        from dana.core.agent.timeline import TimelineEntryType
+        from dana.core.timeline.timeline import TimelineEntryType
 
         agent._runtime = Mock()
         agent._runtime.execute_tools.return_value = [
@@ -667,42 +667,73 @@ class TestVisionFallbackPdf:
 
 
 class TestSupportsVisionProperty:
-    """Test that supports_vision is correctly set on providers."""
+    """Test config-driven vision support resolution via LLM class."""
 
-    def test_base_provider_defaults_false(self):
-        from dana.common.llm.types import LLMProvider
+    def test_vision_model_resolves_true(self):
+        """Model key in vision_models → resolves to True."""
+        from dana.common.llm.llm import LLM
 
-        # Can't instantiate abstract class directly, check the property exists
-        assert LLMProvider.supports_vision.fget is not None
+        mock_provider = MagicMock()
+        mock_provider.model = "claude-sonnet-4-6-20250627"
+        with (
+            patch("dana.common.llm.llm.create_provider", return_value=mock_provider),
+            patch("dana.common.llm.llm.config_manager") as mock_cm,
+        ):
+            mock_cm.get_provider_config.return_value = {
+                "vision_models": ["claude-sonnet-4-6", "claude-opus-4-6"],
+                "models": {
+                    "claude-sonnet-4-6": "claude-sonnet-4-6-20250627",
+                    "claude-opus-4-6": "claude-opus-4-6-20250627",
+                },
+            }
+            llm = LLM(provider="anthropic", model="claude-sonnet-4-6-20250627")
+            assert llm.supports_vision is True
 
-    def test_anthropic_provider_supports_vision(self):
-        with patch("dana.common.llm.providers.anthropic.config_manager") as mock_cm:
-            mock_cm.get_provider_api_key.return_value = "test-key"
-            mock_cm.get_provider_base_url.return_value = None
-            from dana.common.llm.providers.anthropic import AnthropicProvider
+    def test_non_vision_model_resolves_false(self):
+        """Model not in vision_models → False."""
+        from dana.common.llm.llm import LLM
 
-            provider = AnthropicProvider(api_key="test-key")
-            assert provider.supports_vision is True
+        mock_provider = MagicMock()
+        mock_provider.model = "gpt-3.5-turbo"
+        with (
+            patch("dana.common.llm.llm.create_provider", return_value=mock_provider),
+            patch("dana.common.llm.llm.config_manager") as mock_cm,
+        ):
+            mock_cm.get_provider_config.return_value = {
+                "vision_models": ["gpt-4o", "gpt-4.1"],
+                "models": {
+                    "gpt-4o": "gpt-4o",
+                    "gpt-4.1": "gpt-4.1",
+                    "gpt-3.5-turbo": "gpt-3.5-turbo",
+                },
+            }
+            llm = LLM(provider="openai", model="gpt-3.5-turbo")
+            assert llm.supports_vision is False
 
-    def test_anthropic_like_provider_no_vision(self):
-        with patch("dana.common.llm.providers.anthropic_like.config_manager") as mock_cm:
-            mock_cm.get_provider_api_key.return_value = "test-key"
-            mock_cm.get_provider_base_url.return_value = "https://example.com"
-            from dana.common.llm.providers.anthropic_like import AnthropicLikeProvider
+    def test_env_var_override_true(self):
+        """Env var override forces vision support to True."""
+        from dana.common.llm.llm import LLM
 
-            provider = AnthropicLikeProvider(api_key="test-key", base_url="https://example.com")
-            assert provider.supports_vision is False
+        mock_provider = MagicMock()
+        mock_provider.model = "some-model"
+        with (
+            patch("dana.common.llm.llm.create_provider", return_value=mock_provider),
+            patch("dana.common.llm.llm.config_manager") as mock_cm,
+            patch.dict("os.environ", {"ANTHROPIC_LIKE_SUPPORTS_VISION": "true"}),
+        ):
+            mock_cm.get_provider_config.return_value = {"vision_models": []}
+            llm = LLM(provider="anthropic_like", model="some-model")
+            assert llm.supports_vision is True
 
-    def test_llm_delegates_to_provider(self):
+    def test_llm_delegates_to_provider_attr(self):
+        """LLM.supports_vision reads from provider instance attribute."""
         from dana.common.llm.llm import LLM
         from dana.common.llm.types import LLMProvider
 
         mock_provider = MagicMock(spec=LLMProvider)
-        mock_provider.supports_vision = True
         mock_provider.model = "test-model"
-
-        llm = LLM(provider=mock_provider)
-        assert llm.supports_vision is True
-
-        mock_provider.supports_vision = False
-        assert llm.supports_vision is False
+        with patch("dana.common.llm.llm.config_manager") as mock_cm:
+            mock_cm.get_provider_config.return_value = None
+            llm = LLM(provider=mock_provider)
+            # _resolve_vision_support sets it to False (no config for "custom")
+            assert llm.supports_vision is False

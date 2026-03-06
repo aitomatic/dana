@@ -6,18 +6,25 @@ without implementation details like LLM integration or rich state management.
 """
 
 from abc import abstractmethod
+import asyncio
+from collections.abc import AsyncIterator
+import logging
 import threading
 
 from dana.common.observable import observable
-from dana.common.protocols import DictParams, STARAgentProtococol
+from dana.common.protocols import DictParams, STARAgentProtocol
 from dana.common.protocols.types import LearningPhase
 from dana.core.agent.base_agent import BaseAgent
+from dana.core.runtime.protocols import StreamEvent, StreamEventType
+
+
+logger = logging.getLogger(__name__)
 
 
 EXIT_STAR_LOOP_FLAG = "EXIT_STAR_LOOP_FLAG"
 
 
-class BaseSTARAgent(BaseAgent, STARAgentProtococol):
+class BaseSTARAgent(BaseAgent, STARAgentProtocol):
     """
     Minimal base class defining the STAR (See-Think-Act-Reflect) pattern contract.
 
@@ -172,14 +179,15 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
 
                     # Trigger acquisitive learning asynchronously at end of each STAR loop
                     if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
-                        # Prepare acquisitive learning input (async, non-blocking)
                         acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
                         acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
 
-                        # Run asynchronously to not block STAR loop
-                        # Capture acquisitive_input in closure properly
+                        # Sync path: use thread (no event loop available)
                         def run_reflect(acq_input):
-                            return self._reflect(acq_input)
+                            try:
+                                self._reflect(acq_input)
+                            except Exception as reflect_err:
+                                logger.error("Reflection failed: %s", reflect_err, exc_info=True)
 
                         threading.Thread(target=run_reflect, args=(acquisitive_input,), daemon=True).start()
 
@@ -189,7 +197,7 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
                 except Exception as e:
                     import traceback
 
-                    print(f"Error in query: {e}. {traceback.format_exc()}")
+                    logger.error("Error in query: %s\n%s", e, traceback.format_exc())
                     trace_outputs = {"trace_outputs": {"error": e}}
                     break
 
@@ -203,7 +211,7 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
             result = result.get("trace_outputs", {}) if result else {}
 
         except Exception as e:
-            print(f"Error in query: {e}")
+            logger.error("Error in query: %s", e)
             result = {"error": e}
 
         return result
@@ -221,8 +229,6 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
 
             for _ in range(self.MAX_ITERATIONS):
                 try:
-                    if self._object_id == "dana-coding-agent":
-                        print("Hello")
                     # _see is sync (no async ops needed)
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     # _think_async uses native async LLM call
@@ -232,21 +238,23 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
 
                     # Trigger acquisitive learning asynchronously at end of each STAR loop
                     if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
-                        # Prepare acquisitive learning input (async, non-blocking)
                         acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
                         acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
 
-                        # Run asynchronously to not block STAR loop
-                        def run_reflect(acq_input):
-                            return self._reflect(acq_input)
+                        # Async path: use asyncio.create_task (proper async, not threads)
+                        async def _async_reflect(acq_input):
+                            try:
+                                self._reflect(acq_input)
+                            except Exception as reflect_err:
+                                logger.error("Async reflection failed", error=str(reflect_err), exc_info=True)
 
-                        threading.Thread(target=run_reflect, args=(acquisitive_input,), daemon=True).start()
+                        asyncio.create_task(_async_reflect(acquisitive_input))
 
                     if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
                         break
 
                 except Exception as e:
-                    print(f"Error in aquery: {e}")
+                    logger.error("Error in aquery: %s", e)
                     trace_outputs = {"trace_outputs": {"error": e}}
                     break
 
@@ -257,10 +265,40 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
             result = result.get("trace_outputs", {}) if result else {}
 
         except Exception as e:
-            print(f"Error in aquery: {e}")
+            logger.error("Error in aquery: %s", e)
             result = {"error": e}
 
         return result
+
+    async def aquery_stream(self, **kwargs) -> AsyncIterator[StreamEvent]:
+        """Streaming version of aquery. Yields StreamEvent objects.
+
+        Subclasses override _think_stream() to stream text deltas during the
+        think phase. The default implementation falls back to aquery() and
+        emits a single DONE event — subclasses provide richer streaming.
+
+        Yields:
+            StreamEvent: Events with types TEXT_DELTA, TOOL_CALL_START,
+                         TOOL_RESULT, ERROR, or DONE.
+        """
+        # Default: no streaming support — subclasses override
+        try:
+            result = await self.aquery(**kwargs)
+            response = result.get("response", "") if result else ""
+            if response:
+                yield StreamEvent(
+                    event_type=StreamEventType.TEXT_DELTA,
+                    data=response,
+                    iteration=0,
+                )
+        except Exception as exc:
+            yield StreamEvent(
+                event_type=StreamEventType.ERROR,
+                data=str(exc),
+                iteration=0,
+            )
+            return
+        yield StreamEvent(event_type=StreamEventType.DONE, data=None, iteration=0)
 
     # ============================================================================
     # UTILITIES

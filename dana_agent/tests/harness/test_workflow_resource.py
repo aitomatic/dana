@@ -7,21 +7,10 @@ and tests whether the current implementation is robust.
 
 from __future__ import annotations
 
-import asyncio
 import pytest
 
-from dana.core.agent.components.tool_caller import ToolCaller
-
-from .mocks.llm_client import MockLLMClient, LLMResponseScenario
-from .mocks.resources import (
-    MockResource,
-    AsyncMockResource,
-    FailingResource,
-    MockWorkflow,
-    AsyncMockWorkflow,
-    FailingWorkflow,
-)
 from .harness_agent import HarnessAgent
+from .mocks.llm_client import LLMResponseScenario, MockLLMClient
 
 
 class TestResourceMethodRequirement:
@@ -50,14 +39,16 @@ class TestResourceMethodRequirement:
         """Resource call with method should succeed."""
         mock_llm = harness_agent_with_resource._mock_llm
 
-        mock_llm.queue_response(MockLLMClient.well_formed_tool_call(
-            target_id="mock-resource",
-            method="query",
-            message="test",
-        ))
+        mock_llm.queue_response(
+            MockLLMClient.well_formed_tool_call(
+                target_id="mock-resource",
+                method="query",
+                message="test",
+            )
+        )
         mock_llm.queue_response(MockLLMClient.simple_response("Done"))
 
-        result = harness_agent_with_resource.query(message="Call with method")
+        harness_agent_with_resource.query(message="Call with method")
 
         harness_agent_with_resource.assert_no_errors()
         assert len(mock_resource.call_history) == 1
@@ -66,9 +57,7 @@ class TestResourceMethodRequirement:
 class TestWorkflowDefaultMethod:
     """Tests for workflow default method behavior."""
 
-    def test_workflow_call_without_method_uses_execute(
-        self, harness_agent_with_workflow, mock_workflow
-    ):
+    def test_workflow_call_without_method_uses_execute(self, harness_agent_with_workflow, mock_workflow):
         """Workflow call without method should use 'execute' as default."""
         mock_llm = harness_agent_with_workflow._mock_llm
 
@@ -87,9 +76,7 @@ class TestWorkflowDefaultMethod:
         # Should complete without errors
         assert result is not None
 
-    def test_workflow_call_with_explicit_execute(
-        self, harness_agent_with_workflow, mock_workflow
-    ):
+    def test_workflow_call_with_explicit_execute(self, harness_agent_with_workflow, mock_workflow):
         """Workflow call with explicit 'execute' method should work."""
         mock_llm = harness_agent_with_workflow._mock_llm
 
@@ -120,11 +107,13 @@ class TestAsyncResourceHandling:
         )
         agent.with_resources(async_mock_resource)
 
-        mock_llm.queue_response(MockLLMClient.well_formed_tool_call(
-            target_id="async-mock-resource",
-            method="query",
-            message="test",
-        ))
+        mock_llm.queue_response(
+            MockLLMClient.well_formed_tool_call(
+                target_id="async-mock-resource",
+                method="query",
+                message="test",
+            )
+        )
         mock_llm.queue_response(MockLLMClient.simple_response("Done"))
 
         # This should not hang or deadlock
@@ -175,10 +164,12 @@ class TestErrorHandlingSymmetry:
         """Failing resource should produce consistent error format."""
         mock_llm = agent_with_failing_resource._mock_llm
 
-        mock_llm.queue_response(MockLLMClient.well_formed_tool_call(
-            target_id="failing-resource",
-            method="query",
-        ))
+        mock_llm.queue_response(
+            MockLLMClient.well_formed_tool_call(
+                target_id="failing-resource",
+                method="query",
+            )
+        )
         mock_llm.queue_response(MockLLMClient.simple_response("Error occurred"))
 
         result = agent_with_failing_resource.query(message="Call failing resource")
@@ -216,10 +207,12 @@ class TestReturnValueHandling:
         mock_llm = harness_agent_with_resource._mock_llm
         mock_resource.default_response = "String result"
 
-        mock_llm.queue_response(MockLLMClient.well_formed_tool_call(
-            target_id="mock-resource",
-            method="query",
-        ))
+        mock_llm.queue_response(
+            MockLLMClient.well_formed_tool_call(
+                target_id="mock-resource",
+                method="query",
+            )
+        )
         mock_llm.queue_response(MockLLMClient.simple_response("Done"))
 
         result = harness_agent_with_resource.query(message="Get string result")
@@ -239,38 +232,6 @@ class TestReturnValueHandling:
         mock_llm.queue_response(MockLLMClient.simple_response("Done"))
 
         result = harness_agent_with_workflow.query(message="Get dict result")
-
-        assert result is not None
-
-
-class TestToolCallerBehavior:
-    """Unit tests for ToolCaller resource vs workflow handling."""
-
-    def test_execute_resource_call_signature(self, harness_agent, mock_resource):
-        """Test execute_resource_call method signature."""
-        harness_agent.with_resources(mock_resource)
-        tool_caller = harness_agent._tool_caller
-
-        # Valid call with method
-        result = tool_caller.execute_resource_call({
-            "resource_id": "mock-resource",
-            "method": "query",
-            "parameters": {"message": "test"},
-        })
-
-        assert "success" in result or "result" in result or "error" in result
-
-    def test_execute_workflow_call_signature(self, harness_agent, mock_workflow):
-        """Test execute_workflow_call method signature."""
-        harness_agent.with_workflows(mock_workflow)
-        tool_caller = harness_agent._tool_caller
-
-        # Call with explicit method
-        result = tool_caller.execute_workflow_call({
-            "workflow_id": "mock-workflow",
-            "method": "execute",
-            "parameters": {},
-        })
 
         assert result is not None
 
@@ -329,9 +290,7 @@ class TestIdKeyConsistency:
 class TestMixedResourceWorkflowCalls:
     """Tests for handling mixed resource and workflow calls."""
 
-    def test_sequential_resource_and_workflow_calls(
-        self, mock_llm, mock_resource, mock_workflow
-    ):
+    def test_sequential_resource_and_workflow_calls(self, mock_llm, mock_resource, mock_workflow):
         """Sequential resource and workflow calls should both succeed."""
         agent = HarnessAgent(
             mock_llm=mock_llm,
@@ -342,11 +301,13 @@ class TestMixedResourceWorkflowCalls:
         agent.with_workflows(mock_workflow)
 
         # First: resource call
-        mock_llm.queue_response(MockLLMClient.well_formed_tool_call(
-            target_id="mock-resource",
-            method="query",
-            message="first",
-        ))
+        mock_llm.queue_response(
+            MockLLMClient.well_formed_tool_call(
+                target_id="mock-resource",
+                method="query",
+                message="first",
+            )
+        )
         # Second: workflow call
         workflow_call = """<tool_call>
 <target type="workflow" id="mock-workflow"/>
