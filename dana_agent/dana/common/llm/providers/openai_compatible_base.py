@@ -4,9 +4,10 @@ import json
 from typing import Any
 
 import httpx
+from openai import APITimeoutError
 import structlog
 
-from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk
+from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
 logger = structlog.get_logger()
@@ -209,6 +210,8 @@ class OpenAICompatibleProvider(LLMProvider):
                 reasoning_tokens=reasoning_tokens,
             )
 
+        except (APITimeoutError, httpx.TimeoutException) as e:
+            raise LLMTimeoutError(f"OpenAI-compatible API timeout: {e}") from e
         except Exception as e:
             logger.error("OpenAI-compatible API error", error=str(e))
             raise
@@ -418,6 +421,8 @@ class OpenAICompatibleProvider(LLMProvider):
                 logger.debug("Using Chat Completions API for streaming", model=self.model)
                 async for chunk in self._stream_chat_completions(messages, tools=tools, **kwargs):
                     yield chunk
+        except (APITimeoutError, httpx.TimeoutException) as e:
+            raise LLMTimeoutError(f"OpenAI-compatible stream timeout: {e}") from e
         except Exception as e:
             logger.error("Stream error", model=self.model, error=str(e))
             raise

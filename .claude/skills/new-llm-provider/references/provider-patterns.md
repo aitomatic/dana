@@ -1,8 +1,47 @@
 # Provider Implementation Patterns
 
+## Timeout & Error Handling (MANDATORY)
+
+Every provider MUST:
+1. **Apply per-request timeout** using `self.DEFAULT_TIMEOUT_SECONDS` (120s, inherited from `LLMProvider`)
+2. **Catch SDK-specific timeout exceptions** and re-raise as `LLMTimeoutError`
+3. Import: `from ..types import LLMTimeoutError`
+
+| Provider Type | SDK Timeout Exceptions to Catch | Timeout Mechanism |
+|---------------|-------------------------------|-------------------|
+| OpenAI-compatible | `openai.APITimeoutError`, `httpx.TimeoutException` | `timeout=httpx.Timeout(self.DEFAULT_TIMEOUT_SECONDS)` on `.create()` |
+| Anthropic | `anthropic.APITimeoutError` | `timeout=self.DEFAULT_TIMEOUT_SECONDS` on `.create()`/`.stream()` |
+| Gemini | `httpx.TimeoutException` | `http_options=HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS)` in config |
+
+**Why:** SDK timeout exceptions (e.g., `openai.APITimeoutError`) don't inherit from Python's `TimeoutError`, so the retry layer can't detect them without this mapping. `LLMTimeoutError` is a `ProviderError` that the `LLMCaller._is_transient_error()` recognizes → triggers retry with backoff → failover to next provider.
+
+```python
+# Example: catch pattern for OpenAI-compatible
+import httpx
+import openai
+from ..types import LLMTimeoutError
+
+try:
+    response = await self.client.chat.completions.create(
+        ...,
+        timeout=httpx.Timeout(self.DEFAULT_TIMEOUT_SECONDS),
+    )
+except (openai.APITimeoutError, httpx.TimeoutException) as e:
+    raise LLMTimeoutError(f"API timeout: {e}") from e
+
+# Example: catch pattern for custom SDK
+try:
+    response = await self.client.messages.create(
+        ...,
+        timeout=self.DEFAULT_TIMEOUT_SECONDS,
+    )
+except provider_sdk.APITimeoutError as e:
+    raise LLMTimeoutError(f"Provider API timeout: {e}") from e
+```
+
 ## Pattern 1: OpenAI-Compatible Provider (Most Common)
 
-Most providers (Mistral, Groq, DeepSeek, Together, xAI, etc.) use OpenAI-compatible APIs. Extend `OpenAICompatibleProvider` — only need `__init__`.
+Most providers (Mistral, Groq, DeepSeek, Together, xAI, etc.) use OpenAI-compatible APIs. Extend `OpenAICompatibleProvider` — only need `__init__`. Timeout and error handling is inherited from `OpenAICompatibleProvider`.
 
 ```python
 """[ProviderName] Provider Implementation"""
@@ -52,7 +91,7 @@ For providers with non-OpenAI APIs (e.g., Anthropic, Gemini), extend `LLMProvide
 
 import structlog
 from ...config import config_manager
-from ..types import LLMProvider, LLMMessage, LLMResponse, LLMStreamChunk
+from ..types import LLMProvider, LLMMessage, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 logger = structlog.get_logger()
 
@@ -82,11 +121,23 @@ class {Name}Provider(LLMProvider):
         ...
 
     async def chat(self, messages: list[LLMMessage], tools=None, **kwargs) -> LLMResponse:
-        """Send messages and return LLMResponse."""
+        """Send messages and return LLMResponse.
+        MUST: apply timeout=self.DEFAULT_TIMEOUT_SECONDS on API call.
+        MUST: catch SDK timeout exceptions → raise LLMTimeoutError.
+        """
+        try:
+            response = await self.client.create(
+                ...,
+                timeout=self.DEFAULT_TIMEOUT_SECONDS,  # 120s per-request
+            )
+        except SdkSpecificTimeoutError as e:
+            raise LLMTimeoutError(f"{Name} API timeout: {e}") from e
         ...
 
     async def stream(self, messages: list[LLMMessage], tools=None, **kwargs):
         """Yield LLMStreamChunk objects.
+        MUST: apply timeout=self.DEFAULT_TIMEOUT_SECONDS on API call.
+        MUST: catch SDK timeout exceptions → raise LLMTimeoutError.
 
         Map provider-specific events to exactly 3 chunk types:
         - LLMStreamChunk(type="text_delta", content="...")
@@ -95,6 +146,14 @@ class {Name}Provider(LLMProvider):
 
         See references/streaming-format-mapping.md for mapping examples.
         """
+        try:
+            stream = await self.client.create(
+                ...,
+                timeout=self.DEFAULT_TIMEOUT_SECONDS,
+                stream=True,
+            )
+        except SdkSpecificTimeoutError as e:
+            raise LLMTimeoutError(f"{Name} stream timeout: {e}") from e
         ...
 ```
 
@@ -134,6 +193,8 @@ In `dana/config.json`, add under `"providers"`:
 ```
 
 ## Common Pitfalls
+- **Missing timeout**: Every `chat()` and `stream()` call MUST pass `self.DEFAULT_TIMEOUT_SECONDS` — without it, SDK defaults can block for 10+ minutes
+- **Wrong timeout exception**: SDK timeouts (e.g., `openai.APITimeoutError`) do NOT inherit from Python's `TimeoutError` — must catch the SDK-specific class and re-raise as `LLMTimeoutError`
 - **None content**: APIs reject null content — always default to `""`
 - **tool_call_id format**: Must match exactly between assistant tool_calls and tool results
 - **Consecutive roles**: Some providers reject consecutive user or assistant messages

@@ -143,6 +143,13 @@ Create `dana/common/llm/providers/{name}.py`. See `references/provider-patterns.
 
 **Critical: Map provider events to LLMStreamChunk correctly.** See `references/streaming-format-mapping.md` for the exact mapping from each provider's raw events to Dana's `LLMStreamChunk` types.
 
+**Critical: Timeout & error handling is MANDATORY.** Every provider must:
+1. Apply `self.DEFAULT_TIMEOUT_SECONDS` (120s) on every API call (chat + stream)
+2. Catch SDK-specific timeout exceptions → re-raise as `LLMTimeoutError`
+3. Import `LLMTimeoutError` from `..types`
+
+OpenAI-compatible providers inherit this from `OpenAICompatibleProvider`. Custom providers must implement it explicitly — see `references/provider-patterns.md` § "Timeout & Error Handling".
+
 ### Step 7: Run Tests (TDD Loop)
 ```bash
 cd dana_agent
@@ -157,7 +164,7 @@ Fix failures, re-run. Both `test_replay_all_turns` and `test_stream_all_turns` m
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `dana/common/llm/types.py` | LLMProvider base, LLMStreamChunk, LLMResponse |
+| `dana/common/llm/types.py` | LLMProvider base, LLMStreamChunk, LLMResponse, LLMTimeoutError, DEFAULT_TIMEOUT_SECONDS |
 | `dana/common/llm/providers/openai_compatible_base.py` | OpenAI-compatible base (chat + stream) |
 | `dana/common/llm/providers/factory.py` | Provider factory/registry |
 | `dana/config.json` | Provider config (api_key_env, model, base_url) |

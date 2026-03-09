@@ -8,7 +8,7 @@ import anthropic
 import structlog
 
 from ...config import config_manager
-from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk
+from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
 logger = structlog.get_logger()
@@ -329,6 +329,8 @@ class AnthropicProvider(LLMProvider):
                 tool_calls=tool_calls,
             )
 
+        except anthropic.APITimeoutError as e:
+            raise LLMTimeoutError(f"Anthropic API timeout: {e}") from e
         except Exception as e:
             logger.error("Anthropic API error", error=str(e))
             raise
@@ -372,6 +374,8 @@ class AnthropicProvider(LLMProvider):
 
                     # Future: thinking blocks (when Anthropic enables extended thinking in streaming)
 
+        except anthropic.APITimeoutError as e:
+            raise LLMTimeoutError(f"Anthropic stream timeout: {e}") from e
         except Exception as e:
             logger.error("Anthropic stream error", error=str(e))
             raise
