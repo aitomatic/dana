@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from dana.common.llm.types import ConfigurationError, LLMError, LLMResponse, ProviderError
+from dana.common.llm.types import ConfigurationError, LLMError, LLMResponse, LLMTimeoutError, ProviderError
 from dana.core.llm.llm_caller import LLMCaller, ProviderConfig
 
 
@@ -160,6 +160,11 @@ def test_all_providers_fail_raises_last_exception(mock_sleep):
 # ---------------------------------------------------------------------------
 
 
+def test_is_transient_llm_timeout_error():
+    """LLMTimeoutError (raised by providers on SDK timeout) is transient → triggers retry."""
+    assert LLMCaller._is_transient_error(LLMTimeoutError("API timeout")) is True
+
+
 def test_is_transient_timeout_error():
     assert LLMCaller._is_transient_error(TimeoutError("timed out")) is True
 
@@ -191,6 +196,34 @@ def test_is_permanent_generic_llm_error():
 def test_is_permanent_provider_error_non_transient():
     # ProviderError without transient keywords is permanent (e.g. invalid model name)
     assert LLMCaller._is_transient_error(ProviderError("invalid model name")) is False
+
+
+# ---------------------------------------------------------------------------
+# Test 7: LLMTimeoutError triggers retry + failover (end-to-end)
+# ---------------------------------------------------------------------------
+
+
+@patch("time.sleep")
+def test_llm_timeout_error_triggers_failover(mock_sleep):
+    """LLMTimeoutError from provider → retry exhausted → failover to secondary."""
+    fallback_cfg = ProviderConfig(provider="openai", model="gpt-4o")
+    caller, primary_llm = _make_caller(fallbacks=[fallback_cfg], max_retries=1, base_delay=0.0)
+
+    fallback_llm = MagicMock()
+    fallback_llm.chat_response_sync.return_value = _make_response("fallback-after-timeout")
+
+    # Primary always times out
+    primary_llm.chat_response_sync.side_effect = LLMTimeoutError("OpenAI API timeout")
+
+    with (
+        patch.object(LLMCaller, "_resolve_llm", return_value=primary_llm),
+        patch("dana.core.llm.llm_caller.LLM", return_value=fallback_llm),
+    ):
+        result = caller.call_llm([])
+
+    assert result.content == "fallback-after-timeout"
+    assert primary_llm.chat_response_sync.call_count == 2  # 1 attempt + 1 retry
+    fallback_llm.chat_response_sync.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
