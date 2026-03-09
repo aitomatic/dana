@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+
 if TYPE_CHECKING:
     from dana.common.schemas.tool_call import MethodSignature
 
@@ -131,6 +132,10 @@ class LLMProvider:
     Provides default implementations for prepare_messages() and prepare_tools().
     Subclasses override chat() and optionally the prepare methods.
     """
+
+    # Default timeout in seconds for LLM API calls (2 minutes).
+    # Prevents long-running calls (e.g. timeline compression) from blocking the agent loop.
+    DEFAULT_TIMEOUT_SECONDS = 120
 
     @property
     def supports_native_tools(self) -> bool:

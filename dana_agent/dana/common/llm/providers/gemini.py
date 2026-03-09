@@ -143,7 +143,9 @@ class GeminiProvider(LLMProvider):
         try:
             system_instruction, contents = self.prepare_messages(messages)
 
-            config = genai_types.GenerateContentConfig()
+            config = genai_types.GenerateContentConfig(
+                http_options=genai_types.HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS),
+            )
             if system_instruction:
                 config.system_instruction = system_instruction
             if "temperature" in kwargs:
@@ -202,7 +204,9 @@ class GeminiProvider(LLMProvider):
         try:
             system_instruction, contents = self.prepare_messages(messages)
 
-            config = genai_types.GenerateContentConfig()
+            config = genai_types.GenerateContentConfig(
+                http_options=genai_types.HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS),
+            )
             if system_instruction:
                 config.system_instruction = system_instruction
             if "temperature" in kwargs:
