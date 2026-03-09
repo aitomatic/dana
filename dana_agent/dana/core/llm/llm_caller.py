@@ -21,6 +21,7 @@ from dana.common.llm.types import (
     LLMMessage,
     LLMResponse,
     LLMStreamChunk,
+    LLMTimeoutError,
     ProviderError,
 )
 from dana.common.observable import observable
@@ -241,6 +242,9 @@ class LLMCaller:
         """Return True if the error is transient and should trigger a retry."""
         if isinstance(exc, ConfigurationError):
             return False
+        # Unified timeout error raised by all providers
+        if isinstance(exc, LLMTimeoutError):
+            return True
         if isinstance(exc, TimeoutError | ConnectionError):
             return True
         if isinstance(exc, ProviderError):

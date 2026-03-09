@@ -9,10 +9,11 @@ import uuid
 
 from google import genai
 from google.genai import types as genai_types
+import httpx
 import structlog
 
 from ...config import config_manager
-from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk
+from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
 logger = structlog.get_logger()
@@ -195,6 +196,8 @@ class GeminiProvider(LLMProvider):
                 tool_calls=tool_calls,
             )
 
+        except httpx.TimeoutException as e:
+            raise LLMTimeoutError(f"Gemini API timeout: {e}") from e
         except Exception as e:
             logger.error("Gemini API error", error=str(e))
             raise
@@ -238,6 +241,8 @@ class GeminiProvider(LLMProvider):
                             },
                         )
 
+        except httpx.TimeoutException as e:
+            raise LLMTimeoutError(f"Gemini stream timeout: {e}") from e
         except Exception as e:
             logger.error("Gemini stream error", error=str(e))
             raise

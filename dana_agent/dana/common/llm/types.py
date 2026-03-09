@@ -26,6 +26,17 @@ class ProviderError(LLMError):
     pass
 
 
+class LLMTimeoutError(ProviderError):
+    """Exception raised when an LLM API call times out.
+
+    Providers catch SDK-specific timeout exceptions and re-raise as this
+    unified type so the retry/failover layer can detect timeouts without
+    knowing about individual SDK exception hierarchies.
+    """
+
+    pass
+
+
 class ConfigurationError(LLMError):
     """Exception raised for configuration issues."""
 
