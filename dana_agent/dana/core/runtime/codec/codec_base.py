@@ -43,6 +43,7 @@ class CodecRuntimeBase(AgentRuntime):
         )
         self._codec = codec
         self._prompt_api = None
+        self._system_prompt_template_override: str | None = None
         self._last_native_tools_state: bool | None = None  # Track for cache invalidation
         # Codec runtimes don't use json_mode — reconfigure the shared LLMCaller.
         self._llm_caller._json_mode = False
@@ -88,9 +89,21 @@ class CodecRuntimeBase(AgentRuntime):
         """
         ...
 
+    def set_system_prompt_template(self, template: str) -> None:
+        """Override the entire system prompt template for codec runtimes.
+
+        Sets the template on LocalPromptAPI. If prompt_api hasn't been
+        created yet, stores it for deferred application.
+        """
+        self._system_prompt_template_override = template
+        if self._prompt_api is not None:
+            self._prompt_api.set_system_prompt_template(template)
+
     def _get_prompt_api(self, agent: STARAgent) -> LocalPromptAPI:
         if self._prompt_api is None:
             self._prompt_api = LocalPromptAPI(agent=agent, codec=self._codec, provider=self._provider)
+            if self._system_prompt_template_override is not None:
+                self._prompt_api.set_system_prompt_template(self._system_prompt_template_override)
         return self._prompt_api
 
     def _build_system_prompt(self, agent: STARAgent) -> str:

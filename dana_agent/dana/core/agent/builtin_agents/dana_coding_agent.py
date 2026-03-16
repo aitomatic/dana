@@ -144,15 +144,9 @@ class DanaCodingAgent(STARAgent):
             enable_skills=enable_skills,
             enable_assistant=enable_assistant,
             identity_override=identity_override,
+            system_prompt_template=IDENTITY,
             **kwargs,
         )
-        if hasattr(self._runtime, "_get_prompt_api"):
-            _prompt_api = self._runtime._get_prompt_api(self)
-            _prompt_api._template_system_prompt = IDENTITY
-        else:
-            raise ValueError(
-                f"{self.__class__.__name__} only works with `dana_agent/dana/core/runtime/codec` runtimes. You are using {self._runtime.__class__.__name__}."
-            )
         self._cwd = cwd
         _supports_vision = self.llm_client.supports_vision
         explore_agent = ExploreAgent(
