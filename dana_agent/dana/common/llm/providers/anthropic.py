@@ -8,7 +8,7 @@ import anthropic
 import structlog
 
 from ...config import config_manager
-from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk
+from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
 logger = structlog.get_logger()
@@ -264,9 +264,12 @@ class AnthropicProvider(LLMProvider):
             if system is not None:
                 request_kwargs["system"] = system
 
-            # Call Anthropic API
+            # Call Anthropic API with per-request timeout
             try:
-                response = await self.client.messages.create(**request_kwargs)
+                response = await self.client.messages.create(
+                    **request_kwargs,
+                    timeout=self.DEFAULT_TIMEOUT_SECONDS,
+                )
             except Exception as e:
                 logger.error("Anthropic API error", error=str(e))
                 raise
@@ -326,6 +329,8 @@ class AnthropicProvider(LLMProvider):
                 tool_calls=tool_calls,
             )
 
+        except anthropic.APITimeoutError as e:
+            raise LLMTimeoutError(f"Anthropic API timeout: {e}") from e
         except Exception as e:
             logger.error("Anthropic API error", error=str(e))
             raise
@@ -349,7 +354,10 @@ class AnthropicProvider(LLMProvider):
             if tools:
                 request_kwargs["tools"] = self.prepare_tools(tools)
 
-            async with self.client.messages.stream(**request_kwargs) as stream_resp:
+            async with self.client.messages.stream(
+                **request_kwargs,
+                timeout=self.DEFAULT_TIMEOUT_SECONDS,
+            ) as stream_resp:
                 async for event in stream_resp:
                     # Text delta events
                     if event.type == "content_block_delta" and getattr(event.delta, "type", None) == "text_delta":
@@ -366,6 +374,8 @@ class AnthropicProvider(LLMProvider):
 
                     # Future: thinking blocks (when Anthropic enables extended thinking in streaming)
 
+        except anthropic.APITimeoutError as e:
+            raise LLMTimeoutError(f"Anthropic stream timeout: {e}") from e
         except Exception as e:
             logger.error("Anthropic stream error", error=str(e))
             raise

@@ -736,3 +736,75 @@ class TestAnthropicMessageConversion:
         system, out = self._prepare([])
         assert system is None
         assert out == []
+
+
+# ---------------------------------------------------------------------------
+# Timeout → LLMTimeoutError tests (all providers)
+# ---------------------------------------------------------------------------
+
+
+class TestProviderTimeoutHandling:
+    """Verify each provider catches SDK-specific timeout exceptions and re-raises as LLMTimeoutError."""
+
+    @pytest.mark.asyncio
+    async def test_openai_chat_timeout_raises_llm_timeout_error(self):
+        """OpenAI chat() catches APITimeoutError → LLMTimeoutError."""
+        from unittest.mock import AsyncMock
+
+        import openai
+
+        from dana.common.llm.types import LLMTimeoutError
+
+        with patch("dana.common.llm.providers.openai.AsyncOpenAI"):
+            from dana.common.llm.providers.openai import OpenAIProvider
+
+            provider = OpenAIProvider(api_key="test-key", model="gpt-4o")
+
+        provider.client.chat.completions.create = AsyncMock(
+            side_effect=openai.APITimeoutError(request=None),
+        )
+
+        with pytest.raises(LLMTimeoutError, match="timeout"):
+            await provider.chat([LLMMessage(role="user", content="hello")])
+
+    @pytest.mark.asyncio
+    async def test_anthropic_chat_timeout_raises_llm_timeout_error(self):
+        """Anthropic chat() catches anthropic.APITimeoutError → LLMTimeoutError."""
+        from unittest.mock import AsyncMock
+
+        import anthropic
+
+        from dana.common.llm.types import LLMTimeoutError
+
+        with patch("dana.common.llm.providers.anthropic.anthropic"):
+            from dana.common.llm.providers.anthropic import AnthropicProvider
+
+            provider = AnthropicProvider(api_key="test-key", model="claude-3-sonnet")
+
+        provider.client.messages.create = AsyncMock(
+            side_effect=anthropic.APITimeoutError(request=None),
+        )
+
+        with pytest.raises(LLMTimeoutError, match="timeout"):
+            await provider.chat([LLMMessage(role="user", content="hello")])
+
+    @pytest.mark.asyncio
+    async def test_gemini_chat_timeout_raises_llm_timeout_error(self):
+        """Gemini chat() catches httpx.TimeoutException → LLMTimeoutError."""
+        from unittest.mock import AsyncMock
+
+        import httpx
+
+        from dana.common.llm.types import LLMTimeoutError
+
+        with patch("dana.common.llm.providers.gemini.genai"):
+            from dana.common.llm.providers.gemini import GeminiProvider
+
+            provider = GeminiProvider(api_key="test-key", model="gemini-2.5-flash")
+
+        provider.client.aio.models.generate_content = AsyncMock(
+            side_effect=httpx.ReadTimeout("connection timed out"),
+        )
+
+        with pytest.raises(LLMTimeoutError, match="timeout"):
+            await provider.chat([LLMMessage(role="user", content="hello")])

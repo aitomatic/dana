@@ -3,9 +3,11 @@
 import json
 from typing import Any
 
+import httpx
+from openai import APITimeoutError
 import structlog
 
-from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk
+from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
 logger = structlog.get_logger()
@@ -167,7 +169,10 @@ class OpenAICompatibleProvider(LLMProvider):
             if kwargs.get("json_mode", False):
                 request_kwargs["response_format"] = {"type": "json_object"}
 
-            response = await self.client.chat.completions.create(**request_kwargs)
+            response = await self.client.chat.completions.create(
+                **request_kwargs,
+                timeout=httpx.Timeout(self.DEFAULT_TIMEOUT_SECONDS),
+            )
 
             choice = response.choices[0]
             message = choice.message
@@ -205,6 +210,8 @@ class OpenAICompatibleProvider(LLMProvider):
                 reasoning_tokens=reasoning_tokens,
             )
 
+        except (APITimeoutError, httpx.TimeoutException) as e:
+            raise LLMTimeoutError(f"OpenAI-compatible API timeout: {e}") from e
         except Exception as e:
             logger.error("OpenAI-compatible API error", error=str(e))
             raise
@@ -227,7 +234,10 @@ class OpenAICompatibleProvider(LLMProvider):
             request_kwargs["tools"] = self.prepare_tools(tools)
             request_kwargs["tool_choice"] = "auto"
 
-        response = await self.client.chat.completions.create(**request_kwargs)
+        response = await self.client.chat.completions.create(
+            **request_kwargs,
+            timeout=httpx.Timeout(self.DEFAULT_TIMEOUT_SECONDS),
+        )
 
         tool_calls: dict[int, dict] = {}
 
@@ -353,7 +363,10 @@ class OpenAICompatibleProvider(LLMProvider):
         if tools:
             request_kwargs["tools"] = self._prepare_tools_for_responses(tools)
 
-        stream = await self.client.responses.create(**request_kwargs)
+        stream = await self.client.responses.create(
+            **request_kwargs,
+            timeout=httpx.Timeout(self.DEFAULT_TIMEOUT_SECONDS),
+        )
 
         async for event in stream:
             if event.type == "response.output_text.delta":
@@ -408,6 +421,8 @@ class OpenAICompatibleProvider(LLMProvider):
                 logger.debug("Using Chat Completions API for streaming", model=self.model)
                 async for chunk in self._stream_chat_completions(messages, tools=tools, **kwargs):
                     yield chunk
+        except (APITimeoutError, httpx.TimeoutException) as e:
+            raise LLMTimeoutError(f"OpenAI-compatible stream timeout: {e}") from e
         except Exception as e:
             logger.error("Stream error", model=self.model, error=str(e))
             raise

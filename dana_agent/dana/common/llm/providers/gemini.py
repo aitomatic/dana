@@ -9,10 +9,11 @@ import uuid
 
 from google import genai
 from google.genai import types as genai_types
+import httpx
 import structlog
 
 from ...config import config_manager
-from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk
+from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
 logger = structlog.get_logger()
@@ -143,7 +144,9 @@ class GeminiProvider(LLMProvider):
         try:
             system_instruction, contents = self.prepare_messages(messages)
 
-            config = genai_types.GenerateContentConfig()
+            config = genai_types.GenerateContentConfig(
+                http_options=genai_types.HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS),
+            )
             if system_instruction:
                 config.system_instruction = system_instruction
             if "temperature" in kwargs:
@@ -193,6 +196,8 @@ class GeminiProvider(LLMProvider):
                 tool_calls=tool_calls,
             )
 
+        except httpx.TimeoutException as e:
+            raise LLMTimeoutError(f"Gemini API timeout: {e}") from e
         except Exception as e:
             logger.error("Gemini API error", error=str(e))
             raise
@@ -202,7 +207,9 @@ class GeminiProvider(LLMProvider):
         try:
             system_instruction, contents = self.prepare_messages(messages)
 
-            config = genai_types.GenerateContentConfig()
+            config = genai_types.GenerateContentConfig(
+                http_options=genai_types.HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS),
+            )
             if system_instruction:
                 config.system_instruction = system_instruction
             if "temperature" in kwargs:
@@ -234,6 +241,8 @@ class GeminiProvider(LLMProvider):
                             },
                         )
 
+        except httpx.TimeoutException as e:
+            raise LLMTimeoutError(f"Gemini stream timeout: {e}") from e
         except Exception as e:
             logger.error("Gemini stream error", error=str(e))
             raise
