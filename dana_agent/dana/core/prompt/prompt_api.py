@@ -278,6 +278,12 @@ class LocalPromptAPI(PromptAPIProtocol):
     def tool_instruction_prompt(self) -> str:
         return self._codec.get_instruction()
 
+    def set_system_prompt_template(self, template: str) -> None:
+        """Replace the system prompt template and invalidate cached prompt."""
+        self._template_system_prompt = template
+        self._system_prompt = None
+        self._template = None
+
     @property
     def system_prompt(self) -> str:
         if self._system_prompt is None:

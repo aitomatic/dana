@@ -113,13 +113,12 @@ class ExploreAgent(STARAgent):
             enable_skills=enable_skills,
             enable_assistant=enable_assistant,
             identity_override=identity_override,
+            system_prompt_template=IDENTITY,
             **kwargs,
         )
 
         self._cwd = cwd
         _supports_vision = self.llm_client.supports_vision
-        _prompt_api = self._runtime._get_prompt_api(self)
-        _prompt_api._template_system_prompt = IDENTITY
         self.with_resources(
             BashResource(resource_id="bash", working_directory=cwd),
             FileIOResource(resource_id="file-io", base_path=cwd, supports_vision=_supports_vision),
