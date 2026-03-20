@@ -1,7 +1,7 @@
 """Resource for file read/write operations.
 
 Provides read() and write() tools mirroring Claude Code's file I/O signatures.
-Supports text files, images (PNG, JPG, GIF, WebP, BMP), and PDFs.
+Supports text files, images (PNG, JPG, GIF, WebP, BMP), audio, video, and PDFs.
 """
 
 import base64
@@ -20,8 +20,28 @@ IMAGE_MEDIA_TYPES = {
     ".webp": "image/webp",
     ".bmp": "image/bmp",
 }
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac", ".wma"}
+AUDIO_MEDIA_TYPES = {
+    ".mp3": "audio/mp3",
+    ".wav": "audio/wav",
+    ".ogg": "audio/ogg",
+    ".flac": "audio/flac",
+    ".m4a": "audio/m4a",
+    ".aac": "audio/aac",
+    ".wma": "audio/x-ms-wma",
+}
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".webm", ".mkv", ".wmv"}
+VIDEO_MEDIA_TYPES = {
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".avi": "video/x-msvideo",
+    ".webm": "video/webm",
+    ".mkv": "video/x-matroska",
+    ".wmv": "video/x-ms-wmv",
+}
 PDF_EXTENSION = ".pdf"
 MAX_IMAGE_SIZE = 20 * 1024 * 1024  # 20MB (Anthropic API limit)
+MAX_MEDIA_SIZE = 100 * 1024 * 1024  # 100MB for audio/video
 MAX_PDF_PAGES = 20
 LARGE_PDF_THRESHOLD = 10  # pages
 
@@ -29,20 +49,31 @@ LARGE_PDF_THRESHOLD = 10  # pages
 class FileIOResource(BaseResource):
     """Resource for file read/write operations."""
 
-    def __init__(self, resource_id: str, base_path: str | Path | None = None, supports_vision: bool = True, **kwargs):
+    def __init__(
+        self,
+        resource_id: str,
+        base_path: str | Path | None = None,
+        supports_vision: bool = True,
+        supports_audio: bool = False,
+        supports_video: bool = False,
+        **kwargs,
+    ):
         """Initialize the FileIOResource.
 
         Args:
             resource_id: Unique identifier for this resource instance.
             base_path: Base directory for relative path resolution.
             supports_vision: Whether the LLM supports image/PDF content blocks.
-                When False, uses VisionParser to extract text instead of base64.
+            supports_audio: Whether the LLM supports audio content blocks.
+            supports_video: Whether the LLM supports video content blocks.
             **kwargs: Additional arguments passed to the base resource.
         """
         super().__init__(resource_id=resource_id, **kwargs)
         self._base_path = Path(base_path) if base_path else Path.cwd()
         self._base_path.mkdir(parents=True, exist_ok=True)
         self._supports_vision = supports_vision
+        self._supports_audio = supports_audio
+        self._supports_video = supports_video
         self._vision_parser = None  # lazy init
 
     def _resolve_path(self, file_path: str) -> Path:
@@ -67,7 +98,7 @@ class FileIOResource(BaseResource):
         limit: int | None = 2000,
         pages: str | None = None,
     ) -> str | dict:
-        """Read file contents. Supports text files (cat -n format), images, and PDFs.
+        """Read file contents. Supports text, images, audio, video, and PDFs.
 
         Args:
             file_path: Absolute path to the file to read
@@ -76,7 +107,7 @@ class FileIOResource(BaseResource):
             pages: Page range for PDF files (e.g., "1-5", "3", "10-20")
 
         Returns:
-            File contents with line numbers (text), or dict with inject_as_user (images/PDFs).
+            File contents with line numbers (text), or dict with inject_as_user (media).
         """
         resolved_path = self._resolve_path(file_path)
 
@@ -93,6 +124,10 @@ class FileIOResource(BaseResource):
                 return self._read_image(resolved_path, suffix)
             else:
                 return await self._read_image_extracted(resolved_path)
+        elif suffix in AUDIO_EXTENSIONS:
+            return self._read_media(resolved_path, suffix, AUDIO_MEDIA_TYPES, "audio", self._supports_audio)
+        elif suffix in VIDEO_EXTENSIONS:
+            return self._read_media(resolved_path, suffix, VIDEO_MEDIA_TYPES, "video", self._supports_video)
         elif suffix == PDF_EXTENSION:
             if self._supports_vision:
                 return self._read_pdf(resolved_path, pages)
@@ -161,6 +196,44 @@ class FileIOResource(BaseResource):
                 {"type": "text", "text": f"Visual contents of {path.name}:"},
                 {
                     "type": "image",
+                    "source": {"type": "base64", "media_type": media_type, "data": b64_data},
+                },
+            ],
+        }
+
+    def _read_media(self, path: Path, suffix: str, media_types: dict, block_type: str, supported: bool) -> str | dict:
+        """Read an audio or video file and return as base64 content block.
+
+        Args:
+            path: Resolved file path.
+            suffix: File extension (e.g., ".mp3").
+            media_types: Mapping of extension to MIME type.
+            block_type: Canonical block type ("audio" or "video").
+            supported: Whether the LLM supports this media type.
+        """
+        file_size = path.stat().st_size
+        if file_size > MAX_MEDIA_SIZE:
+            return f"Error: {block_type.title()} too large ({file_size / 1024 / 1024:.1f}MB). Max: 100MB"
+
+        if not supported:
+            return f"[{block_type.title()} file: {path.name} ({file_size / 1024:.1f}KB) — {block_type} not supported by current model]"
+
+        try:
+            raw_bytes = path.read_bytes()
+        except PermissionError:
+            return f"Error: Permission denied: {path}"
+        except Exception as e:
+            return f"Error reading {block_type}: {e}"
+
+        b64_data = base64.b64encode(raw_bytes).decode("ascii")
+        media_type = media_types.get(suffix, f"{block_type}/octet-stream")
+
+        return {
+            "message": f"{block_type.title()}: {path.name} ({file_size / 1024:.1f}KB, {media_type})",
+            "inject_as_user": [
+                {"type": "text", "text": f"{block_type.title()} contents of {path.name}:"},
+                {
+                    "type": block_type,
                     "source": {"type": "base64", "media_type": media_type, "data": b64_data},
                 },
             ],

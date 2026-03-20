@@ -7,6 +7,7 @@ import httpx
 from openai import APITimeoutError
 import structlog
 
+from ..multimodal_converter import convert_for_openai, is_multimodal_content
 from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
@@ -87,7 +88,16 @@ class OpenAICompatibleProvider(LLMProvider):
                 system = safe_content
                 openai_messages.append({"role": "system", "content": safe_content})
             elif msg.role == "user":
-                openai_messages.append({"role": "user", "content": safe_content})
+                if isinstance(msg.content, list) and is_multimodal_content(msg.content):
+                    converted = convert_for_openai(
+                        msg.content,
+                        supports_vision=getattr(self, "supports_vision", True),
+                        supports_audio=getattr(self, "supports_audio", False),
+                        supports_video=getattr(self, "supports_video", False),
+                    )
+                    openai_messages.append({"role": "user", "content": converted})
+                else:
+                    openai_messages.append({"role": "user", "content": safe_content})
             elif msg.role == "tool":
                 openai_messages.append(
                     {
@@ -315,6 +325,27 @@ class OpenAICompatibleProvider(LLMProvider):
         result = []
         for msg in openai_messages:
             role = msg.get("role")
+            # Convert multimodal user messages to Responses API format
+            if role == "user" and isinstance(msg.get("content"), list):
+                content = msg["content"]
+                # Check if content has OpenAI Chat format blocks (image_url, input_audio)
+                # and convert to Responses API format (input_image, input_text)
+                has_openai_blocks = any(b.get("type") in ("image_url", "input_audio", "file") for b in content if isinstance(b, dict))
+                if has_openai_blocks:
+                    responses_content = []
+                    for block in content:
+                        btype = block.get("type", "")
+                        if btype == "text":
+                            responses_content.append({"type": "input_text", "text": block.get("text", "")})
+                        elif btype == "image_url":
+                            url = block.get("image_url", {}).get("url", "")
+                            responses_content.append({"type": "input_image", "image_url": url})
+                        else:
+                            responses_content.append(block)
+                    result.append({"role": "user", "content": responses_content})
+                else:
+                    result.append(msg)
+                continue
             if role == "assistant" and msg.get("tool_calls"):
                 # Emit any text content as a regular assistant message
                 if msg.get("content"):

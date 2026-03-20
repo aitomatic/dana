@@ -97,7 +97,7 @@ class NativeMessage:
     """
 
     role: NativeMessageRole
-    content: str
+    content: str | list[dict]
     tool_calls: list[NativeToolCall] | None = None
     tool_call_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)

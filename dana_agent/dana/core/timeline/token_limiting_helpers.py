@@ -26,7 +26,8 @@ def estimate_messages_tokens(messages: list[LLMMessage]) -> int:
     total = 0
     for msg in messages:
         # Rough estimation: 4 characters per token
-        total += len(msg.content) // 4
+        content = msg.content
+        total += len(content) // 4 if isinstance(content, str) else len(str(content)) // 4
         # Add tokens for tool_calls if present
         if msg.tool_calls:
             for tc in msg.tool_calls:

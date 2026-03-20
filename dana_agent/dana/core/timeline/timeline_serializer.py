@@ -329,7 +329,7 @@ class TimelineSerializerMixin:
             entry_type = TimelineEntryType.USER_MESSAGE
         elif msg.role == "system":
             # Check if it's a summary or context
-            if msg.content.startswith("[SUMMARY]") or COMPRESSED_CONTEXT_KEY in msg.metadata:
+            if isinstance(msg.content, str) and (msg.content.startswith("[SUMMARY]") or COMPRESSED_CONTEXT_KEY in msg.metadata):
                 entry_type = TimelineEntryType.TIMELINE_SUMMARY
             else:
                 entry_type = TimelineEntryType.CONTEXT

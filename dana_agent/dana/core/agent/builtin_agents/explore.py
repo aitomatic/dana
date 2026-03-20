@@ -118,10 +118,19 @@ class ExploreAgent(STARAgent):
         )
 
         self._cwd = cwd
+        _llm = self.llm_client
+        _prompt_api = self._runtime._get_prompt_api(self)
+        _prompt_api._template_system_prompt = IDENTITY
         _supports_vision = self.llm_client.supports_vision
         self.with_resources(
             BashResource(resource_id="bash", working_directory=cwd),
-            FileIOResource(resource_id="file-io", base_path=cwd, supports_vision=_supports_vision),
+            FileIOResource(
+                resource_id="file-io",
+                base_path=cwd,
+                supports_vision=_llm.supports_vision,
+                supports_audio=_llm.supports_audio,
+                supports_video=_llm.supports_video,
+            ),
             ToDoResource(resource_id="todo"),
             FileEditResource(resource_id="file-edit", base_path=cwd),
             SearchResource(resource_id="search", base_path=cwd),

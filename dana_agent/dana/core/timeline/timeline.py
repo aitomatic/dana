@@ -111,25 +111,26 @@ class TimelineEntry:
         """
         return self._get_entry_config()
 
-    def _get_formatted_content(self) -> str:
+    def _get_formatted_content(self) -> str | list[dict]:
         """
         Get formatted content with semantic labels.
 
         Returns:
-            Formatted content string
+            Formatted content (string or multimodal content blocks)
         """
         if self.entry_type in [TimelineEntryType.USER_MESSAGE, TimelineEntryType.AGENT_RESPONSE]:
             return self.content
         else:
             label = self._get_display_label()
-            return f"[{label}] {self.content}"
+            display_content = self.content if isinstance(self.content, str) else "[multimodal content]"
+            return f"[{label}] {display_content}"
 
-    def _format_content_for_llm(self) -> str:
+    def _format_content_for_llm(self) -> str | list[dict]:
         """
         Format content for LLM consumption.
 
         Returns:
-            Formatted content string with semantic context
+            Formatted content (string or multimodal content blocks)
         """
         return self._get_formatted_content()
 
@@ -140,7 +141,7 @@ class TimelineEntry:
         Returns:
             Display content string
         """
-        return self.content
+        return self.content if isinstance(self.content, str) else "[multimodal content]"
 
     def to_string(self) -> str:
         """

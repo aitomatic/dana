@@ -31,10 +31,6 @@ from dana.core.timeline.native_message import (
     NativeMessageRole,
     NativeToolCall,
 )
-from dana.core.timeline.token_limiting_helpers import (
-    apply_token_limit_to_messages,
-    estimate_messages_tokens,
-)
 from dana.core.timeline.timeline import (
     Timeline,
     TimelineConfig,
@@ -42,6 +38,10 @@ from dana.core.timeline.timeline import (
     TimelineEntryType,
 )
 from dana.core.timeline.timeline_serializer import TimelineSerializerMixin
+from dana.core.timeline.token_limiting_helpers import (
+    apply_token_limit_to_messages,
+    estimate_messages_tokens,
+)
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
 
@@ -572,7 +572,8 @@ class CompressedTimeline(CompressionMixin, TimelineSerializerMixin, Timeline):
             Estimated token count
         """
         # Base content tokens
-        total = len(message.content) // 4
+        content = message.content
+        total = len(content) // 4 if isinstance(content, str) else len(str(content)) // 4
 
         # Add tokens for tool_calls if present
         if message.tool_calls:
