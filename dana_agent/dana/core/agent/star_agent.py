@@ -20,6 +20,8 @@ from dana.common.llm import LLM
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana.common.protocols.types import LearningPhase
+from dana.core.timeline.compressed_timeline import CompressedTimeline
+from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 from dana.repositories.repository_factory import DEFAULT_REPOSITORY_FACTORY, RepositoryFactory
 
 from ..knowledge.prompts.codecs import AbstractCodec
@@ -29,8 +31,6 @@ from .base_star_agent import BaseSTARAgent
 from .components import Communicator, LearnerProtocol, State
 from .components.observer import ObserverProtocol
 from .star_agent_streaming import STARAgentStreamingMixin
-from dana.core.timeline.compressed_timeline import CompressedTimeline
-from dana.core.timeline.timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
 logger = structlog.get_logger()
@@ -70,6 +70,7 @@ class STARAgent(STARAgentStreamingMixin, BaseSTARAgent):
         enable_code_execution: bool = False,
         enable_assistant: bool = True,
         identity_override: str | None = None,
+        system_prompt_template: str | None = None,
         compress_timeline: bool = True,
         **kwargs,
     ):
@@ -130,6 +131,7 @@ class STARAgent(STARAgentStreamingMixin, BaseSTARAgent):
         codec_provided = codec is not _CODEC_SENTINEL
         self._codec = codec
         self._identity_override = identity_override
+        self._system_prompt_template = system_prompt_template
 
         if runtime is None:
             if codec is None or codec is _CODEC_SENTINEL:
@@ -162,6 +164,9 @@ class STARAgent(STARAgentStreamingMixin, BaseSTARAgent):
                 )
 
         self._runtime = runtime
+
+        if system_prompt_template is not None:
+            self._runtime.set_system_prompt_template(system_prompt_template)
 
         # Initialize other components
         self._communicator = Communicator(self)

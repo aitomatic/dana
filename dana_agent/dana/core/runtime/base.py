@@ -158,6 +158,17 @@ When you need to call tools, use the function calling API directly — do NOT in
     # Customization Hooks - Override these in subclasses
     # -------------------------------------------------------------------------
 
+    def set_system_prompt_template(self, template: str) -> None:  # noqa: B027
+        """Override the entire system prompt template.
+
+        Subclasses should implement this to replace the prompt template
+        used for LLM calls. Prefer passing system_prompt_template via
+        constructor when possible; use this method for dynamic overrides.
+
+        Args:
+            template: The complete system prompt template string.
+        """
+
     def get_system_prompt_template(self, native_tools: bool) -> str:
         """Return the system prompt template.
 
