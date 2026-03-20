@@ -255,6 +255,21 @@ class STARAgent(STARAgentStreamingMixin, BaseSTARAgent):
         """Set the session id for the agent."""
         self._session_id = session_id
 
+    def resume_session(self, session_id: str) -> None:
+        """Resume from a previously saved session, loading full conversation history.
+
+        High-level convenience that loads the timeline from disk and syncs
+        ``_star_loop_count``.  For custom timeline injection (testing,
+        learners), use :meth:`resume_from_timeline` instead.
+
+        Args:
+            session_id: The session identifier to resume from.
+        """
+        self._session_id = session_id
+        entries = list(self._timeline.read_since(0))
+        self._timeline.timeline = entries
+        self.resume_from_timeline(self._timeline, session_id)
+
     def resume_from_timeline(self, timeline: Timeline, session_id: str | None = None) -> None:
         """
         Resume the STAR loop from a previously saved Timeline.

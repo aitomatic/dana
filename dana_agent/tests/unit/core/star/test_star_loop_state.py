@@ -230,3 +230,73 @@ class TestResumeFromTimeline:
         agent.resume_from_timeline(Timeline())
 
         assert agent._star_loop_count == 0
+
+
+# ---------------------------------------------------------------------------
+# resume_session (high-level)
+# ---------------------------------------------------------------------------
+
+
+class TestResumeSession:
+    """Tests for STARAgent.resume_session() — loads from disk via read_since."""
+
+    def test_resume_session_sets_session_id(self):
+        agent = _make_agent()
+        entries = [_user("hi"), _response("hello")]
+        agent._timeline.read_since = lambda checkpoint: iter(entries)
+
+        agent.resume_session("saved-session-42")
+
+        assert agent._session_id == "saved-session-42"
+
+    def test_resume_session_loads_timeline_entries(self):
+        agent = _make_agent()
+        entries = [_user("hi"), _response("hello")]
+        agent._timeline.read_since = lambda checkpoint: iter(entries)
+
+        agent.resume_session("sess-1")
+
+        assert len(agent._timeline.timeline) == 2
+        assert agent._timeline.timeline[0].content == "hi"
+
+    def test_resume_session_syncs_star_loop_count(self):
+        agent = _make_agent()
+        entries = [
+            _user("search"),
+            _tool_call(tool_calls=[{"function": "search:web", "arguments": {}}]),
+            _resource_result("results"),
+            _response("Done."),
+        ]
+        agent._timeline.read_since = lambda checkpoint: iter(entries)
+
+        agent.resume_session("sess-2")
+
+        # 1 TOOL_CALL + 1 AGENT_RESPONSE = 2 iterations
+        assert agent._star_loop_count == 2
+
+    def test_resume_session_empty_history(self):
+        agent = _make_agent()
+        agent._star_loop_count = 5
+        agent._timeline.read_since = lambda checkpoint: iter([])
+
+        agent.resume_session("empty-sess")
+
+        assert agent._star_loop_count == 0
+        assert agent._session_id == "empty-sess"
+        assert len(agent._timeline.timeline) == 0
+
+    def test_resume_session_sets_id_before_read_since(self):
+        """_session_id must be set before read_since (which may depend on it)."""
+        agent = _make_agent()
+        call_order: list[str] = []
+
+        def tracking_read_since(checkpoint):
+            call_order.append(f"read_since:session={agent._session_id}")
+            return iter([_user("hi"), _response("hello")])
+
+        agent._timeline.read_since = tracking_read_since
+
+        agent.resume_session("order-test-session")
+
+        assert len(call_order) == 1
+        assert "order-test-session" in call_order[0]
