@@ -146,12 +146,17 @@ class LLMProvider:
 
     # Default timeout in seconds for LLM API calls (2 minutes).
     # Prevents long-running calls (e.g. timeline compression) from blocking the agent loop.
-    DEFAULT_TIMEOUT_SECONDS = 120
+    DEFAULT_TIMEOUT_SECONDS = 360
 
     @property
     def supports_native_tools(self) -> bool:
         """Whether this provider supports native function/tool calling."""
         return False
+
+    # supports_vision, supports_video, supports_audio are set as instance
+    # attributes by LLMResource at runtime (based on env/config).
+    # Not @property — must be assignable per-instance.
+    # Use getattr(provider, "supports_video", False) for safe access.
 
     def prepare_messages(self, messages: list[LLMMessage]) -> tuple[Any, list[dict]]:
         """Default: extract system message, convert rest to basic dicts."""
@@ -160,6 +165,9 @@ class LLMProvider:
         for msg in messages:
             # Guard against None content — APIs reject null content
             safe_content = msg.content if msg.content is not None else ""
+            # Base class doesn't support multimodal — extract text from list[dict] blocks
+            if isinstance(safe_content, list):
+                safe_content = " ".join(block.get("text", f"[{block.get('type', 'unknown')} content]") for block in safe_content)
             if msg.role == "system":
                 system = safe_content
             elif msg.role == "tool":

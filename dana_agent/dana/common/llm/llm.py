@@ -21,7 +21,7 @@ except ModuleNotFoundError:
 
 from ..config import config_manager
 from .providers.factory import create_provider
-from .types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, ProviderError
+from .types import LLMMessage, LLMProvider, LLMResponse, ProviderError
 
 
 logger = structlog.get_logger()
@@ -156,33 +156,48 @@ class LLM:
 
         self.model = getattr(self.provider, "model", "unknown")
         self.provider.supports_vision = self._resolve_vision_support()
+        self.provider.supports_video = self._resolve_capability("video")
+        self.provider.supports_audio = self._resolve_capability("audio")
 
     def _resolve_vision_support(self) -> bool:
         """Resolve vision support: env var > config vision_models > False."""
-        env_key = f"{self.provider_name.upper()}_SUPPORTS_VISION"
+        return self._resolve_capability("vision")
+
+    def _resolve_capability(self, capability: str) -> bool:
+        """Resolve a multimodal capability: env var > config {capability}_models > False.
+
+        Args:
+            capability: One of 'vision', 'video', 'audio'.
+        """
+        env_key = f"{self.provider_name.upper()}_SUPPORTS_{capability.upper()}"
         env_val = os.getenv(env_key)
         if env_val is not None:
             return env_val.lower() in ("1", "true", "yes")
 
         config = config_manager.get_provider_config(self.provider_name)
         if config:
-            vision_models = config.get("vision_models", [])
-            if vision_models:
+            model_list = config.get(f"{capability}_models", [])
+            if model_list:
                 # Match against both model keys (aliases) and values (full IDs)
                 models_map = config.get("models", {})
-                vision_ids = set()
-                for vm in vision_models:
-                    if vm in models_map:
-                        vision_ids.add(models_map[vm])
-                    else:
-                        vision_ids.add(vm)
-                return self.model in vision_ids
+                ids = set()
+                for m in model_list:
+                    ids.add(models_map[m] if m in models_map else m)
+                return self.model in ids
 
         return False
 
     @property
     def supports_vision(self) -> bool:
         return getattr(self.provider, "supports_vision", False)
+
+    @property
+    def supports_video(self) -> bool:
+        return getattr(self.provider, "supports_video", False)
+
+    @property
+    def supports_audio(self) -> bool:
+        return getattr(self.provider, "supports_audio", False)
 
     async def chat(self, messages: list[LLMMessage], **kwargs) -> str:
         """
@@ -369,7 +384,9 @@ class LLM:
         self.provider = create_provider(provider, model=model)
         self.provider_name = provider
         self.model = getattr(self.provider, "model", "unknown")
-        self.provider.supports_vision = self._resolve_vision_support()
+        self.provider.supports_vision = self._resolve_capability("vision")
+        self.provider.supports_video = self._resolve_capability("video")
+        self.provider.supports_audio = self._resolve_capability("audio")
         logger.info("Switched LLM provider", provider=provider, model=self.model)
 
     @staticmethod

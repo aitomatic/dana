@@ -13,6 +13,7 @@ import httpx
 import structlog
 
 from ...config import config_manager
+from ..multimodal_converter import convert_for_gemini, is_multimodal_content
 from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
@@ -37,7 +38,12 @@ class GeminiProvider(LLMProvider):
         if not self.api_key:
             raise ValueError("Gemini API key not found. Set GEMINI_API_KEY environment variable.")
 
-        self.client = genai.Client(api_key=self.api_key)
+        # google-genai SDK bug: HttpOptions(timeout=N) divides N by 1000 for async httpx client.
+        # Multiply by 1000 to compensate, so 360 seconds → 360000 → actual 360s timeout.
+        self.client = genai.Client(
+            api_key=self.api_key,
+            http_options=genai_types.HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS * 1000),
+        )
 
     def prepare_messages(self, messages: list[LLMMessage]) -> tuple[str | None, list[genai_types.Content]]:
         """Convert LLMMessage[] to Gemini API format.
@@ -54,8 +60,18 @@ class GeminiProvider(LLMProvider):
                 system_parts.append(safe_content if isinstance(safe_content, str) else json.dumps(safe_content))
 
             elif msg.role == "user":
-                text = safe_content if isinstance(safe_content, str) else json.dumps(safe_content)
-                contents.append(genai_types.Content(role="user", parts=[genai_types.Part(text=text)]))
+                if isinstance(msg.content, list) and is_multimodal_content(msg.content):
+                    # Convert canonical multimodal blocks to Gemini Part objects
+                    parts = convert_for_gemini(
+                        msg.content,
+                        supports_vision=getattr(self, "supports_vision", True),
+                        supports_audio=getattr(self, "supports_audio", True),
+                        supports_video=getattr(self, "supports_video", True),
+                    )
+                    contents.append(genai_types.Content(role="user", parts=parts))
+                else:
+                    text = safe_content if isinstance(safe_content, str) else json.dumps(safe_content)
+                    contents.append(genai_types.Content(role="user", parts=[genai_types.Part(text=text)]))
 
             elif msg.role == "assistant":
                 parts: list[genai_types.Part] = []
@@ -144,9 +160,7 @@ class GeminiProvider(LLMProvider):
         try:
             system_instruction, contents = self.prepare_messages(messages)
 
-            config = genai_types.GenerateContentConfig(
-                http_options=genai_types.HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS),
-            )
+            config = genai_types.GenerateContentConfig()
             if system_instruction:
                 config.system_instruction = system_instruction
             if "temperature" in kwargs:
@@ -207,9 +221,7 @@ class GeminiProvider(LLMProvider):
         try:
             system_instruction, contents = self.prepare_messages(messages)
 
-            config = genai_types.GenerateContentConfig(
-                http_options=genai_types.HttpOptions(timeout=self.DEFAULT_TIMEOUT_SECONDS),
-            )
+            config = genai_types.GenerateContentConfig()
             if system_instruction:
                 config.system_instruction = system_instruction
             if "temperature" in kwargs:

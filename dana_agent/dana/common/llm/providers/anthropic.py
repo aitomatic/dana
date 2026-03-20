@@ -8,6 +8,7 @@ import anthropic
 import structlog
 
 from ...config import config_manager
+from ..multimodal_converter import convert_for_anthropic, is_multimodal_content
 from ..types import LLMMessage, LLMProvider, LLMResponse, LLMStreamChunk, LLMTimeoutError
 
 
@@ -58,7 +59,11 @@ def prepare_anthropic_messages(
             system_blocks.append(block)
 
         elif msg.role == "user":
-            if msg.cache_control:
+            if isinstance(msg.content, list) and is_multimodal_content(msg.content):
+                # Convert canonical multimodal blocks to Anthropic wire format
+                converted = convert_for_anthropic(msg.content)
+                user_msg = {"role": "user", "content": converted}
+            elif msg.cache_control:
                 user_msg = {"role": "user", "content": [{"type": "text", "text": msg.content, "cache_control": msg.cache_control}]}
             else:
                 user_msg = {"role": "user", "content": msg.content}
